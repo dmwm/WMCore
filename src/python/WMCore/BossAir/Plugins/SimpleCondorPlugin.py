@@ -536,7 +536,8 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.WMAgent_SubTaskName'] = classad.quote(encodeUnicodeToBytesConditional(job['task_name'], condition=PY2))
             ad['My.CMS_JobType'] = classad.quote(encodeUnicodeToBytesConditional(job['task_type'], condition=PY2))
             ad['My.CMS_Type'] = classad.quote(activityToType(job['activity']))
-     
+            ad['My.CMS_RequestType'] = classad.quote(job['requestType'])
+
             # Handling for AWS, cloud and opportunistic resources
             ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
             if job.get('inputDataset'):

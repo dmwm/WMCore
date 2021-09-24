@@ -122,43 +122,34 @@ def capResourceEstimates(jobGroups, constraints):
     return
 
 
-def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
-            owner=None, ownerDN=None, ownerGroup='', ownerRole='',
-            scramArch=None, swVersion=None, agentNumber=0, numberOfCores=1,
-            inputDataset=None, inputDatasetLocations=None, inputPileup=None,
-            allowOpportunistic=False, agentName='', requiresGPU='forbidden',
-            gpuRequirements=None):
+def saveJob(job, thisJobNumber, **kwargs):
     """
     _saveJob_
 
     Actually do the mechanics of saving the job to a pickle file
     """
-    if wmTask:
-        # If we managed to load the task,
-        # so the url should be valid
-        job['spec'] = workflow.spec
-        job['task'] = wmTask
-        if job.get('sandbox', None) is None:
-            job['sandbox'] = sandbox
-
-    job['counter'] = jobNumber
-    job['agentNumber'] = agentNumber
-    job['agentName'] = agentName
+    job['counter'] = thisJobNumber
+    job['spec'] = kwargs.get('workflow').spec
+    job['task'] = kwargs.get('wmTaskName')
+    job['sandbox'] = kwargs.get('sandbox')
+    job['agentNumber'] = kwargs['agentNumber']
+    job['agentName'] = kwargs['agentName']
     cacheDir = job.getCache()
     job['cache_dir'] = cacheDir
-    job['owner'] = owner
-    job['ownerDN'] = ownerDN
-    job['ownerGroup'] = ownerGroup
-    job['ownerRole'] = ownerRole
-    job['scramArch'] = scramArch
-    job['swVersion'] = swVersion
-    job['numberOfCores'] = numberOfCores
-    job['inputDataset'] = inputDataset
-    job['inputDatasetLocations'] = inputDatasetLocations
-    job['inputPileup'] = inputPileup
-    job['allowOpportunistic'] = allowOpportunistic
-    job['requiresGPU'] = requiresGPU
-    job['gpuRequirements'] = gpuRequirements
+    job['owner'] = kwargs['owner']
+    job['ownerDN'] = kwargs['ownerDN']
+    job['ownerGroup'] = kwargs['ownerGroup']
+    job['ownerRole'] = kwargs['ownerRole']
+    job['scramArch'] = kwargs['scramArch']
+    job['swVersion'] = kwargs['swVersion']
+    job['numberOfCores'] = kwargs['numberOfCores']
+    job['inputDataset'] = kwargs['inputDataset']
+    job['inputDatasetLocations'] = kwargs['inputDatasetLocations']
+    job['inputPileup'] = kwargs['inputPileup']
+    job['allowOpportunistic'] = kwargs['allowOpportunistic']
+    job['requiresGPU'] = kwargs['requiresGPU']
+    job['gpuRequirements'] = kwargs['gpuRequirements']
+    job['requestType'] = kwargs['requestType']
 
     with open(os.path.join(cacheDir, 'job.pkl'), 'wb') as output:
         pickle.dump(job, output, HIGHEST_PICKLE_PROTOCOL)
@@ -178,28 +169,7 @@ def creatorProcess(work, jobCacheDir):
         wmbsJobGroup = work.get('jobGroup')
         workflow = work.get('workflow')
         wmWorkload = work.get('wmWorkload')
-        wmTaskName = work.get('wmTaskName')
-        sandbox = work.get('sandbox')
-        owner = work.get('owner')
-        ownerDN = work.get('ownerDN', None)
-        ownerGroup = work.get('ownerGroup', '')
-        ownerRole = work.get('ownerRole', '')
-        scramArch = work.get('scramArch', None)
-        swVersion = work.get('swVersion', None)
-        agentNumber = work.get('agentNumber', 0)
-        numberOfCores = work.get('numberOfCores', 1)
-        inputDataset = work.get('inputDataset', None)
-        inputDatasetLocations = work.get('inputDatasetLocations', None)
-        inputPileup = work.get('inputPileup', None)
-        allowOpportunistic = work.get('allowOpportunistic', False)
-        agentName = work.get('agentName', '')
-        requiresGPU = work.get('requiresGPU', 'forbidden')
-        gpuRequirements = work.get('gpuRequirements', None)
-
-        if ownerDN is None:
-            ownerDN = owner
-
-        jobNumber = work.get('jobNumber', 0)
+        work['ownerDN'] = work.get('owner') if work.get('ownerDN', None) is None else work.get('ownerDN')
     except KeyError as ex:
         msg = "Could not find critical key-value in work input.\n"
         msg += str(ex)
@@ -217,28 +187,10 @@ def creatorProcess(work, jobCacheDir):
                                    wmWorkload=wmWorkload,
                                    cache=False)
 
+        thisJobNumber = work.get('jobNumber', 0)
         for job in wmbsJobGroup.jobs:
-            jobNumber += 1
-            saveJob(job=job, workflow=workflow,
-                    wmTask=wmTaskName,
-                    jobNumber=jobNumber,
-                    sandbox=sandbox,
-                    owner=owner,
-                    ownerDN=ownerDN,
-                    ownerGroup=ownerGroup,
-                    ownerRole=ownerRole,
-                    scramArch=scramArch,
-                    swVersion=swVersion,
-                    agentNumber=agentNumber,
-                    numberOfCores=numberOfCores,
-                    inputDataset=inputDataset,
-                    inputDatasetLocations=inputDatasetLocations,
-                    inputPileup=inputPileup,
-                    allowOpportunistic=allowOpportunistic,
-                    agentName=agentName,
-                    requiresGPU=requiresGPU,
-                    gpuRequirements=gpuRequirements)
-
+            thisJobNumber += 1
+            saveJob(job, thisJobNumber, **work)
     except Exception as ex:
         msg = "Exception in processing wmbsJobGroup %i\n. Error: %s" % (wmbsJobGroup.id, str(ex))
         logging.exception(msg)
@@ -550,8 +502,7 @@ class JobCreatorPoller(BaseWorkerThread):
             jobNumber += splitParams.get('initial_lfn_counter', 0)
             logging.debug("Have %i jobs for workflow %s already in database.", jobNumber, workflow.name)
 
-            continueSubscription = True
-            while continueSubscription:
+            while True:
                 # This loop runs over the jobFactory,
                 # using yield statements and a pre-existing proxy to
                 # generate and process new jobs
@@ -564,21 +515,22 @@ class JobCreatorPoller(BaseWorkerThread):
                 except StopIteration:
                     # If you receive a stopIteration, we're done
                     logging.info("Completed iteration over subscription %i", subscriptionID)
-                    continueSubscription = False
                     myThread.transaction.commit()
                     break
 
                 # If we have no jobGroups, we're done
                 if len(wmbsJobGroups) == 0:
                     logging.info("Found end in iteration over subscription %i", subscriptionID)
-                    continueSubscription = False
                     myThread.transaction.commit()
                     break
 
                 # Assemble a dict of all the info
                 processDict = {'workflow': workflow,
-                               'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
-                               'jobNumber': jobNumber, 'sandbox': wmTask.data.input.sandbox,
+                               'wmWorkload': wmWorkload,
+                               'wmTaskName': wmTask.getPathName(),
+                               'requestType': wmWorkload.getRequestType(),
+                               'jobNumber': jobNumber,
+                               'sandbox': wmTask.data.input.sandbox,
                                'owner': wmWorkload.getOwner().get('name', None),
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),

@@ -226,6 +226,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             testJob['mask']['FirstEvent'] = 101
             testJob['priority'] = 101
             testJob['numberOfCores'] = 1
+            testJob['requestType'] = 'ReReco'
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)

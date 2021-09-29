@@ -6,6 +6,8 @@ from future.utils import viewitems
 from builtins import str, bytes
 from past.builtins import basestring
 
+from Utils.PythonVersion import PY3
+
 import subprocess
 import os
 import re
@@ -294,3 +296,29 @@ def encodeUnicodeToBytesConditional(value, errors="ignore", condition=True):
     if condition:
         return encodeUnicodeToBytes(value, errors)
     return value
+
+
+# listvalues and listitems definitions from Nick Coghlan's (withdrawn)
+# PEP 496:
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def listvalues(d):
+        return list(d.values())
+    def listitems(d):
+        return list(d.items())
+else:
+    # Python 2
+    def listvalues(d):
+        return d.values()
+    def listitems(d):
+        return d.items()
+
+
+if PY3:
+    newstr = str
+    newbytes = bytes
+else:
+    newstr = unicode
+    newbytes = str

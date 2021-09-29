@@ -9,14 +9,11 @@ Module dealing with Configuration file in python format
 
 """
 
-from builtins import object, int, str as newstr, bytes as newbytes
-
-from future.utils import listvalues
-
+from Utils.PythonVersion import PY3
+from Utils.Utilities import listvalues, newstr, newbytes
+        
 import os
 import traceback
-
-from Utils.PythonVersion import PY3
 
 import imp
 

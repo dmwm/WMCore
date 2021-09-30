@@ -1,3 +1,7 @@
+1.5.4.pre1 to 1.5.4.pre2:
+  - Provide request type via job classad (Alan Malta Rodrigues) #10821
+
+
 1.5.3 to 1.5.4.pre1:
   - [py2py3] modernize WMCore_t/REST_t/Api_t.py (Dario Mapelli) #10757
   - Propagate GPU requirements to job creation and submission (Alan Malta Rodrigues) #10811

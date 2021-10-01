@@ -216,9 +216,12 @@ def main():
     tmpFile = '/tmp/%s.json' % pwd.getpwuid(os.getuid()).pw_name
     wfCounter = 0
 
+    # figure out which python version it is
+    pythonCmd = "python3" if sys.version_info[0] == 3 else "python"
+
     for fname in templates:
         logger.info("Processing template: %s", fname)
-        strComand = "python %s -u %s -f %s -i " % (reqMgrCommand, args.url, tmpFile)
+        strComand = "%s %s -u %s -f %s -i " % (pythonCmd, reqMgrCommand, args.url, tmpFile)
 
         # read the original json template
         with open(wmcorePath + fname) as fo:

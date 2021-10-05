@@ -122,12 +122,17 @@ echo -e "======== WMAgent CMS environment load finished at $(TZ=GMT date) ======
 
 
 echo "======== WMAgent COMP Python bootstrap starting at $(TZ=GMT date) ========"
-# First, decide which COMP ScramArch to use based on the required OS
+# First, decide which COMP ScramArch to use based on the required OS and Architecture
+THIS_ARCH=`uname -m`  # if it's PowerPC, it returns `ppc64le`
+if [ "$THIS_ARCH" = "x86_64" ]
+then
+    THIS_ARCH="amd64"
+fi
 if [ "$REQUIRED_OS" = "rhel7" ];
 then
-    WMA_SCRAM_ARCH=slc7_amd64_gcc630
+    WMA_SCRAM_ARCH=slc7_${THIS_ARCH}_gcc630
 else
-    WMA_SCRAM_ARCH=slc6_amd64_gcc700
+    WMA_SCRAM_ARCH=slc6_${THIS_ARCH}_gcc700
 fi
 echo "Job requires OS: $REQUIRED_OS, thus setting ScramArch to: $WMA_SCRAM_ARCH"
 

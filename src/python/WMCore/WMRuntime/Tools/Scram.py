@@ -38,8 +38,8 @@ from PSetTweaks.WMTweak import readAdValues
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicodeConditional
 
+SCRAM_TO_ARCH = {'amd64': 'X86_64', 'aarch64': 'aarch64', 'ppc64le': 'ppc64le'}
 ARCH_TO_OS = {'slc5': ['rhel6'], 'slc6': ['rhel6'], 'slc7': ['rhel7']}
-
 OS_TO_ARCH = {}
 for arch, oses in viewitems(ARCH_TO_OS):
     for osName in oses:

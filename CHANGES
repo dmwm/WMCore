@@ -1,3 +1,7 @@
+1.5.4.pre2 to 1.5.4:
+  - Fix python version in subprocess call for inject-test-wfs (Alan Malta Rodrigues) #10847
+
+
 1.5.4.pre1 to 1.5.4.pre2:
   - Provide request type via job classad (Alan Malta Rodrigues) #10821
 

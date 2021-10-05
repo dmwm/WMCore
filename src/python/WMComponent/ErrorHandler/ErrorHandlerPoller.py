@@ -96,11 +96,14 @@ class ErrorHandlerPoller(BaseWorkerThread):
         """
         Initialize (and update every cycle) some of the component's
         parameters, according to the agent type (T0/Production) and agent config.
+        :return: True if the setup was completed, False if any non-critical problem happened
         """
         if self.reqAuxDB:
             agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
-            self.exitCodesNoRetry = agentConfig.get("NoRetryExitCodes", [])
+            if not agentConfig:
+                return False
 
+            self.exitCodesNoRetry = agentConfig.get("NoRetryExitCodes", [])
             if agentConfig.get("UserDrainMode") and agentConfig.get("SpeedDrainMode") \
                 and agentConfig.get("SpeedDrainConfig")['NoJobRetries']['Enabled']:
                 logging.info("Agent is in speed drain mode. Not retrying any jobs.")
@@ -112,6 +115,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
             self.maxRetries = {'default': self.maxRetries}
         if 'default' not in self.maxRetries:
             raise ErrorHandlerException('Max retries for the default job type must be specified')
+        return True
 
     def setup(self, parameters=None):
         """
@@ -395,8 +399,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         And deal with it as desired.
         """
         logging.debug("Running error handling algorithm")
-        self.setupComponentParam()
-        if not self.maxRetries:
+        if not self.setupComponentParam():
             msg = "Component failed to retrieve agent configuration from central ReqMgr Aux DB."
             msg += " Skipping this cycle."
             logging.error(msg)

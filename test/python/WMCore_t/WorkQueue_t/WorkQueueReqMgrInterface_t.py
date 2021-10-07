@@ -68,8 +68,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
     def setupGlobalWorkqueue(self, **kwargs):
         """Return a workqueue instance"""
         kwargs.setdefault('rucioAccount', "wmcore_transferor")
-        kwargs.setdefault('rucioAuthUrl', "https://cmsrucio-auth-int.cern.ch")
-        kwargs.setdefault('rucioUrl', "http://cmsrucio-int.cern.ch")
+        kwargs.setdefault('rucioAuthUrl', "https://cms-rucio-auth-int.cern.ch")
+        kwargs.setdefault('rucioUrl', "http://cms-rucio-int.cern.ch")
         globalQ = globalQueue(DbName=self.globalQDB,
                               InboxDbName=self.globalQInboxDB,
                               QueueURL=self.globalQCouchUrl,

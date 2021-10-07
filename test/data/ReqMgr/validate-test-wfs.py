@@ -117,7 +117,7 @@ def getRucioToken(rucioUrl):
     """
     Get a Rucio token for this account
     """
-    mapHosts = {"http://cmsrucio-int.cern.ch": "https://cmsrucio-auth-int.cern.ch",
+    mapHosts = {"http://cms-rucio-int.cern.ch": "https://cms-rucio-auth-int.cern.ch",
                 "http://cms-rucio.cern.ch": "https://cms-rucio-auth.cern.ch"}
 
     rucioAuth = None
@@ -654,7 +654,7 @@ def main():
     parser.add_argument('-c', '--cms', help='CMSWEB url to talk to DBS. E.g: cmsweb.cern.ch')
     parser.add_argument('-r', '--reqmgr', help='Request Manager URL. Example: couch-dev1.cern.ch')
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action="store_true")
-    parser.add_argument('-x', '--rucio', help='Rucio url', default='cmsrucio-int.cern.ch')
+    parser.add_argument('-x', '--rucio', help='Rucio url', default='cms-rucio-int.cern.ch')
     args = parser.parse_args()
 
     if args.workflow:
@@ -669,7 +669,7 @@ def main():
     verbose = True if args.verbose else False
     cmswebUrl = "https://" + args.cms if args.cms else "https://cmsweb-testbed.cern.ch"
     reqmgrUrl = "https://" + args.reqmgr if args.reqmgr else "https://cmsweb-testbed.cern.ch"
-    rucioUrl = "http://" + args.rucio if args.rucio else "http://cmsrucio-int.cern.ch"
+    rucioUrl = "http://" + args.rucio if args.rucio else "http://cms-rucio-int.cern.ch"
 
     rucioToken = getRucioToken(rucioUrl)
 

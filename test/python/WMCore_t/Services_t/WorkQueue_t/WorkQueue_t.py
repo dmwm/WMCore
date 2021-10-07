@@ -49,8 +49,8 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.queueParams = {}
         self.queueParams['log_reporter'] = "Services_WorkQueue_Unittest"
         self.queueParams['rucioAccount'] = "wma_test"
-        self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
-        self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
+        self.queueParams['rucioAuthUrl'] = "http://cms-rucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cms-rucio-auth-int.cern.ch"
 
         if PY3:
             self.assertItemsEqual = self.assertCountEqual

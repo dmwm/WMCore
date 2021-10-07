@@ -13,7 +13,7 @@ import unittest
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore.WorkQueue.WorkQueue import localQueue
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import SITES as DUMMY_SITES
+from WMQuality.Emulators.RucioClient.MockRucioApi import SITES as DUMMY_SITES
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 

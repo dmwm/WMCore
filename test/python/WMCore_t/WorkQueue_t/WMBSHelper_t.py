@@ -16,8 +16,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.DBS.DBSReader import DBSReader
-### FIXME mock PhEDEx (or Rucio?)
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
@@ -78,7 +77,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = DBSReader(self.inputDataset.dbsurl)
-        self.phedex = PhEDEx()
+        self.rucioAcct = "wmcore_transferor"
+        self.rucio = Rucio(self.rucioAcct)
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
                                      logger=threading.currentThread().logger,
                                      dbinterface=threading.currentThread().dbi)
@@ -544,12 +544,12 @@ class WMBSHelperTest(EmulatedUnitTestCase):
             blockName = block
             if parentFlag:
                 block = self.dbs.getFileBlockWithParents(blockName)
-                location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName], complete='y')
-                block['PhEDExNodeNames'] = location[blockName]
+                data = self.rucio.getReplicaInfoForBlocks(block=[blockName])
+                block['PhEDExNodeNames'] = data[0]["replica"]
             else:
                 block = self.dbs.getFileBlock(blockName)
-                location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName], complete='y')
-                block['PhEDExNodeNames'] = location[blockName]
+                data = self.rucio.getReplicaInfoForBlocks(block=[blockName])
+                block['PhEDExNodeNames'] = data[0]["replica"]
         sub, files = wmbs.createSubscriptionAndAddFiles(block=block)
         if detail:
             return wmbs, sub, files
@@ -888,8 +888,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         wmbs = self.createWMBSHelperWithTopTask(wmspec, block)
         # check duplicate insert
         dbsFiles = dbs.getFileBlock(block)
-        location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[block], complete='y')
-        dbsFiles['PhEDExNodeNames'] = location[block]
+        data = self.rucio.getReplicaInfoForBlocks(block=[block])
+        dbsFiles['PhEDExNodeNames'] = data[0]["replica"]
         numOfFiles = wmbs.addFiles(dbsFiles)
         self.assertEqual(numOfFiles, 0)
         secondFileset = wmbs.topLevelFileset

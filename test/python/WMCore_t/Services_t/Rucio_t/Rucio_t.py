@@ -53,8 +53,8 @@ class RucioTest(EmulatedUnitTestCase):
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}
 
-        self.defaultArgs = {"host": 'http://cmsrucio-int.cern.ch',
-                            "auth_host": 'https://cmsrucio-auth-int.cern.ch',
+        self.defaultArgs = {"host": 'http://cms-rucio-int.cern.ch',
+                            "auth_host": 'https://cms-rucio-auth-int.cern.ch',
                             "auth_type": "x509", "account": self.acct,
                             "ca_cert": False, "timeout": 30, "request_retries": 3,
                             "creds": self.creds}
@@ -105,8 +105,8 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertTrue(getattr(self.myRucio.cli, "user_agent").startswith("wmcore-client/"))
         self.assertTrue(getattr(self.client, "user_agent").startswith("rucio-clients/"))
 
-        newParams = {"host": 'http://cmsrucio-int.cern.ch',
-                     "auth_host": 'https://cmsrucio-auth-int.cern.ch',
+        newParams = {"host": 'http://cms-rucio-int.cern.ch',
+                     "auth_host": 'https://cms-rucio-auth-int.cern.ch',
                      "auth_type": "x509", "account": self.acct,
                      "ca_cert": False, "timeout": 5}
         newKeys = list(newParams)

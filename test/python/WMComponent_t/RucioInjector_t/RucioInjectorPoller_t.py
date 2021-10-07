@@ -79,8 +79,8 @@ class RucioInjectorPollerTest(EmulatedUnitTestCase):
         config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
         config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
         config.RucioInjector.rucioAccount = "wma_test"
-        config.RucioInjector.rucioUrl = "http://cmsrucio-int.cern.ch"
-        config.RucioInjector.rucioAuthUrl = "https://cmsrucio-auth-int.cern.ch"
+        config.RucioInjector.rucioUrl = "http://cms-rucio-int.cern.ch"
+        config.RucioInjector.rucioAuthUrl = "https://cms-rucio-auth-int.cern.ch"
         return config
 
     def stuffDatabase(self):

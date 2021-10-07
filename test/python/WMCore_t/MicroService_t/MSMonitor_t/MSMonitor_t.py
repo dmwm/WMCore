@@ -33,8 +33,8 @@ class MSMonitorTest(EmulatedUnitTestCase):
                          'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',
                          'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader',
                          'rucioAccount': "wma_test",
-                         'rucioUrl': "http://cmsrucio-int.cern.ch",
-                         'rucioAuthUrl': "https://cmsrucio-auth-int.cern.ch"}
+                         'rucioUrl': "http://cms-rucio-int.cern.ch",
+                         'rucioAuthUrl': "https://cms-rucio-auth-int.cern.ch"}
 
         self.ms = MSMonitor(self.msConfig)
         self.ms.reqmgrAux = MockReqMgrAux()

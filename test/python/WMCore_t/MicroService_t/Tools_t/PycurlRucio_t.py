@@ -26,8 +26,8 @@ class PycurlRucioTests(unittest.TestCase):
 
     def setUp(self):
         "initialization"
-        self.rucioUrl = "http://cmsrucio-int.cern.ch"
-        self.rucioAuthUrl = "https://cmsrucio-auth-int.cern.ch"
+        self.rucioUrl = "http://cms-rucio-int.cern.ch"
+        self.rucioAuthUrl = "https://cms-rucio-auth-int.cern.ch"
         self.rucioAccount = "wma_test"
         self.rucioScope = "cms"
         #self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)

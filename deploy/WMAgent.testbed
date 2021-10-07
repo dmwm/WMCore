@@ -24,5 +24,5 @@ CENTRAL_LOGDB_URL=https://cmsweb-testbed.cern.ch/couchdb/wmstats_logdb
 WMARCHIVE_URL=https://cmsweb-testbed.cern.ch/wmarchive
 AMQ_CREDENTIALS=
 RUCIO_ACCOUNT=wma_test
-RUCIO_HOST=http://cmsrucio-int.cern.ch
-RUCIO_AUTH=https://cmsrucio-auth-int.cern.ch
+RUCIO_HOST=http://cms-rucio-int.cern.ch
+RUCIO_AUTH=https://cms-rucio-auth-int.cern.ch

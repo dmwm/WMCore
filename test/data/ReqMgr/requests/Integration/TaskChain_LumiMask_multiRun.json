@@ -15,7 +15,6 @@
     "DQMConfigCacheID": "cf0f08f510b46c89e73b3c1c3624d5d4",
     "DQMHarvestUnit": "multiRun",
     "GlobalTag": "PRE_R_72_V10A",
-    "Requestor": "amaltaro",
     "Group": "DATAOPS",
     "ProcessingVersion": 1,
     "RequestPriority": 200000,

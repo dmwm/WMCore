@@ -45,7 +45,6 @@
         "RequestPriority": 210000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "ReReco", 
-        "Requestor": "amaltaro", 
         "RunWhitelist": [
             316877, 
             316879, 

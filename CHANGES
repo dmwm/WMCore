@@ -1,3 +1,11 @@
+1.5.4 to 1.5.5.pre1:
+  - Updating workflow json templates; adding working PY3 templates (Alan Malta Rodrigues) #10761
+  - Update Rucio Int url (Alan Malta Rodrigues) #10855
+  - Skip ErrorHandler cycle if agent configuration fails to be retrieved - take2 (Alan Malta Rodrigues) #10852
+  - add two new CMSSW exit code: 8034 and 8501 (Stefano Belforte) #10850
+  - Set request_GPUs classad according to RequiresGPU (Alan Malta Rodrigues) #10849
+
+
 1.5.4.pre2 to 1.5.4:
   - Fix python version in subprocess call for inject-test-wfs (Alan Malta Rodrigues) #10847
 

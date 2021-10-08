@@ -558,7 +558,12 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.Requestioslots'] = str(1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0)
             # GPU resource handling
             # while we do not support a third option for RequiresGPU, make a binary decision
-            ad['My.RequiresGPU'] = "1" if job['requiresGPU'] == "required" else "0"
+            if job['requiresGPU'] == "required":
+                ad['My.RequiresGPU'] = "1"
+                ad['request_GPUs'] = "1"
+            else:
+                ad['My.RequiresGPU'] = "0"
+                ad['request_GPUs'] = "0"
             if job.get('gpuRequirements', None):
                 ad['My.GPUMemoryMB'] = str(job['gpuRequirements']['GPUMemoryMB'])
                 cudaCapabilities = ','.join(sorted(job['gpuRequirements']['CUDACapabilities']))

@@ -22,11 +22,11 @@
 ### Usage:               -r <repository>   Comp repository to look for the RPMs (defaults to comp=comp)
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
-### Usage:               -3|--py3  Uses the python3 stack WMAgent package
+### Usage:               -2|--py2  Uses the python2 stack WMAgent package (soon to be deprecated)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.5.2 -d HG2108h -t production -n 30 --py3
-### Usage: Example: sh deploy-wmagent.sh -w 1.5.2 -d HG2108h -t testbed-vocms001 -p "10179" -r comp=comp.amaltaro --py3
+### Usage: Example: sh deploy-wmagent.sh -w 1.5.4.patch3 -d HG2110b -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.5.4.patch3 -d HG2110b -t testbed-vocms001 -p "10853" -r comp=comp.amaltaro --py2
 ### Usage:
 
 IAM=`whoami`
@@ -46,7 +46,7 @@ WMA_ARCH=slc7_amd64_gcc630
 REPO="comp=comp"
 AG_NUM=0
 FLAVOR=mysql
-RPM_NAME=wmagent
+RPM_NAME=wmagentpy3
 
 ### Usage function: print the usage of the script
 usage()
@@ -190,7 +190,7 @@ for arg; do
     -r) REPO=$2; shift; shift ;;
     -p) PATCHES=$2; shift; shift ;;
     -n) AG_NUM=$2; shift; shift ;;
-    -3|--py3) RPM_NAME=wmagentpy3; shift;;
+    -2|--py2) RPM_NAME=wmagent; shift;;
     -*) usage ;;
   esac
 done

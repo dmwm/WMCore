@@ -1,3 +1,8 @@
+1.5.4 to 1.5.4.patch1:
+  - Set request_GPUs classad according to RequiresGPU (Alan Malta Rodrigues) #10857
+  - Skip ErrorHandler cycle if agent configuration fails to be retrieved - take2 (Alan Malta Rodrigues) #10857
+
+
 1.5.4.pre2 to 1.5.4:
   - Fix python version in subprocess call for inject-test-wfs (Alan Malta Rodrigues) #10847
 

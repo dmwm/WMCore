@@ -1,3 +1,8 @@
+1.5.4.patch1 to 1.5.4.patch2:
+  - Support different architectures during job submission and runtime (Alan Malta Rodrigues) #10863
+  - JobAccountant workaround for StepChain jobs with duplicate files - wmagent branch (Alan Malta Rodrigues) #10863
+
+
 1.5.4 to 1.5.4.patch1:
   - Set request_GPUs classad according to RequiresGPU (Alan Malta Rodrigues) #10857
   - Skip ErrorHandler cycle if agent configuration fails to be retrieved - take2 (Alan Malta Rodrigues) #10857

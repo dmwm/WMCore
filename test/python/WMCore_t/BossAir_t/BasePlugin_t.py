@@ -12,7 +12,7 @@ import unittest
 
 from WMCore_t.BossAir_t.BossAir_t import BossAirTest
 
-from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 
 
 class BasePluginTest(BossAirTest):
@@ -40,6 +40,29 @@ class BasePluginTest(BossAirTest):
 
         return
 
+    def testScramArchtoRequiredArch(self):
+        """
+        Test mapping of ScramArch to a given architecture
+        """
+        bp = BasePlugin(config=None)
+
+        self.assertEqual(bp.scramArchtoRequiredArch('slc5_amd64_gcc481'), 'X86_64')
+        self.assertEqual(bp.scramArchtoRequiredArch('slc6_amd64_gcc630'), 'X86_64')
+        self.assertEqual(bp.scramArchtoRequiredArch('slc7_amd64_gcc10'), 'X86_64')
+        self.assertEqual(bp.scramArchtoRequiredArch('slc7_aarch64_gcc700'), 'aarch64')
+        self.assertEqual(bp.scramArchtoRequiredArch('slc7_ppc64le_gcc9'), 'ppc64le')
+        self.assertIsNone(bp.scramArchtoRequiredArch(None))
+        self.assertIsNone(bp.scramArchtoRequiredArch(None))
+        with self.assertRaises(BossAirPluginException):
+            bp.scramArchtoRequiredArch("slc7_BLAH_gcc700")
+
+        self.assertEqual(bp.scramArchtoRequiredArch(['slc5_amd64_gcc481', 'slc6_amd64_gcc630']), 'X86_64')
+        self.assertEqual(bp.scramArchtoRequiredArch(['slc7_amd64_gcc10', 'slc7_aarch64_gcc700']), 'X86_64')
+        self.assertEqual(bp.scramArchtoRequiredArch(
+                ['slc7_amd64_gcc10', 'slc7_aarch64_gcc700', 'slc7_ppc64le_gcc9']), 'X86_64')
+        self.assertEqual(bp.scramArchtoRequiredArch(['slc7_aarch64_gcc700', 'slc7_ppc64le_gcc9']), 'ppc64le')
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

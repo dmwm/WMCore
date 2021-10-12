@@ -1,0 +1,187 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "HIG_RunIISummer20UL16DIGIPremixAPV_02791_0": "AcquisitionEra-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16HLTAPV_02812_0": "AcquisitionEra-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16MiniAODAPVv2_02457_0": "AcquisitionEra-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16RECOAPV_02812_0": "AcquisitionEra-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16SIMAPV_02812_0": "AcquisitionEra-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16wmLHEGENAPV_03178_0": "AcquisitionEra-OVERRIDE-ME"
+        },
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "HIG_RunIISummer20UL16DIGIPremixAPV_02791_0": "ProcessingString-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16HLTAPV_02812_0": "ProcessingString-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16MiniAODAPVv2_02457_0": "ProcessingString-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16RECOAPV_02812_0": "ProcessingString-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16SIMAPV_02812_0": "ProcessingString-OVERRIDE-ME",
+            "HIG_RunIISummer20UL16wmLHEGENAPV_03178_0": "ProcessingString-OVERRIDE-ME"
+        },
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_10_6_25",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": ["StepChain request from scratch; StepChain with duplicate output module; StepChain request with KeepOutput false",
+                          "StepChain multicore/eventStreams; StepChain with different CMSSW/ScramArch and PrepID"],
+            "WorkFlowDesc": ["StepChain from scratch with PU at Step3; KeepOutput of Step5/6 only - AOD and MINI; SC with dup outputModule",
+                             "Diff CMSSW/ScramArch and PrepID; 100 jobs 2LpJ; Diff Multicore and EventStreams, 4GB RAM"]
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "EventStreams": 0,
+        "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v11",
+        "IncludeParents": false,
+        "Memory": 4000,
+        "Multicore": 4,
+        "PrepID": "HIG-TopLevel",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 11,
+        "RequestPriority": 400000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "StepChain",
+        "ScramArch": [
+            "slc7_amd64_gcc700"
+        ],
+        "SizePerEvent": 3437.5822380952377,
+        "Step1": {
+            "AcquisitionEra": "RunIISummer20UL16wmLHEGENAPV",
+            "CMSSWVersion": "CMSSW_10_6_28_patch1",
+            "Campaign": "RunIISummer20UL16wmLHEGENAPV",
+            "ConfigCacheID": "abd4cc458ae724060c82a8c7e8535570",
+            "EventsPerJob": 1000,
+            "EventsPerLumi": 500,
+            "FilterEfficiency": 1,
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8",
+            "KeepOutput": false,
+            "LheInputFiles": false,
+            "Multicore": 2,
+            "EventStreams": 2,
+            "PrepID": "HIG-Step1",
+            "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
+            "ProcessingString": "Step1_WMCore_TEST",
+            "RequestNumEvents": 100000,
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ],
+            "Seeding": "AutomaticSeeding",
+            "SplittingAlgo": "EventBased",
+            "StepName": "HIG_RunIISummer20UL16wmLHEGENAPV_03178_0"
+        },
+        "Step2": {
+            "AcquisitionEra": "RunIISummer20UL16SIMAPV",
+            "CMSSWVersion": "CMSSW_10_6_17_patch1",
+            "Campaign": "RunIISummer20UL16SIMAPV",
+            "ConfigCacheID": "08a4940e14b0b7a2f0f4720a0f22bacb",
+            "FilterEfficiency": 1,
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8",
+            "InputFromOutputModule": "RAWSIMoutput",
+            "InputStep": "HIG_RunIISummer20UL16wmLHEGENAPV_03178_0",
+            "KeepOutput": false,
+            "PrepID": "HIG-Step2",
+            "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
+            "ProcessingString": "Step2_WMCore_TEST",
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "HIG_RunIISummer20UL16SIMAPV_02812_0"
+        },
+        "Step3": {
+            "AcquisitionEra": "RunIISummer20UL16DIGIPremixAPV",
+            "CMSSWVersion": "CMSSW_10_6_17_patch1",
+            "Campaign": "RunIISummer20UL16DIGIPremixAPV",
+            "ConfigCacheID": "08a4940e14b0b7a2f0f4720a0f23bdce",
+            "FilterEfficiency": 1,
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8",
+            "InputFromOutputModule": "RAWSIMoutput",
+            "InputStep": "HIG_RunIISummer20UL16SIMAPV_02812_0",
+            "KeepOutput": false,
+            "MCPileup": "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX",
+            "PrepID": "HIG-Step3",
+            "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
+            "ProcessingString": "Step3_WMCore_TEST",
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "HIG_RunIISummer20UL16DIGIPremixAPV_02791_0"
+        },
+        "Step4": {
+            "AcquisitionEra": "RunIISummer20UL16HLTAPV",
+            "CMSSWVersion": "CMSSW_8_0_36_UL_patch1",
+            "Campaign": "RunIISummer20UL16HLTAPV",
+            "ConfigCacheID": "1b96d80d6061d572208f6a0ef554734c",
+            "FilterEfficiency": 1,
+            "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6",
+            "InputFromOutputModule": "PREMIXRAWoutput",
+            "InputStep": "HIG_RunIISummer20UL16DIGIPremixAPV_02791_0",
+            "KeepOutput": false,
+            "Multicore": 2,
+            "EventStreams": 2,
+            "PrepID": "HIG-Step4",
+            "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
+            "ProcessingString": "Step4_WMCore_TEST",
+            "ScramArch": [
+                "slc7_amd64_gcc530"
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "HIG_RunIISummer20UL16HLTAPV_02812_0"
+        },
+        "Step5": {
+            "AcquisitionEra": "RunIISummer20UL16RECOAPV",
+            "CMSSWVersion": "CMSSW_10_6_17_patch1",
+            "Campaign": "RunIISummer20UL16RECOAPV",
+            "ConfigCacheID": "08a4940e14b0b7a2f0f4720a0f2436d0",
+            "FilterEfficiency": 1,
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8",
+            "InputFromOutputModule": "RAWSIMoutput",
+            "InputStep": "HIG_RunIISummer20UL16HLTAPV_02812_0",
+            "KeepOutput": true,
+            "PrepID": "HIG-Step5",
+            "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
+            "ProcessingString": "Step5_WMCore_TEST",
+            "ScramArch": ["slc7_amd64_gcc700"],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "HIG_RunIISummer20UL16RECOAPV_02812_0"
+        },
+        "Step6": {
+            "AcquisitionEra": "RunIISummer20UL16MiniAODAPVv2",
+            "CMSSWVersion": "CMSSW_10_6_25",
+            "Campaign": "RunIISummer20UL16MiniAODAPVv2",
+            "ConfigCacheID": "c121f9d5ea13ca2b315c408778e5693a",
+            "FilterEfficiency": 1,
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v11",
+            "InputFromOutputModule": "AODSIMoutput",
+            "InputStep": "HIG_RunIISummer20UL16RECOAPV_02812_0",
+            "KeepOutput": true,
+            "Multicore": 1,
+            "EventStreams": 2,
+            "PrepID": "HIG-Step6",
+            "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
+            "ProcessingString": "Step6_WMCore_TEST",
+            "ScramArch": ["slc7_amd64_gcc820"],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "HIG_RunIISummer20UL16MiniAODAPVv2_02457_0"
+        },
+        "StepChain": 6,
+        "SubRequestType": "ReDigi",
+        "TimePerEvent": 15.951107623690724
+    }
+}

@@ -1,3 +1,8 @@
+1.5.4.patch2 to 1.5.4.patch3:
+  - Remove leading ../../ from logArchive tarballs (Alan Malta Rodrigues) #10869
+  - Check whether WMStep object has gpu attribute (Alan Malta Rodrigues) #10869
+
+
 1.5.4.patch1 to 1.5.4.patch2:
   - Support different architectures during job submission and runtime (Alan Malta Rodrigues) #10863
   - JobAccountant workaround for StepChain jobs with duplicate files - wmagent branch (Alan Malta Rodrigues) #10863

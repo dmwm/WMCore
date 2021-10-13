@@ -867,9 +867,9 @@ class WMTaskTest(unittest.TestCase):
                     self.assertEqual(stepHelper.getGPURequired(), "forbidden")
                     self.assertIsNone(stepHelper.getGPURequirements())
                 else:
-                    # AttributeError: 'ConfigSection' object has no attribute 'gpu'
-                    with self.assertRaises(AttributeError):
-                        stepHelper.getGPURequired()
+                    # 'ConfigSection' object has no attribute 'gpu'
+                    self.assertIsNone(stepHelper.getGPURequired())
+
 
         ### Now set a single value for both tasks
         gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
@@ -893,6 +893,11 @@ class WMTaskTest(unittest.TestCase):
             taskName = taskObj.name()
             self.assertEqual(taskObj.getRequiresGPU(), gpuRequired[taskName])
             self.assertItemsEqual(taskObj.getGPURequirements(), gpuParams[taskName])
+
+        # Now delete the "gpu" ConfigSection to make sure we can deal with older workloads/tasks
+        for taskObj in task1.taskIterator():
+            delattr(taskObj.data.steps.cmsRun1.application, "gpu")
+            self.assertEqual(taskObj.getRequiresGPU(), "forbidden")
 
     def testGPUTaskSettingsMultiStep(self):
         """

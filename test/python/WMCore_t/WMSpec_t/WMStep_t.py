@@ -162,8 +162,7 @@ class WMStepTest(unittest.TestCase):
         wmStep = makeWMStep("step1")
         self.assertIsNone(wmStep.stepType())
         self.assertFalse(hasattr(wmStep.data, "gpu"))
-        with self.assertRaises(AttributeError):
-            wmStep.getGPURequired()
+        self.assertIsNone(wmStep.getGPURequired())
 
         # now apply the CMSSW template
         wmStep.setStepType("CMSSW")

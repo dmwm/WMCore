@@ -181,9 +181,9 @@ class LogArchive(Executor):
         tarName = 'logArchive.tar.gz'
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         with tarfile.open(tarBallLocation, 'w:gz') as tarBall:
-            for f in logFilesToArchive:
-                tarBall.add(name=f,
-                            arcname=f.replace(self.stepSpace.taskSpace.location, '', 1).lstrip('/'))
+            for fName in logFilesToArchive:
+                altName = fName.replace(pilotScratchDir, '', 1)
+                tarBall.add(name=fName, arcname=altName)
 
         fileInfo = {'LFN': self.getLFN(tarName),
                     'PFN': tarBallLocation,

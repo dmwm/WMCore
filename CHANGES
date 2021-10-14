@@ -1,3 +1,12 @@
+1.5.5.pre1 to 1.5.5.pre2:
+  - Remove PhEDEx library and any other use of PhEDEx (Alan Malta Rodrigues) #10856
+  - update campaigns used in our test setup (Alan Malta Rodrigues) #10859
+  - Update wmagent-deploy script to deploy Py3 WMAgent by default; update to cycle 1.5.4 (Alan Malta Rodrigues) #10859
+  - Check whether WMStep object has gpu attribute (Alan Malta Rodrigues) #10866
+  - Remove leading ../../ from logArchive tarballs (Alan Malta Rodrigues) #10868
+  - Support different architectures during job submission and runtime (Alan Malta Rodrigues) #10853
+
+
 1.5.4 to 1.5.5.pre1:
   - Updating workflow json templates; adding working PY3 templates (Alan Malta Rodrigues) #10761
   - Update Rucio Int url (Alan Malta Rodrigues) #10855

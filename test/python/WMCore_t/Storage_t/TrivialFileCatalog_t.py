@@ -9,17 +9,11 @@ from builtins import str
 
 import os
 import unittest
-import nose
 import tempfile
 
-from xml.dom.minidom import parseString
 from WMCore.WMBase import getTestBase
 
-from WMQuality.TestInit import TestInit
-
-from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC, TrivialFileCatalog
-
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Storage.TrivialFileCatalog import readTFC, TrivialFileCatalog
 
 
 class TrivialFileCatalogTest(unittest.TestCase):

@@ -98,14 +98,14 @@ class WorkQueueTest(WorkQueueTestCase):
     _WorkQueueTest_
 
     For /MinimumBias/ComissioningHI-v1/RAW the dataset has 47 blocks with 72 files.
-    The PhEDEx emulator sets the block locations like:
+    The Rucio emulator sets the block locations like:
         17 at 'T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'
         19 at 'T2_XX_SiteA', 'T2_XX_SiteB'
         11 at 'T2_XX_SiteA' only
     """
 
     def __init__(self, methodName='runTest'):
-        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
+        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockRucio=True)
         self.queueParams = {}
         self.queueParams['log_reporter'] = "WorkQueue_Unittest"
         self.queueParams['rucioAccount'] = "wma_test"
@@ -1445,7 +1445,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertGreaterEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1,
                                                           'T2_XX_SiteB': 1,
                                                           'T2_XX_SiteC': 1}), 3)
-        # The PhEDEx emulator will move the pileup blocks to site A
+        # The Rucio emulator will move the pileup blocks to site A
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB': 1,
                                                    'T2_XX_SiteC': 1}), 0)

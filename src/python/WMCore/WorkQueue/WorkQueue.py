@@ -26,7 +26,6 @@ from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundErro
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.Rucio.Rucio import Rucio
@@ -188,14 +187,12 @@ class WorkQueue(WorkQueueBase):
 
         self.params.setdefault('rucioAccount', "wmcore_transferor")
 
-        self.phedexService = None
         self.rucio = Rucio(self.params['rucioAccount'],
                            self.params['rucioUrl'], self.params['rucioAuthUrl'],
                            configDict=dict(logger=self.logger))
 
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
-                                                              phedex=self.phedexService,
                                                               rucio=self.rucio,
                                                               cric=self.cric,
                                                               locationFrom=self.params['TrackLocationOrSubscription'],
@@ -346,7 +343,7 @@ class WorkQueue(WorkQueueBase):
                         blockName, dbsBlock = self._getDBSBlock(match, wmspec)
                 except Exception as ex:
                     msg = "%s, %s: \n" % (wmspec.name(), list(match['Inputs']))
-                    msg += "failed to retrieve data from DBS/PhEDEx in LQ: \n%s" % str(ex)
+                    msg += "failed to retrieve data from DBS/Rucio in LQ: \n%s" % str(ex)
                     self.logger.error(msg)
                     self.logdb.post(wmspec.name(), msg, 'error')
                     continue
@@ -384,23 +381,6 @@ class WorkQueue(WorkQueueBase):
             return self.dbses[dbsUrl]
         return DBSReader(dbsUrl)
 
-    def _blockLocationRucioPhedex(self, blockName):
-        """
-        Wrapper around Rucio and PhEDEx systems.
-        Fetch the current location of the block name (if Rucio,
-        also consider the locks made on that block)
-        :param blockName: string with the block name
-        :return: a list of RSEs
-        """
-        if self.rucio:
-            # then it's Rucio
-            location = self.rucio.getDataLockedAndAvailable(name=blockName,
-                                                            account=self.params['rucioAccount'])
-        else:
-            location = self.phedexService.getReplicaPhEDExNodesForBlocks(block=[blockName],
-                                                                         complete='y')[blockName]
-        return location
-
     def _getDBSDataset(self, match):
         """Get DBS info for this dataset"""
         tmpDsetDict = {}
@@ -410,7 +390,8 @@ class WorkQueue(WorkQueueBase):
         blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
         for blockName in blocks:
             blockSummary = dbs.getFileBlock(blockName)
-            blockSummary['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
+            blockSummary['PhEDExNodeNames'] = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                                                   account=self.params['rucioAccount'])
             tmpDsetDict[blockName] = blockSummary
 
         dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
@@ -441,13 +422,15 @@ class WorkQueue(WorkQueueBase):
             dbs = self._getDbs(match['Dbs'])
             if wmspec.getTask(match['TaskName']).parentProcessingFlag():
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
-                dbsBlockDict['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                                                       account=self.params['rucioAccount'])
             elif wmspec.getRequestType() == 'StoreResults':
                 dbsBlockDict = dbs.getFileBlock(blockName)
                 dbsBlockDict['PhEDExNodeNames'] = dbs.listFileBlockLocation(blockName)
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
-                dbsBlockDict['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                                                       account=self.params['rucioAccount'])
 
         return blockName, dbsBlockDict
 

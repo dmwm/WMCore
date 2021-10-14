@@ -105,6 +105,18 @@ class MockRucioApi(object):
 
         return genericLookup
 
+    def getReplicaInfoForBlocks(self, **args):
+        """
+        Returns a mocked location for data.
+        In the same format as the real `getReplicaInfoForBlocks` from the main module.
+        """
+        logging.info("%s: Calling mock getReplicaInfoForBlocks", self.__class__.__name__)
+        result = []
+        for blockName in args['block']:
+            rses = self.sitesByBlock(block=blockName)
+            result.append(dict(name=blockName, replica=rses))
+        return result
+
     def getDataLockedAndAvailable(self, **kwargs):
         """
         Mock the method to discover where data is locked and available.

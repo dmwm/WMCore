@@ -59,7 +59,6 @@ class DataLocationMapper(object):
                 self.params['locationFrom'], validLocationFrom)
             raise ValueError(msg)
 
-        self.phedex = self.params.get('phedex')
         self.rucio = self.params.get('rucio')
         if self.params.get('cric'):
             self.cric = self.params['cric']
@@ -74,13 +73,9 @@ class DataLocationMapper(object):
         dataByDbs = self.organiseByDbs(dataItems)
 
         for dbs, dataItems in viewitems(dataByDbs):
-            # if global use phedex, else use dbs
+            # if global use Rucio, else use dbs
             if isGlobalDBS(dbs):
-                if self.rucio:
-                    # then it's Rucio
-                    output = self.locationsFromRucio(dataItems)
-                else:
-                    output = self.locationsFromPhEDEx(dataItems)
+                output = self.locationsFromRucio(dataItems)
             else:
                 output = self.locationsFromDBS(dbs, dataItems)
             result[dbs] = output
@@ -104,46 +99,6 @@ class DataLocationMapper(object):
                 result[dataItem] = self.cric.PNNstoPSNs(dataLocations)
             except Exception as ex:
                 self.logger.error('Error getting block location from Rucio for %s: %s', dataItem, str(ex))
-
-        return result
-
-    def locationsFromPhEDEx(self, dataItems):
-        """Get data location from phedex"""
-        result = defaultdict(set)
-        if self.params['locationFrom'] == 'subscription':
-            self.logger.info("Fetching subscription data from PhEDEx")
-            # subscription api doesn't support partial update
-            result = self.phedex.getSubscriptionMapping(*dataItems)
-        elif self.params['locationFrom'] == 'location':
-            args = {}
-            if not self.params['incompleteBlocks']:
-                args['complete'] = 'y'
-            if not self.params['requireBlocksSubscribed']:
-                args['subscribed'] = 'y'
-            self.logger.info("Fetching location data from PhEDEx with args: %s", args)
-
-            for dataItem in dataItems:
-                try:
-                    if isDataset(dataItem):
-                        response = self.phedex.getReplicaInfoForBlocks(dataset=[dataItem], **args)['phedex']
-                    else:
-                        response = self.phedex.getReplicaInfoForBlocks(block=[dataItem], **args)['phedex']
-                    for block in response['block']:
-                        nodes = [replica['node'] for replica in block['replica']]
-                        if isDataset(dataItem):
-                            result[dataItem].update(nodes)
-                        else:
-                            result[block['name']].update(nodes)
-                except Exception as ex:
-                    self.logger.error('Error getting block location from phedex for %s: %s', dataItem, str(ex))
-        else:
-            raise RuntimeError("shouldn't get here")
-
-        # convert from PhEDEx name to cms site name
-        for item in result:
-            psns = set()
-            psns.update(self.cric.PNNstoPSNs(result[item]))
-            result[item] = list(psns)
 
         return result
 

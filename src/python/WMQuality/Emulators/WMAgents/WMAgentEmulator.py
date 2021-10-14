@@ -10,7 +10,7 @@ import logging
 import threading
 
 from WMCore.Agent.Harness import Harness
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import SITES as DUMMY_SITES
+from WMQuality.Emulators.RucioClient.MockRucioApi import SITES as DUMMY_SITES
 from .WMAgentTasks import WMAgentTasks
 
 

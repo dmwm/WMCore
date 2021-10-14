@@ -13,7 +13,6 @@ from WMQuality.Emulators.CRICClient.MockCRICApi import MockCRICApi
 from WMQuality.Emulators.Cache.MockMemoryCacheStruct import MockMemoryCacheStruct
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
 from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.PyCondorAPI.MockPyCondorAPI import MockPyCondorAPI
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
 from WMQuality.Emulators.RucioClient.MockRucioApi import MockRucioApi
@@ -25,12 +24,11 @@ class EmulatedUnitTestCase(unittest.TestCase):
     services.
     """
 
-    def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
+    def __init__(self, methodName='runTest', mockDBS=True,
                  mockReqMgrAux=True, mockLogDB=True,
                  mockMemoryCache=True, mockPyCondor=True,
                  mockCRIC=True, mockRucio=True):
         self.mockDBS = mockDBS
-        self.mockPhEDEx = mockPhEDEx
         self.mockReqMgrAux = mockReqMgrAux
         self.mockLogDB = mockLogDB
         self.mockMemoryCache = mockMemoryCache
@@ -57,15 +55,6 @@ class EmulatedUnitTestCase(unittest.TestCase):
                 self.dbsPatchers[-1].start()
                 self.addCleanup(self.dbsPatchers[-1].stop)
 
-        if self.mockPhEDEx:
-            self.phedexPatchers = []
-            patchPhedexAt = ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx',
-                             'WMCore.WorkQueue.WorkQueue.PhEDEx']
-            for module in patchPhedexAt:
-                self.phedexPatchers.append(mock.patch(module, new=MockPhEDExApi))
-                self.phedexPatchers[-1].start()
-                self.addCleanup(self.phedexPatchers[-1].stop)
-
         if self.mockRucio:
             self.rucioPatchers = []
             patchRucioAt = ['WMCore.WorkQueue.WorkQueue.Rucio',
@@ -73,7 +62,8 @@ class EmulatedUnitTestCase(unittest.TestCase):
                             'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.Rucio',
                             'WMComponent.RucioInjector.RucioInjectorPoller.Rucio',
                             'WMCore.WMSpec.Steps.Fetchers.PileupFetcher.Rucio',
-                            'WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio']
+                            'WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio',
+                            'WMCore_t.WorkQueue_t.WMBSHelper_t.Rucio']
             for module in patchRucioAt:
                 self.rucioPatchers.append(mock.patch(module, new=MockRucioApi))
                 self.rucioPatchers[-1].start()

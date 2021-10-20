@@ -49,7 +49,6 @@ echo "System:     $(uname -a)"
 echo "Arguments:  $@"
 
 # Python library required for Python2/Python3 compatibility through "future"
-PY2_FUTURE_VERSION=0.16.0
 PY3_FUTURE_VERSION=0.18.2
 
 # Saving START_TIME and when job finishes END_TIME.
@@ -122,17 +121,31 @@ echo -e "======== WMAgent CMS environment load finished at $(TZ=GMT date) ======
 
 
 echo "======== WMAgent COMP Python bootstrap starting at $(TZ=GMT date) ========"
+### This is a bit messy! We do not have all the necessary COMP packages under all
+# the CMSSW ScramArch. So, for many ScramArchs not supported by COMP, what we did
+# was to make a symlink in CVMFS to packages provided under a given CMSSW branch.
+#
+### A summary of our current setup is:
+# slc7_amd64_gcc630 (standard COMP): py2-future/0.18.2 python/2.7.13 py3-future/0.18.2 python3/3.8.2
+# slc6_amd64_gcc700 (from CMSSW): py2-future/0.16.0 py3-future/0.18.2 python3/3.6.4
+# slc7_ppc64le_gcc630 (from CMSSW): py2-future/0.18.2 python/2.7.15 py3-future/0.18.2 python3/3.8.2
+# slc6_ppc64le_gcc493 (from CMSSW): py2-future/0.18.2 python/2.7.15 py3-future/0.18.2 python3/3.8.2
+#
+# NOTE: all the ppc64le ScramArchs are actually pointing to: slc7_ppc64le_gcc820
 # First, decide which COMP ScramArch to use based on the required OS and Architecture
 THIS_ARCH=`uname -m`  # if it's PowerPC, it returns `ppc64le`
 if [ "$THIS_ARCH" = "x86_64" ]
 then
     THIS_ARCH="amd64"
 fi
-if [ "$REQUIRED_OS" = "rhel7" ];
+if [ "$REQUIRED_OS" = "rhel7" ]
 then
     WMA_SCRAM_ARCH=slc7_${THIS_ARCH}_gcc630
-else
+elif [ "$THIS_ARCH" = "amd64" ]
+then
     WMA_SCRAM_ARCH=slc6_${THIS_ARCH}_gcc700
+else
+    WMA_SCRAM_ARCH=slc6_${THIS_ARCH}_gcc493
 fi
 echo "Job requires OS: $REQUIRED_OS, thus setting ScramArch to: $WMA_SCRAM_ARCH"
 
@@ -159,14 +172,8 @@ pythonMajorVersion=`echo $latestPythonVersion | cut -d '.' -f1`
 pythonCommand="python"${pythonMajorVersion}
 echo "WMAgent bootstrap: latest python3 release is: $latestPythonVersion"
 source "$prefix/$latestPythonVersion/$suffix"
-if [ "$WMA_SCRAM_ARCH" = "slc7_amd64_gcc630" ];
-then
-    echo "Sourcing python future library from: ${compPythonPath}/py3-future/${PY3_FUTURE_VERSION}/${suffix}"
-    source "$compPythonPath/py3-future/${PY3_FUTURE_VERSION}/${suffix}"
-else
-    echo "Sourcing python future library from: ${compPythonPath}/py2-future/${PY2_FUTURE_VERSION}/${suffix}"
-    source "$compPythonPath/py2-future/${PY2_FUTURE_VERSION}/${suffix}"
-fi
+echo "Sourcing python future library from: ${compPythonPath}/py3-future/${PY3_FUTURE_VERSION}/${suffix}"
+source "$compPythonPath/py3-future/${PY3_FUTURE_VERSION}/${suffix}"
 
 command -v $pythonCommand > /dev/null
 rc=$?

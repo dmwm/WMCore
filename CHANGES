@@ -1,3 +1,8 @@
+1.5.5.pre2 to 1.5.5.pre3:
+  - Remove unused Unified/MSTransferor code (Alan Malta Rodrigues) #10876
+  - Use the right COMP scramArch for PowerPC workflows (Alan Malta Rodrigues) #10871
+
+
 1.5.5.pre1 to 1.5.5.pre2:
   - Remove PhEDEx library and any other use of PhEDEx (Alan Malta Rodrigues) #10856
   - update campaigns used in our test setup (Alan Malta Rodrigues) #10859

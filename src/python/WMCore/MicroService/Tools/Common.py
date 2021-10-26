@@ -8,8 +8,6 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 # futures
 from __future__ import division, print_function, absolute_import
 
-from future.utils import viewitems
-
 from future import standard_library
 standard_library.install_aliases()
 
@@ -334,26 +332,6 @@ def getRunsInBlock(blocks, dbsUrl):
     return runsByBlock
 
 
-def phedexInfo(datasets, phedexUrl):
-    "Fetch PhEDEx info about nodes for all datasets"
-    urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl, d) for d in datasets]
-    logging.info("Executing %d requests against PhEDEx 'blockreplicasummary' API", len(urls))
-    data = multi_getdata(urls, ckey(), cert())
-    blockNodes = {}
-    for row in data:
-        dataset = row['url'].rsplit('=')[-1]
-        if row['data'] is None:
-            print("FAILURE: phedexInfo for %s. Error: %s %s" % (dataset,
-                                                                row.get('code'),
-                                                                row.get('error')))
-            continue
-        rows = json.loads(row['data'])
-        for item in rows['phedex']['block']:
-            nodes = [r['node'] for r in item['replica'] if r['complete'] == 'y']
-            blockNodes[item['name']] = nodes
-    return blockNodes
-
-
 def getWorkflow(requestName, reqMgrUrl):
     "Get list of workflow info from ReqMgr2 data-service for given request name"
     headers = {'Accept': 'application/json'}
@@ -373,40 +351,6 @@ def getDetoxQuota(url):
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     res = res.split('\n')
     return res
-
-
-def workflowsInfo(workflows):
-    "Return minimum info about workflows in flat format"
-    winfo = {}
-    for wflow in workflows:
-        for key, val in viewitems(wflow):
-            datasets = set()
-            pileups = set()
-            selist = []
-            priority = 0
-            campaign = ''
-            for kkk, vvv in viewitems(val):
-                if STEP_PAT.match(kkk) or TASK_PAT.match(kkk):
-                    dataset = vvv.get('InputDataset', '')
-                    pileup = vvv.get('MCPileup', '')
-                    if dataset:
-                        datasets.add(dataset)
-                    if pileup:
-                        pileups.add(pileup)
-                if kkk == 'SiteWhiteList':
-                    selist = vvv
-                if kkk == 'RequestPriority':
-                    priority = vvv
-                if kkk == 'Campaign':
-                    campaign = vvv
-                if kkk == 'InputDataset':
-                    datasets.add(vvv)
-                if kkk == 'MCPileup':
-                    pileups.add(vvv)
-            winfo[key] = \
-                dict(datasets=list(datasets), pileups=list(pileups),
-                     priority=priority, selist=selist, campaign=campaign)
-    return winfo
 
 
 def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):

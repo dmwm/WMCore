@@ -19,7 +19,16 @@ import json
 
 from urllib.parse import urlparse, urlunparse
 
-from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
+# this try block provides ability to load this module without WMCore dependency, e.g.
+# when we need to regenerate lexicon dict
+try:
+    from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
+except:
+    WMEXCEPTION_START_STR = str("<@========== WMException Start ==========@>")
+    WMEXCEPTION_END_STR = str("<@---------- WMException End ----------@>")
+    def WMException(msg):
+        print(msg)
+
 
 # restriction enforced by DBS. for different types blocks.
 # It could have a strict restriction
@@ -64,7 +73,7 @@ CONDOR_LOG_FILTER_REGEXP = re.compile(r"%s|%s" % (CONDOR_LOG_REASON_FILTER, COND
                                       re.DOTALL)
 
 
-def DBSUser(candidate):
+def DBSUser(candidate, return_regexp=False):
     """
     create_by and last_modified_by in DBS are in several formats. The major ones are:
     1. DN that was mostly used in DBS2: example /DC=org/DC=doegrids/OU=People/CN=Lothar A.T. Bauerdick 301799;
@@ -77,6 +86,8 @@ def DBSUser(candidate):
     r2 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_\']*$'
     r3 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*@[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
 
+    if return_regexp:
+        return [r1, r2, r3]
     errorMsg = "DBSUser candidate: %s doesn't match any of the following regular expressions:\n" % candidate
     try:
         return check(r1, candidate)
@@ -95,25 +106,29 @@ def DBSUser(candidate):
         raise AssertionError(errorMsg)
 
 
-def searchblock(candidate):
+def searchblock(candidate, return_regexp=False):
     """
     A block name with a * wildcard one or more times in it.
     """
     regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,99})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
+    if return_regexp:
+        return [regexp]
     return check(regexp, candidate)
 
 
 SEARCHDATASET_RE = r'^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$'
 
 
-def searchdataset(candidate):
+def searchdataset(candidate, return_regexp=False):
     """
     A dataset name with a * wildcard one or more times in it. Only the first '/' is mandatory to use.
     """
+    if return_regexp:
+        return [SEARCHDATASET_RE]
     return check(SEARCHDATASET_RE, candidate)
 
 
-def searchstr(candidate):
+def searchstr(candidate, return_regexp=False):
     """
     Used to check a DBS input that searches for names in dbs. Note block name, dataset name, file name have their own
     searching string.
@@ -121,48 +136,67 @@ def searchstr(candidate):
     letters, numbers, periods, dashes, underscores
 
     """
+    regexp = r'^[a-zA-Z0-9/%*][a-zA-Z0-9/\.\-_%*/#]*$'
+    if return_regexp:
+        return [regexp]
     if candidate == '':
         return candidate
-    return check(r'^[a-zA-Z0-9/%*][a-zA-Z0-9/\.\-_%*/#]*$', candidate)
+    return check(regexp, candidate)
 
 
-def namestr(candidate):
+def namestr(candidate, return_regexp=False):
     """
     Any input used in DBS and not defined here should pass namestr check.
     No white space found in names in DBS production and allowed to elimate input like "Drop table table1".
     letters, numbers, periods, dashes, underscores,#,/
 
     """
+    regexp = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_/#]*$'
+    if return_regexp:
+        return [regexp]
     if candidate == '' or not candidate:
         return candidate
-    return check(r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_/#]*$', candidate)
+    return check(regexp, candidate)
 
 
-def sitetier(candidate):
-    return check("^T[0-3]", candidate)
+def sitetier(candidate, return_regexp=False):
+    regexp = "^T[0-3]"
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
 
-def jobrange(candidate):
+def jobrange(candidate, return_regexp=False):
     """ Specifies a numbers/range of jobs separated by a comma.
         A range is composed by two numbers separated my minus
         For example valid candidates are either 1 or 1,2 or 3-6,5,7-8
         It is like when you specifies which pages to print in Word
     """
-    return check("^\d+(-\d+)?(,\d+(-\d+)?)*$", candidate)
+    regexp = "^\d+(-\d+)?(,\d+(-\d+)?)*$"
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
 
-def cmsname(candidate):
+def cmsname(candidate, return_regexp=False):
     """
     Candidate must pass the CMS name pattern. Thus:
      * good candidates: T2_UK_SGrid or T2_UK_SGrid_Bristol
      * bad candidates: T2, T2_UK
     """
+    regexp = "^T[0-3]_[A-Z]{2}((_[A-Za-z0-9]+)+)$"
+    if return_regexp:
+        return [regexp]
     candidate = candidate.rstrip('_')
-    return check("^T[0-3]_[A-Z]{2}((_[A-Za-z0-9]+)+)$", candidate)
+    return check(regexp, candidate)
 
 
-def countrycode(candidate):
+def countrycode(candidate, return_regexp=False):
+    "country code check"
     # TODO: do properly with a look up table
+    regexp = "^[A-Z]{2}$"
+    if return_regexp:
+        return [regexp]
     return check("^[A-Z]{2}$", candidate)
 
 
@@ -179,9 +213,12 @@ def _blockStructCheck(candidate):
     return parts
 
 
-def block(candidate):
+def block(candidate, return_regexp=False):
     """assert if not a valid block name"""
 
+    if return_regexp:
+        regexp = '/{}/{}/{}#{}'.format(PRIMARY_DS['re'], PROCESSED_DS['re'], TIER['re'], BLOCK_STR['re'])
+        return [regexp]
     parts = _blockStructCheck(candidate)
 
     primDSCheck = check(r"%s" % PRIMARY_DS['re'], parts[1], PRIMARY_DS['maxLength'])
@@ -192,32 +229,42 @@ def block(candidate):
     return (primDSCheck and procDSCheck and tierCheck and blockCheck)
 
 
-def identifier(candidate):
+def identifier(candidate, return_regexp=False):
     """ letters, numbers, whitespace, periods, dashes, underscores """
-    return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
+    regexp = r'[a-zA-Z0-9\s\.\-_]{1,100}$'
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
 
-def globalTag(candidate):
+def globalTag(candidate, return_regexp=False):
     """ Identifier plus colons """
-    return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
+    regexp = r'[a-zA-Z0-9\s\.\-_:]{1,100}$'
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
 
 DATASET_RE = r'^/[a-zA-Z0-9\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[A-Z\-]{1,50}$'
 
 
-def dataset(candidate):
+def dataset(candidate, return_regexp=False):
     """ A slash followed by an identifier,x3 """
+    if return_regexp:
+        return [DATASET_RE]
     return check(DATASET_RE, candidate)
 
 
 PROCDATASET_RE = r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$'
 
 
-def procdataset(candidate):
+def procdataset(candidate, return_regexp=False):
     """
     Check for processed dataset name.
     letters, numbers, dashes, underscores.
     """
+    if return_regexp:
+        return [PROCDATASET_RE, PROCESSED_DS['re']]
     if not candidate or candidate.startswith('None'):
         raise AssertionError("ProcDataset cannot be empty or start with None.")
 
@@ -226,7 +273,10 @@ def procdataset(candidate):
     return (commonCheck and prodCheck)
 
 
-def publishdatasetname(candidate):
+def publishdatasetname(candidate, return_regexp=False):
+    "Publish dataset name check"
+    if return_regexp:
+        return [r'%(publishdataname)s$' % userProcDSParts]
     if candidate == '' or not candidate:
         return candidate
     return check(r'%(publishdataname)s$' % userProcDSParts, candidate, 100)
@@ -235,11 +285,13 @@ def publishdatasetname(candidate):
 USERPROCDATASET_RE = r'%(groupuser)s-%(publishdataname)s-%(psethash)s$' % userProcDSParts
 
 
-def userprocdataset(candidate):
+def userprocdataset(candidate, return_regexp=False):
     """
     Check for processed dataset name of users.
     letters, numbers, dashes, underscores.
     """
+    if return_regexp:
+        return [USERPROCDATASET_RE]
     if candidate == '' or not candidate:
         return candidate
 
@@ -248,101 +300,126 @@ def userprocdataset(candidate):
     return (commonCheck and anlaysisCheck)
 
 
-def physicsgroup(candidate):
+def physicsgroup(candidate, return_regexp=False):
     """
     Check for Physics Group string which is added to StoreResults
     merged LFN base. Up to 30 letters, numbers, dashes, underscores.
     """
-    return check(r'%(physics_group)s$' % lfnParts, candidate, 30)
+    regexp = r'%(physics_group)s$' % lfnParts
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate, 30)
 
 
-def procversion(candidate):
+def procversion(candidate, return_regexp=False):
     """ Integers """
+    regexp = r'^[0-9]+$'
+    if return_regexp:
+        return [regexp]
     if isinstance(candidate, dict):
         for candi in viewvalues(candidate):
-            check(r'^[0-9]+$', str(candi))
+            check(regexp, str(candi))
         return True
     else:
-        return check(r'^[0-9]+$', str(candidate))
+        return check(regexp, str(candidate))
 
 
-def procstring(candidate):
+def procstring(candidate, return_regexp=False):
     """ Identifier """
+    regexp = r'[a-zA-Z0-9_]{1,100}$'
+    if return_regexp:
+        return [regexp]
     if not candidate:
         raise AssertionError("ProcStr cannot be empty or None.")
     if isinstance(candidate, dict):
         for candi in viewvalues(candidate):
-            check(r'[a-zA-Z0-9_]{1,100}$', candi)
+            check(regexp, candi)
         return True
     else:
-        return check(r'[a-zA-Z0-9_]{1,100}$', candidate)
+        return check(regexp, candidate)
 
 
-def procstringT0(candidate):
+def procstringT0(candidate, return_regexp=False):
     """
     ProcessingString validation function for T0 specs
     """
+    regexp = r'^$|[a-zA-Z0-9_]{1,100}$'
+    if return_regexp:
+        return [regexp]
     if isinstance(candidate, dict):
         for candi in viewvalues(candidate):
-            check(r'^$|[a-zA-Z0-9_]{1,100}$', candi)
+            check(regexp, candi)
         return True
     else:
-        return check(r'^$|[a-zA-Z0-9_]{1,100}$', candidate)
+        return check(regexp, candidate)
 
 
-def acqname(candidate):
+def acqname(candidate, return_regexp=False):
     """
     Check for acquisition name.
     letters, numbers, underscores.
     """
+    regexp = r'[a-zA-Z][a-zA-Z0-9_]*$'
+    if return_regexp:
+        return [regexp]
     if not candidate:
         raise AssertionError("AcqEra cannot be empty or None.")
     if isinstance(candidate, dict):
         for candi in viewvalues(candidate):
-            check(r'[a-zA-Z][a-zA-Z0-9_]*$', candi)
+            check(regexp, candi)
         return True
     else:
-        return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
+        return check(regexp, candidate)
 
 
-def campaign(candidate):
+def campaign(candidate, return_regexp=False):
     """
     Check for Campaign name.
     letters, numbers, underscores and dashes are allowed, up to 60 chars.
     """
+    regexp = r'^[a-zA-Z0-9-_]{1,80}$'
+    if return_regexp:
+        return [regexp]
     if not candidate:
         return True
-    return check(r'^[a-zA-Z0-9-_]{1,80}$', candidate)
+    return check(regexp, candidate)
 
 
-def primdataset(candidate):
+def primdataset(candidate, return_regexp=False):
     """
     Check for primary dataset name.
     letters, numbers, dashes, underscores.
     """
+    regexp = r"%s" % PRIMARY_DS['re']
+    if return_regexp:
+        return [regexp]
     if candidate == '' or not candidate:
         return candidate
-    return check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength'])
+    return check(regexp, candidate, PRIMARY_DS['maxLength'])
 
 
 TASK_STEP_NAME = {'re': '^[a-zA-Z][a-zA-Z0-9\-_]*$', 'maxLength': 50}
-def taskStepName(candidate):
+def taskStepName(candidate, return_regexp=False):
     """
     Validate the TaskName and/or StepName field.
     Letters, numbers, dashes and underscores are allowed.
     """
-    return check(r"%s" % TASK_STEP_NAME['re'], candidate, TASK_STEP_NAME['maxLength'])
+    regexp = r"%s" % TASK_STEP_NAME['re']
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate, TASK_STEP_NAME['maxLength'])
 
-def hnName(candidate):
+def hnName(candidate, return_regexp=False):
     """
     Use lfn parts definitions to validate a simple HN name
     """
+    regexp = '^%(hnName)s$' % lfnParts
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
-    validName = '^%(hnName)s$' % lfnParts
-    return check(validName, candidate)
 
-
-def lfn(candidate):
+def lfn(candidate, return_regexp=False):
     """
     Should be of the following form:
     /store/data/acquisition_era/primary-dataset/data_tier/processing_version/lfn_counter/filename.root
@@ -372,6 +449,14 @@ def lfn(candidate):
     lheLFN1 = '/store/lhe/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}'
     # This is for future lhe LFN structure. Need to be tested.
     lheLFN2 = '/store/lhe/%(era)s/%(primDS)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
+
+    if return_regexp:
+        rlist = [
+                regexp1, regexp2, regexp3, regexp4, oldStyleTier0LFN,
+                tier0LFN, storeMcLFN, storeResults2LFN, storeResultsLFN,
+                lheLFN1, lheLFN2
+                ]
+        return rlist
 
     errorMsg = "LFN candidate: %s doesn't match any of the following regular expressions:\n" % candidate
 
@@ -432,7 +517,7 @@ def lfn(candidate):
         raise AssertionError(errorMsg)
 
 
-def lfnBase(candidate):
+def lfnBase(candidate, return_regexp=False):
     """
     As lfn above, but for doing the lfnBase
     i.e., for use in spec generation and parsing
@@ -443,6 +528,8 @@ def lfnBase(candidate):
 
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/|unmerged/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s' % lfnParts
 
+    if return_regexp:
+        return [regexp1, regexp2, regexp3, tier0LFN]
     errorMsg = "LFN candidate: %s doesn't match any of the following regular expressions:\n" % candidate
 
     try:
@@ -472,32 +559,48 @@ def lfnBase(candidate):
         raise AssertionError(errorMsg)
 
 
-def userLfn(candidate):
+def userLfn(candidate, return_regexp=False):
     """
     Check LFNs in /store/{temp}/user that are not EDM data
     """
     regexp = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
+    if return_regexp:
+        return [regexp]
     return check(regexp, candidate)
 
 
-def userLfnBase(candidate):
+def userLfnBase(candidate, return_regexp=False):
     """
     As above but for the base part of the file
     """
     regexp = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
+    if return_regexp:
+        return [regexp]
     return check(regexp, candidate)
 
 
-def cmsswversion(candidate):
-    return check('CMSSW(_\d+){3}(_[a-zA-Z0-9_]+)?$', candidate)
+def cmsswversion(candidate, return_regexp=False):
+    "CMSSW version check"
+    regexp = 'CMSSW(_\d+){3}(_[a-zA-Z0-9_]+)?$'
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
 
-def couchurl(candidate):
-    return check('https?://(([a-zA-Z0-9:@\.\-_]){0,100})([a-z0-9\.]+)(:\d+|/couchdb)', candidate)
+def couchurl(candidate, return_regexp=False):
+    "Couch URL check"
+    regexp = 'https?://(([a-zA-Z0-9:@\.\-_]){0,100})([a-z0-9\.]+)(:\d+|/couchdb)'
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
 
-def requestName(candidate):
-    return check(r'[a-zA-Z0-9\.\-_]{1,150}$', candidate)
+def requestName(candidate, return_regexp=False):
+    "request name check"
+    regexp = r'[a-zA-Z0-9\.\-_]{1,150}$'
+    if return_regexp:
+        return [regexp]
+    return check(regexp, candidate)
 
 
 def validateUrl(candidate):
@@ -514,10 +617,13 @@ def validateUrl(candidate):
     port = r'(?::\d+)?'  # optional port
     path = r'(?:/?|[/?]\S+)$'
     regex_url = r'%s(%s|%s|%s|%s)%s%s' % (protocol, domain, localhost, ipv4, ipv6, port, path)
+    if return_regexp:
+        return [regexp_url]
     return check(regex_url, candidate)
 
 
 def check(regexp, candidate, maxLength=None):
+    "check helper function"
     if maxLength is not None:
         assert len(candidate) <= maxLength, \
             "%s is longer than max length (%s) allowed" % (candidate, maxLength)
@@ -694,18 +800,22 @@ def splitCouchServiceURL(serviceURL):
     return splitedURL[0], splitedURL[1]
 
 
-def primaryDatasetType(candidate):
+def primaryDatasetType(candidate, return_regexp=False):
     pDatasetTypes = ["mc", "data", "cosmic", "test"]
+    if return_regexp:
+        return pDatasetTypes
     if candidate in pDatasetTypes:
         return True
     # to sync with the check() exception when it doesn't match
     raise AssertionError("Invalid primary dataset type : %s should be 'mc' or 'data' or 'test'" % candidate)
 
 
-def activity(candidate):
+def activity(candidate, return_regexp=False):
     dashboardActivities = ['reprocessing', 'production', 'relval', 'tier0', 't0',
                            'harvesting', 'storeresults', 'integration',
                            'test', 'analysis']
+    if return_regexp:
+        return dashboardActivities
     if candidate in dashboardActivities:
         return True
     raise AssertionError("Invalid dashboard activity: %s should 'test'" % candidate)
@@ -822,6 +932,84 @@ def getStringsBetween(start, end, source):
 
 
 def getIterMatchObjectOnRegexp(filePath, regexp):
+    "provides iter matching object"
     with io.open(filePath, 'r', encoding='utf8', errors='ignore') as f:
         for m in re.finditer(regexp, f.read()):
             yield m
+
+def dump_regexp(fname=None):
+    """
+    Return all regexp expression used in Lexicon. The format of lexicon JSON is the following:
+    [
+        {"name": <name of object>, "regexp": [list of regexp's], "length": int},
+        ...
+    ]
+    The length value -1 means no restriction on the length of matching object.
+    """
+    lfnLength = 500
+    blockLength = 4 + PRIMARY_DS['maxLength'] + PROCESSED_DS['maxLength'] + BLOCK_STR['maxLength']
+    datasetLength = 3 + PRIMARY_DS['maxLength'] + PROCESSED_DS['maxLength']
+    rdict = [
+        {"name": "logical_file_name", "patterns": [r'{}'.format(i) for i in lfn("", True)], "length": lfnLength},
+        {"name": "block_name", "patterns": [r'{}'.format(i) for i in block("", True)], "length": blockLength},
+        {"name": "dataset", "patterns": [r'{}'.format(i) for i in dataset("", True)], "length": datasetLength},
+        {"name": "processed_ds_name", "patterns": [r'{}'.format(i) for i in procdataset("", True)], "length": -1},
+        {"name": "user", "patterns": [r'{}'.format(i) for i in DBSUser("", True)], "length": -1},
+        {"name": "search_block", "patterns": [r'{}'.format(i) for i in searchblock("", True)], "length": -1},
+        {"name": "search_dataset", "patterns": [r'{}'.format(i) for i in searchdataset("", True)], "length": -1},
+        {"name": "searchstr", "patterns": [r'{}'.format(i) for i in searchstr("", True)], "length": -1},
+        {"name": "namestr", "patterns": [r'{}'.format(i) for i in namestr("", True)], "length": -1},
+        {"name": "site_tier", "patterns": [r'{}'.format(i) for i in sitetier("", True)], "length": TIER['maxLength']},
+        {"name": "job_range", "patterns": [r'{}'.format(i) for i in jobrange("", True)], "length": -1},
+        {"name": "cms_name", "patterns": [r'{}'.format(i) for i in cmsname("", True)], "length": -1},
+        {"name": "country_code", "patterns": [r'{}'.format(i) for i in countrycode("", True)], "length": -1},
+        {"name": "identifier", "patterns": [r'{}'.format(i) for i in identifier("", True)], "length": -1},
+        {"name": "global_tag", "patterns": [r'{}'.format(i) for i in globalTag("", True)], "length": -1},
+        {"name": "publish_dataset_name", "patterns": [r'{}'.format(i) for i in publishdatasetname("", True)], "length": -1},
+        {"name": "user_processed_dataset", "patterns": [r'{}'.format(i) for i in userprocdataset("", True)], "length": -1},
+        {"name": "physics_group", "patterns": [r'{}'.format(i) for i in physicsgroup("", True)], "length": -1},
+        {"name": "processed_ds_name", "patterns": [r'{}'.format(i) for i in procversion("", True)], "length": PROCESSED_DS['maxLength']},
+        {"name": "processed_string", "patterns": [r'{}'.format(i) for i in procstring("", True)], "length": -1},
+        {"name": "processed_string_t0", "patterns": [r'{}'.format(i) for i in procstringT0("", True)], "length": -1},
+        {"name": "acquisition_name", "patterns": [r'{}'.format(i) for i in acqname("", True)], "length": -1},
+        {"name": "campaign", "patterns": [r'{}'.format(i) for i in campaign("", True)], "length": -1},
+        {"name": "primary_ds_name", "patterns": [r'{}'.format(i) for i in primdataset("", True)], "length": PRIMARY_DS['maxLength']},
+        {"name": "task_step_name", "patterns": [r'{}'.format(i) for i in taskStepName("", True)], "length": TASK_STEP_NAME['maxLength']},
+        {"name": "hn_name", "patterns": [r'{}'.format(i) for i in hnName("", True)], "length": -1},
+        {"name": "lfn_base", "patterns": [r'{}'.format(i) for i in lfnBase("", True)], "length": -1},
+        {"name": "user_lfn", "patterns": [r'{}'.format(i) for i in userLfn("", True)], "length": -1},
+        {"name": "cmssw_version", "patterns": [r'{}'.format(i) for i in cmsswversion("", True)], "length": -1},
+        {"name": "request_name", "patterns": [r'{}'.format(i) for i in requestName("", True)], "length": -1},
+        {"name": "couch_url", "patterns": [r'{}'.format(i) for i in couchurl("", True)], "length": -1},
+        {"name": "activity", "patterns": [r'{}'.format(i) for i in activity("", True)], "length": -1},
+        {"name": "primary_ds_type", "patterns": [r'{}'.format(i) for i in primaryDatasetType("", True)], "length": -1},
+    ]
+    # if we are given output file name we'll dump json to it
+    if fname:
+        with open(fname, 'w') as ostream:
+            ostream.write(json.dumps(rdict))
+        return
+    # otherwise we'll return json to upstream
+    return json.dumps(rdict)
+
+def load_regexp(fname, convert_to_dict=False):
+    """
+    Load regexp Lexicon file. It is reverse function to dump_regexp.
+    It either return patterns Lexicon list, see dump_regexp data-format, or
+    convert it to dictionaries. One dictionary contains keys and patterns,
+    while another keys and lengths.
+    """
+    data = []
+    with open(fname, 'r') as istream:
+        data = json.load(istream)
+    if not convert_to_dict:
+        return data
+    rdict = {}
+    ldict = {}
+    for item in data:
+        rdict[item['name']] = item['patterns']
+        ldict[item['name']] = item['length']
+    return rdict, ldict
+
+if __name__ == '__main__':
+    print(dump_regexp())

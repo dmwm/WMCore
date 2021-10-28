@@ -44,7 +44,7 @@ class CommonTest(unittest.TestCase):
 
     def test_findParent(self):
         "Test function for findParent()"
-        parents = findParent(self.child, self.dbsUrl)
+        parents, _ = findParent(self.child, self.dbsUrl)
         self.assertEqual(parents[self.child[0]], '/SingleElectron/Run2016B-v2/RAW')
 
 

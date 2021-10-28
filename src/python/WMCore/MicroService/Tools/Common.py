@@ -80,141 +80,6 @@ def dbsInfo(datasets, dbsUrl):
     return datasetBlocks, datasetSizes, datasetTransfers
 
 
-def getPileupDatasetSizes(datasets, phedexUrl):
-    """
-    Given a list of datasets, find all their blocks with replicas
-    available, i.e., blocks that have valid files to be processed,
-    and calculate the total dataset size
-    :param datasets: list of dataset names
-    :param phedexUrl: a string with the PhEDEx URL
-    :return: a dictionary of datasets and their respective sizes
-    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
-    """
-    sizeByDset = {}
-    if not datasets:
-        return sizeByDset
-
-    urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
-    logging.info("Executing %d requests against PhEDEx 'blockreplicas' API", len(urls))
-    data = multi_getdata(urls, ckey(), cert())
-
-    for row in data:
-        dataset = row['url'].split('=')[-1]
-        if row['data'] is None:
-            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s %s" % (dataset,
-                                                                                     row.get('code'),
-                                                                                     row.get('error')))
-            sizeByDset.setdefault(dataset, None)
-            continue
-        rows = json.loads(row['data'])
-        sizeByDset.setdefault(dataset, 0)
-        try:
-            for item in rows['phedex']['block']:
-                sizeByDset[dataset] += item['bytes']
-        except Exception as exc:
-            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s" % (dataset, str(exc)))
-            sizeByDset[dataset] = None
-    return sizeByDset
-
-
-def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
-    """
-    Given a list of datasets, find all their blocks with replicas
-    available (thus blocks with at least 1 valid file), completed
-    and subscribed.
-    If PhEDEx group is provided, make sure it's subscribed under that
-    same group.
-    :param datasets: list of dataset names
-    :param phedexUrl: a string with the PhEDEx URL
-    :param group: optional PhEDEx group name
-    :return: a dictionary in the form of:
-    {"dataset":
-        {"block":
-            {"blockSize": 111, "locations": ["x", "y"]}
-        }
-    }
-    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
-    """
-    dsetBlockSize = {}
-    if not datasets:
-        return dsetBlockSize
-
-    urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
-    logging.info("Executing %d requests against PhEDEx 'blockreplicas' API", len(urls))
-    data = multi_getdata(urls, ckey(), cert())
-
-    for row in data:
-        dataset = row['url'].split('=')[-1]
-        if row['data'] is None:
-            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s %s" % (dataset,
-                                                                                       row.get('code'),
-                                                                                       row.get('error')))
-            dsetBlockSize.setdefault(dataset, None)
-            continue
-        rows = json.loads(row['data'])
-        dsetBlockSize.setdefault(dataset, {})
-        try:
-            for item in rows['phedex']['block']:
-                block = {item['name']: {'blockSize': item['bytes'], 'locations': []}}
-                for repli in item['replica']:
-                    if repli['complete'] == 'y' and repli['subscribed'] == 'y':
-                        if not group:
-                            block[item['name']]['locations'].append(repli['node'])
-                        elif repli['group'] == group:
-                            block[item['name']]['locations'].append(repli['node'])
-                dsetBlockSize[dataset].update(block)
-        except Exception as exc:
-            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s" % (dataset, str(exc)))
-            dsetBlockSize[dataset] = None
-    return dsetBlockSize
-
-
-def getPileupSubscriptions(datasets, phedexUrl, group=None, percentMin=99):
-    """
-    Provided a list of datasets, find dataset level subscriptions where it's
-    as complete as `percent_min`.
-    :param datasets: list of dataset names
-    :param phedexUrl: a string with the PhEDEx URL
-    :param group: optional string with the PhEDEx group
-    :param percent_min: only return subscriptions that are this complete
-    :return: a dictionary of datasets and a list of their location.
-    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
-    """
-    locationByDset = {}
-    if not datasets:
-        return locationByDset
-
-    if group:
-        url = "%s/subscriptions?group=%s" % (phedexUrl, group)
-        url += "&percent_min=%s&dataset=%s"
-    else:
-        url = "%s/subscriptions?" % phedexUrl
-        url += "percent_min=%s&dataset=%s"
-    urls = [url % (percentMin, dset) for dset in datasets]
-
-    logging.info("Executing %d requests against PhEDEx 'subscriptions' API", len(urls))
-    data = multi_getdata(urls, ckey(), cert())
-
-    for row in data:
-        dataset = row['url'].rsplit('=')[-1]
-        if row['data'] is None:
-            print("Failure in getPileupSubscriptions for dataset %s. Error: %s %s" % (dataset,
-                                                                                      row.get('code'),
-                                                                                      row.get('error')))
-            locationByDset.setdefault(dataset, None)
-            continue
-        rows = json.loads(row['data'])
-        locationByDset.setdefault(dataset, [])
-        try:
-            for item in rows['phedex']['dataset']:
-                for subs in item['subscription']:
-                    locationByDset[dataset].append(subs['node'])
-        except Exception as exc:
-            print("Failure in getPileupSubscriptions for dataset %s. Error: %s" % (dataset, str(exc)))
-            locationByDset[dataset] = None
-    return locationByDset
-
-
 def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
     """
     Given a dataset name and a list of runs, find all the blocks
@@ -571,13 +436,19 @@ def ioForTask(request, dbsUrl):
 
 def findParent(datasets, dbsUrl):
     """
-    Helper function to find the parent dataset.
+    Provided a list of dataset names, find their parent dataset.
     It returns a dictionary key'ed by the child dataset
     NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    :param datasets: list of dataset names
+    :param dbsUrl: string with the dbsurl to contact
+    :return: a tuple of:
+        dictionary key'ed by the child dataset name, with the parent as value;
+        and a list of dataset names that failed to be resolved
     """
     parentByDset = {}
+    erroredDsets = []
     if not datasets:
-        return parentByDset
+        return parentByDset, erroredDsets
 
     urls = ['%s/datasetparents?dataset=%s' % (dbsUrl, d) for d in datasets]
     logging.info("Executing %d requests against DBS 'datasetparents' API", len(urls))
@@ -586,10 +457,8 @@ def findParent(datasets, dbsUrl):
     for row in data:
         dataset = row['url'].split('=')[-1]
         if row['data'] is None:
-            print("Failure in findParent for dataset %s. Error: %s %s" % (dataset,
-                                                                          row.get('code'),
-                                                                          row.get('error')))
-            parentByDset.setdefault(dataset, None)
+            print("Failure in findParent for dataset %s. Error: %s" % (dataset, row))
+            erroredDsets.append(dataset)
             continue
         rows = json.loads(row['data'])
         try:
@@ -597,5 +466,5 @@ def findParent(datasets, dbsUrl):
                 parentByDset[item['this_dataset']] = item['parent_dataset']
         except Exception as exc:
             print("Failure in findParent for dataset %s. Error: %s" % (dataset, str(exc)))
-            parentByDset[dataset] = None
-    return parentByDset
+            erroredDsets.append(dataset)
+    return parentByDset, erroredDsets

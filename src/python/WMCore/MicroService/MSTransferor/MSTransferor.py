@@ -84,10 +84,15 @@ class MSTransferor(MSCore):
         self.msConfig.setdefault("rucioRuleWeight", 'ddm_quota')
 
         quotaAccount = self.msConfig["rucioAccount"]
-
         self.rseQuotas = RSEQuotas(quotaAccount, self.msConfig["quotaUsage"],
                                    minimumThreshold=self.msConfig["minimumThreshold"],
                                    verbose=self.msConfig['verbose'], logger=logger)
+
+        quotaAccountRelVal = self.msConfig["rucioAccountRelVal"]
+        self.rseQuotasRelVal = RSEQuotas(quotaAccountRelVal, self.msConfig["quotaUsage"],
+                                         minimumThreshold=self.msConfig["minimumThreshold"],
+                                         verbose=self.msConfig['verbose'], logger=logger)
+
         self.reqInfo = RequestInfo(self.msConfig, self.rucio, self.logger)
 
         self.cric = CRIC(logger=self.logger)
@@ -109,19 +114,12 @@ class MSTransferor(MSCore):
     def updateCaches(self):
         """
         Fetch some data required for the transferor logic, e.g.:
-         * account limits from Rucio
-         * account usage from Rucio
          * unified configuration
          * all campaign configuration
          * PSN to PNN map from CRIC
+         * account limits from Rucio
+         * account usage from Rucio
         """
-        self.logger.info("Updating RSE/PNN quota and usage")
-        self.rseQuotas.fetchStorageQuota(self.rucio)
-        self.rseQuotas.fetchStorageUsage(self.rucio)
-        self.rseQuotas.evaluateQuotaExceeded()
-        if not self.rseQuotas.getNodeUsage():
-            raise RuntimeWarning("Failed to fetch storage usage stats")
-
         self.logger.info("Updating all local caches...")
         self.dsetCounter = 0
         self.blockCounter = 0
@@ -140,7 +138,15 @@ class MSTransferor(MSCore):
             self.campaigns = {}
             for camp in campaigns:
                 self.campaigns[camp['CampaignName']] = camp
-        self.rseQuotas.printQuotaSummary()
+        for clsObject in (self.rseQuotas, self.rseQuotasRelVal):
+            self.logger.info("Updating RSE quota/usage for Rucio account: %s", clsObject.dataAcct)
+            getattr(clsObject, "fetchStorageQuota")(self.rucio)
+            getattr(clsObject, "fetchStorageUsage")(self.rucio)
+            getattr(clsObject, "evaluateQuotaExceeded")()
+            getattr(clsObject, "printQuotaSummary")()
+            if not getattr(clsObject, "getNodeUsage")():
+                msg = "Failed to fetch storage usage stats for account: {}".format(clsObject.dataAcct)
+                raise RuntimeWarning(msg)
 
     def execute(self, reqStatus):
         """
@@ -169,6 +175,7 @@ class MSTransferor(MSCore):
             self.updateCaches()
             self.updateReportDict(summary, "total_num_campaigns", len(self.campaigns))
             self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
+            self.updateReportDict(summary, "relval_nodes_out_of_space", list(self.rseQuotasRelVal.getOutOfSpaceRSEs()))
         except RuntimeWarning as ex:
             msg = "All retries exhausted! Last error was: '%s'" % str(ex)
             msg += "\nRetrying to update caches again in the next cycle."
@@ -217,7 +224,8 @@ class MSTransferor(MSCore):
                     self.logger.exception(msg)
                 if success:
                     self.logger.info("Transfer requests successful for %s. Summary: %s",
-                                     wflow.getName(), pformat(transfers))                    # then create a document in ReqMgr Aux DB
+                                     wflow.getName(), pformat(transfers))
+                    # then create a document in ReqMgr Aux DB
                     if self.createTransferDoc(wflow.getName(), transfers):
                         self.logger.info("Transfer document successfully created in CouchDB for: %s", wflow.getName())
                         # then move this request to staging status
@@ -247,6 +255,7 @@ class MSTransferor(MSCore):
         self.updateReportDict(summary, "num_datasets_subscribed", self.dsetCounter)
         self.updateReportDict(summary, "num_blocks_subscribed", self.blockCounter)
         self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
+        self.updateReportDict(summary, "relval_nodes_out_of_space", list(self.rseQuotasRelVal.getOutOfSpaceRSEs()))
         return summary
 
     def getRequestRecords(self, reqStatus):
@@ -591,6 +600,7 @@ class MSTransferor(MSCore):
 
         self.logger.info("Handling data subscriptions for request: %s", wflow.getName())
 
+        rseQuotaObject = self.rseQuotasRelVal if wflow.isRelVal() else self.rseQuotas
         for dataIn in wflow.getDataCampaignMap():
             if dataIn["type"] == "parent":
                 msg = "Skipping 'parent' data subscription (done with the 'primary' data), for: %s" % dataIn
@@ -600,9 +610,9 @@ class MSTransferor(MSCore):
                 # secondary already in place
                 continue
 
-            if wflow.getPURSElist() and not wflow.isRelVal():
+            if wflow.getPURSElist():
                 # then the whole workflow is very much limited to a single site
-                nodes = list(wflow.getPURSElist() & self.rseQuotas.getAvailableRSEs())
+                nodes = list(wflow.getPURSElist() & rseQuotaObject.getAvailableRSEs())
                 if not nodes:
                     msg = "Workflow: %s can only run in RSEs with no available space: %s. "
                     msg += "Skipping this workflow until space gets released"
@@ -641,7 +651,7 @@ class MSTransferor(MSCore):
                         transRec['transferIDs'].update(transferId)
                     else:
                         transRec['transferIDs'].add(transferId)
-                    self.rseQuotas.updateNodeUsage(nodes[idx], dataSize)
+                    rseQuotaObject.updateNodeUsage(nodes[idx], dataSize)
 
                 # and update some instance caches
                 if subLevel == 'container':
@@ -653,7 +663,7 @@ class MSTransferor(MSCore):
             response.append(transRec)
 
         # once the workflow has been completely processed, update the node usage
-        self.rseQuotas.evaluateQuotaExceeded()
+        rseQuotaObject.evaluateQuotaExceeded()
         return success, response
 
     def makeTransferRucio(self, wflow, dataIn, subLevel, blocks, dataSize, nodes, nodeIdx):
@@ -672,11 +682,12 @@ class MSTransferor(MSCore):
         success, transferId = True, set()
         subLevel = "ALL" if subLevel == "container" else "DATASET"
         dids = blocks if blocks else [dataIn['name']]
+        rucioAcct = self.msConfig['rucioAccountRelVal'] if wflow.isRelVal() else self.msConfig['rucioAccount']
 
         ruleAttrs = {'copies': 1,
                      'activity': 'Production Input',
                      'lifetime': self.msConfig['rulesLifetime'],
-                     'account': self.msConfig['rucioAccount'],
+                     'account': rucioAcct,
                      'grouping': subLevel,
                      'weight': self.msConfig['rucioRuleWeight'],
                      'meta': {'workflow_group': wflow.getWorkflowGroup()},
@@ -788,14 +799,10 @@ class MSTransferor(MSCore):
         self.logger.info("  final list of PSNs to be use: %s", psns)
         pnns = self._getPNNsFromPSNs(psns)
 
-        if wflow.isRelVal():
-            self.logger.info("RelVal workflow '%s' ignores sites out of quota", wflow.getName())
-            return list(pnns)
-
+        rseQuotaObject = self.rseQuotasRelVal if wflow.isRelVal() else self.rseQuotas
         self.logger.info("List of out-of-space RSEs dropped for '%s' is: %s",
-                         wflow.getName(), pnns & self.rseQuotas.getOutOfSpaceRSEs())
-        return list(pnns & self.rseQuotas.getAvailableRSEs())
-
+                         wflow.getName(), pnns & rseQuotaObject.getOutOfSpaceRSEs())
+        return list(pnns & rseQuotaObject.getAvailableRSEs())
 
     def _decideDataDestination(self, wflow, dataIn, numNodes):
         """

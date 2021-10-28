@@ -88,7 +88,8 @@ class MSTransferor(MSCore):
                                    minimumThreshold=self.msConfig["minimumThreshold"],
                                    verbose=self.msConfig['verbose'], logger=logger)
 
-        quotaAccountRelVal = self.msConfig["rucioAccountRelVal"]
+        # FIXME TODO: remove the setdefault once deployment is properly updated
+        quotaAccountRelVal = self.msConfig.setdefault("rucioAccountRelVal", "wmcore_transferor_relval")
         self.rseQuotasRelVal = RSEQuotas(quotaAccountRelVal, self.msConfig["quotaUsage"],
                                          minimumThreshold=self.msConfig["minimumThreshold"],
                                          verbose=self.msConfig['verbose'], logger=logger)

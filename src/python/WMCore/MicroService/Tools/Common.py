@@ -147,6 +147,7 @@ def findBlockParents(blocks, dbsUrl):
     NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     parentsByBlock = {}
+    erroredCont = []
     urls = ['%s/blockparents?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
     logging.info("Executing %d requests against DBS 'blockparents' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
@@ -157,7 +158,7 @@ def findBlockParents(blocks, dbsUrl):
             print("Failure in findBlockParents for block %s. Error: %s %s" % (blockName,
                                                                               row.get('code'),
                                                                               row.get('error')))
-            parentsByBlock.setdefault(dataset, None)
+            erroredCont.append(dataset)
             continue
         rows = json.loads(row['data'])
         try:
@@ -170,8 +171,8 @@ def findBlockParents(blocks, dbsUrl):
                 parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
         except Exception as exc:
             print("Failure in findBlockParents for block %s. Error: %s" % (blockName, str(exc)))
-            parentsByBlock[dataset] = None
-    return parentsByBlock
+            erroredCont.append(dataset)
+    return parentsByBlock, erroredCont
 
 
 def getRunsInBlock(blocks, dbsUrl):

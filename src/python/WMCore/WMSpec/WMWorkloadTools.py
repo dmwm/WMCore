@@ -299,7 +299,7 @@ def validateArgumentsCreate(arguments, argumentDefinition, checkInputDset=True):
     otherwise returns None.
     """
     validateUnknownArgs(arguments, argumentDefinition)
-    _validateArgumentOptions(arguments, argumentDefinition, "optional")
+    _validateArgumentOptions(arguments, argumentDefinition, "optional")#Validation optional arg T0 workflows
     if checkInputDset:
         validateInputDatasSetAndParentFlag(arguments)
     return

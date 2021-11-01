@@ -1050,7 +1050,7 @@ class StdBase(object):
                      "VoRole": {"default": "unknown", "attr": "owner_vorole"},
                      "ValidStatus": {"default": "PRODUCTION"},
                      "OverrideCatalog": {"null": True},
-                     "RunNumber": {"default": 0, "type": int},
+                     "RunNumber": {"default": 0, "type": int, "validate": lambda x: x > 0},
                      "RobustMerge": {"default": True, "type": strToBool},
                      "Comments": {"default": ""},
                      "SubRequestType": {"default": "", "validate": subRequestType},

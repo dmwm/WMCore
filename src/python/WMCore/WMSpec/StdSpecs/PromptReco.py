@@ -8,7 +8,7 @@ from __future__ import division
 from future.utils import viewitems
 
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import procstringT0
+from WMCore.Lexicon import procstringT0, globalTag, validateUrl
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 
 
@@ -169,16 +169,17 @@ class PromptRecoWorkloadFactory(DataProcessing):
     def getWorkloadCreateArgs():
         baseArgs = DataProcessing.getWorkloadCreateArgs()
         specArgs = {"RequestType": {"default": "PromptReco", "optional": True},
+                    "RequestString": {"default": "", "validate": procstringT0},
                     "ConfigCacheID": {"optional": True, "null": True},
                     "Scenario": {"default": None, "optional": False,
-                                 "attr": "procScenario", "null": False},
+                                 "attr": "procScenario", "null": False, "validate":lambda x: True if type(x) == str else False},#Need proper validation in lexicon
                     "ProcessingString": {"default": "", "validate": procstringT0},
                     "WriteTiers": {"default": ["RECO", "AOD", "DQM", "ALCARECO"],
-                                   "type": makeList, "optional": False, "null": False},
+                                   "type": makeList, "optional": False, "null": False, "validate": lambda x: True if type(x) == list else False},
                     "AlcaSkims": {"default": ["TkAlCosmics0T", "MuAlGlobalCosmics", "HcalCalHOCosmics"],
-                                  "type": makeList, "optional": False, "null": False},
+                                  "type": makeList, "optional": False, "null": False, "validate": lambda x: True if type(x) == list else False},
                     "PhysicsSkims": {"default": [], "type": makeList,
-                                     "optional": True, "null": False},
+                                     "optional": True, "null": False, "validate": lambda x: True if type(x) == list else False},
                     "InitCommand": {"default": None, "optional": True, "null": True},
                     "EnvPath": {"default": None, "optional": True, "null": True},
                     "BinPath": {"default": None, "optional": True, "null": True},
@@ -200,7 +201,21 @@ class PromptRecoWorkloadFactory(DataProcessing):
                                         "null": False},
                     "SkimFilesPerJob": {"default": 1, "type": int, "validate": lambda x: x > 0,
                                         "null": False},
+                    "GlobalTag": {"optional": False, "validate": globalTag},
+                    "GlobalTagConnect": {"null": True, "validate": lambda x: True if type(x) == str else False},#Needs proper validation function by Lexicon
+                    "DQMUploadUrl": {"default": "https://cmsweb.cern.ch/dqm/dev", "attr": "dqmUploadUrl", "validate":validateUrl},
+                    "DQMSequences": {"type": makeList, "attr": "dqmSequences", "optional": False, "validate": lambda x: True if type(x) == list else False},
+                    "EnableHarvesting": {"default": False, "type": strToBool, "validate": lambda x: True if type(x) == bool else False},
+                    "RobustMerge": {"default": True, "type": strToBool, "validate": lambda x: True if type(x) == bool else False},
+                    "Requestor": {"attr": "owner", "optional": False, "validate": lambda x: x in ("Tier0")},
+                    "RequestorDN": {"attr": "owner_dn", "optional": False, "null": False, "validate": lambda x: x in ("Tier0")},
+                    "RequestTransition": {"optional": False, "type": list, "validate": lambda x: True if type(x) == list else False},
+                    "PriorityTransition": {"optional": False, "type": list, "validate": lambda x: True if type(x) == list else False},
+                    "RequestDate": {"optional": False, "type": list, "validate": lambda x: True if type(x) == list else False},
+                    "MergedLFNBase": {"default": "/store/data", "validate": lambda x: x in ("/store/data","/store/backfill/1/data")},
+                    "UnmergedLFNBase": {"default": "/store/unmerged", "validate": lambda x: x in ("/store/unmerged","/store/unmerged/data")},
                     }
+
 
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)

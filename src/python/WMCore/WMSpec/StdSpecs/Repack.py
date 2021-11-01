@@ -11,7 +11,7 @@ repacking -> RAW -> optional merge
 from __future__ import division
 
 from Utils.Utilities import makeList
-from WMCore.Lexicon import procstringT0
+from WMCore.Lexicon import procstringT0, globalTag
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -184,20 +184,21 @@ class RepackWorkloadFactory(StdBase):
     def getWorkloadCreateArgs():
         baseArgs = StdBase.getWorkloadCreateArgs()
         specArgs = {"RequestType": {"default": "Repack"},
+                    "RequestString": {"default": "", "validate": procstringT0},
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "Scenario": {"default": "fake", "attr": "procScenario"},
-                    "GlobalTag": {"default": "fake"},
+                    "Scenario": {"default": "fake", "attr": "procScenario", "validate":lambda x: True if type(x) == str else False},
+                    "GlobalTag": {"default": "fake", "validate": globalTag},
                     "ProcessingString": {"default": "", "validate": procstringT0},
-                    "Outputs": {"type": makeList, "optional": False},
-                    "MaxSizeSingleLumi": {"type": int, "optional": False},
-                    "MaxSizeMultiLumi": {"type": int, "optional": False},
-                    "MaxInputEvents": {"type": int, "optional": False},
-                    "MaxInputFiles": {"type": int, "optional": False},
-                    "MaxLatency": {"type": int, "optional": False},
-                    "MinInputSize": {"type": int, "optional": False},
-                    "MaxInputSize": {"type": int, "optional": False},
-                    "MaxEdmSize": {"type": int, "optional": False},
-                    "MaxOverSize": {"type": int, "optional": False},
+                    "Outputs": {"type": makeList, "optional": False, "validate": lambda x: True if type(x) == list else False},
+                    "MaxSizeSingleLumi": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxSizeMultiLumi": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxInputEvents": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxInputFiles": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxLatency": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MinInputSize": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxInputSize": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxEdmSize": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxOverSize": {"type": int, "optional": False, "validate": lambda x: x >= 0},
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

@@ -17,7 +17,7 @@ from future.utils import viewitems
 
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from Utils.Utilities import makeList, makeNonEmptyList
-from WMCore.Lexicon import procstringT0
+from WMCore.Lexicon import procstringT0, globalTag, validateUrl
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
@@ -470,29 +470,38 @@ class ExpressWorkloadFactory(StdBase):
     def getWorkloadCreateArgs():
         baseArgs = StdBase.getWorkloadCreateArgs()
         specArgs = {"RequestType": {"default": "Express"},
+                    "RequestString": {"default": "", "validate": procstringT0},
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "Scenario": {"optional": False, "attr": "procScenario"},
+                    "Scenario": {"optional": False, "attr": "procScenario", "validate":lambda x: True if type(x) == str else False},
                     "RecoCMSSWVersion": {"validate": lambda x: x in releases(),
                                          "optional": False, "attr": "recoFrameworkVersion"},
                     "RecoScramArch": {"validate": lambda x: all([y in architectures() for y in x]),
                                       "optional": False, "type": makeNonEmptyList},
-                    "GlobalTag": {"optional": False},
-                    "GlobalTagTransaction": {"optional": False},
+                    "GlobalTag": {"optional": False, "validate": globalTag},
+                    "GlobalTagTransaction": {"optional": False,  "validate":procstringT0},#Needs proper validation in lexicon,
                     "ProcessingString": {"default": "", "validate": procstringT0},
-                    "StreamName": {"optional": False},
-                    "SpecialDataset": {"optional": False},
-                    "AlcaHarvestTimeout": {"type": int, "optional": False},
-                    "AlcaHarvestCondLFNBase": {"optional": False, "null": True},
-                    "AlcaHarvestLumiURL": {"optional": False, "null": True},
-                    "AlcaSkims": {"type": makeList, "optional": False},
-                    "DQMSequences": {"type": makeList, "attr": "dqmSequences", "optional": False},
-                    "Outputs": {"type": makeList, "optional": False},
-                    "MaxInputRate": {"type": int, "optional": False},
-                    "MaxInputEvents": {"type": int, "optional": False},
-                    "MaxInputSize": {"type": int, "optional": False},
-                    "MaxInputFiles": {"type": int, "optional": False},
-                    "MaxLatency": {"type": int, "optional": False},
-
+                    "StreamName": {"optional": False, "validate":procstringT0},
+                    "SpecialDataset": {"optional": False, "validate":procstringT0},
+                    "AlcaHarvestTimeout": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "AlcaHarvestCondLFNBase": {"optional": False, "null": True, "validate": lambda x: x in ("/store/unmerged/tier0_harvest/2021")},#Need proper validation in lexicon
+                    "AlcaHarvestLumiURL": {"optional": False, "null": True, "validate":lambda x: x in ("root://eoscms.cern.ch//eos/cms/store/unmerged/tier0_harvest/2021")},#Need proper validation in lexicon
+                    "AlcaSkims": {"type": makeList, "optional": False, "validate": lambda x: True if type(x) == list else False},
+                    "DQMSequences": {"type": makeList, "attr": "dqmSequences", "optional": False, "validate": lambda x: True if type(x) == list else False},
+                    "Outputs": {"type": makeList, "optional": False, "validate": lambda x: True if type(x) == list else False},
+                    "MaxInputRate": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxInputEvents": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxInputSize": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxInputFiles": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "MaxLatency": {"type": int, "optional": False, "validate": lambda x: x >= 0},
+                    "GlobalTagConnect": {"null": True, "validate": lambda x: True if type(x) == str else False},#Needs proper validation function by Lexicon
+                    "DQMUploadUrl": {"default": "https://cmsweb.cern.ch/dqm/dev", "attr": "dqmUploadUrl", "validate":validateUrl},
+                    "MergedLFNBase": {"default": "/store/data", "validate": lambda x: x in ("/store/data","/store/backfill/1/data","/store/backfill/1/express")},#Needs proper validation function by Lexicon
+                    "UnmergedLFNBase": {"default": "/store/unmerged", "validate": lambda x: x in ("/store/unmerged","/store/unmerged/data","/store/unmerged/express")},#Needs proper validation function by Lexicon
+                    "Requestor": {"attr": "owner", "optional": False, "validate": lambda x: x in ("Tier0")},
+                    "RequestorDN": {"attr": "owner_dn", "optional": False, "null": False, "validate": lambda x: x in ("Tier0")},
+                    "RequestTransition": {"optional": False, "type": list, "validate": lambda x: True if type(x) == list else False},
+                    "PriorityTransition": {"optional": False, "type": list, "validate": lambda x: True if type(x) == list else False},
+                    "RequestDate": {"optional": False, "type": list, "validate": lambda x: True if type(x) == list else False},
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

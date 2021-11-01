@@ -308,17 +308,27 @@ class Service(dict):
             # from a cachefile, and that cachefiles can be good/stale/dead.
             #
             if force_refresh or isfile(cachefile) or not os.path.exists(cachefile):
-                msg = 'The cachefile %s does not exist and the service at %s'
-                msg = msg % (cachefile, self["requests"]['host'] + url)
-                if hasattr(he, 'status') and hasattr(he, 'reason'):
-                    msg += ' is unavailable - it returned %s because %s' % (he.status,
-                                                                            he.reason)
-                    if hasattr(he, 'result'):
-                        msg += ' with result: %s\n' % he.result
-                else:
-                    msg += ' raised a %s when accessed' % he.__repr__()
-                self['logger'].warning(msg)
-                raise he
+                try:
+                    if not os.path.exists(cachefile):
+                        pathfile=cachefile.split("/")
+                        pathfile="/"+"/".join(pathfile[1:-1])
+                        os.makedirs(pathfile, exist_ok=True)
+                        with open(cachefile, 'w') as f:
+                            if isinstance(data, dict) or isinstance(data, list):
+                                f.write(json.dumps(data))
+                            else:
+                                f.write(data)
+                except:
+                    msg = 'The cachefile %s does not exist and the service at %s'
+                    msg = msg % (cachefile, self["requests"]['host'] + url)
+                    if hasattr(he, 'status') and hasattr(he, 'reason'):
+                        msg += ' is unavailable - it returned %s because %s' % (he.status,he.reason)
+                        if hasattr(he, 'result'):
+                            msg += ' with result: %s\n' % he.result
+                        else:
+                            msg += ' raised a %s when accessed' % he.__repr__()
+                        self['logger'].warning(msg)
+                        raise he
             else:
                 cache_dead = cache_expired(cachefile, delta=self["cacheduration"])
                 if cache_dead:

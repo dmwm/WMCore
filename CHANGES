@@ -1,3 +1,7 @@
+1.5.5.pre3 to 1.5.5.pre4:
+  - Add validation to the SubRequestType parameter (Alan Malta Rodrigues) #10890
+
+
 1.5.5.pre2 to 1.5.5.pre3:
   - Remove unused Unified/MSTransferor code (Alan Malta Rodrigues) #10876
   - Use the right COMP scramArch for PowerPC workflows (Alan Malta Rodrigues) #10871

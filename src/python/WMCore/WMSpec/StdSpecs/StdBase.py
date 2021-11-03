@@ -15,8 +15,9 @@ from Utils.PythonVersion import PY3
 from Utils.Utilities import decodeBytesToUnicodeConditional
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset, gpuParameters
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block, campaign
+from WMCore.Lexicon import (couchurl, procstring, activity, procversion, primdataset,
+                            gpuParameters, lfnBase, identifier, acqname, cmsname,
+                            dataset, block, campaign, subRequestType)
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
@@ -1052,7 +1053,7 @@ class StdBase(object):
                      "RunNumber": {"default": 0, "type": int},
                      "RobustMerge": {"default": True, "type": strToBool},
                      "Comments": {"default": ""},
-                     "SubRequestType": {"default": ""},  # used only(?) for RelVals
+                     "SubRequestType": {"default": "", "validate": subRequestType},
                      "RequiresGPU": {"default": "forbidden",
                                      "validate": lambda x: x in ("forbidden", "optional", "required")},
                      "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},

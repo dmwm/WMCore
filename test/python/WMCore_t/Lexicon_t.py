@@ -1023,6 +1023,20 @@ class LexiconTest(unittest.TestCase):
         self.assertTrue(_gpuInternalParameters({"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2", "2.3", "2.3.4"],
                                                 "CUDARuntime": "2.3.4"}))
 
+    def testSubRequestType(self):
+        """
+        Test some task and step names
+        """
+        # valid values
+        for cand in ["MC", "ReDigi", "Pilot", "RelVal", "HIRelVal", "ReReco", ""]:
+            self.assertTrue(subRequestType(cand))
+
+        # now invalid ones
+        self.assertRaises(AssertionError, subRequestType, None)
+        self.assertRaises(AssertionError, subRequestType, "test")
+        self.assertRaises(AssertionError, subRequestType, ["blah"])
+        self.assertRaises(AssertionError, subRequestType, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

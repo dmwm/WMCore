@@ -702,6 +702,15 @@ def primaryDatasetType(candidate):
     raise AssertionError("Invalid primary dataset type : %s should be 'mc' or 'data' or 'test'" % candidate)
 
 
+def subRequestType(candidate):
+    subTypes = ["MC", "ReDigi", "Pilot", "RelVal", "HIRelVal", "ReReco", ""]
+    if candidate in subTypes:
+        return True
+    # to sync with the check() exception when it doesn't match
+    msg = "Invalid SubRequestType value: '{}'. Allowed values are: {}".format(candidate, subTypes)
+    raise AssertionError(msg)
+
+
 def activity(candidate):
     dashboardActivities = ['reprocessing', 'production', 'relval', 'tier0', 't0',
                            'harvesting', 'storeresults', 'integration',

@@ -90,7 +90,7 @@ class WorkQueueReqMgrInterface(object):
             self.logger.warning(msg)
             return 0
 
-        for team, reqName, workLoadUrl in workLoads:
+        for team, reqName, workLoadUrl, subReqType in workLoads:
             try:
                 try:
                     Lexicon.couchurl(workLoadUrl)
@@ -101,7 +101,7 @@ class WorkQueueReqMgrInterface(object):
                         raise error
 
                 self.logger.info("Processing request %s at %s" % (reqName, workLoadUrl))
-                units = queue.queueWork(workLoadUrl, request=reqName, team=team)
+                units = queue.queueWork(workLoadUrl, request=reqName, team=team, subRequestType=subReqType)
                 self.logdb.delete(reqName, "error", this_thread=True, agent=False)
             except TERMINAL_EXCEPTIONS as ex:
                 # fatal error - report back to ReqMgr
@@ -222,7 +222,7 @@ class WorkQueueReqMgrInterface(object):
         filteredResults.sort(key=itemgetter('RequestPriority'), reverse=True)
         filteredResults.sort(key=lambda r: r["Team"])
 
-        results = [(x["Team"], x["RequestName"], x["RequestWorkflow"]) for x in filteredResults]
+        results = [(x["Team"], x["RequestName"], x["RequestWorkflow"], x["SubRequestType"]) for x in filteredResults]
 
         return results
 

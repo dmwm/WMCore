@@ -185,7 +185,11 @@ class WorkQueue(WorkQueueBase):
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
                 raise RuntimeError('Only blocks can be released on location')
 
-        self.params.setdefault('rucioAccount', "wmcore_transferor")
+        # Central production will use: wmcore_transferor
+        # while Release Validation will use: wmcore_transferor_relval
+        if self.params.get('rucioAccount'):
+            raise RuntimeError('rucioAccount parameter is mandatory for WorkQueue')
+        self.params.setdefault('rucioAccountRelVal', "wmcore_transferor_relval")
 
         self.rucio = Rucio(self.params['rucioAccount'],
                            self.params['rucioUrl'], self.params['rucioAuthUrl'],
@@ -634,17 +638,16 @@ class WorkQueue(WorkQueueBase):
             else:
                 self.logger.debug('Not deleting "%s" as it is %s', request.id, request['Status'])
 
-    def queueWork(self, wmspecUrl, request=None, team=None):
+    def queueWork(self, wmspecUrl, request=None, team=None, subRequestType=""):
         """
-        Take and queue work from a WMSpec.
-
-        If request name is provided but doesn't match WMSpec name
-        an error is raised.
-
-        If team is provided work will only be available to queue's
-        belonging to that team.
-
-        Duplicate specs will be ignored.
+        Take and queue work from a WMSpec. Duplicate specs will be ignored.
+        :param wmspecUrl: string with the url to retrieve the workload spec object
+        :param request: string with the request name
+        :param team: if team name is provided, work will only be available to the
+            queue that belongs to this team name.
+        :param subRequestType: this string defines the sub-class of the request, which
+            basically maps to relval or not - and it defines which Rucio account to use.
+        :return: integer with the amount of work processed in this cycle
         """
         self.logger.info('queueWork() begin queueing "%s"', wmspecUrl)
         wmspec = WMWorkloadHelper()

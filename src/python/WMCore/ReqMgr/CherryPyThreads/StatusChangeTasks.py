@@ -56,6 +56,11 @@ def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
                 reqmgrSvc.updateRequestStatus(wf, stateFromGQ)
                 logger.info("%s in %s moved to %s", wf, status, stateFromGQ)
                 continue
+            # FIXME: remove this elif once the current active workflows are out
+            # of the system. January 2022 should be good (HG2201)
+            elif stateFromGQ == "running-open" and status == "running-closed":
+                logger.warning("%s in %s, but it should actually be in %s", wf, status, stateFromGQ)
+                continue
 
             try:
                 i = nextStatus.index(stateFromGQ)

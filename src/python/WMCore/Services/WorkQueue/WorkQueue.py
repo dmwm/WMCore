@@ -15,47 +15,46 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
     :returns: request status
 
     Here is the mapping between request status and it GQE status
-    1. acquired:  if all the GQEs are either Available or Negotiating -  Work is still in GQ but not LQ
-    2. running-open: if at least one of the GQEs are in Acquired status - at least some work is in LQ
-    3. running-closed: if all the GQEs are in Running or complted status
-                       no Available Negotiating or Acquired status. all the work is in WMBS db (in agents)
-    4. completed: if all the GQEs are in 'Done', 'Canceled' status.
-                   - all work is finsed in wmbs (excluding cleanup, logcollect)
-    5. failed: if all the GQEs are in Failed status. If the workflow has multiple GQEs and only a few are
-               in Failed status, then just follow the usual request status.
+    1. acquired:  all the GQEs are either Available or Negotiating.
+        Work is still in GQ, but not LQ.
+    2. running-open: at least one of the GQEs are in Acquired status.
+    3. running-closed: all the GQEs are in Running or beyond status.
+        No Available/Negotiating/Acquired status, all the work is in WMBS db (in agents)
+    4. completed: all the GQEs are in a final status, like Done/Canceled/Failed.
+        All work is finished in WMBS (excluding cleanup and logcollect)
+    5. failed: all the GQEs are in Failed status. If the workflow has multiple GQEs
+        and only a few are in Failed status, then just follow the usual request status.
 
-    CancelRequest status treated as transient status.
+    NOTE: CancelRequested status is a transient status and it should not trigger
+    any request status transition (thus, None gets returned).
     """
-    if len(elementsStatusSet) == 0:
+    if not elementsStatusSet:
         return None
 
+    forceCompleted = set(["CancelRequested"])
     available = set(["Available", "Negotiating", "Failed"])
     acquired = set(["Acquired"])
     running = set(["Running"])
-    completed = set(['Done', 'Canceled', "Failed"])
+    runningOpen = set(["Available", "Negotiating", "Acquired"])
+    runningClosed = set(["Running", "Done", "Canceled"])
+    completed = set(["Done", "Canceled", "Failed"])
     failed = set(["Failed"])
 
-    if elementsStatusSet == acquired:
+    if forceCompleted <= elementsStatusSet:  # at least 1 WQE in CancelRequested
+        return None
+    elif elementsStatusSet == acquired:  # all WQEs in Acquired
         return "running-open"
-    elif elementsStatusSet == running:
+    elif elementsStatusSet == running:  # all WQEs in Running
         return "running-closed"
-    elif elementsStatusSet == failed:
+    elif elementsStatusSet == failed:  # all WQEs in Failed
         return "failed"
-    elif elementsStatusSet <= available:
-        # if all the elements are Available status.
+    elif elementsStatusSet <= available:  # all WQEs still in GQ
         return "acquired"
-    elif elementsStatusSet <= completed:
-        # if all the elements are Done or Canceled status
+    elif elementsStatusSet <= completed:  # all WQEs in a final state
         return "completed"
-    elif elementsStatusSet <= failed:
-        # if all the elements are in Failed staus
-        return "failed"
-    elif acquired <= elementsStatusSet:
-        # if one of the elements are in Acquired status
+    elif elementsStatusSet & runningOpen:  # at least 1 WQE still in GQ
         return "running-open"
-    elif running <= elementsStatusSet:
-        # if one of the elements in running status but no elements are
-        # Acquired or Assigned status
+    elif elementsStatusSet & runningClosed:  # all WQEs already in LQ and WMBS
         return "running-closed"
     else:
         # transitional status. Negotiating status won't be changed.

@@ -403,8 +403,6 @@ class MSUnmerged(MSCore):
 
         isConsDone = self.rseConsStats[rseName]['status'] == 'done'
         isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
-        isRootFailed = self.rseConsStats[rseName]['root_failed']
-
         if not isConsNewer:
             msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. " % rseName
             msg += "Skipping it in the current run."
@@ -412,11 +410,6 @@ class MSUnmerged(MSCore):
             raise MSUnmergedPlineExit(msg)
         if not isConsDone:
             msg = "RSE: %s In non-final state in Rucio Consistency Monitor. " % rseName
-            msg += "Skipping it in the current run."
-            self.logger.warning(msg)
-            raise MSUnmergedPlineExit(msg)
-        if isRootFailed:
-            msg = "RSE: %s With failed root in Rucio Consistency Monitor. " % rseName
             msg += "Skipping it in the current run."
             self.logger.warning(msg)
             raise MSUnmergedPlineExit(msg)

@@ -1,3 +1,7 @@
+1.5.5.pre5 to 1.5.5.pre6:
+  - Remove check of RSE dump root_failed attr in MSUnmerged (Alan Malta Rodrigues) #10894
+
+
 1.5.5.pre4 to 1.5.5.pre5:
   - Temporary fix for the StatusChangeTasks ReqMgr2 thread (Alan Malta Rodrigues) #10693
   - Keep workflows in running-open if they still have Available/Acquired GQEs (Alan Malta Rodrigues) #10693

@@ -27,6 +27,9 @@ except ImportError:
     # in case we do not have gfal2 installed
     print("FAILED to import gfal2. Use it only in emulateGfal2=True mode!!!")
     gfal2 = None
+
+from pymongo import IndexModel
+
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
 from WMCore.MicroService.MSCore import MSCore
@@ -34,6 +37,7 @@ from WMCore.MicroService.MSUnmerged.MSUnmergedRSE import MSUnmergedRSE
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 # from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
+from WMCore.Database.MongoDB import MongoDB
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
 from Utils.TwPrint import twFormat
@@ -95,12 +99,30 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("skipRSEs", [])
         self.msConfig.setdefault("rseExpr", "*")
         self.msConfig.setdefault("enableRealMode", False)
-        self.msConfig.setdefault("dumpRSE", False)
+        self.msConfig.setdefault("fullRSEToDB", False)
         self.msConfig.setdefault("gfalLogLevel", 'normal')
         self.msConfig.setdefault("dirFilterIncl", [])
         self.msConfig.setdefault("dirFilterExcl", [])
         self.msConfig.setdefault("emulateGfal2", False)
         self.msConfig.setdefault("filesToDeleteSliceSize", 100)
+
+        self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
+        self.msConfig.setdefault("mongoDBPort", 27017)
+        self.msConfig.setdefault("mongoDB", 'msUnmergedDB')
+
+        msUnmergedIndex = IndexModel('name', unique=True)
+        msUnmergedDBConfig = {
+            'database': self.msConfig['mongoDB'],
+            'server': self.msConfig['mongoDBUrl'],
+            'port': self.msConfig['mongoDBPort'],
+            'logger': self.logger,
+            'create': True,
+            'collections': [('msUnmergedColl', msUnmergedIndex)]}
+
+        mongoClt = MongoDB(**msUnmergedDBConfig)
+        self.msUnmergedDB = getattr(mongoClt, self.msConfig['mongoDB'])
+        self.msUnmergedColl = self.msUnmergedDB['msUnmergedColl']
+
         if self.msConfig['emulateGfal2'] is False and gfal2 is None:
             msg = "Failed to import gfal2 library while it's not "
             msg += "set to emulate it. Crashing the service!"
@@ -118,7 +140,8 @@ class MSUnmerged(MSCore):
         # Building all the Pipelines:
         pName = 'plineUnmerged'
         self.plineUnmerged = Pipeline(name=pName,
-                                      funcLine=[Functor(self.updateRSETimestamps, start=True, end=False),
+                                      funcLine=[Functor(self.getRSEFromMongoDB),
+                                                Functor(self.updateRSETimestamps, start=True, end=False),
                                                 Functor(self.consRecordAge),
                                                 Functor(self.getUnmergedFiles),
                                                 Functor(self.filterUnmergedFiles),
@@ -126,7 +149,8 @@ class MSUnmerged(MSCore):
                                                 Functor(self.cleanRSE),
                                                 Functor(self.updateRSECounters, pName),
                                                 Functor(self.updateRSETimestamps, start=False, end=True),
-                                                Functor(self.purgeRseObj, dumpRSE=self.msConfig['dumpRSE'])])
+                                                Functor(self.uploadRSEToMongoDB),
+                                                Functor(self.purgeRseObj)])
         # Initialization of the deleted files counters:
         self.rseCounters = {}
         self.plineCounters = {}
@@ -577,17 +601,18 @@ class MSUnmerged(MSCore):
         return rse
 
     # @profile
-    def purgeRseObj(self, rse, dumpRSE=False):
+    def purgeRseObj(self, rse, dumpRSEtoLog=False):
         """
         Cleaning all the records in an RSE object. The final method to be used
         before an RSE exits a pipeline.
         :param rse: The RSE to be checked
+        :param dumpRSEToLog: Dump the whole RSEobject into the service log.
         :return:    rse
         """
         msg = "\n----------------------------------------------------------"
         msg += "\nMSUnmergedRSE: \n%s"
         msg += "\n----------------------------------------------------------"
-        if dumpRSE:
+        if dumpRSEtoLog:
             self.logger.debug(msg, pformat(rse))
         else:
             self.logger.debug(msg, twFormat(rse, maxLength=6))
@@ -604,17 +629,22 @@ class MSUnmerged(MSCore):
         rseName = rse['name']
         currTime = time()
 
+        # Initialize the timestamps in both MSUnmerged and MSUnmergedRSE objects
         if rseName not in self.rseTimestamps:
-            self.rseTimestamps[rseName] = {'prevStartTime': 0.0,
-                                           'startTime': 0.0,
-                                           'prevEndtime': 0.0,
-                                           'endTime': 0.0}
+            # NOTE: Reading the timestamps from the rse for the first time.
+            #       This will reset them if no previous record for the RSE in MongoDB
+            #       or will set them to the values fetched from MongoDB, provided
+            #       that the RSE object has been updated from the database.
+            self.rseTimestamps[rseName] = rse['timestamps']
+
+        # Update the timestamps:
         if start:
             self.rseTimestamps[rseName]['prevStartTime'] = self.rseTimestamps[rseName]['startTime']
             self.rseTimestamps[rseName]['startTime'] = currTime
         if end:
             self.rseTimestamps[rseName]['prevEndtime'] = self.rseTimestamps[rseName]['endTime']
             self.rseTimestamps[rseName]['endtime'] = currTime
+        rse['timestamps'] = self.rseTimestamps[rseName]
         return rse
 
     def updateRSECounters(self, rse, pName):
@@ -682,6 +712,24 @@ class MSUnmerged(MSCore):
             self.plineCounters[plineName]['rsesProcessed'] = 0
             self.plineCounters[plineName]['rsesCleaned'] = 0
         return
+
+    def getRSEFromMongoDB(self, rse):
+        """
+        Updates the record for an RSE from MongoDB
+        :param rse: The RSE object to work on
+        :return:    rse
+        """
+        rse.readRSEFromMongoDB(self.msUnmergedColl)
+        return rse
+
+    def uploadRSEToMongoDB(self, rse, fullRSEToDB=False, overwrite=True):
+        """
+        Updates the record for an RSE at MongoDB
+        :param rse: The RSE object to work on
+        :return:    rse
+        """
+        rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite)
+        return rse
 
     # @profile
     def getRSEList(self):

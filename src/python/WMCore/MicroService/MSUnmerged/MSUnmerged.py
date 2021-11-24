@@ -29,6 +29,7 @@ except ImportError:
     gfal2 = None
 
 from pymongo import IndexModel
+from pymongo.errors  import NotMasterError
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
@@ -109,6 +110,7 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 27017)
         self.msConfig.setdefault("mongoDB", 'msUnmergedDB')
+        self.msConfig.setdefault("mongoDBRetryCount", 3)
         self.msConfig.setdefault("mongoDBReplicaset", None)
 
         msUnmergedIndex = IndexModel('name', unique=True)
@@ -163,6 +165,9 @@ class MSUnmerged(MSCore):
         # The basic /store/unmerged regular expression:
         self.regStoreUnmergedLfn = re.compile("^/store/unmerged/.*$")
         self.regStoreUnmergedPfn = re.compile("^.+/store/unmerged/.*$")
+
+        # log msConfig
+        self.logger.info("msConfig: %s", pformat(self.msConfig))
 
     # @profile
     def execute(self):
@@ -415,7 +420,7 @@ class MSUnmerged(MSCore):
 
     def consRecordAge(self, rse):
         """
-        A method to heck the duration of the consistency record for the RSE
+        A method to check the duration of the consistency record for the RSE
         :param rse: The RSE to be checked
         :return:    rse or raises MSUnmergedPlineExit
         """
@@ -431,15 +436,38 @@ class MSUnmerged(MSCore):
         isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
         if not isConsNewer:
             msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. " % rseName
-            msg += "Skipping it in the current run."
-            self.logger.info(msg)
-            raise MSUnmergedPlineExit(msg)
+            if 'isClean' in rse and rse['isClean']:
+                msg += "And the RSE has been cleaned during the last Rucio Consistency Monitor polling cycle."
+                msg += "Skipping it in the current run."
+                self.logger.info(msg)
+                self.updateRSETimestamps(rse, start=False, end=True)
+                raise MSUnmergedPlineExit(msg)
+            else:
+                msg += "But the RSE has NOT been cleaned during the last Rucio Consistency Monitor polling cycle."
+                msg += "Retrying cleanup in the current run."
+                self.logger.info(msg)
         if not isConsDone:
             msg = "RSE: %s In non-final state in Rucio Consistency Monitor. " % rseName
             msg += "Skipping it in the current run."
             self.logger.warning(msg)
+            self.updateRSETimestamps(rse, start=False, end=True)
             raise MSUnmergedPlineExit(msg)
 
+        if isConsNewer and isConsDone:
+            # NOTE: If we've got to this point then we have a brand new record for
+            #       the RSE in RucioConMOn and we are then about to start a new RSE cleanup
+            #       so we will need to wipe out all but the timestamps from both
+            #       the current object and the MongoDB record for the object.
+            msg = "RSE: %s With new consistency record in Rucio Consistency Monitor. " % rseName
+            msg += "Resetting RSE and starting a fresh cleanup process in the current run."
+            self.logger.info(msg)
+            try:
+                rse.resetRSE(self.msUnmergedColl, keepTimestamps=True, retryCount=self.msConfig['mongoDBRetryCount'])
+            except NotMasterError:
+                msg = "Could not reset RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
+                msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
+                msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
+                raise MSUnmergedPlineExit(msg)
         return rse
 
     # @profile
@@ -554,6 +582,7 @@ class MSUnmerged(MSCore):
             rse['counters']['dirsToDeleteAll'] = len(rse['files']['toDelete'])
             return rse
 
+        self.logger.info("rse: %s", twFormat(rse, maxLength=8))
         # If we are here, then there are service filters...
         for dirName in rse['dirs']['toDelete']:
             # apply exclusion filter
@@ -617,7 +646,7 @@ class MSUnmerged(MSCore):
         if dumpRSEtoLog:
             self.logger.debug(msg, pformat(rse))
         else:
-            self.logger.debug(msg, twFormat(rse, maxLength=6))
+            self.logger.debug(msg, twFormat(rse, maxLength=8))
         rse.clear()
         return rse
 
@@ -639,13 +668,16 @@ class MSUnmerged(MSCore):
             #       that the RSE object has been updated from the database.
             self.rseTimestamps[rseName] = rse['timestamps']
 
+        # # Read last RucioConMon stat time for this RSE:
+        # self.rseTimestamps[rseName]['rseConsStatsTime'] = self.rseConsStats[rseName]['startTime']
+
         # Update the timestamps:
         if start:
             self.rseTimestamps[rseName]['prevStartTime'] = self.rseTimestamps[rseName]['startTime']
             self.rseTimestamps[rseName]['startTime'] = currTime
         if end:
-            self.rseTimestamps[rseName]['prevEndtime'] = self.rseTimestamps[rseName]['endTime']
-            self.rseTimestamps[rseName]['endtime'] = currTime
+            self.rseTimestamps[rseName]['prevEndTime'] = self.rseTimestamps[rseName]['endTime']
+            self.rseTimestamps[rseName]['endTime'] = currTime
         rse['timestamps'] = self.rseTimestamps[rseName]
         return rse
 
@@ -730,7 +762,13 @@ class MSUnmerged(MSCore):
         :param rse: The RSE object to work on
         :return:    rse
         """
-        rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite)
+        try:
+            rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite, retryCount=self.msConfig['mongoDBRetryCount'])
+        except NotMasterError:
+            msg = "Could not write RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
+            msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
+            msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
+            raise MSUnmergedPlineExit(msg)
         return rse
 
     # @profile

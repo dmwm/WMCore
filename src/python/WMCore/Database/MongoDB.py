@@ -19,10 +19,12 @@ class MongoDB(object):
                  database=None,
                  server=None,
                  port=None,
+                 replicaset=None,
                  create=False,
                  collections=None,
                  testIndexes=False,
-                 logger=None):
+                 logger=None,
+                 **kwargs):
         """
         :databases:   A database Name to connect to
         :server:      The server url (see https://docs.mongodb.com/manual/reference/connection-string/)
@@ -40,7 +42,10 @@ class MongoDB(object):
         self.port = port # 8230
         self.logger = logger
         try:
-            self.client = MongoClient(self.server, self.port)
+            if replicaset:
+                self.client = MongoClient(self.server, self.port, replicaset=replicaset, **kwargs )
+            else:
+                self.client = MongoClient(self.server, self.port, **kwargs)
             self.client.server_info()
         except Exception as ex:
             msg = "Could not connect to MongoDB server: %s\n%s" % (self.server, str(ex))

@@ -109,12 +109,14 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 27017)
         self.msConfig.setdefault("mongoDB", 'msUnmergedDB')
+        self.msConfig.setdefault("mongoDBReplicaset", None)
 
         msUnmergedIndex = IndexModel('name', unique=True)
         msUnmergedDBConfig = {
             'database': self.msConfig['mongoDB'],
             'server': self.msConfig['mongoDBUrl'],
             'port': self.msConfig['mongoDBPort'],
+            'replicaset': self.msConfig['mongoDBReplicaset'],
             'logger': self.logger,
             'create': True,
             'collections': [('msUnmergedColl', msUnmergedIndex)]}

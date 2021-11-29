@@ -22,6 +22,7 @@ from WMCore.Storage.StageOutMgr import StageOutMgr
 from WMCore.WMRuntime.Tools.Scram import Scram, getSingleScramArch, isCMSSWSupported
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 
 class LogCollect(Executor):
@@ -65,6 +66,9 @@ class LogCollect(Executor):
         overrides = {}
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
+            if overrides.get('logRedirectSiteLocalConfig', None):
+                siteCfg = loadSiteLocalConfig()
+                overrides.update(siteCfg.localStageOut)
 
         # Set wait to over an hour
         waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))

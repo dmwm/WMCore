@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 """
 Rucio Service class developed on top of the native Rucio Client
@@ -244,10 +244,13 @@ class Rucio(object):
         It used to mimic the same PhEDEx wrapper API, listing all the
         current locations where the provided input data is.
 
-        :kwargs: either a dataset or a block name has to be provided. Not both!
+        :param kwargs:  Supported keyword arguments:
+           * block:    List of either dataset or block names. Not both!,
+           * deep:     Whether or not to lookup for replica info at file level
         :return: a list of dictionaries with replica information
         """
         kwargs.setdefault("scope", "cms")
+        kwargs.setdefault("deep", False)
 
         blockNames = []
         result = []
@@ -268,10 +271,17 @@ class Rucio(object):
             inputDids.append({"scope": kwargs["scope"], "type": "DATASET", "name": block})
 
         resultDict = {}
-        for item in self.cli.list_dataset_replicas_bulk(inputDids):
-            resultDict.setdefault(item['name'], [])
-            if item['state'].upper() == 'AVAILABLE':
-                resultDict[item['name']].append(item['rse'])
+        if kwargs['deep']:
+            for did in inputDids:
+                for item in self.cli.list_dataset_replicas(kwargs["scope"], did["name"], deep=kwargs['deep']):
+                    resultDict.setdefault(item['name'], [])
+                    if item['state'].upper() == 'AVAILABLE':
+                        resultDict[item['name']].append(item['rse'])            
+        else:
+            for item in self.cli.list_dataset_replicas_bulk(inputDids):
+                resultDict.setdefault(item['name'], [])
+                if item['state'].upper() == 'AVAILABLE':
+                    resultDict[item['name']].append(item['rse'])
 
         # Finally, convert it to a list of dictionaries, like:
         # [{"name": "block_A", "replica": ["nodeA", "nodeB"]},

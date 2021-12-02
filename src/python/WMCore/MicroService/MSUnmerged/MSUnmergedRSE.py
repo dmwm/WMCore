@@ -3,7 +3,6 @@ File       : MSUnmergedRSE.py
 Description: Provides a document Template for the MSUnmerged MicroServices
 """
 
-from pymongo import ReturnDocument
 from pymongo.errors  import NotMasterError
 # from pymongo.results import results as MongoResults
 

@@ -224,6 +224,15 @@ class RucioTest(EmulatedUnitTestCase):
         for item in res:
             self.assertTrue(len(item['replica']) > 0)
 
+        #Setting  deep=True should yield the same results
+        res = self.myRucio.getReplicaInfoForBlocks(dataset=DSET, deep=True)
+        self.assertTrue(isinstance(res, list))
+        self.assertTrue(len(res) >= 1)  # Again, there are 11 replicas
+        blocks = [item['name'] for item in res]
+        self.assertTrue(BLOCK in blocks)
+        for item in res:
+            self.assertTrue(len(item['replica']) > 0)
+
     def testGetPFN(self):
         """
         Test `getPFN` method

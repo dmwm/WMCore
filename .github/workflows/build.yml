@@ -1,0 +1,90 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.x', 'pypy-3.7' ]
+    steps:
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: |
+          #python3 -m pip install -r requirements_py3.txt
+          python3 setup.py install_system -s reqmgr2ms --prefix=install
+          tar cfz reqmgr2ms.targz $PWD/install
+
+    - name: Get the Ref
+      id: get-ref
+      uses: ankitvgupta/ref-to-tag-action@master
+      with:
+        ref: ${{ github.ref }}
+        head_ref: ${{ github.head_ref }}
+
+    - name: Build image
+      run: |
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
+        cat Dockerfile
+        docker build . --tag registry.cern.ch/cmsweb/reqmgr2ms
+
+    - name: Login to registry.cern.ch
+      uses: docker/login-action@v1.6.0
+      with:
+        registry: registry.cern.ch
+        username: ${{ secrets.CERN_LOGIN }}
+        password: ${{ secrets.CERN_TOKEN }}
+
+    - name: Publish image to registry.cern.ch
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.CERN_LOGIN }}
+        password: ${{ secrets.CERN_TOKEN }}
+        registry: registry.cern.ch
+        repository: cmsweb/reqmgr2ms
+        tag_with_ref: true
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload amd64 binary
+      id: upload-auth-proxy-server
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./reqmgr2ms.tar.gz
+        asset_name: reqmgr2ms.tar.gz
+        asset_content_type: application/octet-stream
+
+#     - name: Push new image to k8s
+#       run: |
+#         curl -ksLO https://raw.githubusercontent.com/vkuznet/imagebot/main/imagebot.sh
+#         sed -i -e "s,COMMIT,${{github.sha}},g" -e "s,REPOSITORY,${{github.repository}},g" -e "s,NAMESPACE,wma,g" -e "s,TAG,${{steps.get-ref.outputs.tag}},g" -e "s,IMAGE,registry.cern.ch/cmsweb/reqmgr2ms,g" -e "s,SERVICE,reqmgr2ms,g" -e "s,HOST,${{secrets.IMAGEBOT_URL}},g" imagebot.sh
+#         chmod +x imagebot.sh
+#         cat imagebot.sh
+#         sh ./imagebot.sh

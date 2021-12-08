@@ -1,14 +1,15 @@
+1.5.6.pre1 to 1.5.6:
+
+
 1.5.5 to 1.5.6.pre1:
-  - Pylint fixes (Todor Ivanov) 
-  - Adapt MSUnmerged to sync RSE data with MongoDB properly (Todor Ivanov) 
-  - Add ddep flag test to Rucio_t.testGetReplicaInfoForBlocks() (germanfgv) 
-  - Add --deep option to getReplicaInfoForBlocks. Add slicing to deleteBlocks (germanfgv) 
-  - Use siteLocalConfig to get LogCollect stage out params (germanfgv) 
-  - Update CMSCouchapp version for python3 stack (Alan Malta Rodrigues) 
-  - Add replicaset opotion to the MongoDB wrapper. (Todor Ivanov) 
-  - Initial MongoDB setup. (Todor Ivanov) 
-  - Update request state diagram with archival done by MS (Alan Malta Rodrigues) 
-  - Fix path for Py2/Py3 WMAgent logs (Alan Malta Rodrigues) 
+  - Adapt MSUnmerged to sync RSE data with MongoDB properly (Todor Ivanov) #10906
+  - Add --deep option to getReplicaInfoForBlocks. Add slicing to deleteBlocks (germanfgv) #10902
+  - Use siteLocalConfig to get LogCollect stage out params (germanfgv) #10905
+  - Update CMSCouchapp version for python3 stack (Alan Malta Rodrigues) #10910
+  - Add replicaset opotion to the MongoDB wrapper. (Todor Ivanov) #10908
+  - Initial MongoDB setup. (Todor Ivanov) #10895
+  - Update request state diagram with archival done by MS (Alan Malta Rodrigues) #10899
+  - Fix path for Py2/Py3 WMAgent logs (Alan Malta Rodrigues) #10897
 
 
 1.5.5.pre6 to 1.5.5:

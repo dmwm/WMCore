@@ -29,7 +29,7 @@ class MSUnmergedRSE(dict):
         #       protected paths have been filtered out and the path been cut to the
         #       proper depth (as provided by the WMStats Protected LFNs interface),
         #       then the final number (but on a directory level rather than on
-        #       files granularity level) will be put in the counter 'toDelete'
+        #       files granularity level) will be put in the counter 'dirsToDelete'
 
         # NOTE: The type of msUnmergedRSE['files']['toDelete'] is a dictionary of
         #       of generators holding the filters for the files to be deleted e.g.:
@@ -47,19 +47,24 @@ class MSUnmergedRSE(dict):
                            'prevEndTime': 0.0,
                            'endTime': 0.0},
             "counters": {"totalNumFiles": 0,
-                         "dirsToDeleteAll": 0,
+                         "totalNumDirs": 0,
                          "dirsToDelete": 0,
                          "filesToDelete": 0,
-                         "deletedSuccess": 0,
-                         "deletedFail": 0},
+                         "filesDeletedSuccess": 0,
+                         "filesDeletedFail": 0,
+                         "dirsDeletedSuccess": 0,
+                         "dirsDeletedFail": 0,
+                         "gfalErrors": {}},
             "files": {"allUnmerged": [],
                       "toDelete": {},
                       "protected": {},
-                      "deletedSuccess": [],
-                      "deletedFail": []},
+                      "deletedSuccess": set(),
+                      "deletedFail": set()},
             "dirs": {"allUnmerged": set(),
                      "toDelete": set(),
-                     "protected": set()}
+                     "protected": set(),
+                     "deletedSuccess": set(),
+                     "deletedFail": set()}
         }
         return defaultDoc
 
@@ -99,8 +104,11 @@ class MSUnmergedRSE(dict):
 
         # update the list fields read from MongoDB back to strictly pythonic `set`s
         if mongoRecord:
-            for dirKey, dirList in mongoRecord['dirs'].items():
-                mongoRecord['dirs'][dirKey] = set(dirList)
+            for field in mongoRecord:
+                if field == 'dirs' or field == 'files':
+                    for fieldKey, fieldList in mongoRecord[field].items():
+                        if isinstance(self[field][fieldKey], set):
+                            mongoRecord[field][fieldKey] = set(fieldList)
             self.update(mongoRecord)
             return True
         else:
@@ -139,11 +147,14 @@ class MSUnmergedRSE(dict):
                 if field == 'dirs':
                     updateFields[field] = {}
                     for dirKey, dirSet in self[field].items():
-                        updateFields[field][dirKey] = list(dirSet)
+                        if isinstance(dirSet, set):
+                            updateFields[field][dirKey] = list(dirSet)
                 elif field == 'files':
                     updateFields[field] = {}
                     for fileKey, fileSet in self[field].items():
-                        if isinstance(self[field][fileKey], dict):
+                        if isinstance(fileSet, set):
+                            updateFields[field][fileKey] = list(fileSet)
+                        elif isinstance(fileSet, dict):
                             # Iterating through the filterNames here, and recording only empty lists for filter values
                             # NOTE: We can either execute the filter and write every single file in the database
                             #       or if we need it we may simply use the filterName to recreate it.
@@ -165,12 +176,12 @@ class MSUnmergedRSE(dict):
                 break
             except NotMasterError:
                 if retryCount:
-                    msg = "Failed write operation to MongoDB. %s retries left."
-                    self.logger.warning(msg, retryCount)
+                    # msg = "Failed write operation to MongoDB. %s retries left."
+                    # self.logger.warning(msg, retryCount)
                     retryCount -= 1
                 else:
-                    msg = "Failed write operation to MongoDB. All retries exhausted."
-                    self.logger.warning(msg, retryCount)
+                    # msg = "Failed write operation to MongoDB. All retries exhausted."
+                    # self.logger.warning(msg, retryCount)
                     raise
 
         # NOTE: If and `upsert` took place the modified_count for both operations is 0

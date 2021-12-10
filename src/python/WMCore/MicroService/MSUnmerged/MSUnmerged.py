@@ -257,7 +257,7 @@ class MSUnmerged(MSCore):
         """
 
         pline = self.plineUnmerged
-        self.resetCounters(plineName=pline.name)
+        self.resetServiceCounters(plineName=pline.name)
         self.plineCounters[pline.name]['totalNumRses'] = len(rseList)
 
         for rseName in rseList:
@@ -282,7 +282,7 @@ class MSUnmerged(MSCore):
         return self.plineCounters[pline.name]['totalNumRses'], \
             self.plineCounters[pline.name]['totalNumFiles'], \
             self.plineCounters[pline.name]['rsesCleaned'], \
-            self.plineCounters[pline.name]['deletedSuccess']
+            self.plineCounters[pline.name]['filesDeletedSuccess']
 
     # @profile
     def cleanRSE(self, rse):
@@ -301,13 +301,16 @@ class MSUnmerged(MSCore):
             self.logger.exception(msg)
             raise MSUnmergedPlineExit(msg)
 
+        filesToDeleteCurrRSE = 0
+
         # Start cleaning one directory at a time:
         for dirLfn, fileLfnGen in rse['files']['toDelete'].items():
-            if self.msConfig['limitFilesPerRSE'] < 0 or \
-               rse['counters']['filesToDelete'] < self.msConfig['limitFilesPerRSE']:
+            if dirLfn in rse['dirs']['deletedSuccess']:
+                self.logger.info("RSE: %s, dir: %s already successfully deleted.", rse['name'], dirLfn)
+                continue
 
-                # First increment the dir counter:
-                rse['counters']['dirsToDelete'] += 1
+            if self.msConfig['limitFilesPerRSE'] < 0 or \
+               filesToDeleteCurrRSE < self.msConfig['limitFilesPerRSE']:
 
                 # Now we consume the rse['files']['toDelete'][dirLfn] generator
                 # upon that no values will be left in it. In case we need it again
@@ -328,36 +331,58 @@ class MSUnmerged(MSCore):
                         filePfn = rse['pfnPrefix'] + fileLfn
                         pfnList.append(filePfn)
 
-                rse['counters']['filesToDelete'] += len(pfnList)
+                filesToDeleteCurrRSE += len(pfnList)
                 msg = "\nRSE: %s \nDELETING: %s."
                 msg += "\nPFN list with: %s entries: \n%s"
                 self.logger.debug(msg, rse['name'], dirLfn, len(pfnList), twFormat(pfnList, maxLength=4))
 
                 if self.msConfig['enableRealMode']:
-                    try:
-                        # execute the actual deletion in bulk - full list of files per directory
+                    # execute the actual deletion in bulk - full list of files per directory
 
-                        deletedSuccess = 0
-                        for pfnSlice in list(grouper(pfnList, self.msConfig["filesToDeleteSliceSize"])):
+                    deletedSuccess = 0
+                    for pfnSlice in list(grouper(pfnList, self.msConfig["filesToDeleteSliceSize"])):
+                        try:
                             delResult = ctx.unlink(pfnSlice)
                             # Count all the successfully deleted files (if a deletion was
                             # successful a value of None is put in the delResult list):
-                            deletedSuccess += sum([1 for pfnStatus in delResult if pfnStatus is None])
+                            self.logger.debug("RSE: %s, Dir: %s, delResult: %s",
+                                              rse['name'], dirLfn, pformat(delResult))
+                            for gfalErr in delResult:
+                                if gfalErr is None:
+                                    deletedSuccess += 1
+                                else:
+                                    errMessage = os.strerror(gfalErr.code)
+                                    rse['counters']['gfalErrors'].setdefault(errMessage, 0)
+                                    rse['counters']['gfalErrors'][errMessage] += 1
+                        except Exception as ex:
+                            msg = "Error while cleaning RSE: %s. "
+                            msg += "Will retry in the next cycle. Err: %s"
+                            self.logger.exception(msg, rse['name'], str(ex))
 
-                        self.logger.debug("RSE: %s, Dir: %s, deletedSuccess: %s",
-                                          rse['name'], dirLfn, deletedSuccess)
-                        rse['counters']['deletedSuccess'] = deletedSuccess
+                    self.logger.info("RSE: %s, Dir: %s, filesDeletedSuccess: %s",
+                                      rse['name'], dirLfn, deletedSuccess)
+                    rse['counters']['filesDeletedSuccess'] += deletedSuccess
 
-                        # Now clean the whole branch
-                        self.logger.debug("Purging dirEntry: %s:\n", dirPfn)
-                        purgeSuccess = self._purgeTree(ctx, dirPfn)
-                        if not purgeSuccess:
-                            msg = "RSE: %s Failed to purge nonEmpty directory: %s"
-                            self.logger.error(msg, rse['name'], dirPfn)
-                    except Exception as ex:
-                        msg = "Error while cleaning RSE: %s. "
-                        msg += "Will retry in the next cycle. Err: %s"
-                        self.logger.warning(msg, rse['name'], str(ex))
+                    # Now clean the whole branch
+                    self.logger.debug("Purging dirEntry: %s:\n", dirPfn)
+                    purgeSuccess = self._purgeTree(ctx, dirPfn)
+                    if purgeSuccess:
+                        rse['dirs']['deletedSuccess'].add(dirLfn)
+                        rse['counters']['dirsDeletedSuccess'] = len(rse['dirs']['deletedSuccess'])
+                        # if dirLfn in rse['dirs']['toDelete']:
+                        #     rse['dirs']['toDelete'].remove(dirLfn)
+                        if dirLfn in rse['dirs']['deletedFail']:
+                            rse['dirs']['deletedFail'].remove(dirLfn)
+                        msg = "RSE: %s  Success deleting directory: %s"
+                        self.logger.info(msg, rse['name'], dirPfn)
+                    else:
+                        rse['dirs']['deletedFail'].add(dirLfn)
+                        rse['counters']['dirsDeletedFail'] = len(rse['dirs']['deletedFail'])
+                        msg = "RSE: %s Failed to purge directory: %s"
+                        self.logger.error(msg, rse['name'], dirPfn)
+            else:
+                msg = "RSE: %s reached limit of files per RSE to be deleted. Skipping directory: %s. It will be retried on the next cycle."
+                self.logger.warning(msg, rse['name'], dirLfn)
         rse['isClean'] = self._checkClean(rse)
 
         return rse
@@ -369,44 +394,60 @@ class MSUnmerged(MSCore):
         :param ctx:  The gfal2 context object
         :return:     Bool: True if it managed to purge everything, False otherwise
         """
-        successList = []
+        # NOTE: It deletes only directories and does not try to unlink any file.
+
+        # First test if baseDirPfn is actually a directory entry:
+        try:
+            entryStat = ctx.stat(baseDirPfn)
+            if not stat.S_ISDIR(entryStat.st_mode):
+                self.logger.error("The base pfn: %s is not a directory entry.", baseDirPfn)
+                return False
+        except gfal2.GError as gfalExc:
+            if gfalExc.code == errno.ENOENT:
+                self.logger.warning("MISSING baseDir: %s", baseDirPfn)
+                return True
+            else:
+                self.logger.error("FAILED to open baseDir: %s: gfalException: %s", baseDirPfn, str(gfalExc))
+                return False
 
         if baseDirPfn[-1] != '/':
             baseDirPfn += '/'
 
+        # Second recursively iterate down the tree:
+        successList = []
         for dirEntry in ctx.listdir(baseDirPfn):
             if dirEntry in ['.', '..']:
                 continue
             dirEntryPfn = baseDirPfn + dirEntry
             try:
                 entryStat = ctx.stat(dirEntryPfn)
-            except gfal2.GError:
-                e = sys.exc_info()[1]
-                if e.code == errno.ENOENT:
-                    self.logger.error("MISSING dirEntry: %s", dirEntryPfn)
-                    successList.append(False)
-                    return all(successList)
+            except gfal2.GError as gfalExc:
+                if gfalExc.code == errno.ENOENT:
+                    self.logger.warning("MISSING dirEntry: %s", dirEntryPfn)
+                    successList.append(True)
                 else:
-                    self.logger.error("FAILED dirEntry: %s", dirEntryPfn)
-                    raise
+                    self.logger.error("FAILED to open dirEntry: %s: gfalException: %s", dirEntryPfn, str(gfalExc))
+                    successList.append(False)
+
             if stat.S_ISDIR(entryStat.st_mode):
                 successList.append(self._purgeTree(ctx, dirEntryPfn))
 
+        # Finally remove the baseDir:
         try:
+            self.logger.debug("RM baseDir: %s", baseDirPfn)
             success = ctx.rmdir(baseDirPfn)
             # for gfal2 rmdir() exit status of 0 is success
             if success == 0:
                 successList.append(True)
             else:
                 successList.append(False)
-            self.logger.debug("RM baseDir: %s", baseDirPfn)
-        except gfal2.GError:
-            e = sys.exc_info()[1]
-            if e.code == errno.ENOENT:
-                self.logger.error("MISSING baseDir: %s", baseDirPfn)
+        except gfal2.GError as gfalExc:
+            if gfalExc.code == errno.ENOENT:
+                self.logger.warning("MISSING baseDir: %s", baseDirPfn)
+                successList.append(True)
             else:
-                self.logger.error("FAILED basedir: %s", baseDirPfn)
-                raise
+                self.logger.error("FAILED to remove baseDir: %s: gfalException: %s", baseDirPfn, str(gfalExc))
+                successList.append(False)
         return all(successList)
 
     def _checkClean(self, rse):
@@ -416,7 +457,7 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to be checked
         :return:    Bool: True if all files found have been deleted, False otherwise
         """
-        return rse['counters']['filesToDelete'] == rse['counters']['deletedSuccess']
+        return rse['counters']['dirsToDelete'] == rse['counters']['dirsDeletedSuccess']
 
     def consRecordAge(self, rse):
         """
@@ -443,7 +484,7 @@ class MSUnmerged(MSCore):
                 self.updateRSETimestamps(rse, start=False, end=True)
                 raise MSUnmergedPlineExit(msg)
             else:
-                msg += "But the RSE has NOT been cleaned during the last Rucio Consistency Monitor polling cycle."
+                msg += "But the RSE has NOT been fully cleaned during the last Rucio Consistency Monitor polling cycle."
                 msg += "Retrying cleanup in the current run."
                 self.logger.info(msg)
         if not isConsDone:
@@ -468,6 +509,9 @@ class MSUnmerged(MSCore):
                 msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
                 msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
                 raise MSUnmergedPlineExit(msg)
+
+        # Before returning the RSE update Consistency StatTime:
+        rse['timestamps']['rseConsStatTime'] = self.rseConsStats[rseName]['end_time']
         return rse
 
     # @profile
@@ -492,7 +536,6 @@ class MSUnmerged(MSCore):
         """
         rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
         for filePath in rse['files']['allUnmerged']:
-            rse['counters']['totalNumFiles'] += 1
             # Check if what we start with is under /store/unmerged/*
             if self.regStoreUnmergedLfn.match(filePath):
                 # Cut the path to the deepest level known to WMStats protected LFNs
@@ -501,6 +544,9 @@ class MSUnmerged(MSCore):
                 if self.regStoreUnmergedLfn.match(dirPath):
                     # Add it to the set of allUnmerged
                     rse['dirs']['allUnmerged'].add(dirPath)
+
+        rse['counters']['totalNumFiles'] = len(rse['files']['allUnmerged'])
+        rse['counters']['totalNumDirs'] = len(rse['dirs']['allUnmerged'])
         return rse
 
     def _cutPath(self, filePath):
@@ -547,7 +593,7 @@ class MSUnmerged(MSCore):
 
         # The following check may seem redundant, but better stay safe than sorry
         if not (rse['dirs']['toDelete'] | rse['dirs']['protected']) == rse['dirs']['allUnmerged']:
-            rse['counters']['toDelete'] = -1
+            rse['counters']['dirsToDelete'] = -1
             msg = "Incorrect set check while trying to estimate the final set for deletion."
             raise MSUnmergedPlineExit(msg)
 
@@ -579,10 +625,10 @@ class MSUnmerged(MSCore):
         if not dirFilterIncl and not dirFilterExcl:
             for dirName in rse['dirs']['toDelete']:
                 rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-            rse['counters']['dirsToDeleteAll'] = len(rse['files']['toDelete'])
+            rse['counters']['dirsToDelete'] = len(rse['files']['toDelete'])
+            self.logger.info("RSE: %s: %s", rse['name'], twFormat(rse, maxLength=8))
             return rse
 
-        self.logger.info("rse: %s", twFormat(rse, maxLength=8))
         # If we are here, then there are service filters...
         for dirName in rse['dirs']['toDelete']:
             # apply exclusion filter
@@ -603,8 +649,12 @@ class MSUnmerged(MSCore):
                     rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
                     break
 
+        # Now apply the filters back to the set in rse['dirs']['toDelete']
+        rse['dirs']['toDelete'] = set(rse['files']['toDelete'].keys())
+
         # Update the counters:
-        rse['counters']['dirsToDeleteAll'] = len(rse['files']['toDelete'])
+        rse['counters']['dirsToDelete'] = len(rse['files']['toDelete'])
+        self.logger.info("RSE: %s: %s", rse['name'], twFormat(rse, maxLength=8))
         return rse
 
     def getPfn(self, rse):
@@ -690,21 +740,28 @@ class MSUnmerged(MSCore):
         :return:      rse
         """
         rseName = rse['name']
-        self.resetCounters(rseName=rseName)
+        self.resetServiceCounters(rseName=rseName)
         self.rseCounters[rseName]['totalNumFiles'] = rse['counters']['totalNumFiles']
-        self.rseCounters[rseName]['deletedSuccess'] = rse['counters']['deletedSuccess']
-        self.rseCounters[rseName]['deletedFail'] = rse['counters']['deletedFail']
+        self.rseCounters[rseName]['totalNumDirs'] = rse['counters']['totalNumDirs']
+        self.rseCounters[rseName]['filesDeletedSuccess'] = rse['counters']['filesDeletedSuccess']
+        self.rseCounters[rseName]['filesDeletedFail'] = rse['counters']['filesDeletedFail']
+        self.rseCounters[rseName]['dirsDeletedSuccess'] = rse['counters']['dirsDeletedSuccess']
+        self.rseCounters[rseName]['dirsDeletedFail'] = rse['counters']['dirsDeletedFail']
+        self.rseCounters[rseName]['gfalErrors'] = rse['counters']['gfalErrors']
 
         self.plineCounters[pName]['totalNumFiles'] += rse['counters']['totalNumFiles']
-        self.plineCounters[pName]['deletedSuccess'] += rse['counters']['deletedSuccess']
-        self.plineCounters[pName]['deletedFail'] += rse['counters']['deletedFail']
+        self.plineCounters[pName]['totalNumDirs'] += rse['counters']['totalNumDirs']
+        self.plineCounters[pName]['filesDeletedSuccess'] += rse['counters']['filesDeletedSuccess']
+        self.plineCounters[pName]['filesDeletedFail'] += rse['counters']['filesDeletedFail']
+        self.plineCounters[pName]['dirsDeletedSuccess'] += rse['counters']['dirsDeletedSuccess']
+        self.plineCounters[pName]['dirsDeletedFail'] += rse['counters']['dirsDeletedFail']
         self.plineCounters[pName]['rsesProcessed'] += 1
         if rse['isClean']:
             self.plineCounters[pName]['rsesCleaned'] += 1
 
         return rse
 
-    def resetCounters(self, rseName=None, plineName=None):
+    def resetServiceCounters(self, rseName=None, plineName=None):
         """
         A simple function for zeroing the service counters.
         :param rseName:   RSE Name whose counters to be zeroed
@@ -716,8 +773,12 @@ class MSUnmerged(MSCore):
             if rseName not in self.rseCounters:
                 self.rseCounters[rseName] = {}
             self.rseCounters[rseName]['totalNumFiles'] = 0
-            self.rseCounters[rseName]['deletedSuccess'] = 0
-            self.rseCounters[rseName]['deletedFail'] = 0
+            self.rseCounters[rseName]['totalNumDirs'] = 0
+            self.rseCounters[rseName]['filesDeletedSuccess'] = 0
+            self.rseCounters[rseName]['filesDeletedFail'] = 0
+            self.rseCounters[rseName]['dirsDeletedSuccess'] = 0
+            self.rseCounters[rseName]['dirsDeletedFail'] = 0
+            self.rseCounters[rseName]['gfalErrors'] = {}
             return
 
         # Resetting Just the pline counters
@@ -725,8 +786,11 @@ class MSUnmerged(MSCore):
             if plineName not in self.plineCounters:
                 self.plineCounters[plineName] = {}
             self.plineCounters[plineName]['totalNumFiles'] = 0
-            self.plineCounters[plineName]['deletedSuccess'] = 0
-            self.plineCounters[plineName]['deletedFail'] = 0
+            self.plineCounters[plineName]['totalNumDirs'] = 0
+            self.plineCounters[plineName]['filesDeletedSuccess'] = 0
+            self.plineCounters[plineName]['filesDeletedFail'] = 0
+            self.plineCounters[plineName]['dirsDeletedSuccess'] = 0
+            self.plineCounters[plineName]['dirsDeletedFail'] = 0
             self.plineCounters[plineName]['totalNumRses'] = 0
             self.plineCounters[plineName]['rsesProcessed'] = 0
             self.plineCounters[plineName]['rsesCleaned'] = 0
@@ -735,13 +799,20 @@ class MSUnmerged(MSCore):
         # Resetting all counters
         for rseName in self.rseCounters:
             self.rseCounters[rseName]['totalNumFiles'] = 0
-            self.rseCounters[rseName]['deletedSuccess'] = 0
-            self.rseCounters[rseName]['deletedFail'] = 0
+            self.rseCounters[rseName]['totalNumDirs'] = 0
+            self.rseCounters[rseName]['filesDeletedSuccess'] = 0
+            self.rseCounters[rseName]['filesDeletedFail'] = 0
+            self.rseCounters[rseName]['dirsDeletedSuccess'] = 0
+            self.rseCounters[rseName]['dirsDeletedFail'] = 0
+            self.rseCounters[rseName]['dirsDeletedFail'] = 0
 
         for plineName in self.plineCounters:
             self.plineCounters[plineName]['totalNumFiles'] = 0
-            self.plineCounters[plineName]['deletedSuccess'] = 0
-            self.plineCounters[plineName]['deletedFail'] = 0
+            self.plineCounters[plineName]['totalNumDirs'] = 0
+            self.plineCounters[plineName]['filesDeletedSuccess'] = 0
+            self.plineCounters[plineName]['filesDeletedFail'] = 0
+            self.plineCounters[plineName]['dirsDeletedSuccess'] = 0
+            self.plineCounters[plineName]['dirsDeletedFail'] = 0
             self.plineCounters[plineName]['totalNumRses'] = 0
             self.plineCounters[plineName]['rsesProcessed'] = 0
             self.plineCounters[plineName]['rsesCleaned'] = 0
@@ -753,6 +824,7 @@ class MSUnmerged(MSCore):
         :param rse: The RSE object to work on
         :return:    rse
         """
+        self.logger.info("RSE: %s Reading rse data from MongoDB." % rse['name'])
         rse.readRSEFromMongoDB(self.msUnmergedColl)
         return rse
 
@@ -763,6 +835,7 @@ class MSUnmerged(MSCore):
         :return:    rse
         """
         try:
+            self.logger.info("RSE: %s Writing rse data to MongoDB." % rse['name'])
             rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite, retryCount=self.msConfig['mongoDBRetryCount'])
         except NotMasterError:
             msg = "Could not write RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']

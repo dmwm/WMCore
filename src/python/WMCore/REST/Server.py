@@ -19,6 +19,8 @@ from WMCore.REST.Error import *
 from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
 
+from Utils.Utilities import encodeUnicodeToBytes
+
 try:
     from cherrypy.lib import httputil
 except:
@@ -312,7 +314,7 @@ class RESTFrontPage(object):
         response.headers['Content-Type'] = ctype
         response.headers['Last-Modified'] = httputil.HTTPDate(mtime)
         response.headers['Cache-Control'] = "public, max-age=%d" % 86400
-        response.headers['ETag'] = '"%s"' % hashlib.sha1(result).hexdigest()
+        response.headers['ETag'] = '"%s"' % hashlib.sha1(encodeUnicodeToBytes(result)).hexdigest()
         cherrypy.lib.cptools.validate_since()
         cherrypy.lib.cptools.validate_etags()
         return result

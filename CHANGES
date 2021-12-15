@@ -1,3 +1,10 @@
+1.5.6 to 1.5.7.pre1:
+  - Add dbs3-pycurl and dbs3-client dependencies (Valentin Kuznetsov) #10919
+  - [py3] CredentialProxy - convert to bytes the input of hashlib.sha1() (Dario Mapelli) #10918
+  - [py3] REST/Server.py - encode to bytes input of hashlib.sha1 (Dario Mapelli) #10917
+  - Update pylint version required from 2.6.0 to 2.7.0 (Alan Malta Rodrigues) #10913
+
+
 1.5.6.pre1 to 1.5.6:
 
 

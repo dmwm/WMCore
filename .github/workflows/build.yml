@@ -28,7 +28,7 @@ jobs:
       run: |
           #python3 -m pip install -r requirements_py3.txt
           python3 setup.py install_system -s reqmgr2ms --prefix=install
-          tar cfz reqmgr2ms.targz $PWD/install
+          tar cfz reqmgr2ms.tar.gz $PWD/install
 
     - name: Get the Ref
       id: get-ref

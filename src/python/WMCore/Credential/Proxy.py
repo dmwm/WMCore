@@ -19,7 +19,7 @@ from hashlib import sha1
 from WMCore.Credential.Credential import Credential
 from WMCore.WMException import WMException
 from Utils.PythonVersion import PY3
-from Utils.Utilities import decodeBytesToUnicode
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
 
 
 def execute_command(command, logger, timeout, redirect=True):
@@ -260,8 +260,9 @@ class Proxy(Credential):
         2.  from an ui
         """
         if serverRenewer:
-            proxyFilename = os.path.join(self.credServerPath, sha1(
-                self.userDN + self.vo + self.group + self.role).hexdigest())
+            uniqName = self.userDN + self.vo + self.group + self.role
+            proxyFilename = os.path.join(self.credServerPath,
+                                         sha1(encodeUnicodeToBytes(uniqName)).hexdigest())
         elif 'X509_USER_PROXY' in os.environ:
             proxyFilename = os.environ['X509_USER_PROXY']
         else:
@@ -354,11 +355,11 @@ class Proxy(Credential):
             if self.myproxyAccount:
                 self.logger.debug(
                     "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
-                username = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+                username = sha1(encodeUnicodeToBytes(self.userDN + "_" + self.myproxyAccount)).hexdigest()
             else:
                 self.logger.debug(
                     "Calculating hash of %s for credential name" % (self.userDN))
-                username = sha1(self.userDN).hexdigest()
+                username = sha1(encodeUnicodeToBytes(self.userDN)).hexdigest()
         return username
 
     def checkAttribute(self, proxy=None):
@@ -429,7 +430,7 @@ class Proxy(Credential):
                                   % ('rfc' if self.rfcCompliant else 'old', self.myproxyServer, self.serverDN, \
                                      self.serverDN, myproxyUsername, self.myproxyValidity)
             elif serverRenewer and len(self.serverDN.strip()) > 0:
-                serverCredName = sha1(self.serverDN).hexdigest()
+                serverCredName = sha1(encodeUnicodeToBytes(self.serverDN)).hexdigest()
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
                                    % (self.serverDN, self.serverDN, serverCredName, self.myproxyValidity)
             _, stderr, _ = execute_command(self.setEnv(myproxyDelegCmd), self.logger, self.commandTimeout)
@@ -493,7 +494,7 @@ class Proxy(Credential):
                     self.logger.error('Error extracting timeleft from proxy %s' % str(e))
 
             elif len(self.serverDN.strip()) > 0:
-                serverCredName = sha1(self.serverDN).hexdigest()
+                serverCredName = sha1(encodeUnicodeToBytes(self.serverDN)).hexdigest()
                 credNameList = re.compile(" name: (?P<CN>.*)").findall(output)
 
                 if len(timeleftList) == len(credNameList):
@@ -561,7 +562,7 @@ class Proxy(Credential):
             # check the timeleft for the required server
             elif len(self.serverDN.strip()) > 0:
 
-                serverCredName = sha1(self.serverDN).hexdigest()
+                serverCredName = sha1(encodeUnicodeToBytes(self.serverDN)).hexdigest()
                 credNameList = re.compile(" name: (?P<CN>.*)").findall(output)
 
                 # check if the server credential exists
@@ -621,8 +622,9 @@ class Proxy(Credential):
         cmdList.append('X509_USER_KEY=%s' % self.serverKey)
 
         ## get a new delegated proxy
+        uniqName = self.userDN + self.vo + self.group + self.role
         proxyFilename = os.path.join(self.credServerPath,
-                                     sha1(self.userDN + self.vo + self.group + self.role).hexdigest())
+                                     sha1(encodeUnicodeToBytes(uniqName)).hexdigest())
         # Note that this is saved in a temporary file with the pid appended to the filename. This way we will avoid adding many
         # signatures later on with vomsExtensionRenewal in case of multiple processing running at the same time
         tmpProxyFilename = proxyFilename + '.' + str(os.getpid())

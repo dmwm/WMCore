@@ -341,26 +341,30 @@ class RequestInfo(MSCore):
         """
         finalBlocks = {}
         dbsUrl = wflow.getDbsUrl()
-        runWhite = wflow.getRunWhitelist()
-        runBlack = set(wflow.getRunBlacklist())
+        runAllowedList = wflow.getRunWhitelist()
+        runForbiddenList = set(wflow.getRunBlacklist())
         lumiList = wflow.getLumilist()
+        # if there is no filter on the input data, simply return it
+        if not (lumiList or runAllowedList or runForbiddenList):
+            return self._removeZeroSizeBlocks(blocksDict)
+
         if lumiList:
             # LumiList has precedence over RunWhitelist
-            runWhite = []
+            runAllowedList = []
             for run in lumiList.getRuns():
-                runWhite.append(int(run))
-            runWhite = list(set(runWhite))
-        if runWhite:
+                runAllowedList.append(int(run))
+            runAllowedList = list(set(runAllowedList))
+        if runAllowedList:
             # Run number 1 is not supported by DBSServer
-            if int(runWhite[0]) == 1:
+            if int(runAllowedList[0]) == 1:
                 finalBlocks = deepcopy(blocksDict)
             else:
-                runWhite = list(set(runWhite) - runBlack)
+                runAllowedList = list(set(runAllowedList) - runForbiddenList)
                 self.logger.info("Fetching blocks matching a list of runs for %s", wflow.getName())
                 try:
-                    blocks = getBlocksByDsetAndRun(dset, runWhite, dbsUrl)
+                    blocks = getBlocksByDsetAndRun(dset, runAllowedList, dbsUrl)
                 except Exception as exc:
-                    msg = "Failed to retrieve blocks by dataset '%s'and run: %s\n" % (dset, runWhite)
+                    msg = "Failed to retrieve blocks by dataset '%s'and run: %s\n" % (dset, runAllowedList)
                     msg += "Error details: %s" % str(exc)
                     self.logger.error(msg)
                     raise
@@ -369,7 +373,7 @@ class RequestInfo(MSCore):
                         finalBlocks[block] = deepcopy(blocksDict[block])
                     else:
                         self.logger.warning("Dropping block existent in DBS but not in Rucio: %s", block)
-        elif runBlack:
+        elif runForbiddenList:
             # only run blacklist set
             self.logger.info("Fetching runs in blocks for RunBlacklist for %s", wflow.getName())
             try:
@@ -378,7 +382,7 @@ class RequestInfo(MSCore):
                 self.logger.error("Failed to bulk retrieve runs per block. Details: %s", str(exc))
                 raise
             for block, runs in viewitems(blockRuns):
-                if not set(runs).difference(runBlack):
+                if not set(runs).difference(runForbiddenList):
                     self.logger.info("Dropping block with only blacklisted runs: %s", block)
                 elif block in blocksDict:
                     finalBlocks[block] = deepcopy(blocksDict[block])
@@ -386,7 +390,7 @@ class RequestInfo(MSCore):
         if lumiList:
             self.logger.info("Fetching block/lumi information for %d blocks in %s",
                              len(finalBlocks), wflow.getName())
-            self.logger.debug("with the following run whitelist: %s", runWhite)
+            self.logger.debug("with the following run whitelist: %s", runAllowedList)
             goodBlocks = set()
             # now with a smaller set of blocks in hand, we collect their lumi
             # information and discard any blocks not matching the lumi list
@@ -398,7 +402,7 @@ class RequestInfo(MSCore):
                     raise
                 for block, fileLumis in viewitems(blockFileLumis):
                     for fileLumi in fileLumis:
-                        if int(fileLumi['run_num']) not in runWhite:
+                        if int(fileLumi['run_num']) not in runAllowedList:
                             continue
                         runNumber = str(fileLumi['run_num'])
                         lumis = fileLumi['lumi_section_num']
@@ -413,8 +417,6 @@ class RequestInfo(MSCore):
                     self.logger.info("Dropping block not matching LumiList: %s", block)
                     finalBlocks.pop(block)
 
-        if not finalBlocks:
-            finalBlocks = blocksDict
         return self._removeZeroSizeBlocks(finalBlocks)
 
     def _removeZeroSizeBlocks(self, blocksDict):

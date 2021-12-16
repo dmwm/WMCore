@@ -32,7 +32,7 @@ from datetime import datetime
 # WMCore modules
 from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.MicroService.TaskManager import start_new_thread
-
+from Utils.Utilities import strToBool
 
 def daemon(func, reqStatus, interval, logger):
     "Daemon to perform given function action for all request in our store"
@@ -295,8 +295,7 @@ class MSManager(object):
         :param reqName: request name
         :param kwargs: other arguments that can be provided for different
             microservices. Examples:
-            rse_type: string with the type of the RSEs to fetch (MSUnmerged)
-                      Meaningful values at the moment are: "t1", "t2t3" and "t2t3us"
+            rse: string with the name of the RSE (e.g 'T2_DE_DESY')
         :return: data transfer information for this request
         """
         if 'ruleCleaner' in self.services or 'unmerged' in self.services:
@@ -317,8 +316,10 @@ class MSManager(object):
                 data['transferDoc'] = transferDoc[0]
 
         if 'unmerged' in self.services:
-            if kwargs.get("rse_type"):
-                data = {"rse_type": kwargs.get("rse_type")}
+            detail = strToBool(kwargs.get('detail', False))
+
+            if kwargs.get("rse"):
+                data = self.msUnmerged.getStatsFromMongoDB(detail=detail, rse=kwargs['rse'])
         return data
 
     def delete(self, request):

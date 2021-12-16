@@ -32,7 +32,7 @@ from Utils.Patterns import Singleton
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 # from WMCore.REST.Validation import validate_rx, validate_str
-from WMCore.REST.Format import JSONFormat
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 
 def results(res):
@@ -79,7 +79,7 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
                 return False
         return True
 
-    @restcall(formats=[('application/json', JSONFormat())])
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, **kwds):
         """

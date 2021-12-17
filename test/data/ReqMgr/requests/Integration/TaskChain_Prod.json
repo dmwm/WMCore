@@ -51,7 +51,7 @@
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "EnableHarvesting": false,
         "EventStreams": 4,
         "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8", 

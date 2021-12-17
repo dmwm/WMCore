@@ -28,7 +28,7 @@
         "ConfigCacheID": "6d0b906879c210bde4baecd2e78ded41", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "GlobalTag": "106X_dataRun2_v28", 
         "IncludeParents": true, 
         "InputDataset": "/NoBPTX/Run2018D-12Nov2019_UL2018-v1/MINIAOD", 

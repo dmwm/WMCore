@@ -29,7 +29,7 @@
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache", 
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "EnableHarvesting": false, 
         "GlobalTag": "81X_mcRun1_realistic_v5", 
         "Group": "DATAOPS", 

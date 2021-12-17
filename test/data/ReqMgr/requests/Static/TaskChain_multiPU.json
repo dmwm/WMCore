@@ -34,7 +34,7 @@
     "CouchDBName": "reqmgr_config_cache",
     "DQMConfigCacheID": "e2a5c7c675f60b4777564d5dd16b0dcd",
     "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
     "EnableHarvesting": true,
     "GlobalTag": "81X_upgrade2017_realistic_v26",
     "Group": "DATAOPS",

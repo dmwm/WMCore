@@ -42,7 +42,7 @@
         "DQMConfigCacheID": "e7930f77770253f5e9ff8d7b2761accd", 
         "DQMHarvestUnit": "byRun", 
         "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/relval", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "EnableHarvesting": true, 
         "EventStreams": 0, 
         "GlobalTag": "120X_mcRun3_2021_realistic_v5", 

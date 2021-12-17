@@ -29,7 +29,7 @@
         }, 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
         "Memory": 6000, 
         "Multicore": 4, 

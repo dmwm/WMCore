@@ -86,6 +86,7 @@ def replaceDbsProdUrl(requestArgs):
     # TODO: this url conversion below can be removed in one year from now, thus March 2022
     if requestArgs.get("DbsUrl"):
         requestArgs["DbsUrl"] = requestArgs["DbsUrl"].replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+        requestArgs["DbsUrl"] = requestArgs["DbsUrl"].rstrip("/")
 
 
 def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=None):

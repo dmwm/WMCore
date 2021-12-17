@@ -10,7 +10,6 @@ import json
 import os
 import pwd
 import sys
-import urllib
 
 try:
     # python2
@@ -22,7 +21,7 @@ try:
     urlencode = urllib.urlencode
     import httplib
     HTTPSConnection = httplib.HTTPSConnection
-except:
+except ImportError:
     # python3
     import urllib.error
     HTTPError, URLError = urllib.error.HTTPError, urllib.error.URLError
@@ -126,9 +125,9 @@ def handleDBS(reqmgrOutDsets, cmswebUrl):
     Get total number of lumi sections in each dataset
     """
     if 'testbed' in cmswebUrl:
-        dbsUrl = cmswebUrl + "/dbs/int/global/DBSReader/"
+        dbsUrl = cmswebUrl + "/dbs/int/global/DBSReader"
     else:
-        dbsUrl = cmswebUrl + "/dbs/prod/global/DBSReader/"
+        dbsUrl = cmswebUrl + "/dbs/prod/global/DBSReader"
 
     dbsOutput = {}
     for dataset in reqmgrOutDsets:

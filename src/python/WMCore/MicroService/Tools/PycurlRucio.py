@@ -108,20 +108,21 @@ def renewRucioToken(rucioAuthUrl, userToken):
     return newExpiration
 
 
-def getPileupContainerSizesRucio(containers, rucioUrl, rucioToken, scope="cms"):
+def getPileupContainerSizes(containers, rucioUrl, rucioToken, scope="cms"):
     """
-    Given a list of containers, find their total size in Rucio
+    Given a list of container names, find their total size in Rucio
     :param containers: list of container names
     :param rucioUrl: a string with the Rucio URL
     :param rucioToken: a string with the user rucio token
     :param scope: a string with the Rucio scope of our data
-    :return: a flat dictionary of container and their respective sizes
-    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
-    NOTE: Rucio version of getPileupDatasetSizes()
+    :return: a tuple of:
+        flat dictionary of container and their respective sizes
+        and a list of dataset names that failed to be resolved
     """
-    sizeByDset = {}
+    sizeByCont = {}
+    erroredCont = []
     if not containers:
-        return sizeByDset
+        return sizeByCont, erroredCont
 
     headers = {"X-Rucio-Auth-Token": rucioToken}
 
@@ -133,19 +134,18 @@ def getPileupContainerSizesRucio(containers, rucioUrl, rucioToken, scope="cms"):
         container = row['url'].split('/dids/{}/'.format(scope))[1]
         container = container.replace("?dynamic=anything", "")
         if row['data'] is None:
-            msg = "Failure in getPileupContainerSizesRucio for container {}. Response: {}".format(container, row)
+            msg = "getPileupContainerSizes failed for container {}. Response: {}".format(container, row)
             logging.error(msg)
-            sizeByDset.setdefault(container, None)
+            erroredCont.append(container)
             continue
         response = json.loads(row['data'])
         try:
-            sizeByDset.setdefault(container, response['bytes'])
+            sizeByCont.setdefault(container, response['bytes'])
         except KeyError:
-            msg = "getPileupContainerSizesRucio function did not return a valid response for container: %s. Error: %s"
-            logging.error(msg, container, response)
-            sizeByDset.setdefault(container, None)
-            continue
-    return sizeByDset
+            msg = "Container {} does not have size in bytes in Rucio. Error: {}".format(container, response)
+            logging.error(msg)
+            erroredCont.append(container)
+    return sizeByCont, erroredCont
 
 
 def listReplicationRules(containers, rucioAccount, grouping,
@@ -161,13 +161,14 @@ def listReplicationRules(containers, rucioAccount, grouping,
     :param rucioUrl: string with the Rucio url
     :param rucioToken: string with the Rucio token
     :param scope: string with the data scope
-    :return: a flat dictionary key'ed by the container name, with a list of RSE
-      expressions that still need to be resolved
-    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    :return: a tuple of:
+        flat dictionary key'ed by the container name, with a list of RSE expressions
+        and a list of container names that failed to be resolved
     """
     locationByContainer = {}
+    erroredCont = []
     if not containers:
-        return locationByContainer
+        return locationByContainer, erroredCont
     if grouping not in ["A", "D"]:
         raise RuntimeError("Replication rule grouping value provided ({}) is not allowed!".format(grouping))
 
@@ -184,7 +185,7 @@ def listReplicationRules(containers, rucioAccount, grouping,
         if "200 OK" not in row['headers']:
             msg = "Failure in listReplicationRules for container {}. Response: {}".format(container, row)
             logging.error(msg)
-            locationByContainer.setdefault(container, None)
+            erroredCont.append(container)
             continue
         try:
             locationByContainer.setdefault(container, [])
@@ -209,9 +210,8 @@ def listReplicationRules(containers, rucioAccount, grouping,
 
                     daysStuck = (utcTimeNow - stuckAt) // (24 * 60 * 60)
                     if daysStuck > STUCK_LIMIT:
-                        msg = "Container {} has a STUCK rule for {} days (limit set to: {}).".format(container,
-                                                                                                     daysStuck,
-                                                                                                     STUCK_LIMIT)
+                        msg = "Container {} has a STUCK rule for {} days ".format(container, daysStuck)
+                        msg += "(limit set to: {}).".format(STUCK_LIMIT)
                         msg += " Not going to use it! Rule info: {}".format(item)
                         logging.warning(msg)
                         continue
@@ -229,9 +229,9 @@ def listReplicationRules(containers, rucioAccount, grouping,
             msg = "listReplicationRules function did not return a valid response for container: %s."
             msg += "Server responded with: %s\nError: %s"
             logging.exception(msg, container, str(exc), row['data'])
-            locationByContainer.setdefault(container, None)
+            erroredCont.append(container)
             continue
-    return locationByContainer
+    return locationByContainer, erroredCont
 
 
 def getPileupSubscriptionsRucio(datasets, rucioUrl, rucioToken, scope="cms"):
@@ -300,26 +300,21 @@ def getBlocksAndSizeRucio(containers, rucioUrl, rucioToken, scope="cms"):
     :param rucioUrl: a string with the Rucio URL
     :param rucioToken: a string with the user rucio token
     :param scope: a string with the Rucio scope of our data
-    :return: a dictionary in the form of:
-    {"dataset":
-        {"block":
-            {"blockSize": 111, "locations": ["x", "y"]}
-        }
-    }
-    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
-    NOTE2: meant to return an output similar to Common.getBlockReplicasAndSize
+    :return: a tuple of:
+        a dictionary in the form of:
+            {"dataset":
+                {"block":
+                    {"blockSize": 111, "locations": ["x", "y"]}}}
+        and a list of container names that failed to be resolved
     """
     contBlockSize = {}
+    erroredCont = []
     if not containers:
-        return contBlockSize
+        return contBlockSize, erroredCont
 
     headers = {"X-Rucio-Auth-Token": rucioToken}
     urls = []
     for cont in containers:
-        ### FIXME: the long attribute value type has recently changed integer to boolean
-        ### see PR: https://github.com/rucio/rucio/pull/3949 , which went in in 1.23.5 series
-        ### we need to make sure CMS production Rucio will be running that version once MicroServices
-        ### get deployed to CMSWEB
         urls.append('{}/dids/{}/dids/search?type=dataset&long=True&name={}'.format(rucioUrl, scope, quote(cont + "#*")))
     logging.info("Executing %d requests against Rucio DIDs search API for containers", len(urls))
     data = multi_getdata(urls, ckey(), cert(), headers=headers)
@@ -330,13 +325,13 @@ def getBlocksAndSizeRucio(containers, rucioUrl, rucioToken, scope="cms"):
         if row['data'] in [None, ""]:
             msg = "Failure in getBlocksAndSizeRucio function for container {}. Response: {}".format(container, row)
             logging.error(msg)
-            contBlockSize[container] = None
+            erroredCont.append(container)
             continue
 
         for item in parseNewLineJson(row['data']):
             # NOTE: we do not care about primary block location in Rucio
             contBlockSize[container][item['name']] = {"blockSize": item['bytes'], "locations": []}
-    return contBlockSize
+    return contBlockSize, erroredCont
 
 
 ### NOTE: likely not going to be used for a while

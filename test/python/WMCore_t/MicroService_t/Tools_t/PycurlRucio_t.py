@@ -10,7 +10,7 @@ import unittest
 from Utils.PythonVersion import PY3
 
 from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, parseNewLineJson,
-                                                   getPileupContainerSizesRucio, listReplicationRules,
+                                                   getPileupContainerSizes, listReplicationRules,
                                                    getBlocksAndSizeRucio, stringDateToEpoch)
 
 CONT1 = "/NoBPTX/Run2018D-12Nov2019_UL2018-v1/MINIAOD"
@@ -46,24 +46,24 @@ class PycurlRucioTests(unittest.TestCase):
         for num, item in enumerate(parseNewLineJson(dataStream)):
             self.assertItemsEqual(item, validate[str(num + 1)])
 
-    def testGetPileupContainerSizesRucio(self):
+    def testGetPileupContainerSizes(self):
         """
         Test the getPileupContainerSizesRucio function, which fetches the container
         total bytes.
         """
         self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         # Test 1: no DIDs provided as input
-        resp = getPileupContainerSizesRucio([], self.rucioUrl,
-                                            self.rucioToken, scope=self.rucioScope)
+        resp, _ = getPileupContainerSizes([], self.rucioUrl, self.rucioToken,
+                                          scope=self.rucioScope)
         self.assertEqual(resp, {})
 
         # Test 2: multiple valid/invalid DIDs provided as input
         containers = [CONT1, PU_CONT, self.badDID]
-        resp = getPileupContainerSizesRucio(containers, self.rucioUrl,
-                                            self.rucioToken, scope=self.rucioScope)
-        self.assertTrue(len(resp) == 3)
+        resp, failedCont = getPileupContainerSizes(containers, self.rucioUrl,
+                                                   self.rucioToken, scope=self.rucioScope)
+        self.assertTrue(len(resp) == 2)
         self.assertTrue(resp[PU_CONT] > 0)
-        self.assertIsNone(resp[self.badDID])
+        self.assertTrue(self.badDID in failedCont)
 
     def testListReplicationRules(self):
         """
@@ -71,8 +71,8 @@ class PycurlRucioTests(unittest.TestCase):
         rules a return a list of RSEs key'ed by the container name.
         """
         self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
-        resp = listReplicationRules([], self.rucioAccount, grouping="A",
-                                    rucioUrl=self.rucioUrl, rucioToken=self.rucioToken, scope=self.rucioScope)
+        resp, _ = listReplicationRules([], self.rucioAccount, grouping="A", rucioUrl=self.rucioUrl,
+                                       rucioToken=self.rucioToken, scope=self.rucioScope)
         self.assertEqual(resp, {})
 
         with self.assertRaises(RuntimeError):
@@ -80,8 +80,9 @@ class PycurlRucioTests(unittest.TestCase):
                                  rucioUrl=self.rucioUrl, rucioToken=self.rucioToken, scope=self.rucioScope)
 
         containers = [PU_CONT, CONT2, self.badDID]
-        resp = listReplicationRules(containers, self.rucioAccount, grouping="A",
-                                    rucioUrl=self.rucioUrl, rucioToken=self.rucioToken, scope=self.rucioScope)
+        resp, failedContainers = listReplicationRules(containers, self.rucioAccount, grouping="A",
+                                                      rucioUrl=self.rucioUrl, rucioToken=self.rucioToken,
+                                                      scope=self.rucioScope)
         self.assertTrue(len(resp) == 3)
         self.assertTrue(PU_CONT in resp)
         self.assertTrue(isinstance(resp[CONT2], list))
@@ -94,16 +95,16 @@ class PycurlRucioTests(unittest.TestCase):
         """
         self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         # Test 1: no DIDs provided as input
-        resp = getBlocksAndSizeRucio([], self.rucioUrl, self.rucioToken, self.rucioScope)
+        resp, _ = getBlocksAndSizeRucio([], self.rucioUrl, self.rucioToken, self.rucioScope)
         self.assertEqual(resp, {})
         # Test 2: multiple valid/invalid DIDs provided as input
         containers = [PU_CONT, CONT3, self.badDID]
-        resp = getBlocksAndSizeRucio(containers, self.rucioUrl, self.rucioToken, self.rucioScope)
+        resp, failedContainers = getBlocksAndSizeRucio(containers, self.rucioUrl, self.rucioToken, self.rucioScope)
         self.assertTrue(len(resp) == 3)
         self.assertTrue(resp[PU_CONT][PU_CONT_BLK]['blockSize'] > 0)
         self.assertTrue(isinstance(resp[PU_CONT][PU_CONT_BLK]['locations'], list))
         self.assertTrue(len(resp[CONT3]) > 0)
-        self.assertIsNone(resp[self.badDID])
+        self.assertTrue(self.badDID in failedContainers)
 
     def testStringDateToEpoch(self):
         """

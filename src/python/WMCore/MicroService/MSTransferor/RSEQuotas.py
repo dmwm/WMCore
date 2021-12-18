@@ -145,7 +145,7 @@ class RSEQuotas(object):
         """
         Print a summary of the current quotas, space usage and space available
         """
-        self.logger.info("Summary of the current quotas in Terabytes:")
+        self.logger.info("Current quotas in Terabytes (account: %s):", self.dataAcct)
         for node in sorted(self.nodeUsage.keys()):
             msg = "  %s:\t\tbytes_limit: %.2f, bytes_used: %.2f, bytes_remaining: %.2f, "
             msg += "quota: %.2f, quota_avail: %.2f"

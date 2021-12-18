@@ -10,18 +10,18 @@ from future.utils import viewitems
 
 # system modules
 import datetime
-import time
 # WMCore modules
 from pprint import pformat
 from copy import deepcopy
 from Utils.IteratorTools import grouper
+from Utils.Timers import timeFunction
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.MSTransferor.Workflow import Workflow
-from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getPileupContainerSizesRucio,
+from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getPileupContainerSizes,
                                                    listReplicationRules, getBlocksAndSizeRucio)
-from WMCore.MicroService.Tools.Common import (elapsedTime, findBlockParents,
-                                              findParent, getBlocksByDsetAndRun,
-                                              getFileLumisInBlock, getRunsInBlock)
+from WMCore.MicroService.Tools.Common import (findBlockParents, findParent,
+                                              getBlocksByDsetAndRun, getRunsInBlock,
+                                              getFileLumisInBlock)
 from WMCore.MicroService.MSCore import MSCore
 
 
@@ -67,8 +67,9 @@ class RequestInfo(MSCore):
 
         # setup the Rucio token
         self.setupRucio()
-        # get complete requests information (based on Unified Transferor logic)
-        self.unified(workflows)
+        # Now run the heavy stuff (based on the old Unified Transferor logic)
+        tSpent, resp, funcName = self.unified(workflows)
+        self.logger.debug("%s took %.3f secs to execute", funcName, tSpent)
 
         return workflows
 
@@ -90,6 +91,7 @@ class RequestInfo(MSCore):
         self.rucioToken, self.tokenValidity = getRucioToken(self.msConfig['rucioAuthUrl'],
                                                             self.msConfig['rucioAccount'])
 
+    @timeFunction
     def unified(self, workflows):
         """
         Unified Transferor black box
@@ -99,36 +101,33 @@ class RequestInfo(MSCore):
         # make subscriptions based on site white/black lists
         self.logger.info("Unified method processing %d requests", len(workflows))
 
-        orig = time.time()
         # start by finding what are the parent datasets for requests requiring it
-        time0 = time.time()
-        parentMap = self.getParentDatasets(workflows)
+        tSpent, parentMap, funcName = self.getParentDatasets(workflows)
         self.setParentDatasets(workflows, parentMap)
-        self.logger.debug(elapsedTime(time0, "### getParentDatasets"))
+        self.logger.debug("%s took %.3f secs to execute", funcName, tSpent)
 
-        # then check the secondary dataset sizes and locations
-        time0 = time.time()
-        sizeByDset, locationByDset = self.getSecondaryDatasets(workflows)
-        locationByDset = self.resolveSecondaryRSEs(locationByDset)
-        self.setSecondaryDatasets(workflows, sizeByDset, locationByDset)
-        self.logger.debug(elapsedTime(time0, "### getSecondaryDatasets"))
+        # then check the secondary dataset sizes
+        tSpent, sizeByDset, funcName = self.getSecondarySizes(workflows)
+        self.logger.debug("%s took %.3f secs to execute", funcName, tSpent)
+
+        # now check the secondary dataset locations for production workflow, then RelVals
+        for mode in (False, True):
+            tSpent, locationByDset, funcName = self.getSecondaryLocations(workflows, relvalMode=mode)
+            locationByDset = self.resolveSecondaryRSEs(locationByDset)
+            self.setSecondaryDatasets(workflows, sizeByDset, locationByDset, relvalMode=mode)
+            self.logger.debug("%s took %.3f secs to execute", funcName, tSpent)
 
         # get final primary and parent list of valid blocks,
         # considering run, block and lumi lists
-        time0 = time.time()
-        blocksByDset = self.getInputDataBlocks(workflows)
+        tSpent, blocksByDset, funcName = self.getInputDataBlocks(workflows)
         self.setInputDataBlocks(workflows, blocksByDset)
-        self.logger.debug(elapsedTime(time0, "### getInputDataBlocks"))
+        self.logger.debug("%s took %.3f secs to execute", funcName, tSpent)
 
         # get a final list of parent blocks
-        time0 = time.time()
-        parentageMap = self.getParentChildBlocks(workflows)
+        tSpent, parentageMap, funcName = self.getParentChildBlocks(workflows)
         self.setParentChildBlocks(workflows, parentageMap)
-        self.logger.debug(elapsedTime(time0, "### getParentChildBlocks"))
-        self.logger.info(elapsedTime(orig, '### total time for unified method'))
+        self.logger.debug("%s took %.3f secs to execute", funcName, tSpent)
         self.logger.info("Unified method successfully processed %d requests", len(workflows))
-
-        return workflows
 
     def _workflowRemoval(self, listOfWorkflows, workflowsToRetry):
         """
@@ -144,37 +143,31 @@ class RequestInfo(MSCore):
             self.logger.warning("Removing workflow that failed processing in MSTransferor: %s", wflow.getName())
             listOfWorkflows.remove(wflow)
 
+    @timeFunction
     def getParentDatasets(self, workflows):
         """
         Given a list of requests, find which requests need to process a parent
         dataset, and discover what the parent dataset name is.
         :return: dictionary with the child and the parent dataset
         """
-        retryWorkflows = []
-        retryDatasets = []
+        mapWflowByData = {}
         datasetByDbs = {}
         parentByDset = {}
         for wflow in workflows:
             if wflow.hasParents():
+                mapWflowByData.setdefault(wflow.getInputDataset(), [])
+                mapWflowByData[wflow.getInputDataset()].append(wflow.getName())
                 datasetByDbs.setdefault(wflow.getDbsUrl(), set())
                 datasetByDbs[wflow.getDbsUrl()].add(wflow.getInputDataset())
 
         for dbsUrl, datasets in viewitems(datasetByDbs):
             self.logger.info("Resolving %d dataset parentage against DBS: %s", len(datasets), dbsUrl)
             # first find out what's the parent dataset name
-            parentByDset.update(findParent(datasets, dbsUrl))
-
-        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
-        # FIXME: isn't there a better way to do this?!?
-        for dset, value in viewitems(parentByDset):
-            if value is None:
-                retryDatasets.append(dset)
-        if retryDatasets:
-            for wflow in workflows:
-                if wflow.hasParents() and wflow.getInputDataset() in retryDatasets:
-                    retryWorkflows.append(wflow)
-            # remove workflows that failed one or more of the bulk queries to the data-service
-            self._workflowRemoval(workflows, retryWorkflows)
+            parents, erroredDsets = findParent(datasets, dbsUrl)
+            parentByDset.update(parents)
+            # now remove any workflows that failed the parent lookup resolution
+            for inputDset in erroredDsets:
+                self._workflowRemoval(workflows, mapWflowByData[inputDset])
 
         return parentByDset
 
@@ -186,49 +179,68 @@ class RequestInfo(MSCore):
             if wflow.hasParents() and wflow.getInputDataset() in parentageMap:
                 wflow.setParentDataset(parentageMap[wflow.getInputDataset()])
 
-    def getSecondaryDatasets(self, workflows):
+    @timeFunction
+    def getSecondarySizes(self, workflows):
         """
         Given a list of requests, list all the pileup datasets and, find their
-        total dataset sizes and which locations host completed and subscribed datasets.
+        total dataset sizes.
         NOTE it only uses valid blocks (i.e., blocks with at least one replica!)
         :param workflows: a list of Workflow objects
-        :return: two dictionaries keyed by the dataset.
-           First contains dataset size as value.
-           Second contains a list of locations as value.
+        :return: flat dictionary with the dataset name and its size as value
         """
-        retryWorkflows = []
-        retryDatasets = []
+        mapWflowByData = {}
         datasets = set()
         for wflow in workflows:
-            datasets = datasets | wflow.getPileupDatasets()
+            for pileupDset in wflow.getPileupDatasets():
+                mapWflowByData.setdefault(pileupDset, [])
+                mapWflowByData[pileupDset].append(wflow.getName())
+                datasets.add(pileupDset)
 
         # retrieve pileup container size and locations from Rucio
         self.logger.info("Fetching pileup dataset sizes for %d datasets against Rucio: %s",
                          len(datasets), self.msConfig['rucioUrl'])
-        sizesByDset = getPileupContainerSizesRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
+        sizesByDset, erroredDsets = getPileupContainerSizes(datasets, self.msConfig['rucioUrl'],
+                                                            self.rucioToken)
+        # now remove any workflows that failed the parent lookup resolution
+        for inputDset in erroredDsets:
+            self._workflowRemoval(workflows, mapWflowByData[inputDset])
+        return sizesByDset
+
+    @timeFunction
+    def getSecondaryLocations(self, workflows, relvalMode):
+        """
+        Given a list of requests, list all the pileup datasets and find RSEs
+        hosting a complete copy of it (under a given rucio account).
+        :param workflows: a list of Workflow objects
+        :param relvalMode: flag to deal only with production or relval workflows
+        :return: flat dictionary with the dataset name and a list of RSE expressions
+        """
+        mapWflowByData = {}
+        datasets = set()
+        for wflow in workflows:
+            if not relvalMode and wflow.isRelVal():
+                # we only want non-relval workflows
+                continue
+            if relvalMode and not wflow.isRelVal():
+                # we only want relval workflows
+                continue
+            for pileupDset in wflow.getPileupDatasets():
+                mapWflowByData.setdefault(pileupDset, [])
+                mapWflowByData[pileupDset].append(wflow.getName())
+                datasets.add(pileupDset)
 
         # then fetch data location for locked data, under our own rucio account
-        self.logger.info("Fetching pileup container location for %d containers against Rucio: %s",
-                         len(datasets), self.msConfig['rucioUrl'])
-        locationsByDset = listReplicationRules(datasets, self.msConfig['rucioAccount'],
-                                               grouping="A", rucioUrl=self.msConfig['rucioUrl'],
-                                               rucioToken=self.rucioToken)
-        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
-        # FIXME: isn't there a better way to do this?!?
-        for dset, value in viewitems(sizesByDset):
-            if value is None:
-                retryDatasets.append(dset)
-        for dset, value in viewitems(locationsByDset):
-            if value is None:
-                retryDatasets.append(dset)
-        if retryDatasets:
-            for wflow in workflows:
-                for pileup in wflow.getPileupDatasets():
-                    if pileup in  retryDatasets:
-                        retryWorkflows.append(wflow)
-            # remove workflows that failed one or more of the bulk queries to the data-service
-            self._workflowRemoval(workflows, retryWorkflows)
-        return sizesByDset, locationsByDset
+        rucioAcct = self.msConfig['rucioAccountRelVal'] if relvalMode else self.msConfig['rucioAccount']
+        msg = "Resolving pileup container location for {} containers, ".format(len(datasets))
+        msg += "under Rucio account: {}, and Rucio url: {}".format(rucioAcct, self.msConfig['rucioUrl'])
+        self.logger.info(msg)
+        locationsByDset, erroredDsets = listReplicationRules(datasets, rucioAcct, grouping="A",
+                                                             rucioUrl=self.msConfig['rucioUrl'],
+                                                             rucioToken=self.rucioToken)
+        # now remove any workflows that failed the parent lookup resolution
+        for inputDset in erroredDsets:
+            self._workflowRemoval(workflows, mapWflowByData[inputDset])
+        return locationsByDset
 
     def resolveSecondaryRSEs(self, rsesByContainer):
         """
@@ -247,15 +259,27 @@ class RequestInfo(MSCore):
             rsesByContainer[contName] = list(set(rseNames))
         return rsesByContainer
 
-    def setSecondaryDatasets(self, workflows, sizesByDset, locationsByDset):
+    def setSecondaryDatasets(self, workflows, sizesByDset, locationsByDset, relvalMode):
         """
         Given dictionaries with the pileup dataset size and locations, set the
         workflow object accordingly.
+        :param workflows: list of workflow objects
+        :param sizesByDset: flat dictionary with containers and their sizes
+        :param locationsByDset: flat dictionary with containers and their location
+        :param relvalMode: flag to deal only with production or relval workflows
+        :return: none
         """
         for wflow in workflows:
+            if not relvalMode and wflow.isRelVal():
+                # we only want non-relval workflows
+                continue
+            if relvalMode and not wflow.isRelVal():
+                # we only want relval workflows
+                continue
             for dsetName in wflow.getPileupDatasets():
                 wflow.setSecondarySummary(dsetName, sizesByDset[dsetName], locationsByDset[dsetName])
 
+    @timeFunction
     def getInputDataBlocks(self, workflows):
         """
         Given a list of requests, list all the primary and parent datasets and, find
@@ -264,30 +288,24 @@ class RequestInfo(MSCore):
         :param workflows: a list of Workflow objects
         :return: dictionary with dataset and a few block information
         """
-        retryWorkflows = []
-        retryDatasets = []
+        mapWflowByData = {}
         datasets = set()
         for wflow in workflows:
             for dataIn in wflow.getDataCampaignMap():
                 if dataIn['type'] in ["primary", "parent"]:
+                    mapWflowByData.setdefault(dataIn['name'], [])
+                    mapWflowByData[dataIn['name']].append(wflow.getName())
                     datasets.add(dataIn['name'])
 
         # fetch all block names and their sizes from Rucio
         self.logger.info("Fetching parent/primary block sizes for %d containers against Rucio: %s",
                          len(datasets), self.msConfig['rucioUrl'])
-        blocksByDset = getBlocksAndSizeRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
+        blocksByDset, erroredDsets = getBlocksAndSizeRucio(datasets, self.msConfig['rucioUrl'],
+                                                           self.rucioToken)
 
-        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
-        # FIXME: isn't there a better way to do this?!?
-        for dsetName in blocksByDset:
-            if blocksByDset[dsetName] is None:
-                retryDatasets.append(dsetName)
-        if retryDatasets:
-            for wflow in workflows:
-                if wflow.getInputDataset() in retryDatasets or wflow.getParentDataset() in retryDatasets:
-                    retryWorkflows.append(wflow)
-            # remove workflows that failed one or more of the bulk queries to the data-service
-            self._workflowRemoval(workflows, retryWorkflows)
+        # now remove any workflows that failed the parent lookup resolution
+        for inputDset in erroredDsets:
+            self._workflowRemoval(workflows, mapWflowByData[inputDset])
         return blocksByDset
 
     def setInputDataBlocks(self, workflows, blocksByDset):
@@ -435,6 +453,7 @@ class RequestInfo(MSCore):
                                  blockName, blocksDict[blockName]['blockSize'])
         return finalBlocks
 
+    @timeFunction
     def getParentChildBlocks(self, workflows):
         """
         Given a list of requests, get their children block, discover their parent blocks
@@ -442,13 +461,14 @@ class RequestInfo(MSCore):
         :param workflows: list of workflow objects
         :return: nothing, updates the workflow attributes in place
         """
-        retryWorkflows = []
-        retryDatasets = []
+        mapWflowByData = {}
         blocksByDbs = {}
         parentageMap = {}
         for wflow in workflows:
             blocksByDbs.setdefault(wflow.getDbsUrl(), set())
             if wflow.getParentDataset():
+                mapWflowByData.setdefault(wflow.getParentDataset(), [])
+                mapWflowByData[wflow.getParentDataset()].append(wflow.getName())
                 blocksByDbs[wflow.getDbsUrl()] = blocksByDbs[wflow.getDbsUrl()] | set(wflow.getPrimaryBlocks().keys())
 
         for dbsUrl, blocks in viewitems(blocksByDbs):
@@ -456,19 +476,12 @@ class RequestInfo(MSCore):
                 continue
             self.logger.debug("Fetching DBS parent blocks for %d children blocks...", len(blocks))
             # first find out what's the parent dataset name
-            parentageMap.update(findBlockParents(blocks, dbsUrl))
+            parentBlocks, erroredDsets = findBlockParents(blocks, dbsUrl)
+            parentageMap.update(parentBlocks)
+            # now remove any workflows that failed the parent lookup resolution
+            for inputDset in erroredDsets:
+                self._workflowRemoval(workflows, mapWflowByData[inputDset])
 
-        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
-        # FIXME: isn't there a better way to do this?!?
-        for dset, value in viewitems(parentageMap):
-            if value is None:
-                retryDatasets.append(dset)
-        if retryDatasets:
-            for wflow in workflows:
-                if wflow.getParentDataset() in retryDatasets:
-                    retryWorkflows.append(wflow)
-            # remove workflows that failed one or more of the bulk queries to the data-service
-            self._workflowRemoval(workflows, retryWorkflows)
         return parentageMap
 
     def setParentChildBlocks(self, workflows, parentageMap):

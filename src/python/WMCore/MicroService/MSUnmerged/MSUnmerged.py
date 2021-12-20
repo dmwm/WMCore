@@ -771,6 +771,34 @@ class MSUnmerged(MSCore):
             raise MSUnmergedPlineExit(msg)
         return rse
 
+    def getStatsFromMongoDB(self, detail=False, **kwargs):
+        """
+        Auxiliary method to serve the APIs of the REST calls for the service.
+        Implements various queries to MongoDB based on the parameters passed.
+        :param detail:           Bool marking if additional details must be queried from the database
+                                 (e.g. putting the 'dirs' field into the mongo projection)
+        :param rse=rseName:      String representing the RSE name to query the database for
+        :return:                 Dictionary with the type of query + the data returned from the database
+        """
+        data = {}
+        if kwargs.get('rse'):
+            data["query"] = 'rse=%s&detail=%s' % (kwargs['rse'], detail)
+            mongoProjection = {"_id": False,
+                               "name": True,
+                               "pfnPrefix": True,
+                               "isClean": True,
+                               "timestamps": True,
+                               "counters": True}
+            if detail:
+                mongoProjection["dirs"]  = True
+
+            rseList = kwargs['rse'] if isinstance(kwargs['rse'], list) else [kwargs['rse']]
+            data["rseData"] = []
+            for rseName in rseList:
+                mongoFilter = {'name': rseName}
+                data["rseData"].append(self.msUnmergedColl.find_one(mongoFilter, projection=mongoProjection))
+        return data
+
     # @profile
     def getRSEList(self):
         """

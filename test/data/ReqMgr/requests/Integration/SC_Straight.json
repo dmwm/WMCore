@@ -36,7 +36,7 @@
                  "CheckList": ["Few files going straight to merge, thus DBS info must be consistent"]},
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "CouchDBName": "reqmgr_config_cache",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
     "GlobalTag": "106X_upgrade2023_realistic_v3",
     "Memory": 18000,
     "Multicore": 8,

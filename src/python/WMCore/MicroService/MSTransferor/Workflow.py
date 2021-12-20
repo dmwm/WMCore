@@ -7,7 +7,6 @@ from __future__ import division, print_function
 from builtins import range, object
 from future.utils import viewitems, viewvalues, listvalues
 
-import operator
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.Tools.Common import getMSLogger, gigaBytes
@@ -22,6 +21,11 @@ class Workflow(object):
     def __init__(self, reqName, reqData, logger=None, verbose=False):
         self.reqName = reqName
         self.data = reqData
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        self.data['DbsUrl'] = self.data['DbsUrl'].replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+        # stripping any end slashes, which no longer work in the Go-based server
+        self.data['DbsUrl'] = self.data['DbsUrl'].rstrip("/")
+
         self.logger = getMSLogger(verbose, logger)
 
         self.inputDataset = ""
@@ -62,8 +66,7 @@ class Workflow(object):
         """
         Get the DbsUrl defined in this request
         """
-        # TODO: this replace can be removed in one year from now, thus March 2022
-        return self.data['DbsUrl'].replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+        return self.data['DbsUrl']
 
     def getReqType(self):
         """

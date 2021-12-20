@@ -27,7 +27,7 @@
         "DQMConfigCacheID": "6c075881a8454070ce3c1e8921cdb45e", 
         "DQMHarvestUnit": "byRun", 
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "GlobalTag": "106X_dataRun2_v27", 
         "InputDataset": "/ZeroBias/Run2016B-UL16_ver2_forHarvestOnly-v1/DQMIO", 
         "Memory": 3000, 

@@ -23,7 +23,7 @@
                      "CheckList": ["TaskChain: MC reading LHE files", "Read LHE articles remotely"]},
         "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
         "GlobalTag": "93X_upgrade2023_realistic_v5",
         "Memory": 1500,
         "Multicore": 1, 

@@ -28,7 +28,7 @@
         "ConfigCacheID": "6d0b906879c210bde4baecd2e78ded41", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "GlobalTag": "106X_dataRun2_v28", 
         "InputDataset": "/NoBPTX/Run2018D-12Nov2019_UL2018-v1/MINIAOD",
         "LumiList": {"320836": [[1, 10], [16, 20]], "322605": [[264, 275]], "324841": [[560, 565], [855, 860], [920, 926]]},

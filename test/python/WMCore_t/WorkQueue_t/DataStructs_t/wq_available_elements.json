@@ -38740,7 +38740,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510307.81,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },

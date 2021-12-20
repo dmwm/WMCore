@@ -11,7 +11,7 @@
     "ScramArch": "slc6_amd64_gcc493",
     "RequestType": "TaskChain",
     "SubRequestType": "RelVal",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "Requestor": "amaltaro",
     "Group": "DATAOPS",

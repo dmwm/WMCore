@@ -177,6 +177,7 @@ def validateInputDatasSetAndParentFlag(arguments):
     dbsURL = arguments.get("DbsUrl")
     if dbsURL:
         dbsURL = dbsURL.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+        dbsURL = dbsURL.rstrip("/")
 
     if includeParents and not inputdataset:
         msg = "IncludeParents flag is True but InputDataset value has not been provided"

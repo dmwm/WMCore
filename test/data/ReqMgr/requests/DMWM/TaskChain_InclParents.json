@@ -28,7 +28,7 @@
         "Comments": {"WorkFlowDesc": ["Single task; IncludeParents True and 3 runs whitelisted; auto-splitting"],
 		             "CheckList": ["TaskChain with IncludeParents", "TaskChain: Data workflow"]},
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "GlobalTag": "GR_P_V49",
         "PrepID": "TEST-CMSSW_7_3_2__test2inwf-1510737328-RunHLTPhy2017B_RAWAOD",
         "ProcessingString": {

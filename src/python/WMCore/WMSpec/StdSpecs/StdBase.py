@@ -82,6 +82,7 @@ class StdBase(object):
         # TODO: this replace can be removed in one year from now, thus March 2022
         if hasattr(self, "dbsUrl"):
             self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+            self.dbsUrl = self.dbsUrl.rstrip("/")
 
         return
 
@@ -277,8 +278,7 @@ class StdBase(object):
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
-        # TODO: this replace can be removed in one year from now, thus March 2022
-        workload.setDbsUrl(self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch"))
+        workload.setDbsUrl(self.dbsUrl)
         workload.setPrepID(self.prepID)
         return workload
 

@@ -33,4 +33,4 @@ Sphinx==4.0.3
 CMSMonitoring==0.3.4
 CMSCouchapp==1.3.4
 dbs3-pycurl>=3.17.7
-dbs3-client>=4.0.4
+dbs3-client>=4.0.5

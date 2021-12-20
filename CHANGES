@@ -1,3 +1,11 @@
+1.5.7.pre1 to 1.5.7.pre2:
+  - Bump dbs3-client to 4.0.5 (Alan Malta Rodrigues) #10931
+  - Add getStatsFromMongoDB to MSUnmerged. (Todor Ivanov) #10923
+  - fix DbsUrl in test modules and templates (Alan Malta Rodrigues) #10930
+  - Remove trailing slash from DBS URL (Alan Malta Rodrigues) #10930
+  - Fix logic which drops input blocks to be transferred (Alan Malta Rodrigues) #10928
+
+
 1.5.6 to 1.5.7.pre1:
   - Add dbs3-pycurl and dbs3-client dependencies (Valentin Kuznetsov) #10919
   - [py3] CredentialProxy - convert to bytes the input of hashlib.sha1() (Dario Mapelli) #10918

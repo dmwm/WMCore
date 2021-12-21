@@ -1,3 +1,7 @@
+1.5.7.pre3 to 1.5.7.pre4:
+  - Create the MariaDB wmcore unittest database with the current unix user (Alan Malta Rodrigues) #10934
+
+
 1.5.7.pre2 to 1.5.7.pre3:
   - Stop using password for MariaDB localhost users (Alan Malta Rodrigues) #10932
 

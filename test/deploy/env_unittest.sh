@@ -12,7 +12,7 @@ export ORG_SRC_PYTHON=$INSTALL_DIR/current/apps/wmagent/lib/python*/site-package
 export ORG_SRC_OTHER=$INSTALL_DIR/current/apps/wmagent/data
 export DBSOCK=$INSTALL_DIR/current/install/mysql/logs/mysql.sock
 
-export DATABASE=mysql://unittestagent:passwd@localhost/wmcore_unittest
+export DATABASE=mysql://unittestagent@localhost/wmcore_unittest
 export COUCHURL=http://unittestagent:passwd@localhost:6994
 export DIALECT=MySQL
 

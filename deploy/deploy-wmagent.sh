@@ -118,7 +118,6 @@ download_secrets_file(){
 update_secrets_file(){
   cd $ADMIN_DIR
   sed -i "s+MYSQL_USER=+MYSQL_USER=$IAM+" WMAgent.secrets
-  sed -i "s+MYSQL_PASS=+MYSQL_PASS=UPDATE-ME+" WMAgent.secrets
   sed -i "s+COUCH_USER=+COUCH_USER=$IAM+" WMAgent.secrets
   sed -i "s+COUCH_HOST=127.0.0.1+COUCH_HOST=$MY_IP+" WMAgent.secrets
   cd -

@@ -78,5 +78,5 @@ else
     source ./env_unittest.sh
     $manage start-services
 
-    mysql -u unittestagent --password=passwd --sock $INSTALL_DIR/current/install/mysql/logs/mysql.sock --exec "create database wmcore_unittest"
+    mysql -u unittestagent --sock $INSTALL_DIR/current/install/mysql/logs/mysql.sock --execute "create database wmcore_unittest"
 fi

@@ -1,3 +1,7 @@
+1.5.7.pre2 to 1.5.7.pre3:
+  - Stop using password for MariaDB localhost users (Alan Malta Rodrigues) #10932
+
+
 1.5.7.pre1 to 1.5.7.pre2:
   - Bump dbs3-client to 4.0.5 (Alan Malta Rodrigues) #10931
   - Add getStatsFromMongoDB to MSUnmerged. (Todor Ivanov) #10923

@@ -1,4 +1,3 @@
-from builtins import str, zip, range, object
 from future.utils import viewitems, viewvalues, listvalues
 
 import cherrypy
@@ -20,6 +19,7 @@ from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
 
 from Utils.Utilities import encodeUnicodeToBytes
+from Utils.ProcessStats import ProcessInfo
 
 try:
     from cherrypy.lib import httputil
@@ -655,6 +655,7 @@ class MiniRESTApi(object):
         self.methods = {}
         self.default_expires = 3600
         self.default_expires_opts = []
+        self.pinfo = ProcessInfo()
 
     def _addAPI(self, method, api, callable, args, validation, **kwargs):
         """Add an API method.
@@ -807,6 +808,16 @@ class MiniRESTApi(object):
 
         # Invoke the method.
         obj = apiobj['call'](*safe.args, **safe.kwargs)
+
+        # set new attributes for cherrypy request
+        request.rss = self.pinfo.rss()
+        request.cpu = self.pinfo.cpu()
+        request.vms = self.pinfo.vms()
+        request.inc_rss = self.pinfo.inc_rss()
+        request.inc_vms = self.pinfo.inc_vms()
+        request.con_lis = len([c for c in self.pinfo.connections() if c.status=='LISTEN'])
+        request.con_est = len([c for c in self.pinfo.connections() if c.status=='ESTABLISHED'])
+        request.con_tot = len(self.pinfo.connections())
 
         # Add Vary: Accept header.
         vary_by('Accept')

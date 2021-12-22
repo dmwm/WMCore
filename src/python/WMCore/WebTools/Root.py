@@ -123,6 +123,15 @@ class WTLogger(LogManager):
                                                 'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
                                                 'f': inheaders.get("Referer", ""),
                                                 'a': inheaders.get("User-Agent", "")}
+        msg += ' [stats: cpu={} rss={} vms={} inc_rss={} inc_vms={} connections tot={} lis={} est={}]'.format(
+                request.cpu,
+                request.rss,
+                request.vms,
+                request.inc_rss,
+                request.inc_vms,
+                request.con_tot,
+                request.con_lis,
+                request.con_est)
         self.access_log.log(logging.INFO, msg)
 
 

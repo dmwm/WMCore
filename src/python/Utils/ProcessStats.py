@@ -42,8 +42,41 @@ import traceback
 
 try:
     import psutil
+    PSUTIL = True
 except ImportError:
+    PSUTIL = False
     pass
+
+class ProcessInfo(object):
+    def __init__(self):
+        self.psutil = PSUTIL
+        self.process = psutil.Process(os.getpid())
+        self.init_rss = self.rss()
+        self.init_vms = self.vms()
+
+    def rss(self):
+        "Provide process memory value"
+        return self.process.memory_info().rss if self.psutil else 0
+
+    def cpu(self):
+        "Provide process cpu value"
+        return self.process.cpu_percent(interval=None) if self.psutil else 0
+
+    def vms(self):
+        "Provide process virtual memory value"
+        return self.process.memory_info().vms if self.psutil else 0
+
+    def connections(self):
+        "Provide process conenctions"
+        return self.process.connections() if self.psutil else 0
+
+    def inc_rss(self):
+        "Provide process increase RSS memory value"
+        return self.rss()-self.init_rss
+
+    def inc_vms(self):
+        "Provide process increase virtual memory value"
+        return self.vms()-self.init_vms
 
 def _baseProcessStatusFormat(pid=None):
     if not pid:

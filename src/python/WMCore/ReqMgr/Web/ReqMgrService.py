@@ -413,9 +413,10 @@ class ReqMgrService(TemplatedPage):
     def update_scripts(self, force=False):
         "Update scripts dict"
         if force or abs(time.time() - self.sdict['ts']) > self.sdict_thr:
-            for item in os.listdir(self.sdir):
-                with open(os.path.join(self.sdir, item), 'r') as istream:
-                    self.sdict[item.split('.')[0]] = istream.read()
+            if os.path.isdir(self.sdir):
+                for item in os.listdir(self.sdir):
+                    with open(os.path.join(self.sdir, item), 'r') as istream:
+                        self.sdict[item.split('.')[0]] = istream.read()
             self.sdict['ts'] = time.time()
 
     def abs_page(self, tmpl, content):

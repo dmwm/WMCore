@@ -1174,6 +1174,8 @@ class StdBase(object):
                      # set to "" string or None for eos-lfn-prefix if you don't want to save the log in eos
                      "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/PRODUCTION"},
                                   "type": dict},
+                     # Rucio rule subscription lifetime (used in ContainerRules by T0)
+                     "DatasetLifetime": {"default": 0, "type": int, "assign_optional": True, "validate": lambda x: x >= 0},
                      }
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)

@@ -727,7 +727,8 @@ class StepChainTests(EmulatedUnitTestCase):
                             'NonCustodialGroup': 'AnalysisOps',
                             'NonCustodialSites': ['T1_US_FNAL_Disk'],
                             'NonCustodialSubType': 'Move',
-                            'Priority': 'High'}
+                            'Priority': 'High',
+                            'DatasetLifetime': None}
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "RequestStatus": "assigned", "RequestPriority": 111,
                       "CustodialSites": subscriptionInfo['CustodialSites'],
@@ -737,7 +738,8 @@ class StepChainTests(EmulatedUnitTestCase):
                       "CustodialSubType": subscriptionInfo['CustodialSubType'],
                       "NonCustodialSubType": subscriptionInfo['NonCustodialSubType'],
                       "CustodialGroup": subscriptionInfo['CustodialGroup'],
-                      "NonCustodialGroup": subscriptionInfo['NonCustodialGroup']
+                      "NonCustodialGroup": subscriptionInfo['NonCustodialGroup'],
+                      "DatasetLifetime": subscriptionInfo['DatasetLifetime']
                       }
 
         testArguments = StepChainWorkloadFactory.getTestArguments()

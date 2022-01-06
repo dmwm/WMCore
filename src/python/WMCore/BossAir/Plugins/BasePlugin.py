@@ -109,7 +109,7 @@ class BasePlugin(object):
 
         pass
 
-    def updateJobInformation(self, workflow, task, **kwargs):
+    def updateJobInformation(self, workflow, **kwargs):
         """
         _updateJobInformation_
 

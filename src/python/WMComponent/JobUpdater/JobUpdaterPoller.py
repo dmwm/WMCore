@@ -141,6 +141,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         priorityCache = {}
         workflowsToUpdateWMBS = {}
         workflowsToCheck = self.listWorkflowsDAO.execute()
+        updatedRequest = []
         for workflowEntry in workflowsToCheck:
             workflow = workflowEntry['name']
             if workflow not in priorityCache:
@@ -157,9 +158,11 @@ class JobUpdaterPoller(BaseWorkerThread):
                 self.workqueue.updatePriority(workflow, requestPriority)
                 # Check if there are executing jobs for this particular task
                 if self.executingJobsDAO.execute(workflow, workflowEntry['task']) > 0:
-                    self.bossAir.updateJobInformation(workflow, workflowEntry['task'],
-                                                      requestPriority=priorityCache[workflow],
-                                                      taskPriority=workflowEntry['task_priority'])
+                    # Only update once per request workflow
+                    if workflow not in updatedRequest:
+                        updatedRequest.append(workflow)
+                        self.bossAir.updateJobInformation(workflow,
+                                                          requestPriority=priorityCache[workflow])
                 workflowsToUpdateWMBS[workflow] = priorityCache[workflow]
         if workflowsToUpdateWMBS:
             logging.info("Updating %d workflows in WMBS.", len(workflowsToUpdateWMBS))

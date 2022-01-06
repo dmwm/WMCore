@@ -466,7 +466,7 @@ class SimpleCondorPlugin(BasePlugin):
 
         return
 
-    def updateJobInformation(self, workflow, task, **kwargs):
+    def updateJobInformation(self, workflow, **kwargs):
         """
         _updateJobInformation_
 
@@ -475,18 +475,21 @@ class SimpleCondorPlugin(BasePlugin):
 
         The currently supported changes are only priority for which both the task (taskPriority)
         and workflow priority (requestPriority) must be provided.
+
+        Since the default priority is very high, we only need to adjust new priorities
+        for processing/production task types (which have a task priority of 0)
         """
         schedd = htcondor.Schedd()
 
-        if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
-            newPriority = int(kwargs['requestPriority']) + int(kwargs['taskPriority'] * self.maxTaskPriority)
+        if 'requestPriority' in kwargs:
+            newPriority = int(kwargs['requestPriority'])
             try:
-                constraint = "WMAgent_SubTaskName =?= %s" % classad.quote(str(task))
-                constraint += " && WMAgent_RequestName =?= %s" % classad.quote(str(workflow))
+                constraint = "WMAgent_RequestName =?= %s" % classad.quote(str(workflow))
                 constraint += " && JobPrio =!= %d" % newPriority
+                constraint += " && stringListMember(CMS_JobType, %s) " % classad.quote(str("Production, Processing"))
                 schedd.edit(constraint, 'JobPrio', classad.Literal(newPriority))
             except Exception as ex:
-                logging.error("Failed to update JobPrio for WMAgent_SubTaskName=%s", task)
+                logging.error("Failed to update JobPrio for WMAgent_RequestName=%s", str(workflow))
                 logging.exception(ex)
 
         return

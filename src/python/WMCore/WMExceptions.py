@@ -6,6 +6,7 @@ _WMExceptions_
 mappings to a human readable message.
 """
 
+
 WMEXCEPTION = {'WMCORE-1': 'Not allowed to instantiate ',
                'WMCORE-2': 'Problem creating database table ',
                'WMCORE-3': 'Could not find in library class ',

@@ -22,11 +22,10 @@
 ### Usage:               -r <repository>   Comp repository to look for the RPMs (defaults to comp=comp)
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
-### Usage:               -2|--py2  Uses the python2 stack WMAgent package (soon to be deprecated)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.5.4.patch3 -d HG2110b -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.5.4.patch3 -d HG2110b -t testbed-vocms001 -p "10853" -r comp=comp.amaltaro --py2
+### Usage: Example: sh deploy-wmagent.sh -w 1.5.7.patch1 -d HG2201e -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.5.7.patch1 -d HG2201e -t testbed-vocms001 -p "10853" -r comp=comp.amaltaro
 ### Usage:
 
 IAM=`whoami`
@@ -189,7 +188,6 @@ for arg; do
     -r) REPO=$2; shift; shift ;;
     -p) PATCHES=$2; shift; shift ;;
     -n) AG_NUM=$2; shift; shift ;;
-    -2|--py2) RPM_NAME=wmagent; shift;;
     -*) usage ;;
   esac
 done

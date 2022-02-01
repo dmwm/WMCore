@@ -25,11 +25,30 @@ from Utils.CertTools import getKeyCertFromEnv
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
+# DBS agregators
+from dbs.apis.dbsClient import aggRuns, aggFileLumis
+
 
 # static variables
 STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
 
+
+def isEmptyResults(row):
+    """
+    _isEmptyResults_
+
+    Evaluates whether row data contains empty result set
+    :return: bool
+    """
+    if 'data' not in row:
+        raise Exception("provided result dict does not contain 'data' key")
+    # if code is not present in row it means it was success (HTTP status code 200)
+    code = int(row.get('code', 200))
+    data = row['data']
+    if (code >= 200 and code < 400) and data in (None, []):
+        return True
+    return False
 
 def getMSLogger(verbose, logger=None):
     """
@@ -63,7 +82,7 @@ def dbsInfo(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("FAILURE: dbsInfo for %s. Error: %s %s" % (dataset, row.get('code'), row.get('error')))
             continue
         rows = json.loads(row['data'])
@@ -232,7 +251,7 @@ def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
 
     for row in data:
         dataset = row['url'].rsplit('=')[-1]
-        if row['data'] is None:
+        if isEmptyResults(row):
             msg = "Failure in getBlocksByDsetAndRun for %s. Error: %s %s" % (dataset,
                                                                              row.get('code'),
                                                                              row.get('error'))
@@ -261,12 +280,13 @@ def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
 
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
-        if row['data'] is None:
+        if isEmptyResults(row):
             msg = "Failure in getFileLumisInBlock for block %s. Error: %s %s" % (blockName,
                                                                                  row.get('code'),
                                                                                  row.get('error'))
             raise RuntimeError(msg)
         rows = json.loads(row['data'])
+        rows = aggFileLumis(rows) # adjust to DBS Go server output
         runLumisByBlock.setdefault(blockName, [])
         for item in rows:
             runLumisByBlock[blockName].append(item)
@@ -288,7 +308,7 @@ def findBlockParents(blocks, dbsUrl):
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
         dataset = blockName.split("#")[0]
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("Failure in findBlockParents for block %s. Error: %s %s" % (blockName,
                                                                               row.get('code'),
                                                                               row.get('error')))
@@ -322,12 +342,13 @@ def getRunsInBlock(blocks, dbsUrl):
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
-        if row['data'] is None:
+        if isEmptyResults(row):
             msg = "Failure in getRunsInBlock for block %s. Error: %s %s" % (blockName,
                                                                             row.get('code'),
                                                                             row.get('error'))
             raise RuntimeError(msg)
         rows = json.loads(row['data'])
+        rows = aggRuns(rows) # adjust to DBS Go server output
         runsByBlock[blockName] = rows[0]['run_num']
     return runsByBlock
 
@@ -366,7 +387,7 @@ def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         data = unquote(row['url'].split('=')[-1])
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("FAILURE: eventsLumisInfo for %s. Error: %s %s" % (data,
                                                                     row.get('code'),
                                                                     row.get('error')))
@@ -585,7 +606,7 @@ def findParent(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("Failure in findParent for dataset %s. Error: %s %s" % (dataset,
                                                                           row.get('code'),
                                                                           row.get('error')))

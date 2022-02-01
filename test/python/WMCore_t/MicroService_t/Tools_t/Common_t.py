@@ -7,7 +7,8 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.MicroService.Tools.Common import dbsInfo, getEventsLumis, findParent
+from WMCore.MicroService.Tools.Common import \
+        dbsInfo, getEventsLumis, findParent, isEmptyResults
 
 
 class CommonTest(unittest.TestCase):
@@ -47,6 +48,19 @@ class CommonTest(unittest.TestCase):
         parents = findParent(self.child, self.dbsUrl)
         self.assertEqual(parents[self.child[0]], '/SingleElectron/Run2016B-v2/RAW')
 
+    def test_isEmptyResults(self):
+        row = {'code': 200, 'data': None}
+        result = isEmptyResults(row)
+        self.assertEqual(result, True)
+        row = {'code': 200, 'data': []}
+        result = isEmptyResults(row)
+        self.assertEqual(result, True)
+        row = {'code': 400, 'data': None}
+        result = isEmptyResults(row)
+        self.assertEqual(result, False)
+        row = {'code': 400, 'data': []}
+        result = isEmptyResults(row)
+        self.assertEqual(result, False)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,3 +1,11 @@
+1.5.7 to 2.0.0.pre1:
+  - Aggregate DBS results from Go server (Valentin Kuznetsov) #10963
+  - Update diagrams and contribution documentation for end of support for Py2 (Alan Malta Rodrigues) #10968
+  - Update deploy-wmagent for 1.5.7.patch1; remove deprecated py2 option (Alan Malta Rodrigues) #10966
+  - DBS3Upload: check error message from the response body attribute (Alan Malta Rodrigues) #10961
+  - Update error message for jobs killed from site state transition (Alan Malta Rodrigues) #10958
+
+
 1.5.7.pre5 to 1.5.7:
 
 

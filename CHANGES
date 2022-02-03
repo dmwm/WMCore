@@ -1,3 +1,7 @@
+2.0.0.pre2 to 2.0.0.pre3:
+  - Check that sdir exists on a file system (Valentin Kuznetsov) #10938
+
+
 2.0.0.pre1 to 2.0.0.pre2:
   - Unittests: Add MSUnmergedRSE_t (Todor Ivanov) #10687
   - Fix MSUnmerged logic and MSUnmergedRSE format to account for deletion errors. (Todor Ivanov) #10687

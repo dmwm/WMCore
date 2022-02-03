@@ -1,3 +1,9 @@
+2.0.0.pre1 to 2.0.0.pre2:
+  - Unittests: Add MSUnmergedRSE_t (Todor Ivanov) #10687
+  - Fix MSUnmerged logic and MSUnmergedRSE format to account for deletion errors. (Todor Ivanov) #10687
+  - Added MSUnmerged to the WM schematic (Alan Malta Rodrigues) #10974
+
+
 1.5.7 to 2.0.0.pre1:
   - Aggregate DBS results from Go server (Valentin Kuznetsov) #10963
   - Update diagrams and contribution documentation for end of support for Py2 (Alan Malta Rodrigues) #10968

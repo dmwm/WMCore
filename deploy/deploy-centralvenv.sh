@@ -17,8 +17,34 @@
 ### Usage: Example: ./deploy-centralvenv.sh -c tivanov-unit01.cern.ch -p "10003" -s reqmgr2ms
 ### Usage: Example: yes | ./deploy-centralvenv.sh -p "10003" -s reqmgr2ms -c tivanov-unit01.cern.ch
 ### Usage:
+# TODO: to add configuration repository to use as a parameter and default + branch - prod/preprod/dev
 
-FULL_SCRIPT_PATH="$(realpath "${0}")"
+realPath(){
+    [[ -z $1 ]] &&  return
+    pathExpChars="\? \* \+ \@ \! \{ \} \[ \]"
+    for i in $pathExpChars
+    do
+        [[ $1 =~ .*${i}.* ]] && echo "Path name expansion not supported" &&  return
+    done
+    sufix="$(basename $1)"
+    prefix=$(dirname $1)
+    until cd $prefix
+    do
+        sufix="$(basename $prefix)/$sufix"
+        prefix=$(dirname $prefix)
+    done  2>/dev/null
+    realPath=$(pwd -P)
+    userPath=$sufix
+    if [[ $realPath == "/" ]]
+    then
+        echo ${realPath}${userPath}
+    else
+        echo ${realPath}/${userPath}
+    fi
+    cd - 2>&1 >/dev/null
+}
+
+FULL_SCRIPT_PATH="$(realPath "${0}")"
 
 usage()
 {
@@ -34,6 +60,8 @@ help()
     exit 0
 }
 
+
+
 # Set the default parameters here.
 # Command line options overwrite the default values.
 # All of the lists from bellow are interval separated.
@@ -43,7 +71,7 @@ help()
 
 componentList="admin reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
 venvPath="./WMCore.venv3"           # WMCore virtual environment target path
-venvPath=$(realpath $venvPath)
+venvPath=$(realPath $venvPath)
 wmSrcRelPath="WMCore"               # WMCore source code path relative to $venvPath
 wmTag="2.0.0"                       # wmcore tag
 serPatch=""                         # a list of service patches to be applied
@@ -59,7 +87,7 @@ while getopts ":v:t:c:s:p:l:h" opt; do
     case ${opt} in
         v)
             venvPath=$OPTARG
-            venvPath=$(realpath $venvPath)
+            venvPath=$(realPath $venvPath)
             ;;
         t)
             wmTag=$OPTARG
@@ -103,6 +131,41 @@ wmCfgPath=${venvPath}/config           # WMCore cofig target path
 wmAuthPath=${venvPath}/auth            # WMCore auth target path
 wmTmpPath=${venvPath}/tmp              # WMCore tmp path
 
+
+handleReturn() {
+
+# Handling script interruption based on last exit code
+# Return codes:
+# 0     - Success - CONTINUE
+# 101   - Success - skip step based on user choice
+# 102   - Failure - interrupt execution based on user choice
+# 1-255 - Failure - interrupt all posix return codes
+
+# TODO: to test return codes compatibility to avoid system error codes overlaps
+
+case $1 in
+    0)
+        return 0
+        ;;
+    101)
+        echo "Skipping step due to user choice. Continue script execution."
+        return 0
+        ;;
+    102)
+        echo "Interrupt execution due to user choice."
+        exit 102
+        ;;
+    *)
+        echo "Interrupt execution due to execution failure."
+        exit $?
+        ;;
+esac
+}
+
+realPath() {
+    $( cd "$(dirname "$0")" ; pwd -P )
+}
+
 startSetupVenv()
 {
     echo "======================================================="
@@ -124,21 +187,21 @@ startSetupVenv()
     echo "..."
 }
 
-initSetupVenv()
-{
-    # Initial setup
-    echo
-    echo "======================================================="
-    echo -n "Assuming this is NOT an initial installation! Is it correct? [y]: "
-    read x && [[ $x =~ (n|N) ]] && {
-        echo "Initial setup ..."
-        echo "Resolving system packages dependencies:"
-        # TODO: Here to probe for the underlying packaging system
+# initSetupVenv()
+# {
+#     # Initial setup
+#     echo
+#     echo "======================================================="
+#     echo -n "Assuming this is NOT an initial installation! Is it correct? [y]: "
+#     read x && [[ $x =~ (n|N) ]] && {
+#         echo "Initial setup ..."
+#         echo "Resolving system packages dependencies:"
+#         # TODO: Here to probe for the underlying packaging system
 
-        sudo -l
-        sudo yum -y install python3 git zip unzip gcc python-devel mariadb mariadb-devel openssl openssl-devel
-    }
-}
+#         sudo -l
+#         sudo yum -y install python3 git zip unzip gcc python-devel mariadb mariadb-devel openssl openssl-devel
+#     }
+# }
 
 cleanVenv()
 {
@@ -292,8 +355,8 @@ setupIpython(){
 
 main()
 {
-    startSetupVenv
-    initSetupVenv
+    startSetupVenv || handleReturn $?
+    initSetupVenv  || handleReturn $?
     cleanVenv
     createVenv
     cloneWMCore

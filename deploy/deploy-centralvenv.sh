@@ -24,7 +24,8 @@ realPath(){
     pathExpChars="\? \* \+ \@ \! \{ \} \[ \]"
     for i in $pathExpChars
     do
-        [[ $1 =~ .*${i}.* ]] && echo "Path name expansion not supported" &&  return
+        # Path name expansion not supported
+        [[ $1 =~ .*${i}.* ]] &&  return 38
     done
     sufix="$(basename $1)"
     prefix=$(dirname $1)
@@ -78,8 +79,10 @@ serPatch=""                         # a list of service patches to be applied
 serNameToPatch=""                   # a list of service Names to patch
 vmName=""                           # hostname for central services
 vmName=${vmName%%.*}
-pythonCmd=/usr/bin/python3
 
+# TODO: find python vars from env
+pythonCmd=/usr/bin/python3
+pythonVersion=3.6
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
@@ -333,13 +336,18 @@ setDepPaths() {
     # Setup WMcore deployment paths:
     echo
     echo "======================================================="
-    echo "Setup WMCore setup paths inside the virtual env:"
+    echo "Setup WMCore paths inside the virtual env:"
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && exit 1
     echo "..."
     [[ -d $wmDepPath  ]] || mkdir -p $wmDepPath
     [[ -d $wmCfgPath  ]] || mkdir -p $wmCfgPath
     [[ -d $wmAuthPath ]] || mkdir -p $wmAuthPath
+
+    # Find current pythonlib
+    # TODO: first double check if we are actually inside the virtual environment
+    pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
+    echo ${wmSrcPath}/src/python/ > ${pythonLib}/WMCore.pth
 }
 
 setupIpython(){
@@ -356,7 +364,7 @@ setupIpython(){
 main()
 {
     startSetupVenv || handleReturn $?
-    initSetupVenv  || handleReturn $?
+    # initSetupVenv  || handleReturn $?
     cleanVenv
     createVenv
     cloneWMCore

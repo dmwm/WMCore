@@ -1,3 +1,8 @@
+1.5.7.patch1 to 1.5.7.patch2:
+  - Bump dbs3-client to 4.0.6 (Alan Malta Rodrigues) #10986
+  - JobAccountant workaround for StepChain jobs with duplicate files - wmagent branch (Alan Malta Rodrigues) #10972
+
+
 1.5.7 to 1.5.7.patch1:
   - DBS3Upload: check error message from the response body attribute (Alan Malta Rodrigues) #10964
   - Update error message for jobs killed from site state transition (Alan Malta Rodrigues) #10964

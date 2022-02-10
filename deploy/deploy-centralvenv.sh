@@ -1,9 +1,10 @@
 #!/bin/bash
 
-### Usage: Usage: deploy-centralvenv.sh -t <wmcore_tag> -c <central_services_url> [-v wmcore_path] [-p  <patches>] [-s  <service_names>] [-l  <component_list>]
+### Usage: Usage: deploy-centralvenv.sh [-c <central_services_url>] [-t <wmcore_tag>] [-b <wmcore_branch>]  [-v wmcore_path] [-p  <patches>] [-s  <service_names>] [-l  <component_list>]
 ### Usage:
-### Usage:   -t  <wmcore_tag>       WMCore tag to be used for this deployment [Default: 2.0.0]
-### Usage:   -c  <central_services> Url to central services (e.g. tivanov-unit01.cern.ch)
+### Usage:   -c  <central_services> Url to central services [Default: cmsweb-testbed.cern.ch]
+### Usage:   -t  <wmcore_tag>       WMCore tag to be used for this deployment [Default: None - The tag will be used]
+### Usage:   -b  <wmcore_branch>    WMCore branch to be used for this deployment [Default: master]
 ### Usage:   -v  <wmcore_path>      WMCore virtual environment target path to be used for this deployment [Default: ./WMCore.venv3]
 ### Usage:   -p  <patches>          List of PR numbers
 ### Usage:                          (in double quotes and space separated e.g. "5906 5934 5922")
@@ -50,14 +51,14 @@ FULL_SCRIPT_PATH="$(realPath "${0}")"
 usage()
 {
     echo -e $1
-    /usr/bin/perl -ne '/^### Usage:/ && do { s/^### Usage:?//; print }' < $FULL_SCRIPT_PATH
+    grep '^### Usage:' $FULL_SCRIPT_PATH | sed -e 's/^### Usage:\?//g'
     exit 1
 }
 
 help()
 {
     echo -e $1
-    /usr/bin/perl -ne '/^### Usage:/ && do { s/^### Usage:?//; print }' < $FULL_SCRIPT_PATH
+    grep '^### Usage:' $FULL_SCRIPT_PATH | sed -e 's/^### Usage:\?//g'
     exit 0
 }
 
@@ -74,7 +75,8 @@ componentList="admin reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
 venvPath="./WMCore.venv3"           # WMCore virtual environment target path
 venvPath=$(realPath $venvPath)
 wmSrcRelPath="WMCore"               # WMCore source code path relative to $venvPath
-wmTag="2.0.0"                       # wmcore tag
+wmTag="latest"                      # WMCore tag
+wmBranch=""                         # WMCore branch
 serPatch=""                         # a list of service patches to be applied
 serNameToPatch=""                   # a list of service Names to patch
 vmName=""                           # hostname for central services
@@ -88,44 +90,22 @@ pythonVersion=3.6
 # export OPTIND=1
 while getopts ":v:t:c:s:p:l:h" opt; do
     case ${opt} in
-        v)
-            venvPath=$OPTARG
-            venvPath=$(realPath $venvPath)
-            ;;
-        t)
-            wmTag=$OPTARG
-            ;;
-        c)
-            vmName=$OPTARG
-            vmName=${vmName%%.*}
-            ;;
-        s)
-            serNameToPatch=$OPTARG
-            ;;
-        p)
-            serPatch=$OPTARG
-            ;;
-        l)
-            componentList=$OPTARG
-            ;;
-        h)
-            help
-            ;;
-        \? )
-            msg="Invalid Option: -$OPTARG"
-            usage "$msg"
-            ;;
-        : )
-            msg="Invalid Option: -$OPTARG requires an argument"
-            usage "$msg"
-            ;;
+        v) venvPath=$OPTARG; venvPath=$(realPath $venvPath) ;;
+        t) wmTag=$OPTARG ;;
+        b) wmBranch=$OPTARG ;;
+        c) vmName=$OPTARG; vmName=${vmName%%.*} ;;
+        s) serNameToPatch=$OPTARG ;;
+        p) serPatch=$OPTARG ;;
+        l) componentList=$OPTARG ;;
+        h) help ;;
+        \?) msg="Invalid Option: -$OPTARG"; usage "$msg" ;;
+        : ) msg="Invalid Option: -$OPTARG requires an argument"; usage "$msg" ;;
     esac
 done
 
 
 # check for mandatory parameters:
-[[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
-[[ -z $wmTag ]] && usage "Missing mandatory argument: -t <wmcore_tag"
+# [[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
 
 # setting some more paths
 wmSrcPath=${venvPath}/${wmSrcRelPath}  # WMCore source code target path
@@ -137,32 +117,40 @@ wmTmpPath=${venvPath}/tmp              # WMCore tmp path
 
 handleReturn() {
 
-# Handling script interruption based on last exit code
-# Return codes:
-# 0     - Success - CONTINUE
-# 101   - Success - skip step based on user choice
-# 102   - Failure - interrupt execution based on user choice
-# 1-255 - Failure - interrupt all posix return codes
+    echo "In function $FUNCNAME: FUNCNAME=${FUNCNAME[*]}"
 
-# TODO: to test return codes compatibility to avoid system error codes overlaps
+    # Handling script interruption based on last exit code
+    # Return codes:
+    # 0     - Success - CONTINUE
+    # 101   - Success - skip step based on user choice
+    # 102   - Failure - interrupt execution based on user choice
+    # 103   - Failure - skip step and CONTINUE despite the current failure
+    # 1-255 - Failure - interrupt all posix return codes
 
-case $1 in
-    0)
-        return 0
-        ;;
-    101)
-        echo "Skipping step due to user choice. Continue script execution."
-        return 0
-        ;;
-    102)
-        echo "Interrupt execution due to user choice."
-        exit 102
-        ;;
-    *)
-        echo "Interrupt execution due to execution failure."
-        exit $?
-        ;;
-esac
+    # TODO: to test return codes compatibility to avoid system error codes overlaps
+
+    case $1 in
+        0)
+            return 0
+            ;;
+        101)
+            echo "Skipping step due to user choice. Continue script execution."
+            return 0
+            ;;
+        102)
+            echo "Interrupt script execution due to user choice."
+            exit 102
+            ;;
+
+        103)
+            echo "Skipping step due to step execution Failure. Continue script execution."
+            return 103
+            ;;
+        *)
+            echo "Interrupt script execution due to step execution failure."
+            exit $?
+            ;;
+    esac
 }
 
 realPath() {
@@ -181,6 +169,7 @@ startSetupVenv()
     echo "wmCfgPath: $wmCfgPath"
     echo "wmAuthPath: $wmAuthPath"
     echo "wmTag: $wmTag"
+    echo "wmBranch: $wmBranch"
     echo "serPatch: $serPatch"
     echo "serNameToPatch: $serNameToPatch"
     echo "vmName: $vmName"
@@ -218,7 +207,7 @@ cleanVenv()
 
     ([ "$(hostname -f)" = "$vmName.cern.ch" ] || exit;
         echo "Deleting...";
-        [[ -d $wmDepPath ]] && cd $wmDepPath &&  sudo rm -fr [^aceu]* .??* current enabled)
+        [[ -d $wmDepPath ]] && cd $wmDepPath &&  rm -fr [^aceu]* .??* current enabled)
 }
 
 createVenv()
@@ -246,6 +235,7 @@ cloneWMCore()
     echo "..."
 
     [[ -d $wmSrcPath ]] ||  mkdir -p $wmSrcPath
+    [[ -z ]]
     cd $wmSrcPath && git clone git://github.com/dmwm/wmcore.git . && git reset --hard $wmTag
 }
 
@@ -293,7 +283,7 @@ depSetupVenv()
         echo "There were some package dependencies that couldn't be satisfied."
         echo "List of packages failed to install: $depFail"
         echo -n "Should we try to reinstall them while releasing version constraint? [y]: "
-        read x && [[ $x =~ (n|N) ]] && exit 1
+        read x && [[ $x =~ (n|N) ]] && return
         echo "Retrying to satisfy dependency releasing version constraint:"
         echo "..."
         for pkg in $depFail
@@ -350,6 +340,25 @@ setDepPaths() {
     echo ${wmSrcPath}/src/python/ > ${pythonLib}/WMCore.pth
 }
 
+setConfig(){
+    # Setup WMcore configs:
+    echo
+    echo "======================================================="
+    echo "Setup WMCore configuration inside the virtual env:"
+    echo -n "Continue? [y]: "
+    read x && [[ $x =~ (n|N) ]] && return 102
+
+    # first sync the config repository:
+
+    for component in $componentList
+    do
+        cfgPath=${wmCfgPath}/${component}
+        echo "configPath = $cfgPath"
+    done
+
+}
+
+
 setupIpython(){
     # Setup Ipython:
     echo
@@ -363,7 +372,7 @@ setupIpython(){
 
 main()
 {
-    startSetupVenv || handleReturn $?
+    startSetupVenv && handleReturn $?
     # initSetupVenv  || handleReturn $?
     cleanVenv
     createVenv
@@ -373,6 +382,7 @@ main()
     depSetupVenv
     rucioSetupVenv
     setDepPaths
+    setConfig
     setupIpython
 }
 

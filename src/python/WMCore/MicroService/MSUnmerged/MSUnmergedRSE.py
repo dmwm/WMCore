@@ -82,7 +82,6 @@ class MSUnmergedRSE(dict):
             "isClean" : True,
             "timestamps": True,
             "counters": True,
-            "files": False,
             "dirs": True}
         if fullRSEToDB:
             mongoProjection.update({"files": True})

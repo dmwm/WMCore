@@ -88,6 +88,10 @@ class MockDbsApi(object):
         if 'logical_file_name' in kwargs and len(kwargs['logical_file_name']) > 1:
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
+            # since we iterate over this, we better make sure it's a list to avoid
+            # things like: ['U', 'N', 'K', 'N', 'O', 'W', 'N']
+            if isinstance(kwargs['logical_file_name'], str):
+                kwargs['logical_file_name'] = [kwargs['logical_file_name']]
             for lfn in kwargs['logical_file_name']:
                 origArgs.update({'logical_file_name': [lfn]})
                 returnDicts.extend(self.genericLookup(**origArgs))
@@ -133,5 +137,7 @@ class MockDbsApi(object):
             else:
                 return mockData[self.url][signature]
         except KeyError:
+            if kwargs.get('dataset', None) == '/HighPileUp/Run2011A-v1/RAW-BLAH':
+                return []
             raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s) (Signature: %s)" %
                            (self.item, args, kwargs, self.url, signature))

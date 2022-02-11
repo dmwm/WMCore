@@ -47,11 +47,13 @@ for endpoint, outFile, calls, datasets in INSTANCES:
         print("Building call list for", dataset)
         calls.append(['listDatasetParents', {'dataset': dataset}])
         calls.append(['listDatasets', {'dataset_access_type': '*', 'dataset': dataset}])
+        calls.append(['listBlockOrigin', {'dataset': dataset}])
         calls.append(['listBlocks', {'dataset': dataset}])
         calls.append(['listBlocks', {'detail': False, 'dataset': dataset}])
         calls.append(['listBlocks', {'detail': True, 'dataset': dataset}])
         calls.append(['listFileSummaries', {'validFileOnly': 1, 'dataset': dataset}])
         calls.append(['listFileArray', {'dataset': dataset, 'detail': True, 'validFileOnly': 1}])
+        calls.append(['listFileArray', {'dataset': dataset, 'detail': False, 'validFileOnly': 1}])
         calls.append(['listRuns', {'dataset': dataset}])
         blocks = realDBS.listBlocks(dataset=dataset)
         for block in blocks:

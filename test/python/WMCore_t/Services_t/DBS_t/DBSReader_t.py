@@ -7,6 +7,8 @@ Unit test for the DBS helper class.
 
 import unittest
 
+from nose.plugins.attrib import attr
+
 from Utils.PythonVersion import PY3
 
 from WMCore.Services.DBS.DBS3Reader import getDataTiers, DBS3Reader as DBSReader
@@ -14,13 +16,17 @@ from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 # A small dataset that should always exist
+BAD_DATASET = '/HighPileUp/Run2011A-v1/RAW-BLAH'
 DATASET = '/HighPileUp/Run2011A-v1/RAW'
 BLOCK = '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'
 FILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/657/B293AF24-BFCB-E011-8F85-BCAEC5329701.root'
+FILE2 = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/660/EE0B83F9-F3CB-E011-B996-BCAEC5329710.root'
 
 # A RECO dataset that has parents (also small)
 DATASET_WITH_PARENTS = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
 BLOCK_WITH_PARENTS = DATASET_WITH_PARENTS + '#7020873e-0dcd-11e1-9b6c-003048caaace'
+FILE1_WITH_PARENT = '/store/data/ComissioningHI/Cosmics/RECO/PromptReco-v1/000/180/841/368B76AA-4F09-E111-82CB-BCAEC5329721.root'
+FILE2_WITH_PARENT = '/store/data/ComissioningHI/Cosmics/RECO/PromptReco-v1/000/180/852/D82D6996-1B0B-E111-AA40-003048CF94A6.root'
 
 PARENT_DATASET = '/Cosmics/ComissioningHI-v1/RAW'
 PARENT_BLOCK = PARENT_DATASET + '#929366bc-0c31-11e1-b764-003048caaace'
@@ -28,6 +34,8 @@ PARENT_FILE = '/store/data/ComissioningHI/Cosmics/RAW/v1/000/181/369/662EAD44-30
 
 
 class DBSReaderTest(EmulatedUnitTestCase):
+#class DBSReaderTest(unittest.TestCase):
+
     def setUp(self):
         """
         _setUp_
@@ -190,7 +198,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertEqual(block['NumberOfLumis'], 94)
 
         with self.assertRaises(DBSReaderError):
-            self.dbs.getDBSSummaryInfo(DATASET + 'blah')
+            self.dbs.getDBSSummaryInfo(BAD_DATASET)
         with self.assertRaises(DBSReaderError):
             self.dbs.getDBSSummaryInfo(DATASET, BLOCK + 'asas')
 
@@ -307,6 +315,137 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.dbs = DBSReader(self.endpoint)
         self.assertEqual(self.dbs.blockToDatasetPath(BLOCK), DATASET)
         self.assertRaises(DBSReaderError, self.dbs.blockToDatasetPath, BLOCK + 'asas')
+
+
+
+    ### NEW UNIT TESTS ###
+    def testCheckDBSServer(self):
+        """Test the checkDBSServer method"""
+        # Go and Python based servers return different data in different format
+        # just check whether something is returned
+        self.dbs = DBSReader(self.endpoint)
+        self.assertTrue(self.dbs.checkDBSServer())
+
+    def testCrossCheck(self):
+        """Test the crossCheck method"""
+        self.dbs = DBSReader(self.endpoint)
+        listFiles = [FILE, FILE1_WITH_PARENT]
+        results = self.dbs.crossCheck(DATASET, *listFiles)
+        self.assertItemsEqual(results, [FILE])
+
+    def testCrossCheckMissing(self):
+        """Test the crossCheckMissing method"""
+        self.dbs = DBSReader(self.endpoint)
+        listFiles = [FILE, FILE1_WITH_PARENT]
+        results = self.dbs.crossCheckMissing(DATASET, *listFiles)
+        self.assertItemsEqual(results, [FILE1_WITH_PARENT])
+
+    def testListDatasetLocation(self):
+        """Test the listDatasetLocation method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.listDatasetLocation(DATASET)
+        self.assertItemsEqual(results, [])
+
+    def testCheckDatasetPath(self):
+        """Test the checkDatasetPath method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.checkDatasetPath(DATASET)
+        self.assertIsNone(results)
+
+        with self.assertRaises(DBSReaderError):
+            self.dbs.checkDatasetPath("")
+        with self.assertRaises(DBSReaderError):
+            self.dbs.checkDatasetPath(None)
+        with self.assertRaises(DBSReaderError):
+            self.dbs.checkDatasetPath(BAD_DATASET)
+
+    def testCheckBlockName(self):
+        """Test the checkBlockName method"""
+        self.dbs = DBSReader(self.endpoint)
+        self.assertIsNone(self.dbs.checkBlockName(DATASET))
+        self.assertIsNone(self.dbs.checkBlockName(BLOCK))
+        self.assertIsNone(self.dbs.checkBlockName("blah"))
+
+        with self.assertRaises(DBSReaderError):
+            self.assertIsNone(self.dbs.checkBlockName("*"))
+        with self.assertRaises(DBSReaderError):
+            self.assertIsNone(self.dbs.checkBlockName(""))
+        with self.assertRaises(DBSReaderError):
+            self.assertIsNone(self.dbs.checkBlockName(None))
+
+    def testGetFileListByDataset(self):
+        """Test the getFileListByDataset method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.getFileListByDataset(DATASET, detail=False)
+        self.assertEqual(len(results), 49)
+        self.assertEqual(len(results[0]), 1)
+        self.assertTrue('logical_file_name' in results[0])
+        self.assertTrue(results[0]['logical_file_name'].startswith("/store/data/Run2011A/HighPileUp/RAW/v1"))
+
+        results = self.dbs.getFileListByDataset(DATASET, detail=True)
+        self.assertEqual(len(results), 49)
+        self.assertEqual(len(results[0]), 20)  # 20 keys in total
+        subSetKeys = {'block_name', 'dataset', 'event_count', 'file_size', 'logical_file_name'}
+        self.assertTrue(subSetKeys.issubset(results[0]))
+
+    def testListDatasetParents(self):
+        """Test the listDatasetParents method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.listDatasetParents(DATASET_WITH_PARENTS)
+        self.assertEqual(results[0]['this_dataset'], DATASET_WITH_PARENTS)
+        self.assertEqual(results[0]['parent_dataset'], PARENT_DATASET)
+
+        results = self.dbs.listDatasetParents(PARENT_DATASET)
+        self.assertEqual(results, [])
+
+        with self.assertRaises(DBSReaderError):
+            self.dbs.listDatasetParents(BLOCK)
+
+    @attr('integration')  # too much data to mock
+    def testGetParentFilesGivenParentDataset(self):
+        """Test the getParentFilesGivenParentDataset method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.getParentFilesGivenParentDataset(PARENT_DATASET,
+                                                            [FILE1_WITH_PARENT, FILE2_WITH_PARENT])
+        self.assertItemsEqual(results[FILE1_WITH_PARENT], {'/store/data/ComissioningHI/Cosmics/RAW/v1/000/180/841/721E482F-A407-E111-8C0C-BCAEC518FF6E.root'})
+        self.assertItemsEqual(results[FILE2_WITH_PARENT], {'/store/data/ComissioningHI/Cosmics/RAW/v1/000/180/852/C0A3D337-1408-E111-836F-0030486780A8.root'})
+
+    def testGetParentFilesByLumi(self):
+        """Test the getParentFilesByLumi method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.getParentFilesByLumi(FILE1_WITH_PARENT)
+        self.assertItemsEqual(results[0]['ParentDataset'], PARENT_DATASET)
+        self.assertItemsEqual(results[0]['ParentFiles'], ['/store/data/ComissioningHI/Cosmics/RAW/v1/000/180/841/721E482F-A407-E111-8C0C-BCAEC518FF6E.root'])
+
+    @attr('integration')  # too much data to mock
+    def testListBlocksWithNoParents(self):
+        """Test the listBlocksWithNoParents method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.listBlocksWithNoParents(DATASET_WITH_PARENTS)
+        self.assertItemsEqual(results, [])
+
+        results = self.dbs.listBlocksWithNoParents(DATASET)
+        self.assertEqual(len(results), 46)
+        self.assertTrue('/HighPileUp/Run2011A-v1/RAW#6ffd4f16-cc42-11e0-80a9-003048caaace' in results)
+
+    def testListFilesWithNoParents(self):
+        """Test the listFilesWithNoParents method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.listFilesWithNoParents(BLOCK_WITH_PARENTS)
+        self.assertEqual(len(results), 0)
+
+        results = self.dbs.listFilesWithNoParents(BLOCK)
+        self.assertEqual(len(results), 2)
+        self.assertTrue('/store/data/Run2011A/HighPileUp/RAW/v1/000/173/657/B293AF24-BFCB-E011-8F85-BCAEC5329701.root' in results)
+
+    def testGetParentDatasetTrio(self):
+        """Test the getParentDatasetTrio method"""
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.getParentDatasetTrio(DATASET_WITH_PARENTS)
+        self.assertTrue(frozenset({2, 180851}) in results)
+        self.assertEqual(int(results[frozenset({2, 180851})]), 36092526)
+        self.assertTrue(frozenset({1, 180851}) in results)
+        self.assertEqual(int(results[frozenset({2, 180851})]), 36092526)
 
 
 if __name__ == '__main__':

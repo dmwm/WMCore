@@ -400,7 +400,7 @@ def getEventsLumis(dataset, dbsUrl, blocks=None, eventsLumis=None):
 
 def getComputingTime(workflow, eventsLumis=None, unit='h', dbsUrl=None, logger=None):
     "Return computing time per give workflow"
-    logger = getMSLogger(verbose=True, logger=logger)
+    logger = getMSLogger(logger=logger)
     cput = None
 
     if 'InputDataset' in workflow:

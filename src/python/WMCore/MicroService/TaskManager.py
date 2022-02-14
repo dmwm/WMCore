@@ -110,7 +110,7 @@ class UidSet(object):
 class Worker(threading.Thread):
     """Thread executing worker from a given tasks queue"""
     def __init__(self, name, taskq, pidq, uidq, logger=None):
-        self.logger = getMSLogger(verbose=True, logger=logger)
+        self.logger = getMSLogger(logger=logger)
         threading.Thread.__init__(self, name=name)
         self.exit = 0
         self.tasks = taskq
@@ -160,7 +160,7 @@ class TaskManager(object):
 
     """
     def __init__(self, nworkers=10, name='TaskManager', logger=None):
-        self.logger = getMSLogger(verbose=True, logger=logger)
+        self.logger = getMSLogger(logger=logger)
         self.name = name
         self.pids = set()
         self.uids = UidSet()

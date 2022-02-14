@@ -471,6 +471,12 @@ class MSUnmerged(MSCore):
             msg = "RSE: %s Missing in stats records at Rucio Consistency Monitor. " % rseName
             msg += "Skipping it in the current run."
             self.logger.warning(msg)
+            errMessage = "Missing record"
+            rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
+            rse['counters']['rucioConMonErrors'][errMessage] += 1
+            self.updateRSECounters(rse, self.plineUnmerged.name)
+            self.updateRSETimestamps(rse, start=False, end=True)
+            self.uploadRSEToMongoDB(rse)
             raise MSUnmergedPlineExit(msg)
 
         isConsDone = self.rseConsStats[rseName]['status'] == 'done'
@@ -481,17 +487,30 @@ class MSUnmerged(MSCore):
                 msg += "And the RSE has been cleaned during the last Rucio Consistency Monitor polling cycle."
                 msg += "Skipping it in the current run."
                 self.logger.info(msg)
+                errMessage = "Old record && RSE clean"
+                rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
+                rse['counters']['rucioConMonErrors'][errMessage] += 1
+                self.updateRSECounters(rse, self.plineUnmerged.name)
                 self.updateRSETimestamps(rse, start=False, end=True)
+                self.uploadRSEToMongoDB(rse)
                 raise MSUnmergedPlineExit(msg)
             else:
                 msg += "But the RSE has NOT been fully cleaned during the last Rucio Consistency Monitor polling cycle."
                 msg += "Retrying cleanup in the current run."
+                errMessage = "Old record && Retry clean"
+                rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
+                rse['counters']['rucioConMonErrors'][errMessage] += 1
                 self.logger.info(msg)
         if not isConsDone:
             msg = "RSE: %s In non-final state in Rucio Consistency Monitor. " % rseName
             msg += "Skipping it in the current run."
             self.logger.warning(msg)
+            errMessage = "Non-final state"
+            rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
+            rse['counters']['rucioConMonErrors'][errMessage] += 1
+            self.updateRSECounters(rse, self.plineUnmerged.name)
             self.updateRSETimestamps(rse, start=False, end=True)
+            self.uploadRSEToMongoDB(rse)
             raise MSUnmergedPlineExit(msg)
 
         if isConsNewer and isConsDone:
@@ -748,6 +767,7 @@ class MSUnmerged(MSCore):
         self.rseCounters[rseName]['dirsDeletedSuccess'] = rse['counters']['dirsDeletedSuccess']
         self.rseCounters[rseName]['dirsDeletedFail'] = rse['counters']['dirsDeletedFail']
         self.rseCounters[rseName]['gfalErrors'] = rse['counters']['gfalErrors']
+        self.rseCounters[rseName]['rucioConMonErrors'] = rse['counters']['rucioConMonErrors']
 
         self.plineCounters[pName]['totalNumFiles'] += rse['counters']['totalNumFiles']
         self.plineCounters[pName]['totalNumDirs'] += rse['counters']['totalNumDirs']
@@ -779,6 +799,7 @@ class MSUnmerged(MSCore):
             self.rseCounters[rseName]['dirsDeletedSuccess'] = 0
             self.rseCounters[rseName]['dirsDeletedFail'] = 0
             self.rseCounters[rseName]['gfalErrors'] = {}
+            self.rseCounters[rseName]['rucioConMonErrors'] = {}
             return
 
         # Resetting Just the pline counters

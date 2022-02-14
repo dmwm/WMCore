@@ -151,14 +151,15 @@ class MSUnmerged(MSCore):
                                                 Functor(self.filterUnmergedFiles),
                                                 Functor(self.getPfn),
                                                 Functor(self.cleanRSE),
-                                                Functor(self.updateRSECounters, pName),
+                                                Functor(self.updateServiceCounters),
                                                 Functor(self.updateRSETimestamps, start=False, end=True),
                                                 Functor(self.uploadRSEToMongoDB),
                                                 Functor(self.purgeRseObj)])
-        # Initialization of the deleted files counters:
-        self.rseCounters = {}
+        # Initialization service counters:
         self.plineCounters = {}
         self.rseTimestamps = {}
+
+        # Initialization service common data structures:
         self.rseConsStats = {}
         self.protectedLFNs = []
 
@@ -257,7 +258,7 @@ class MSUnmerged(MSCore):
         """
 
         pline = self.plineUnmerged
-        self.resetServiceCounters(plineName=pline.name)
+        self.resetServiceCounters()
         self.plineCounters[pline.name]['totalNumRses'] = len(rseList)
 
         for rseName in rseList:
@@ -471,44 +472,35 @@ class MSUnmerged(MSCore):
             msg = "RSE: %s Missing in stats records at Rucio Consistency Monitor. " % rseName
             msg += "Skipping it in the current run."
             self.logger.warning(msg)
-            errMessage = "Missing record"
-            rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
-            rse['counters']['rucioConMonErrors'][errMessage] += 1
-            self.updateRSECounters(rse, self.plineUnmerged.name)
+            rse['rucioConMonStatus'] = "Missing"
             self.updateRSETimestamps(rse, start=False, end=True)
             self.uploadRSEToMongoDB(rse)
             raise MSUnmergedPlineExit(msg)
 
         isConsDone = self.rseConsStats[rseName]['status'] == 'done'
         isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
+
         if not isConsNewer:
             msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. " % rseName
             if 'isClean' in rse and rse['isClean']:
                 msg += "And the RSE has been cleaned during the last Rucio Consistency Monitor polling cycle."
                 msg += "Skipping it in the current run."
                 self.logger.info(msg)
-                errMessage = "Old record && RSE clean"
-                rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
-                rse['counters']['rucioConMonErrors'][errMessage] += 1
-                self.updateRSECounters(rse, self.plineUnmerged.name)
+                rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
                 self.updateRSETimestamps(rse, start=False, end=True)
                 self.uploadRSEToMongoDB(rse)
                 raise MSUnmergedPlineExit(msg)
             else:
                 msg += "But the RSE has NOT been fully cleaned during the last Rucio Consistency Monitor polling cycle."
                 msg += "Retrying cleanup in the current run."
-                errMessage = "Old record && Retry clean"
-                rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
-                rse['counters']['rucioConMonErrors'][errMessage] += 1
                 self.logger.info(msg)
+                rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
+
         if not isConsDone:
             msg = "RSE: %s In non-final state in Rucio Consistency Monitor. " % rseName
             msg += "Skipping it in the current run."
             self.logger.warning(msg)
-            errMessage = "Non-final state"
-            rse['counters']['rucioConMonErrors'].setdefault(errMessage, 0)
-            rse['counters']['rucioConMonErrors'][errMessage] += 1
-            self.updateRSECounters(rse, self.plineUnmerged.name)
+            rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
             self.updateRSETimestamps(rse, start=False, end=True)
             self.uploadRSEToMongoDB(rse)
             raise MSUnmergedPlineExit(msg)
@@ -750,7 +742,7 @@ class MSUnmerged(MSCore):
         rse['timestamps'] = self.rseTimestamps[rseName]
         return rse
 
-    def updateRSECounters(self, rse, pName):
+    def updateServiceCounters(self, rse):
         """
         Update/Upload all counters from the rse object into the MSUnmerged
         service counters
@@ -758,17 +750,7 @@ class MSUnmerged(MSCore):
         :param pName: The pipeline name whose counters to be updated
         :return:      rse
         """
-        rseName = rse['name']
-        self.resetServiceCounters(rseName=rseName)
-        self.rseCounters[rseName]['totalNumFiles'] = rse['counters']['totalNumFiles']
-        self.rseCounters[rseName]['totalNumDirs'] = rse['counters']['totalNumDirs']
-        self.rseCounters[rseName]['filesDeletedSuccess'] = rse['counters']['filesDeletedSuccess']
-        self.rseCounters[rseName]['filesDeletedFail'] = rse['counters']['filesDeletedFail']
-        self.rseCounters[rseName]['dirsDeletedSuccess'] = rse['counters']['dirsDeletedSuccess']
-        self.rseCounters[rseName]['dirsDeletedFail'] = rse['counters']['dirsDeletedFail']
-        self.rseCounters[rseName]['gfalErrors'] = rse['counters']['gfalErrors']
-        self.rseCounters[rseName]['rucioConMonErrors'] = rse['counters']['rucioConMonErrors']
-
+        pName = self.plineUnmerged.name
         self.plineCounters[pName]['totalNumFiles'] += rse['counters']['totalNumFiles']
         self.plineCounters[pName]['totalNumDirs'] += rse['counters']['totalNumDirs']
         self.plineCounters[pName]['filesDeletedSuccess'] += rse['counters']['filesDeletedSuccess']
@@ -781,62 +763,23 @@ class MSUnmerged(MSCore):
 
         return rse
 
-    def resetServiceCounters(self, rseName=None, plineName=None):
+    def resetServiceCounters(self):
         """
         A simple function for zeroing the service counters.
-        :param rseName:   RSE Name whose counters to be zeroed
         :param plineName: The Pline Name whose counters to be zeroed
         """
-
-        # Resetting Just the RSE Counters
-        if rseName is not None:
-            if rseName not in self.rseCounters:
-                self.rseCounters[rseName] = {}
-            self.rseCounters[rseName]['totalNumFiles'] = 0
-            self.rseCounters[rseName]['totalNumDirs'] = 0
-            self.rseCounters[rseName]['filesDeletedSuccess'] = 0
-            self.rseCounters[rseName]['filesDeletedFail'] = 0
-            self.rseCounters[rseName]['dirsDeletedSuccess'] = 0
-            self.rseCounters[rseName]['dirsDeletedFail'] = 0
-            self.rseCounters[rseName]['gfalErrors'] = {}
-            self.rseCounters[rseName]['rucioConMonErrors'] = {}
-            return
-
-        # Resetting Just the pline counters
-        if plineName is not None:
-            if plineName not in self.plineCounters:
-                self.plineCounters[plineName] = {}
-            self.plineCounters[plineName]['totalNumFiles'] = 0
-            self.plineCounters[plineName]['totalNumDirs'] = 0
-            self.plineCounters[plineName]['filesDeletedSuccess'] = 0
-            self.plineCounters[plineName]['filesDeletedFail'] = 0
-            self.plineCounters[plineName]['dirsDeletedSuccess'] = 0
-            self.plineCounters[plineName]['dirsDeletedFail'] = 0
-            self.plineCounters[plineName]['totalNumRses'] = 0
-            self.plineCounters[plineName]['rsesProcessed'] = 0
-            self.plineCounters[plineName]['rsesCleaned'] = 0
-            return
-
-        # Resetting all counters
-        for rseName in self.rseCounters:
-            self.rseCounters[rseName]['totalNumFiles'] = 0
-            self.rseCounters[rseName]['totalNumDirs'] = 0
-            self.rseCounters[rseName]['filesDeletedSuccess'] = 0
-            self.rseCounters[rseName]['filesDeletedFail'] = 0
-            self.rseCounters[rseName]['dirsDeletedSuccess'] = 0
-            self.rseCounters[rseName]['dirsDeletedFail'] = 0
-            self.rseCounters[rseName]['dirsDeletedFail'] = 0
-
-        for plineName in self.plineCounters:
-            self.plineCounters[plineName]['totalNumFiles'] = 0
-            self.plineCounters[plineName]['totalNumDirs'] = 0
-            self.plineCounters[plineName]['filesDeletedSuccess'] = 0
-            self.plineCounters[plineName]['filesDeletedFail'] = 0
-            self.plineCounters[plineName]['dirsDeletedSuccess'] = 0
-            self.plineCounters[plineName]['dirsDeletedFail'] = 0
-            self.plineCounters[plineName]['totalNumRses'] = 0
-            self.plineCounters[plineName]['rsesProcessed'] = 0
-            self.plineCounters[plineName]['rsesCleaned'] = 0
+        # Resetting pline counters
+        plineName = self.plineUnmerged.name
+        self.plineCounters.setdefault(plineName, {})
+        self.plineCounters[plineName]['totalNumFiles'] = 0
+        self.plineCounters[plineName]['totalNumDirs'] = 0
+        self.plineCounters[plineName]['filesDeletedSuccess'] = 0
+        self.plineCounters[plineName]['filesDeletedFail'] = 0
+        self.plineCounters[plineName]['dirsDeletedSuccess'] = 0
+        self.plineCounters[plineName]['dirsDeletedFail'] = 0
+        self.plineCounters[plineName]['totalNumRses'] = 0
+        self.plineCounters[plineName]['rsesProcessed'] = 0
+        self.plineCounters[plineName]['rsesCleaned'] = 0
         return
 
     def getRSEFromMongoDB(self, rse):
@@ -880,6 +823,7 @@ class MSUnmerged(MSCore):
             mongoProjection = {"_id": False,
                                "name": True,
                                "pfnPrefix": True,
+                               "rucioConMonStatus": True,
                                "isClean": True,
                                "timestamps": True,
                                "counters": True}

@@ -1,3 +1,12 @@
+2.0.0 to 2.0.1.pre1:
+  - Add parameters to rucio datasets (Jhonatan Amado) #10989
+  - Update requirements.txt and PyPI build scripts for py3 stack (Erik Gough) #10976
+  - Update mocked APIs and data (Alan Malta Rodrigues) #10990
+  - Fix a few DBS3Reader APIs, likely unused ones (Alan Malta Rodrigues) #10990
+  - Remove files from mongoProjection (Todor Ivanov) #10987
+  - Bump dbs3-client to 4.0.6 (Alan Malta Rodrigues) #10984
+
+
 2.0.0.pre3 to 2.0.0:
 
 

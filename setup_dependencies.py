@@ -62,6 +62,28 @@ dependencies = {
                     'etc+'
                     ],
     },
+    'wmagent-devtools': {
+        'packages': ['WMCore+',
+                     'WMComponent+',
+                     'WMQuality+',
+                     'PSetTweaks+',
+                     'Utils+'],
+        'modules': [],
+        'systems': [],
+        'statics': ['src/couchapps+',
+                    'src/css+',
+                    'src/html+',
+                    'src/javascript+',
+                    'src/templates+',
+                    'bin+',
+                    'deploy+',
+                    'doc+',
+                    'etc+',
+                    'test+',
+                    'standards+'
+                    'tools+'
+                    ],
+    },
     'reqmgr2': {
         'packages': ['WMCore.ReqMgr+',
                      'WMCore.Services+',

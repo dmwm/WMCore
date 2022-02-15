@@ -4,9 +4,9 @@ How to contribute to WMCore
 Thank you for participating in WMCore!
 
 * Please ensure that a GitHub `issue <https://github.com/dmwm/WMCore/issues/new/choose>`_ exists before submitting your contribution through a pull request.
-  * There are two templates available to create a new Github issue, select the one matching your issue type.
+    * There are two templates available to create a new Github issue, select the one matching your issue type.
 * Pull request will only be merged if there is an associated issue (different solutions/implementations can be discussed on the issue).
-  * And at least one approval through the GitHub review process.
+    * And at least one approval through the GitHub review process.
 
 A contribution can be either a **patch** or a **feature**:
  * **patch**: includes a bug-fixes or an outstanding enhancement; besides going to the **master** branch, we also backport the same contribution to the latest **wmagent** branch.
@@ -36,7 +36,7 @@ Setting up the development environment
 
 There is no real recipe here, people use different operating systems and different IDE (Integrated Development Environment).
 However, please make sure your dev environment defaults to python 3.8 interpreter.
-A non-exhaustive list of libraries which WMCore depends on can be found on the `requirements_py3 <https://github.com/dmwm/WMCore/blob/master/requirements_py3.txt>`_ file.
+A non-exhaustive list of libraries which WMCore depends on can be found on the `requirements <https://github.com/dmwm/WMCore/blob/master/requirements.txt>`_ file.
 Last but not least, please also have a look at the `Coding Style and checks` section below
 
 Setting up the testing environment

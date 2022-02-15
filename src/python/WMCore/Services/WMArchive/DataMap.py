@@ -1,6 +1,5 @@
 from __future__ import (division, print_function)
 from builtins import str
-from past.builtins import basestring
 from future.utils import viewitems, listvalues, listitems
 
 import copy
@@ -13,18 +12,17 @@ WMARCHIVE_TOP_LEVEL_REMOVE_OUTSIDE_LAYER = ["steps"]
 # convert data format under stpes["cmsRun1"/"logArch1"/"stageOut1"]["output"]
 WMARCHIVE_REMOVE_OUTSIDE_LAYER = ["checksum", "dataset"]
 # convert to list from str
-WMARCHIVE_CONVERT_TO_LIST = ["OutputPFN", "lfn"]
+WMARCHIVE_CONVERT_TO_LIST = ["lfn"]
 
-WMARCHIVE_DATA_MAP = {"OutputPFN": "outputPFNs", "inputPath": "inputDataset",
-                      "lfn": "outputLFNs", "input": "inputLFNs", "inputpfns": "inputPFNs"}
+WMARCHIVE_DATA_MAP = {"inputPath": "inputDataset",
+                      "lfn": "outputLFNs", "input": "inputLFNs"}
 
-WMARCHIVE_REMOVE_FIELD = ["InputPFN", "pfn", "user_dn", "user_vogroup", "user_vorole"]
+WMARCHIVE_REMOVE_FIELD = ["user_dn", "user_vogroup", "user_vorole"]
 WMARCHIVE_COMBINE_FIELD = {"outputDataset": ["primaryDataset", "processedDataset", "dataTier"]}
 
 WMARCHIVE_LFN_REF_KEY = ["lfn", "files"]
-WMARCHIVE_PFN_REF_KEY = ["pfn"]
-WMARCHIVE_FILE_REF_KEY = {"LFN": WMARCHIVE_LFN_REF_KEY,
-                          "PFN": WMARCHIVE_PFN_REF_KEY}
+WMARCHIVE_PFN_REF_KEY = []
+WMARCHIVE_FILE_REF_KEY = {"LFN": WMARCHIVE_LFN_REF_KEY}
 
 ERROR_TYPE = {'exitCode': int}
 
@@ -94,7 +92,6 @@ STEP_DEFAULT = {  # 'name': '',
         # 'guid': '',
         # 'inputDataset': '',
         'inputLFNs': [],
-        'inputPFNs': [],
         # TODO change to empty string from None
         # 'location': '',
         # 'merged': False,
@@ -102,7 +99,6 @@ STEP_DEFAULT = {  # 'name': '',
         # 'output_module_class': '',
         # 'outputDataset': '',
         'outputLFNs': [],
-        'outputPFNs': [],
         # 'prep_id': '',
         # 'processingStr': '',
         # 'processingVer': -1,
@@ -124,6 +120,23 @@ STEP_DEFAULT = {  # 'name': '',
     # 'stop': 1454569736
 }
 
+
+def cleanStep(idict):
+    """
+    perform clean-up of PFNs attributes in place for given dictionary
+
+    :param idict: a FWJR report dictionary
+    :return: a dictionary without PFNs
+    """
+    for step in ['input', 'output']:
+        data = idict.get(step, {})
+        for key, values in data.items():
+            for elem in values:
+                for skip in ['pfn', 'InputPFN', 'OutputPFN', 'inputpfns']:
+                    if skip in elem:
+                        del elem[skip]
+            data[key] = values
+    return idict
 
 def combineDataset(dataset):
     dataset["outputDataset"] = "/%s/%s/%s" % (dataset.pop("primaryDataset"),
@@ -300,12 +313,12 @@ def convertStepValue(stepValue):
 
     return stepValue
 
-
 def convertSteps(steps):
     stepList = []
     for key, value in viewitems(steps):
         stepItem = {}
         stepItem['name'] = key
+        value = cleanStep(value)
         stepItem.update(convertStepValue(value))
         _validateTypeAndSetDefault(stepItem, TOP_LEVEL_STEP_DEFAULT)
         stepList.append(stepItem)

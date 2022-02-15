@@ -77,6 +77,7 @@ class RucioInjectorPollerTest(EmulatedUnitTestCase):
         config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
         config.RucioInjector.metaDIDProject = "Production"
         config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
+        config.RucioInjector.blockRuleParams = {}
         config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
         config.RucioInjector.rucioAccount = "wma_test"
         config.RucioInjector.rucioUrl = "http://cms-rucio-int.cern.ch"

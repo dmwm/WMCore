@@ -62,6 +62,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.lastRulesExecTime = 0
         self.createBlockRules = config.RucioInjector.createBlockRules
         self.containerDiskRuleParams = config.RucioInjector.containerDiskRuleParams
+        self.blockRuleParams = config.RucioInjector.blockRuleParams
         self.containerDiskRuleRSEExpr = config.RucioInjector.containerDiskRuleRSEExpr
         if config.RucioInjector.metaDIDProject not in RUCIO_VALID_PROJECT:
             msg = "Component configured with an invalid 'project' DID: %s"
@@ -239,6 +240,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                           ignore_availability=True, meta=self.metaData)
             rseName = "%s_Test" % item['pnn'] if self.testRSEs else item['pnn']
             # DATASET = replicates all files in the same block to the same RSE
+            kwargs.update(self.blockRuleParams)
             resp = self.rucio.createReplicationRule(item['blockname'],
                                                     rseExpression=rseName, **kwargs)
             if resp:

@@ -29,6 +29,7 @@ class MSUnmergedRSETest(unittest.TestCase):
         self.expectedRSE = {'name': 'T2_US_Wisconsin',
                             'pfnPrefix': None,
                             'isClean': False,
+                            "rucioConMonStatus": None,
                             'timestamps': {'rseConsStatTime': 0.0,
                                            'prevStartTime': 0.0,
                                            'startTime': 0.0,

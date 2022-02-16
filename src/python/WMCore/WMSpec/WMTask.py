@@ -990,7 +990,8 @@ class WMTaskHelper(TreeHelper):
                                    custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
                                    useSkim=False, isSkim=False,
-                                   dataTier=None, deleteFromSource=False):
+                                   dataTier=None, deleteFromSource=False,
+                                   datasetLifetime=None):
         """
         _setSubscriptionsInformation_
 
@@ -1050,6 +1051,7 @@ class WMTaskHelper(TreeHelper):
             outputSection.nonCustodialGroup = nonCustodialGroup
             outputSection.priority = priority
             outputSection.deleteFromSource = deleteFromSource
+            outputSection.datasetLifetime = datasetLifetime
 
         return
 
@@ -1090,7 +1092,9 @@ class WMTaskHelper(TreeHelper):
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
                                        "CustodialSubType": getattr(outputSection, "custodialSubType", "Replica"),
                                        "NonCustodialSubType": getattr(outputSection, "nonCustodialSubType",
-                                                                      "Replica")}
+                                                                      "Replica"),
+                                      # Spec assigned for T0 ContainerRules
+                                      "DatasetLifetime": getattr(outputSection, "datasetLifetime", 0)}
         return subInformation
 
     def parentProcessingFlag(self):

@@ -625,7 +625,8 @@ class WMTaskTest(unittest.TestCase):
                                             nonCustodialGroup="AnalysisOps",
                                             priority="Normal",
                                             deleteFromSource=True,
-                                            primaryDataset="OneParticle")
+                                            primaryDataset="OneParticle",
+                                            datasetLifetime=None)
         subInfo = testTask.getSubscriptionInformation()
         outputRecoSubInfo = {"CustodialSites": ["mercury"],
                              "NonCustodialSites": ["mars", "earth"],
@@ -635,7 +636,8 @@ class WMTaskTest(unittest.TestCase):
                              "CustodialGroup": "DataOps",
                              "NonCustodialGroup": "AnalysisOps",
                              "Priority": "Normal",
-                             "DeleteFromSource": True}
+                             "DeleteFromSource": True,
+                             "DatasetLifetime": None}
 
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"], outputRecoSubInfo,
                          "The RECO subscription information is wrong")
@@ -655,7 +657,8 @@ class WMTaskTest(unittest.TestCase):
                             "CustodialGroup": "DataOps",
                             "NonCustodialGroup": "DataOps",
                             "Priority": "Low",
-                            "DeleteFromSource": False}
+                            "DeleteFromSource": False,
+                            "DatasetLifetime": None}
 
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"], outputRecoSubInfo,
                          "The RECO subscription information is wrong")
@@ -677,7 +680,8 @@ class WMTaskTest(unittest.TestCase):
                             "CustodialGroup": "DataOps",
                             "NonCustodialGroup": "DataOps",
                             "Priority": "Low",
-                            "DeleteFromSource": False}
+                            "DeleteFromSource": False,
+                            "DatasetLifetime": None}
 
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"], outputRecoSubInfo,
                          "The RECO subscription information is wrong")

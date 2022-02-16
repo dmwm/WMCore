@@ -1,3 +1,11 @@
+2.0.1.pre1 to 2.0.1.pre2:
+  - Add lifetime to RucioContainers shipping to disk sites (Jhonatan Amado) #10950
+  - Send alerts to prometheus when a workflow fails to be processed. Rename notifyLargeData method. Fixes #10215 (Kenyi Hurtado) #10959
+  - Remove leftover requirements_py3.txt; update contribution doc (Alan Malta Rodrigues) #10997
+  - Simplify counters logic && Substitute rucioConMonErrors with rucioConMonStatus. (Todor Ivanov) #10993
+  - Add rucioConMonErrors counter. (Todor Ivanov) #10993
+
+
 2.0.0 to 2.0.1.pre1:
   - Add parameters to rucio datasets (Jhonatan Amado) #10989
   - Update requirements.txt and PyPI build scripts for py3 stack (Erik Gough) #10976

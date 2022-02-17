@@ -1017,13 +1017,15 @@ class CouchServer(CouchDBRequests):
         TODO: Improve source/destination handling - can't simply URL quote,
         though, would need to decompose the URL and rebuild it.
         """
-        if source not in self.listDatabases():
+        listDbs = self.listDatabases()
+        if source not in listDbs:
             check_server_url(source)
-        if destination not in self.listDatabases():
+        if destination not in listDbs:
             if create_target and not destination.startswith("http"):
                 check_name(destination)
             else:
                 check_server_url(destination)
+
         if not destination.startswith("http"):
             destination = '%s/%s' % (self.url, destination)
         if not source.startswith("http"):
@@ -1038,7 +1040,10 @@ class CouchServer(CouchDBRequests):
             data["filter"] = filter
             if query_params:
                 data["query_params"] = query_params
-        self.post('/_replicator', data)
+        resp = self.post('/_replicator', data)
+        # AMR FIXME TODO: hack to workaround the delayed scheduling in CouchDB 3.x
+        time.sleep(5)
+        return resp
 
     def status(self):
         """

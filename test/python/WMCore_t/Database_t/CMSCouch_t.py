@@ -5,41 +5,37 @@ CMSCouch library to work with CouchDB. It currently assumes you have a running
 CouchDB instance, and is not going to work in an automated way just yet - we'll
 need to add Couch as an external, include it in start up scripts etc.
 """
-from __future__ import print_function, division
-
 import unittest
 import os
 import hashlib
 import base64
-import sys
 import time
-from datetime import datetime, timedelta
-
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.Database.CMSCouch import (CouchServer, CouchMonitor, Document, Database,
                                       CouchInternalServerError, CouchNotFoundError)
 
-from Utils.Utilities import encodeUnicodeToBytes
 
 class CMSCouchTest(unittest.TestCase):
 
     def setUp(self):
         # Make an instance of the server
-        self.server = CouchServer(os.getenv("COUCHURL", 'http://admin:password@localhost:5984'))
-        self.testname = self.id().split('.')[-1]
+        creds = os.getenv("COUCHURL", 'http://admin:password@localhost:5984')
+        self.server = CouchServer(creds)
+        testname = self.id().split('.')[-1]
         # Create a database, drop an existing one first
-        dbname = 'cmscouch_unittest_%s' % self.testname.lower()
+        self.testdbname = 'cmscouch_unittest_%s' % testname.lower()
 
-        if dbname in self.server.listDatabases():
-            self.server.deleteDatabase(dbname)
+        if self.testdbname in self.server.listDatabases():
+            self.server.deleteDatabase(self.testdbname)
 
-        self.server.createDatabase(dbname)
-        self.db = self.server.connectDatabase(dbname)
+        self.server.createDatabase(self.testdbname)
+        self.db = self.server.connectDatabase(self.testdbname)
+        self.replicatordb = self.server.connectDatabase('_replicator')
 
     def tearDown(self):
-        if sys.exc_info()[0] == None:
-            # This test has passed, clean up after it
-            dbname = 'cmscouch_unittest_%s' % self.testname.lower()
-            self.server.deleteDatabase(dbname)
+        """Destroy our testing setup"""
+        if self.testdbname in self.server.listDatabases():
+            self.server.deleteDatabase(self.testdbname)
 
     def testCommitOne(self):
         # Can I commit one dict
@@ -111,7 +107,7 @@ class CMSCouchTest(unittest.TestCase):
         doc_v1 = self.db.document(doc_id)
 
         #replicate
-        resp = self.server.replicate(self.db.name, repl_db.name)
+        resp = self.server.replicate(self.db.name, repl_db.name, sleepSecs=5)
         self.assertTrue(resp["ok"])
         self.assertTrue("id" in resp)
         self.assertTrue("rev" in resp)
@@ -214,7 +210,7 @@ class CMSCouchTest(unittest.TestCase):
         doc_v1 = self.db.document(doc_id)
 
         #replicate
-        self.server.replicate(self.db.name, repl_db.name)
+        self.server.replicate(self.db.name, repl_db.name, sleepSecs=5)
         time.sleep(1)
 
         doc_v2 = self.db.document(doc_id)
@@ -228,22 +224,32 @@ class CMSCouchTest(unittest.TestCase):
         repl_db.commitOne(conflict_doc)
 
         #replicate, creating the conflict
-        self.server.replicate(self.db.name, repl_db.name)
+        self.server.replicate(self.db.name, repl_db.name, sleepSecs=5)
         time.sleep(1)
 
-        conflict_view = {'map':"function(doc) {if(doc._conflicts) {emit(doc._conflicts, null);}}"}
-        data = repl_db.post('/%s/_temp_view' % repl_db.name, conflict_view)
+        tempDesignDoc = {'views': {
+                             'conflicts': {
+                                 'map': "function(doc) {if(doc._conflicts) {emit(doc._conflicts, null);}}"
+                                           },
+                                   }
+                         }
+        # create the temporary views, which in CouchDB 3.x must be through a
+        # permanent view (within a design doc)
+        repl_db.put('/%s/_design/TempDesignDoc' % repl_db.name, tempDesignDoc)
+        self.db.put('/%s/_design/TempDesignDoc' % self.db.name, tempDesignDoc)
 
         # Should have one conflict in the repl database
-        self.assertEqual(data['total_rows'], 1)
+        dataRepl = repl_db.get('/%s/_design/TempDesignDoc/_view/conflicts' % repl_db.name)
+        self.assertEqual(dataRepl['total_rows'], 1)
         # Should have no conflicts in the source database
-        self.assertEqual(self.db.post('/%s/_temp_view' % self.db.name, conflict_view)['total_rows'], 0)
-        self.assertTrue(repl_db.documentExists(data['rows'][0]['id'], rev=data['rows'][0]['key'][0]))
-
-        repl_db.delete_doc(data['rows'][0]['id'], rev=data['rows'][0]['key'][0])
-        data = repl_db.post('/%s/_temp_view' % repl_db.name, conflict_view)
-
+        data = self.db.get('/%s/_design/TempDesignDoc/_view/conflicts' % self.db.name)
         self.assertEqual(data['total_rows'], 0)
+        self.assertTrue(repl_db.documentExists(dataRepl['rows'][0]['id'], rev=dataRepl['rows'][0]['key'][0]))
+
+        repl_db.delete_doc(dataRepl['rows'][0]['id'], rev=dataRepl['rows'][0]['key'][0])
+        dataRepl = repl_db.get('/%s/_design/TempDesignDoc/_view/conflicts' % repl_db.name)
+
+        self.assertEqual(dataRepl['total_rows'], 0)
         self.server.deleteDatabase(repl_db.name)
 
         #update it again
@@ -483,7 +489,7 @@ class CouchMonitorTest(unittest.TestCase):
         self.assertEqual(resp, [])
 
         # now define a replication task
-        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl)
+        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl, sleepSecs=5)
         self.assertTrue(resp["ok"])
         time.sleep(1)
         # FIXME: this was supposed to be 1. To be investigated!!!
@@ -503,7 +509,7 @@ class CouchMonitorTest(unittest.TestCase):
         self.assertEqual(resp["jobs"], [])
 
         # now define a replication task
-        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl)
+        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl, sleepSecs=5)
         self.assertTrue(resp["ok"])
         # give it a couple of seconds for it to show up as active task
         time.sleep(1)
@@ -526,7 +532,7 @@ class CouchMonitorTest(unittest.TestCase):
         self.assertEqual(resp["docs"], [])
 
         # now define a replication task
-        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl)
+        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl, sleepSecs=5)
         self.assertTrue(resp["ok"])
         # give it a couple of seconds for it to show up as active task
         time.sleep(1)

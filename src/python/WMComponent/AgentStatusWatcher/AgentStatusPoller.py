@@ -72,6 +72,14 @@ class AgentStatusPoller(BaseWorkerThread):
             self.workqueueDS = WorkQueueDS(localWQUrl)
 
     def setUpCouchDBReplication(self):
+        """
+        This method will delete the current replication documents and
+        fresh new ones will be created.
+        :return: None
+        """
+        # delete old replicator docs before setting up fresh ones
+        resp = self.localCouchMonitor.deleteReplicatorDocs()
+        logging.info("Deleted old replication documents and the response was: %s", resp)
 
         self.replicatorDocs = []
         # set up common replication code
@@ -96,14 +104,13 @@ class AgentStatusPoller(BaseWorkerThread):
             self.replicatorDocs.append({'source': localQInboxURL, 'target': parentQURL,
                                         'filter': wqfilter, 'query_params': query_params})
 
-        # delete old replicator docs before setting up
-        self.localCouchMonitor.deleteReplicatorDocs()
-
+        logging.info("Going to create %d new replication documents", len(self.replicatorDocs))
         for rp in self.replicatorDocs:
-            self.localCouchMonitor.couchServer.replicate(
-                rp['source'], rp['target'], filter=rp['filter'],
-                query_params=rp.get('query_params', False),
-                continuous=True)
+            resp = self.localCouchMonitor.couchServer.replicate(rp['source'], rp['target'],
+                                                                continuous=True,
+                                                                filter=rp['filter'],
+                                                                query_params=rp.get('query_params', False))
+            logging.info(".. response for the replication document creation was: %s", resp)
 
     def setup(self, parameters):
         """

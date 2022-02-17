@@ -133,7 +133,9 @@ class CouchDBRequests(JSONRequests):
                     encode, decode, contentType)
         except HTTPException as e:
             self.checkForCouchError(getattr(e, "status", None),
-                                    getattr(e, "reason", None), data)
+                                    getattr(e, "reason", None),
+                                    data,
+                                    getattr(e, "result", None))
 
         return result
 
@@ -157,6 +159,8 @@ class CouchDBRequests(JSONRequests):
             raise CouchNotAcceptableError(reason, data, result)
         elif status == 409:
             raise CouchConflictError(reason, data, result)
+        elif status == 410:
+            raise CouchFeatureGone(reason, data, result)
         elif status == 412:
             raise CouchPreconditionFailedError(reason, data, result)
         elif status == 416:
@@ -882,7 +886,7 @@ class RotatingDatabase(Database):
         now = datetime.now()
         then = now - self.timing['expire']
 
-        options = {'startkey': 0, 'endkey': time.mktime(then.timetuple())}
+        options = {'startkey': 0, 'endkey': int(time.mktime(then.timetuple()))}
         expired = self._find_dbs_in_state('archived', options)
         for db in expired:
             try:
@@ -894,14 +898,25 @@ class RotatingDatabase(Database):
             self.seed_db.queueDelete(db_state)
         self.seed_db.commit()
 
+    def _create_design_doc(self):
+        """Create a design doc with a view for the rotate state"""
+        tempDesignDoc = {'views': {
+                             'rotateState': {
+                                 'map': "function(doc) {emit(doc.timestamp, doc.rotate_state, doc._id);}"
+                                            },
+                                   }
+                         }
+        self.seed_db.put('/%s/_design/TempDesignDoc' % self.seed_db.name, tempDesignDoc)
+
     def _find_dbs_in_state(self, state, options=None):
+        """Creates a design document with a single (temporary) view in it"""
         options = options or {}
-        # TODO: couchapp this, how to make sure that the app is deployed?
-        find = {'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
-        uri = '/%s/_temp_view' % self.seed_db.name
-        if options:
-            uri += '?%s' % urllib.parse.urlencode(options)
-        data = self.seed_db.post(uri, find)
+        if self.seed_db.documentExists("_design/TempDesignDoc"):
+            logging.info("Skipping designDoc creation because it already exists!")
+        else:
+            self._create_design_doc()
+
+        data = self.seed_db.loadView("TempDesignDoc", "rotateState", options=options)
         return data['rows']
 
     def inactive_dbs(self):
@@ -997,9 +1012,13 @@ class CouchServer(CouchDBRequests):
         return Database(dbname=dbname, url=self.url, size=size, ckey=self.ckey, cert=self.cert)
 
     def deleteDatabase(self, dbname):
-        "Delete a database from the server"
+        """Delete a database from the server"""
         check_name(dbname)
         dbname = urllib.parse.quote_plus(dbname)
+        if "cmsweb" in self.url:
+            msg = f"You can't be serious that you want to delete a PROODUCTION database!!! "
+            msg += f"At url: {self.url}, for database name: {dbname}. Bailing out!"
+            raise RuntimeError(msg)
         return self.delete("/%s" % dbname)
 
     def connectDatabase(self, dbname='database', create=True, size=1000):
@@ -1014,18 +1033,11 @@ class CouchServer(CouchDBRequests):
 
     def replicate(self, source, destination, continuous=False,
                   create_target=False, cancel=False, doc_ids=False,
-                  filter=False, query_params=False):
-        """Trigger replication between source and destination. Options are as
-        described in http://wiki.apache.org/couchdb/Replication, in summary:
-            continuous = bool, trigger continuous replication
-            create_target = bool, implicitly create the target database
-            cancel = bool, stop continuous replication
-            doc_ids = list, id's of specific documents you want to replicate
-            filter = string, name of the filter function you want to apply to
-                     the replication, the function should be defined in a design
-                     document in the source database.
-            query_params = dictionary of parameters to pass into the filter
-                     function
+                  filter=False, query_params=False, sleepSecs=0):
+        """
+        Trigger replication between source and destination. CouchDB options are
+        defined in: https://docs.couchdb.org/en/3.1.2/api/server/common.html#replicate
+        with further details in: https://docs.couchdb.org/en/stable/replication/replicator.html
 
         Source and destination need to be appropriately urlquoted after the port
         number. E.g. if you have a database with /'s in the name you need to
@@ -1033,14 +1045,28 @@ class CouchServer(CouchDBRequests):
 
         TODO: Improve source/destination handling - can't simply URL quote,
         though, would need to decompose the URL and rebuild it.
+
+        :param source: string with the source url to replicate data from
+        :param destination: string with the destination url to replicate data to
+        :param continuous: boolean to perform a continuous replication or not
+        :param create_target: boolean to create the target database, if non-existent
+        :param cancel: boolean to stop a replication (but we better just delete the doc!)
+        :param doc_ids: a list of specific doc ids that we would like to replicate
+        :param filter: string with the name of the filter function to be used. Note that
+                       this filter is expected to have been defined in the design doc.
+        :param query_params: dictionary of parameters to pass over to the filter function
+        :param sleepSecs: amount of seconds to sleep after the replication job is created
+        :return: status of the replication creation
         """
-        if source not in self.listDatabases():
+        listDbs = self.listDatabases()
+        if source not in listDbs:
             check_server_url(source)
-        if destination not in self.listDatabases():
+        if destination not in listDbs:
             if create_target and not destination.startswith("http"):
                 check_name(destination)
             else:
                 check_server_url(destination)
+
         if not destination.startswith("http"):
             destination = '%s/%s' % (self.url, destination)
         if not source.startswith("http"):
@@ -1055,7 +1081,10 @@ class CouchServer(CouchDBRequests):
             data["filter"] = filter
             if query_params:
                 data["query_params"] = query_params
-        return self.post('/_replicator', data)
+        resp = self.post('/_replicator', data)
+        # Sleep required for CouchDB 3.x unit tests
+        time.sleep(sleepSecs)
+        return resp
 
     def status(self):
         """
@@ -1131,6 +1160,13 @@ class CouchConflictError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchConflictError"
+
+
+class CouchFeatureGone(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchFeatureGone"
+
 
 class CouchPreconditionFailedError(CouchError):
     def __init__(self, reason, data, result):

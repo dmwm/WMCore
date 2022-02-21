@@ -698,7 +698,7 @@ class Proxy(Credential):
         cmdList = []
         cmdList.append('env')
         cmdList.append('X509_USER_PROXY=%s' % proxy)
-        cmdList.append('voms-proxy-init -noregen -voms %s -out %s -bits 1024 -valid %s %s'
+        cmdList.append('voms-proxy-init -noregen -voms %s -out %s -bits 2048 -valid %s %s'
                        % (voAttribute, proxy, vomsValid, '-rfc' if isRFC  else ''))
         cmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setEnv(cmd), self.logger, self.commandTimeout)

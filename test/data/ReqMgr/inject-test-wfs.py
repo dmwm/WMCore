@@ -196,6 +196,7 @@ def main():
             templates = [args.filename]
         else:
             logger.info("File %s not found.", wmcorePath + args.filename)
+            templates = []
     else:
         templates = os.listdir(wmcorePath)
 

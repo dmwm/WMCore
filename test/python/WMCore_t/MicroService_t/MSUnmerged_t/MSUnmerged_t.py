@@ -67,7 +67,8 @@ def getBasicRSEData():
             "/store/unmerged/express/prod/2020/1/12/log8.tar",
             "/store/unmerged/express/prod/2020/1/12/log9.tar",
             "/store/unmerged/alan/prod/2022/1/12/log10.tar"]
-    rse = {"counters": {"dirsToDeleteAll": 0},
+    rse = {"name": "T2_TestRSE",
+           "counters": {"dirsToDeleteAll": 0},
            "dirs": {"allUnmerged": set(),
                     "toDelete": {},
                     "protected": []},
@@ -124,7 +125,8 @@ class MSUnmergedTest(unittest.TestCase):
                          'wmstatsUrl': 'https://cmsweb-testbed.cern.ch/wmstatsserver',
                          'dirFilterIncl': [],
                          'dirFilterExcl': [],
-                         'emulateGfal2': True}
+                         'emulateGfal2': True,
+                         'mockMongoDB': True}
 
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}
@@ -140,7 +142,7 @@ class MSUnmergedTest(unittest.TestCase):
         self.msUnmerged = MSUnmerged(self.msConfig)
         self.msUnmerged.rucioConMon = RucioConMonEmul()
         self.msUnmerged.wmstatsSvc = WMStatsServerEmul()
-        self.msUnmerged.resetCounters()
+        self.msUnmerged.resetServiceCounters()
         self.msUnmerged.rucio = Rucio.Rucio(self.msConfig['rucioAccount'],
                                             hostUrl=self.rucioConfigDict['rucio_host'],
                                             authUrl=self.rucioConfigDict['auth_host'],
@@ -157,23 +159,46 @@ class MSUnmergedTest(unittest.TestCase):
         self.msUnmerged.rseConsStats = self.msUnmerged.rucioConMon.getRSEStats()
         self.msUnmerged.protectedLFNs = set(self.msUnmerged.wmstatsSvc.getProtectedLFNs())
         # Emulate the pipeline run while skipping the last purgeRseObj step
-        self.msUnmerged.resetCounters(plineName=pName)
+        self.msUnmerged.resetServiceCounters()
         rse = self.msUnmerged.updateRSETimestamps(rse, start=True, end=False)
         rse = self.msUnmerged.consRecordAge(rse)
         rse = self.msUnmerged.getUnmergedFiles(rse)
         rse = self.msUnmerged.filterUnmergedFiles(rse)
         rse = self.msUnmerged.cleanRSE(rse)
-        rse = self.msUnmerged.updateRSECounters(rse, pName)
+        rse = self.msUnmerged.updateServiceCounters(rse)
         rse = self.msUnmerged.updateRSETimestamps(rse, start=False, end=True)
         # self.msUnmerged.plineUnmerged.run(rse)
-        expectedRSE = {'counters': {'deletedFail': 0,
-                                    'deletedSuccess': 0,
-                                    'dirsToDelete': 6,
-                                    'dirsToDeleteAll': 6,
-                                    'filesToDelete': 21811,
-                                    'totalNumFiles': 11938},
+        expectedRSE = {'name': 'T2_US_Wisconsin',
+                       'pfnPrefix': None,
+                       'isClean': False,
+                       'rucioConMonStatus': None,
+                       'timestamps': {'endTime': mock.ANY,
+                                      'prevEndTime': 0.0,
+                                      'prevStartTime': 0.0,
+                                      'rseConsStatTime': mock.ANY,
+                                      'startTime': mock.ANY},
+                       "counters": {"totalNumFiles": 11938,
+                                    "totalNumDirs": 11,
+                                    "dirsToDelete": 6,
+                                    "filesToDelete": 0,
+                                    "filesDeletedSuccess": 0,
+                                    "filesDeletedFail": 0,
+                                    "dirsDeletedSuccess": 0,
+                                    "dirsDeletedFail": 0,
+                                    "gfalErrors": {}},
+                       'files': {'allUnmerged': mock.ANY,
+                                 'deletedFail': set(),
+                                 'deletedSuccess': set(),
+                                 'protected': {},
+                                 'toDelete': {'/store/unmerged/Phase2HLTTDRSummer20ReRECOMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/FEVT/FlatPU0To200_pilot_111X_mcRun4_realistic_T15_v1-v2': mock.ANY,
+                                              '/store/unmerged/Run2016G/DoubleEG/MINIAOD/UL2016_MiniAODv2-v1': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu/lcg-util': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util': mock.ANY}},
                        'dirs': {'allUnmerged': set(),
-                                'empty': [],
+                                "deletedSuccess": set(),
+                                "deletedFail": set(),
                                 'protected': {'/store/unmerged/RunIIAutumn18FSPremix/PMSSM_set_1_prompt_1_TuneCP2_13TeV-pythia8/AODSIM/GridpackScan_102X_upgrade2018_realistic_v15-v1',
                                               '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi1160_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
                                               '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi680_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
@@ -184,20 +209,8 @@ class MSUnmergedTest(unittest.TestCase):
                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu',
                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu/lcg-util',
                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu',
-                                             '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util'}},
-                       'files': {'allUnmerged': mock.ANY,
-                                 'deletedFail': [],
-                                 'deletedSuccess': [],
-                                 'protected': {},
-                                 'toDelete': {'/store/unmerged/Phase2HLTTDRSummer20ReRECOMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/FEVT/FlatPU0To200_pilot_111X_mcRun4_realistic_T15_v1-v2': mock.ANY,
-                                              '/store/unmerged/Run2016G/DoubleEG/MINIAOD/UL2016_MiniAODv2-v1': mock.ANY,
-                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu': mock.ANY,
-                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu/lcg-util': mock.ANY,
-                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu': mock.ANY,
-                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util': mock.ANY}},
-                       'isClean': False,
-                       'name': 'T2_US_Wisconsin',
-                       'pfnPrefix': None}
+                                             '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util'}}
+                       }
         self.assertDictEqual(rse, expectedRSE)
 
     def testCutPath(self):
@@ -224,7 +237,7 @@ class MSUnmergedTest(unittest.TestCase):
                                                      "/store/unmerged/express"]
         self.msUnmerged.protectedLFNs = set()
         filterData = self.msUnmerged.filterUnmergedFiles(rseData)
-        self.assertEqual(filterData['counters']['dirsToDeleteAll'], 2)
+        self.assertEqual(filterData['counters']['dirsToDelete'], 2)
         self.assertItemsEqual(viewkeys(filterData['files']['toDelete']), viewkeys(toDeleteDict))
         self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/data/prod/2018/1/12']),
                               toDeleteDict['/store/unmerged/data/prod/2018/1/12'])
@@ -243,7 +256,7 @@ class MSUnmergedTest(unittest.TestCase):
                                                      "/store/unmerged/alan/prod"]
         self.msUnmerged.protectedLFNs = set()
         filterData = self.msUnmerged.filterUnmergedFiles(rseData)
-        self.assertEqual(filterData['counters']['dirsToDeleteAll'], 2)
+        self.assertEqual(filterData['counters']['dirsToDelete'], 2)
         self.assertItemsEqual(viewkeys(filterData['files']['toDelete']), viewkeys(toDeleteDict))
         self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/data/prod/2018/1/12']),
                               toDeleteDict['/store/unmerged/data/prod/2018/1/12'])
@@ -262,7 +275,7 @@ class MSUnmergedTest(unittest.TestCase):
                                                      "/store/unmerged/alan/prod"]
         self.msUnmerged.protectedLFNs = set()
         filterData = self.msUnmerged.filterUnmergedFiles(rseData)
-        self.assertEqual(filterData['counters']['dirsToDeleteAll'], 1)
+        self.assertEqual(filterData['counters']['dirsToDelete'], 1)
         self.assertItemsEqual(viewkeys(filterData['files']['toDelete']), viewkeys(toDeleteDict))
         self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/express/prod/2020/1/12']),
                               toDeleteDict['/store/unmerged/express/prod/2020/1/12'])

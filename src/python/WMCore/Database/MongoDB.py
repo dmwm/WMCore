@@ -9,6 +9,7 @@ from __future__ import division, print_function
 from builtins import str, object
 
 from pymongo import MongoClient, errors, IndexModel
+import mongomock
 
 
 class MongoDB(object):
@@ -24,6 +25,7 @@ class MongoDB(object):
                  collections=None,
                  testIndexes=False,
                  logger=None,
+                 mockMongoDB=False,
                  **kwargs):
         """
         :databases:   A database Name to connect to
@@ -41,8 +43,12 @@ class MongoDB(object):
         self.server = server # '127.0.0.1'
         self.port = port # 8230
         self.logger = logger
+        self.mockMongoDB = mockMongoDB
         try:
-            if replicaset:
+            if mockMongoDB:
+                self.client = mongomock.MongoClient()
+                self.logger.info("NOTICE: MongoDB is set to use mongomock, instead of real database.")
+            elif replicaset:
                 self.client = MongoClient(self.server, self.port, replicaset=replicaset, **kwargs )
             else:
                 self.client = MongoClient(self.server, self.port, **kwargs)
@@ -156,7 +162,8 @@ class MongoDB(object):
         """
         try:
             setattr(self, db, self.client[db])
-            self._dbTest(db)
+            if not self.mockMongoDB:
+                self._dbTest(db)
         except errors.ConnectionFailure as ex:
             msg = "Could not connect to MongoDB server for database: %s\n%s\n" % (db, str(ex))
             msg += "Giving up Now."

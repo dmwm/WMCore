@@ -698,6 +698,7 @@ class Proxy(Credential):
         cmdList = []
         cmdList.append('env')
         cmdList.append('X509_USER_PROXY=%s' % proxy)
+        # make sure to make a 2048-bit proxy (for CentOS 8 based servers)
         cmdList.append('voms-proxy-init -noregen -voms %s -out %s -bits 2048 -valid %s %s'
                        % (voAttribute, proxy, vomsValid, '-rfc' if isRFC  else ''))
         cmd = ' '.join(cmdList)

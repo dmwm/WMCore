@@ -133,7 +133,9 @@ class CouchDBRequests(JSONRequests):
                     encode, decode, contentType)
         except HTTPException as e:
             self.checkForCouchError(getattr(e, "status", None),
-                                    getattr(e, "reason", None), data)
+                                    getattr(e, "reason", None),
+                                    data,
+                                    getattr(e, "result", None))
 
         return result
 
@@ -157,6 +159,8 @@ class CouchDBRequests(JSONRequests):
             raise CouchNotAcceptableError(reason, data, result)
         elif status == 409:
             raise CouchConflictError(reason, data, result)
+        elif status == 410:
+            raise CouchFeatureGone(reason, data, result)
         elif status == 412:
             raise CouchPreconditionFailedError(reason, data, result)
         elif status == 416:
@@ -885,13 +889,22 @@ class RotatingDatabase(Database):
         self.seed_db.commit()
 
     def _find_dbs_in_state(self, state, options=None):
+        """Creates a design document with a single (temporary) view in it"""
         options = options or {}
-        # TODO: couchapp this, how to make sure that the app is deployed?
-        find = {'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
-        uri = '/%s/_temp_view' % self.seed_db.name
+        tempDesignDoc = {'views': {
+                             'rotateState': {
+                                 'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}"
+                                            },
+                                   }
+                         }
+
+        self.seed_db.put('/%s/_design/TempDesignDoc' % self.seed_db.name, tempDesignDoc)
+        uri = '/%s/_design/TempDesignDoc/_view/rotateState' % self.seed_db.name
         if options:
             uri += '?%s' % urllib.parse.urlencode(options)
-        data = self.seed_db.post(uri, find)
+        data = self.seed_db.get(uri)
+
+
         return data['rows']
 
     def inactive_dbs(self):
@@ -1119,6 +1132,13 @@ class CouchConflictError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchConflictError"
+
+
+class CouchFeatureGone(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchFeatureGone"
+
 
 class CouchPreconditionFailedError(CouchError):
     def __init__(self, reason, data, result):

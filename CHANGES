@@ -1,3 +1,10 @@
+2.0.1.pre2 to 2.0.1.pre3:
+  - Add mockMongoDB to MSUnmerged and MongoDB Class init options (Todor Ivanov) #11007
+  - Explicitly create proxies with 2048 bits (Alan Malta Rodrigues) #11008
+  - make sure proxy is 2048 bit. Fix #11005 (belforte) #11006
+  - fix uninitialized templates variable (Dirk Hufnagel) #11004
+
+
 2.0.1.pre1 to 2.0.1.pre2:
   - Add lifetime to RucioContainers shipping to disk sites (Jhonatan Amado) #10950
   - Send alerts to prometheus when a workflow fails to be processed. Rename notifyLargeData method. Fixes #10215 (Kenyi Hurtado) #10959

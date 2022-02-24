@@ -876,7 +876,7 @@ class RotatingDatabase(Database):
         now = datetime.now()
         then = now - self.timing['expire']
 
-        options = {'startkey': 0, 'endkey': time.mktime(then.timetuple())}
+        options = {'startkey': 0, 'endkey': int(time.mktime(then.timetuple()))}
         expired = self._find_dbs_in_state('archived', options)
         for db in expired:
             try:
@@ -888,23 +888,25 @@ class RotatingDatabase(Database):
             self.seed_db.queueDelete(db_state)
         self.seed_db.commit()
 
-    def _find_dbs_in_state(self, state, options=None):
-        """Creates a design document with a single (temporary) view in it"""
-        options = options or {}
+    def _create_design_doc(self):
+        """Create a design doc with a view for the rotate state"""
         tempDesignDoc = {'views': {
                              'rotateState': {
-                                 'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}"
+                                 'map': "function(doc) {emit(doc.timestamp, doc.rotate_state, doc._id);}"
                                             },
                                    }
                          }
-
         self.seed_db.put('/%s/_design/TempDesignDoc' % self.seed_db.name, tempDesignDoc)
-        uri = '/%s/_design/TempDesignDoc/_view/rotateState' % self.seed_db.name
-        if options:
-            uri += '?%s' % urllib.parse.urlencode(options)
-        data = self.seed_db.get(uri)
 
+    def _find_dbs_in_state(self, state, options=None):
+        """Creates a design document with a single (temporary) view in it"""
+        options = options or {}
+        if self.seed_db.documentExists("_design/TempDesignDoc"):
+            logging.info("Skipping designDoc creation because it already exists!")
+        else:
+            self._create_design_doc()
 
+        data = self.seed_db.loadView("TempDesignDoc", "rotateState", options=options)
         return data['rows']
 
     def inactive_dbs(self):

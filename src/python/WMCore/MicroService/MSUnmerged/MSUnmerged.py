@@ -112,6 +112,7 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("mongoDB", 'msUnmergedDB')
         self.msConfig.setdefault("mongoDBRetryCount", 3)
         self.msConfig.setdefault("mongoDBReplicaset", None)
+        self.msConfig.setdefault("mockMongoDB", False)
 
         msUnmergedIndex = IndexModel('name', unique=True)
         msUnmergedDBConfig = {
@@ -121,6 +122,7 @@ class MSUnmerged(MSCore):
             'replicaset': self.msConfig['mongoDBReplicaset'],
             'logger': self.logger,
             'create': True,
+            'mockMongoDB': self.msConfig['mockMongoDB'],
             'collections': [('msUnmergedColl', msUnmergedIndex)]}
 
         mongoClt = MongoDB(**msUnmergedDBConfig)

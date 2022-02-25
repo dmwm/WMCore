@@ -279,7 +279,7 @@ class Database(CouchDBRequests):
         its internal retval
 
         key, value pairs can be used to pass extra parameters to the bulk doc api
-        See http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API
+        See https://docs.couchdb.org/en/latest/api/database/bulk-api.html#db-bulk-docs
 
         TODO: restore support for returndocs and viewlist
 

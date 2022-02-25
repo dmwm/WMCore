@@ -283,13 +283,13 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(answer[0]['ok'], True)
         self.assertEqual(answer[1]['error'], 'conflict')
 
-        # all_or_nothing mode ignores conflicts
+        # bulk commit with one conflict unresolved
         self.db.queue(Document(id = "2", inputDict = doc))
         self.db.queue(Document(id = "2", inputDict = {'foo':1234, 'bar':456}))
-        answer = self.db.commit(all_or_nothing = True)
+        answer = self.db.commit()
         self.assertEqual(2, len(answer))
-        self.assertEqual(answer[0].get('error'), None)
-        self.assertEqual(answer[0].get('error'), None)
+        self.assertTrue('error' not in answer[0])
+        self.assertTrue('error' in answer[1])
         self.assertEqual(answer[0]['id'], '2')
         self.assertEqual(answer[1]['id'], '2')
 
@@ -302,10 +302,15 @@ class CMSCouchTest(unittest.TestCase):
                     retval = db.commitOne(doc)
             return retval[0]
 
+        # bulk commit with one callback enabled (conflicts resolved)
         self.db.queue(Document(id = "2", inputDict = {'foo':5, 'bar':6}))
+        self.db.queue(Document(id = "3", inputDict = doc))
         answer = self.db.commit(callback = callback)
-        self.assertEqual(1, len(answer))
-        self.assertEqual(answer[0].get('error'), None)
+        self.assertEqual(2, len(answer))
+        self.assertTrue('error' not in answer[0])
+        self.assertTrue('error' not in answer[1])
+        self.assertEqual(answer[0]['id'], '2')
+        self.assertEqual(answer[1]['id'], '3')
         updatedDoc = self.db.document('2')
         self.assertEqual(updatedDoc['foo'], 5)
         self.assertEqual(updatedDoc['bar'], 6)

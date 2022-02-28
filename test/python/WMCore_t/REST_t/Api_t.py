@@ -1,3 +1,6 @@
+# python-future
+from builtins import range
+
 # system modules
 import json
 import re
@@ -17,9 +20,9 @@ from WMCore.REST.Error import InvalidObject
 from WMCore.REST.Format import RawFormat
 from WMCore.REST.Tools import tools
 
-gif_bytes = ('GIF89a\x01\x00\x01\x00\x82\x00\x01\x99"\x1e\x00\x00\x00\x00\x00'
-             '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-             '\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x02\x03\x02\x08\t\x00;')
+gif_bytes = (b'GIF89a\x01\x00\x01\x00\x82\x00\x01\x99"\x1e\x00\x00\x00\x00\x00'
+             b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+             b'\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x02\x03\x02\x08\t\x00;')
 
 FAKE_FILE = fake_authz_key_file()
 PORT = 8887
@@ -38,7 +41,7 @@ class Multi(RESTEntity):
         validate_num("lim", param, safe, bare=True, optional=True, minval=0, maxval=10)
 
     def _generate(self, lim):
-        for i in xrange(0, 10):
+        for i in range(0, 10):
             if i == lim:
                 raise InvalidObject("cut at %d" % i)
             yield ["row", i]
@@ -183,7 +186,7 @@ class Tester(webtest.WebCase):
         assert "result" in b
         assert isinstance(b["result"], list)
         assert len(b["result"]) == 10
-        for i in xrange(0, 10):
+        for i in range(0, 10):
             assert isinstance(b["result"][i], list)
             assert b["result"][i][0] == "row"
             assert b["result"][i][1] == i
@@ -211,7 +214,7 @@ class Tester(webtest.WebCase):
         assert "result" in b
         assert isinstance(b["result"], list)
         assert len(b["result"]) == 5
-        for i in xrange(0, 5):
+        for i in range(0, 5):
             assert isinstance(b["result"][i], list)
             assert b["result"][i][0] == "row"
             assert b["result"][i][1] == i
@@ -239,7 +242,7 @@ class Tester(webtest.WebCase):
         assert "result" in b
         assert isinstance(b["result"], list)
         assert len(b["result"]) == 10
-        for i in xrange(0, 10):
+        for i in range(0, 10):
             assert isinstance(b["result"][i], list)
             assert b["result"][i][0] == "row"
             assert b["result"][i][1] == i

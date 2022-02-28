@@ -6,7 +6,8 @@ Rest Model abstract implementation
 """
 from builtins import str, bytes
 
-from Utils.Utilities import encodeUnicodeToBytes
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
+from Utils.PythonVersion import PY3
 
 from functools import wraps
 from WMCore.Lexicon import check
@@ -266,12 +267,12 @@ class RESTModel(WebAPI):
         for a in self.methods[verb][method]['args']:
             if a in input_kwargs:
                 v = input_kwargs[a]
-                input_data[a] = encodeUnicodeToBytes(v)
+                input_data[a] = decodeBytesToUnicode(v) if PY3 else encodeUnicodeToBytes(v)
                 input_kwargs.pop(a)
             else:
                 if len(input_args):
                     v = input_args.pop(0)
-                    input_data[a] = encodeUnicodeToBytes(v)
+                    input_data[a] = decodeBytesToUnicode(v) if PY3 else encodeUnicodeToBytes(v)
         if input_kwargs:
             raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.')
         self.debug('%s raw data: %s' % (method, {'args': input_args, 'kwargs': input_kwargs}))

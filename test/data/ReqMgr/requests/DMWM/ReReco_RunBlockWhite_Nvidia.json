@@ -1,0 +1,55 @@
+{
+    "assignRequest": {
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
+        "ProcessingString": "ProcessingString-OVERRIDE-ME", 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "Run2016H", 
+        "BlockWhitelist": ["/HLTPhysicsIsolatedBunch/Run2016H-v1/RAW#92049f6e-92f9-11e6-b150-001e67abf228"],
+        "CMSSWVersion": "CMSSW_8_0_23", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {"WorkFlowDesc": ["ReReco run 283171 from one block (out of 2); harvesting enabled; 3 lumis only",
+                                      "Automatic splitting at 389 EpJob (actually 1 lumi and file per job)"],
+                     "CheckList": ["ReReco harvesting"]},
+        "ConfigCacheID": "31b62d6a0629158d7246ce34e82c20c3", 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMConfigCacheID": "947d11a5076ed983a3f9aaafd7a2b04c", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
+        "EnableHarvesting": true, 
+        "GlobalTag": "80X_dataRun2_SPECIALHIGHPUFILL_v0",
+        "Group": "DATAOPS",
+        "RequiresGPU": "required",
+        "GPUParams": "{\"GPUMemoryMB\": 123, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+        "IncludeParents": false, 
+        "InputDataset": "/HLTPhysicsIsolatedBunch/Run2016H-v1/RAW", 
+        "Memory": 12000,
+        "Multicore": 8, 
+        "PrepID": "TEST-ReReco-Run2016H-v1-09Nov2016-0016", 
+        "ProcessingString": "09Nov2016", 
+        "ProcessingVersion": 2, 
+        "RequestPriority": 190000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "ReReco", 
+        "RunWhitelist": [
+            283171
+        ], 
+        "Scenario": "pp", 
+        "ScramArch": "slc6_amd64_gcc530", 
+        "SizePerEvent": 1500, 
+        "SplittingAlgo": "EventAwareLumiBased",
+        "TimePerEvent": 73.85
+    }
+}

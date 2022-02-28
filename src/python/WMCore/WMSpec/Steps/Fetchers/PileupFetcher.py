@@ -9,11 +9,13 @@ from future.utils import viewitems
 
 import datetime
 import os
+import hashlib
 import shutil
 import time
 import logging
 from json import JSONEncoder
 import WMCore.WMSpec.WMStep as WMStep
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
@@ -91,10 +93,10 @@ class PileupFetcher(FetcherInterface):
         fileName = ""
         for pileupType in stepHelper.data.pileup.listSections_():
             datasets = getattr(getattr(stepHelper.data.pileup, pileupType), "dataset")
-            fileName += ("_").join(datasets)
+            fileName += "_".join(datasets)
         # TODO cache is not very effective if the dataset combination is different between workflow
-        # here is possibility of hash value collision
-        cacheFile = "%s/pileupconf-%s.json" % (self.cacheDirectory(), hash(fileName))
+        cacheHash = hashlib.sha1(encodeUnicodeToBytes(fileName)).hexdigest()
+        cacheFile = "%s/pileupconf-%s.json" % (self.cacheDirectory(), cacheHash)
         return cacheFile
 
     def _getStepFilePath(self, stepHelper):

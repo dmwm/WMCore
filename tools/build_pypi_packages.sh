@@ -14,7 +14,7 @@ set -x
 # package passed as parameter, can be one of PACKAGES or "all"
 TOBUILD=$1
 # list of packages that can be built and uploaded to pypi
-PACKAGES="wmagent wmcore reqmon reqmgr2 reqmgr2ms global-workqueue acdcserver"
+PACKAGES="wmagent wmagent-devtools wmcore reqmon reqmgr2 reqmgr2ms global-workqueue acdcserver"
 PACKAGE_REGEX="^($(echo $PACKAGES | sed 's/\ /|/g')|all)$"
 
 if [[ -z $TOBUILD ]]; then

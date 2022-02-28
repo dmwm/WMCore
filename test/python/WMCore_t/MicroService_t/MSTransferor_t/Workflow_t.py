@@ -5,6 +5,8 @@ from __future__ import division, print_function
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.MicroService.MSTransferor.Workflow import Workflow
 
 
@@ -12,6 +14,10 @@ class WorkflowTest(unittest.TestCase):
     """
     Test the very basic functionality of the Workflow module
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testCampaignMap(self):
         """
@@ -22,6 +28,7 @@ class WorkflowTest(unittest.TestCase):
                       "TaskChain": 4,
                       "Campaign": "top-campaign",
                       "RequestName": "whatever_name",
+                      "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/",
                       "Task1": {"InputDataset": "/task1/input-dataset/tier",
                                 "Campaign": "task1-campaign",
                                 "IncludeParents": True},
@@ -33,6 +40,7 @@ class WorkflowTest(unittest.TestCase):
                       }
         wflow = Workflow(tChainSpec['RequestName'], tChainSpec)
         self.assertEqual(len(wflow.getDataCampaignMap()), 3)
+        self.assertEqual(wflow.getDbsUrl(), "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
         for dataIn in wflow.getDataCampaignMap():
             if dataIn['type'] == "primary":
                 self.assertItemsEqual(dataIn, {"type": "primary", "campaign": tChainSpec['Task1']['Campaign'],
@@ -196,10 +204,10 @@ class WorkflowTest(unittest.TestCase):
         """
         Perform basic operations over Workflow objects
         """
-        wflow1 = Workflow("workflow_1", {"RequestType": "StepChain"})
-        wflow2 = Workflow("workflow_2", {"RequestType": "TaskChain"})
-        wflow3 = Workflow("workflow_3", {"RequestType": "ReReco"})
-        wflow4 = Workflow("workflow_4", {"RequestType": "StepChain"})
+        wflow1 = Workflow("workflow_1", {"RequestType": "StepChain", "DbsUrl": "a_dbs_url"})
+        wflow2 = Workflow("workflow_2", {"RequestType": "TaskChain", "DbsUrl": "a_dbs_url"})
+        wflow3 = Workflow("workflow_3", {"RequestType": "ReReco", "DbsUrl": "a_dbs_url"})
+        wflow4 = Workflow("workflow_4", {"RequestType": "StepChain", "DbsUrl": "a_dbs_url"})
         listWflows = [wflow1, wflow2, wflow3, wflow4]
 
         self.assertNotEqual(wflow1, wflow4)
@@ -225,6 +233,7 @@ class WorkflowTest(unittest.TestCase):
                      "block_B": ["parent_A", "parent_C"]}
         wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
                                         "InputDataset": "Dataset_name_XXX",
+                                        "DbsUrl": "a_dbs_url",
                                         "IncludeParents": True})
 
         self.assertEqual(wflow.getParentDataset(), "")
@@ -251,7 +260,8 @@ class WorkflowTest(unittest.TestCase):
         parentDict = {"parent_A": {"blockSize": 11, "locations": ["Site_A", "Site_B"]},
                       "parent_B": {"blockSize": 8, "locations": []}}
         wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
-                                        "InputDataset": "Dataset_name_XXX"})
+                                        "InputDataset": "Dataset_name_XXX",
+                                        "DbsUrl": "a_dbs_url"})
         wflow.setPrimaryBlocks(primDict)
         blockChunks, sizeChunks = wflow.getChunkBlocks(1)
         self.assertEqual(len(blockChunks), 1)
@@ -275,7 +285,8 @@ class WorkflowTest(unittest.TestCase):
         primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A"]},
                     "block_B": {"blockSize": 2, "locations": ["Site_B"]}}
         wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
-                                        "InputDataset": "Dataset_name_XXX"})
+                                        "InputDataset": "Dataset_name_XXX",
+                                        "DbsUrl": "a_dbs_url"})
         wflow.setPrimaryBlocks(primDict)
 
         # same number of chunks and primary blocks
@@ -324,7 +335,8 @@ class WorkflowTest(unittest.TestCase):
         parentage = {"block_A": ["parent_B", "parent_D"],  # parent_D has no replicas!
                      "block_B": ["parent_A", "parent_C"]}
         wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
-                                        "InputDataset": "Dataset_name_XXX"})
+                                        "InputDataset": "Dataset_name_XXX",
+                                        "DbsUrl": "a_dbs_url"})
 
         # now set a parent
         wflow.setParentDataset("Parent_dataset_XXX")
@@ -352,17 +364,20 @@ class WorkflowTest(unittest.TestCase):
         """
         requestTypes = ("StepChain", "TaskChain", "ReReco")
         for wflowType in requestTypes:
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType})
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "DbsUrl": "a_dbs_url"})
             self.assertFalse(wflowObj.isRelVal())
 
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "ReDigi"})
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "ReDigi",
+                                               "DbsUrl": "a_dbs_url"})
             self.assertFalse(wflowObj.isRelVal())
 
         for wflowType in requestTypes:
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "RelVal"})
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "RelVal",
+                                               "DbsUrl": "a_dbs_url"})
             self.assertTrue(wflowObj.isRelVal())
 
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "HIRelVal"})
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "HIRelVal",
+                                               "DbsUrl": "a_dbs_url"})
             self.assertTrue(wflowObj.isRelVal())
 
     def testGetWorkflowGroup(self):
@@ -371,14 +386,16 @@ class WorkflowTest(unittest.TestCase):
         """
         requestTypes = ("StepChain", "TaskChain", "ReReco")
         for wflowType in requestTypes:
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType})
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "DbsUrl": "a_dbs_url"})
             self.assertEqual(wflowObj.getWorkflowGroup(), "production")
 
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "ReDigi"})
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "ReDigi",
+                                               "DbsUrl": "a_dbs_url"})
             self.assertEqual(wflowObj.getWorkflowGroup(), "production")
 
         for wflowType in requestTypes:
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "RelVal"})
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "RelVal",
+                                               "DbsUrl": "a_dbs_url"})
             self.assertEqual(wflowObj.getWorkflowGroup(), "relval")
 
 

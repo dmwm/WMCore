@@ -9,6 +9,7 @@ single job for each merge unit.
 """
 
 import threading
+from functools import cmp_to_key
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
@@ -58,12 +59,10 @@ def sortedFilesFromMergeUnits(mergeUnits):
     Given a list of merge units sort them and the files that they contain.
     Return a list of sorted WMBS File structures.
     """
-    mergeUnits.sort(mergeUnitCompare)
-
+    mergeUnits.sort(key=cmp_to_key(mergeUnitCompare))
     sortedFiles = []
     for mergeUnit in mergeUnits:
-        mergeUnit["files"].sort(fileCompare)
-
+        mergeUnit["files"].sort(key=cmp_to_key(fileCompare))
         for file in mergeUnit["files"]:
             newFile = File(id=file["file_id"], lfn=file["file_lfn"],
                            events=file["file_events"])
@@ -171,7 +170,7 @@ class SplitFileBased(JobFactory):
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
         for runNumber in mergeUnits:
-            mergeUnits[runNumber].sort(mergeUnitCompare)
+            mergeUnits[runNumber].sort(key=cmp_to_key(mergeUnitCompare))
             self.createProcJobs(mergeUnits[runNumber])
 
         return self.jobGroups

@@ -85,7 +85,7 @@ def uploadWorker(workInput, results, dbsUrl):
             dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
         except Exception as ex:
-            exString = str(ex)
+            exString = str(getattr(ex, "body", ex))
             if 'Block %s already exists' % name in exString:
                 # Then this is probably a duplicate
                 # Ignore this for now

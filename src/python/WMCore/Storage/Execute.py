@@ -9,6 +9,7 @@ from __future__ import print_function
 
 from subprocess import Popen, PIPE
 
+from Utils.PythonVersion import PY3
 from WMCore.Storage.StageOutError import StageOutError
 
 def runCommand(command):
@@ -21,7 +22,11 @@ def runCommand(command):
 
     """
     # capture stdout and stderr from command
-    child = Popen(command, shell=True, bufsize=1, stdin=PIPE, close_fds=True)
+    if PY3:
+        # python2 pylint complains about `encoding` argument
+        child = Popen(command, shell=True, bufsize=1, stdin=PIPE, close_fds=True, encoding='utf8')
+    else:
+        child = Popen(command, shell=True, bufsize=1, stdin=PIPE, close_fds=True)
 
     child.communicate()
     retCode = child.returncode
@@ -39,7 +44,11 @@ def runCommandWithOutput(command):
 
     """
     # capture stdout and stderr from command
-    child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    if PY3:
+        # python2 pylint complains about `encoding` argument
+        child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True, encoding='utf8')
+    else:
+        child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
     sout, serr = child.communicate()
     retCode = child.returncode

@@ -9,7 +9,7 @@ set of jobs.
 
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
-
+import json
 from builtins import map, zip, str as newstr, bytes
 from future.utils import viewitems
 
@@ -990,7 +990,8 @@ class WMTaskHelper(TreeHelper):
                                    custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
                                    useSkim=False, isSkim=False,
-                                   dataTier=None, deleteFromSource=False):
+                                   dataTier=None, deleteFromSource=False,
+                                   datasetLifetime=None):
         """
         _setSubscriptionsInformation_
 
@@ -1050,6 +1051,7 @@ class WMTaskHelper(TreeHelper):
             outputSection.nonCustodialGroup = nonCustodialGroup
             outputSection.priority = priority
             outputSection.deleteFromSource = deleteFromSource
+            outputSection.datasetLifetime = datasetLifetime
 
         return
 
@@ -1090,7 +1092,9 @@ class WMTaskHelper(TreeHelper):
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
                                        "CustodialSubType": getattr(outputSection, "custodialSubType", "Replica"),
                                        "NonCustodialSubType": getattr(outputSection, "nonCustodialSubType",
-                                                                      "Replica")}
+                                                                      "Replica"),
+                                      # Spec assigned for T0 ContainerRules
+                                      "DatasetLifetime": getattr(outputSection, "datasetLifetime", 0)}
         return subInformation
 
     def parentProcessingFlag(self):
@@ -1467,6 +1471,93 @@ class WMTaskHelper(TreeHelper):
             task.setNumberOfCores(cores, nStreams)
 
         return
+
+    def getNumberOfCores(self):
+        """
+        Retrieves the number of cores for this task.
+        If it's a multi-step task, it returns only the greatest value
+        :return: an integer with the number of cores required by this task
+        """
+        maxCores = 1
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStep(stepName)
+            maxCores = max(maxCores, stepHelper.getNumberOfCores())
+        return maxCores
+
+    def setTaskGPUSettings(self, requiresGPU, gpuParams):
+        """
+        Setter method for the GPU settings, applied to this Task object and
+        all underneath CMSSW type step object.
+        :param requiresGPU: string defining whether GPUs are needed. For TaskChains, it
+            could be a dictionary key'ed by the taskname.
+        :param gpuParams: GPU settings. A JSON encoded object, from either a None object
+            or a dictionary. For TaskChains, it could be a dictionary key'ed by the taskname
+        :return: nothing, the workload spec is updated in place.
+        """
+        # these job types shall not have these settings
+        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            return
+
+        # default values come from StdBase
+        if isinstance(requiresGPU, dict):
+            thisTaskGPU = requiresGPU.get(self.name(), "forbidden")
+        else:
+            thisTaskGPU = requiresGPU
+
+        decodedGpuParams = json.loads(gpuParams)
+        if self.name() in decodedGpuParams:
+            thisTaskGPUParams = decodedGpuParams[self.name()]
+        else:
+            thisTaskGPUParams = decodedGpuParams
+
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+            if stepHelper.stepType() == "CMSSW":
+                stepHelper.setGPUSettings(thisTaskGPU, thisTaskGPUParams)
+
+        for task in self.childTaskIterator():
+            task.setTaskGPUSettings(requiresGPU, gpuParams)
+
+        return
+
+    def getRequiresGPU(self):
+        """
+        Return whether this task is supposed to use GPUs or not.
+        If it's a multi-step task, decision follows this order:
+          1. "required"
+          2. "optional"
+          3. "forbidden"
+        :return: a string (default to "forbidden")
+        """
+        requiresGPU = set(["forbidden"])
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStep(stepName)
+            if stepHelper.stepType() == "CMSSW" and stepHelper.getGPURequired():
+                requiresGPU.add(stepHelper.getGPURequired())
+
+        # now decide what value has higher weight
+        if len(requiresGPU) == 1:
+            return requiresGPU.pop()
+        elif "required" in requiresGPU:
+            return "required"
+        elif "optional" in requiresGPU:
+            return "optional"
+        else:
+            return "forbidden"
+
+    def getGPURequirements(self):
+        """
+        Return the GPU requirements for this task.
+        If it's a multi-step task, the first step with a meaningful
+        dictionary value will be returned
+        :return: a dictionary with the GPU requirements for this task
+        """
+        gpuRequirements = {}
+        for stepName in sorted(self.listAllStepNames()):
+            stepHelper = self.getStep(stepName)
+            if stepHelper.stepType() == "CMSSW" and stepHelper.getGPURequirements():
+                return stepHelper.getGPURequirements()
+        return gpuRequirements
 
     def _getStepValue(self, keyDict, defaultValue):
         """

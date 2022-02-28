@@ -15,7 +15,8 @@ from future.utils import viewitems, viewkeys
 import logging
 import os
 import pickle
-
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from PSetTweaks.PSetTweak import PSetTweak
 
 # params to be extracted from an output module
@@ -388,7 +389,9 @@ def makeTaskTweak(stepSection, result):
     if hasattr(stepSection, "application"):
         if hasattr(stepSection.application, "configuration"):
             if hasattr(stepSection.application.configuration, "pickledarguments"):
-                args = pickle.loads(stepSection.application.configuration.pickledarguments)
+                pklArgs = encodeUnicodeToBytesConditional(stepSection.application.configuration.pickledarguments,
+                                                          condition=PY3)
+                args = pickle.loads(pklArgs)
                 if 'globalTag' in args:
                     result.addParameter("process.GlobalTag.globaltag",  "customTypeCms.string('%s')" % args['globalTag'])
                 if 'globalTagTransaction' in args:
@@ -516,7 +519,7 @@ def makeOutputTweak(outMod, job, result):
 
     """
     # output filenames
-    modName = str(getattr(outMod, "_internal_name"))
+    modName = outMod.getInternalName()
     logging.info("modName = %s", modName)
     fileName = "%s.root" % modName
 

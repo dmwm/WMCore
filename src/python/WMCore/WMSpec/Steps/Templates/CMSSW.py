@@ -10,6 +10,7 @@ import pickle
 
 from future.utils import viewitems
 
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 from WMCore.WMSpec.Steps.Template import CoreHelper, Template
 
@@ -156,7 +157,8 @@ class CMSSWStepHelper(CoreHelper):
             [setattr(self.data.application.configuration.arguments, k, v) for k, v in viewitems(args)]
         except Exception:
             pass
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)
         return
 
     def cmsswSetup(self, cmsswVersion, **options):
@@ -207,9 +209,10 @@ class CMSSWStepHelper(CoreHelper):
 
         args = {}
         if hasattr(self.data.application.configuration, "pickledarguments"):
-            args = pickle.loads(self.data.application.configuration.pickledarguments)
+            args = pickle.loads(encodeUnicodeToBytes(self.data.application.configuration.pickledarguments))
         args['globalTag'] = globalTag
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)
 
         return
 
@@ -223,7 +226,8 @@ class CMSSWStepHelper(CoreHelper):
             if hasattr(self.data.application.configuration.arguments, "globalTag"):
                 return self.data.application.configuration.arguments.globalTag
 
-        return pickle.loads(self.data.application.configuration.pickledarguments)['globalTag']
+        pickledArgs = encodeUnicodeToBytes(self.data.application.configuration.pickledarguments)
+        return pickle.loads(pickledArgs)['globalTag']
 
     def setDatasetName(self, datasetName):
         """
@@ -236,9 +240,10 @@ class CMSSWStepHelper(CoreHelper):
 
         args = {}
         if hasattr(self.data.application.configuration, "pickledarguments"):
-            args = pickle.loads(self.data.application.configuration.pickledarguments)
+            args = pickle.loads(encodeUnicodeToBytes(self.data.application.configuration.pickledarguments))
         args['datasetName'] = datasetName
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)
 
         return
 
@@ -395,6 +400,14 @@ class CMSSWStepHelper(CoreHelper):
         """
         return self.data.application.multicore.eventStreams
 
+    def setGPUSettings(self, requiresGPU, gpuParams):
+        """
+        Set whether this CMSSW step should require GPUs and if so, which
+        setup should be allowed and/or used
+        """
+        self.data.application.gpu.gpuRequired = requiresGPU
+        self.data.application.gpu.gpuRequirements = gpuParams
+
 
 class CMSSW(Template):
     """
@@ -460,6 +473,11 @@ class CMSSW(Template):
         step.application.section_("multicore")
         step.application.multicore.numberOfCores = 1
         step.application.multicore.eventStreams = 0
+
+        # support for GPU in CMSSW (using defaults from StdBase)
+        step.application.section_("gpu")
+        step.application.gpu.gpuRequired = "forbidden"
+        step.application.gpu.gpuRequirements = None
 
     def helper(self, step):
         """

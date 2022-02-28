@@ -37,7 +37,7 @@ def processWorker(myinput, tmp):
             if jj['cache_dir'].count("Production/LogCollect") > 0:
                 if lcreport is not None:
                     lcreport.task = "/" + taskName + "/Production/LogCollect"
-                    with open(outfile, 'w') as f:
+                    with open(outfile, 'wb') as f:
                         logging.debug('Process worker is dumping the LogCollect report to ' + f.name)
                         pickle.dump(lcreport, f)
                     continue
@@ -62,7 +62,7 @@ def processWorker(myinput, tmp):
             report.task = "/" + taskName + "/Production"
 
             #pickle the report again
-            with open(outfile, 'w') as f:
+            with open(outfile, 'wb') as f:
                 logging.debug('Process worker is dumping the report to ' + f.name)
                 pickle.dump(report, f)
     except Exception as ex:
@@ -164,12 +164,12 @@ class MockPlugin(BasePlugin):
             self.start( self.myinput )
 
         #for each job we will need to modify the default Report (the output of each job).
-        with open(self.fakeReport) as f:
+        with open(self.fakeReport, "rb") as f:
             report = pickle.load(f)
 
         lcreport = getattr(self.config.BossAir.MockPlugin, 'lcFakeReport', None)
         if lcreport != None:
-            with open(lcreport) as f:
+            with open(lcreport, "rb") as f:
                 lcreport = pickle.load(f)
 
         for jj in jobs:

@@ -19,6 +19,8 @@ from WMCore.REST.Error import *
 from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
 
+from Utils.Utilities import encodeUnicodeToBytes
+
 try:
     from cherrypy.lib import httputil
 except:
@@ -188,7 +190,7 @@ class RESTFrontPage(object):
         if instances:
             instances = [dict(id=k, title=v[".title"], order=v[".order"])
                          for k, v in viewitems(instances())]
-            instances.sort(lambda a, b: a["order"] - b["order"])
+            instances.sort(key=lambda x: x["order"])
             self._preamble += (", REST_INSTANCES = %s" % json.dumps(instances))
 
         self._preamble += ";\n%s" % (preamble or "")
@@ -312,7 +314,7 @@ class RESTFrontPage(object):
         response.headers['Content-Type'] = ctype
         response.headers['Last-Modified'] = httputil.HTTPDate(mtime)
         response.headers['Cache-Control'] = "public, max-age=%d" % 86400
-        response.headers['ETag'] = '"%s"' % hashlib.sha1(result).hexdigest()
+        response.headers['ETag'] = '"%s"' % hashlib.sha1(encodeUnicodeToBytes(result)).hexdigest()
         cherrypy.lib.cptools.validate_since()
         cherrypy.lib.cptools.validate_etags()
         return result

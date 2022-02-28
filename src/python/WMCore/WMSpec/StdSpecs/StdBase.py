@@ -9,11 +9,15 @@ from future.utils import viewitems
 from builtins import range, object
 
 import logging
+import json
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import decodeBytesToUnicodeConditional
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block, campaign
+from WMCore.Lexicon import (couchurl, procstring, activity, procversion, primdataset,
+                            gpuParameters, lfnBase, identifier, acqname, cmsname,
+                            dataset, block, campaign, subRequestType)
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
@@ -78,6 +82,7 @@ class StdBase(object):
         # TODO: this replace can be removed in one year from now, thus March 2022
         if hasattr(self, "dbsUrl"):
             self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+            self.dbsUrl = self.dbsUrl.rstrip("/")
 
         return
 
@@ -142,7 +147,8 @@ class StdBase(object):
         import subprocess
 
         p = subprocess.Popen("/cvmfs/cms.cern.ch/common/cmsos", stdout=subprocess.PIPE, shell=True)
-        cmsos = p.communicate()[0].strip()
+        cmsos = p.communicate()[0]
+        cmsos = decodeBytesToUnicodeConditional(cmsos, condition=PY3).strip()
 
         scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw/%s" % (cmsos, cmsswVersion))
         if not scramBaseDirs:
@@ -154,12 +160,17 @@ class StdBase(object):
         command += "cd %s\n" % scramBaseDirs[0]
         command += "eval `scramv1 runtime -sh`\n"
 
-        command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+        if PY3:
+            command += """python3 -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+        else:
+            command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+
         command += """dataTier = getSkimDataTier("%s")\n""" % skim
-        command += """if dataTier:\n\tprint dataTier.value()'"""
+        command += """if dataTier:\n\tprint(dataTier.value())'"""
 
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-        dataTier = p.communicate()[0].strip()
+        dataTier = p.communicate()[0]
+        dataTier = decodeBytesToUnicodeConditional(dataTier, condition=PY3).strip()
 
         if dataTier == "None":
             dataTier = None
@@ -267,8 +278,7 @@ class StdBase(object):
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
-        # TODO: this replace can be removed in one year from now, thus March 2022
-        workload.setDbsUrl(self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch"))
+        workload.setDbsUrl(self.dbsUrl)
         workload.setPrepID(self.prepID)
         return workload
 
@@ -394,9 +404,19 @@ class StdBase(object):
         eventStreams = self.eventStreams
         if 'Multicore' in taskConf and taskConf['Multicore'] > 0:
             multicore = taskConf['Multicore']
-        if 'EventStreams' in taskConf and taskConf['EventStreams'] >= 0:
+        if taskConf.get("EventStreams") is not None and taskConf['EventStreams'] >= 0:
             eventStreams = taskConf['EventStreams']
         procTaskCmsswHelper.setNumberOfCores(multicore, eventStreams)
+
+        gpuRequired = self.requiresGPU
+        if taskConf.get('RequiresGPU', None):
+            gpuRequired = taskConf['RequiresGPU']
+        # Note that GPUParams has already been validated
+        if "GPUParams" in taskConf and json.loads(taskConf['GPUParams']):
+            gpuParams = json.loads(taskConf['GPUParams'])
+        else:
+            gpuParams = json.loads(self.gPUParams)
+        procTaskCmsswHelper.setGPUSettings(gpuRequired, gpuParams)
 
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
@@ -1033,7 +1053,11 @@ class StdBase(object):
                      "RunNumber": {"default": 0, "type": int},
                      "RobustMerge": {"default": True, "type": strToBool},
                      "Comments": {"default": ""},
-                     "SubRequestType": {"default": ""},  # used only(?) for RelVals
+                     "SubRequestType": {"default": "", "validate": subRequestType},
+                     "RequiresGPU": {"default": "forbidden",
+                                     "validate": lambda x: x in ("forbidden", "optional", "required")},
+                     "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
+
 
                      # FIXME (Alan on 27/Mar/017): maybe used by T0 during creation???
                      "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
@@ -1051,7 +1075,7 @@ class StdBase(object):
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
-                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                     "EventStreams": {"type": int, "default": 0, "validate": lambda x: x >= 0, "null": True},
                      "MergedLFNBase": {"default": "/store/data"},
                      "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
@@ -1098,7 +1122,7 @@ class StdBase(object):
                      "ProcessingVersion": {"type": int, "validate": procversion, "assign_optional": True},
                      "Memory": {"type": float, "validate": lambda x: x > 0},
                      "Multicore": {"type": int, "validate": lambda x: x > 0},
-                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                     "EventStreams": {"null": True, "type": int, "validate": lambda x: x >= 0},
 
                      "SiteBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([cmsname(y) for y in x])},
@@ -1150,6 +1174,8 @@ class StdBase(object):
                      # set to "" string or None for eos-lfn-prefix if you don't want to save the log in eos
                      "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/PRODUCTION"},
                                   "type": dict},
+                     # Rucio rule subscription lifetime (used in ContainerRules by T0)
+                     "DatasetLifetime": {"default": 0, "type": int, "assign_optional": True, "validate": lambda x: x >= 0},
                      }
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
@@ -1180,6 +1206,7 @@ class StdBase(object):
                      'ConfigCacheID': {'optional': False, 'type': str},
                      'DataPileup': {'default': None, 'null': False, 'optional': True, 'type': str,
                                     'validate': dataset},
+                     # for task/step level, the default EventStreams value (0) comes from the top level
                      'EventStreams': {'null': True, 'type': int, 'validate': lambda x: x >= 0},
                      'EventsPerJob': {'null': True, 'type': int, 'validate': lambda x: x > 0},
                      'EventsPerLumi': {'default': None, 'null': True, 'optional': True, 'type': int,
@@ -1202,6 +1229,9 @@ class StdBase(object):
                      'Memory': {'default': None, 'null': True, 'type': float, 'validate': lambda x: x > 0},
                      'Multicore': {'default': 0, 'type': int, 'validate': lambda x: x > 0},
                      'PrepID': {'default': None, 'null': True, 'optional': True, 'type': str},
+                     "RequiresGPU": {"default": "forbidden",
+                                     "validate": lambda x: x in ("forbidden", "optional", "required")},
+                     "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
                      'PrimaryDataset': {'null': True, 'validate': primdataset, 'attr': 'inputPrimaryDataset'},
                      'ProcessingString': {'optional': True, 'validate': procstring},
                      'ProcessingVersion': {'type': int, 'validate': procversion},
@@ -1295,25 +1325,20 @@ class StdBase(object):
             else:
                 schema[arg] = workloadDefinition[arg]['default']
 
+        taskStep = {'ConfigCacheID': 'FAKE',
+                    'PrimaryDataset': 'FAKE',
+                    'EventsPerJob': 100,
+                    'GlobalTag': 'GT_DP_V1',
+                    'RequestNumEvents': 1000000,
+                    'Seeding': 'AutomaticSeeding',
+                    'SplittingAlgo': 'EventBased'}
         if schema['RequestType'] == 'TaskChain':
-            schema['Task1'] = {'ConfigCacheID': 'FAKE',
-                               'PrimaryDataset': 'FAKE',
-                               'EventsPerJob': 100,
-                               'GlobalTag': 'GT_DP_V1',
-                               'RequestNumEvents': 1000000,
-                               'Seeding': 'AutomaticSeeding',
-                               'SplittingAlgo': 'EventBased',
-                               'TaskName': 'Task1Name_Test',
-                               'TimePerEvent': 123}
+            schema['Task1'] = taskStep
+            schema['Task1'].update({'TaskName': 'Task1Name_Test',
+                                    'TimePerEvent': 123})
         elif schema['RequestType'] == 'StepChain':
-            schema['Step1'] = {'ConfigCacheID': 'FAKE',
-                               'PrimaryDataset': 'FAKE',
-                               'EventsPerJob': 100,
-                               'GlobalTag': 'GT_DP_V1',
-                               'RequestNumEvents': 1000000,
-                               'Seeding': 'AutomaticSeeding',
-                               'SplittingAlgo': 'EventBased',
-                               'StepName': 'Step1Name_Test'}
+            schema['Step1'] = taskStep
+            schema['Step1'].update({'StepName': 'Step1Name_Test'})
 
         return schema
 
@@ -1349,3 +1374,23 @@ class StdBase(object):
             else:
                 schema[arg] = workloadDefinition[arg]['default']
         return schema
+
+    @staticmethod
+    def validateGPUSettings(schemaData):
+        """
+        Method to check whether GPU settings have been provided for
+        a workflow (or tasks/step) that requires GPUs (or has it set
+        to optional).
+        :param schemaData: workflow or task/step dictionary
+        :return: nothing if validation is successful, otherwise raises an exception
+        """
+        if schemaData.get("RequiresGPU") in ("optional", "required"):
+            try:
+                msg = "Request is set with RequiresGPU={}, ".format(schemaData["RequiresGPU"])
+                if not json.loads(schemaData["GPUParams"]):
+                    msg += "but GPUParams argument is empty and/or incorrect."
+                    raise WMSpecFactoryException(msg)
+            except KeyError:
+                msg += "but GPUParams argument has not been provided."
+                raise WMSpecFactoryException(msg)
+        return True

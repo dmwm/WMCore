@@ -27,7 +27,7 @@
         "CouchDBName": "reqmgr_config_cache", 
         "DQMConfigCacheID": "947d11a5076ed983a3f9aaafd7a2b04c", 
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
         "EnableHarvesting": true, 
         "GlobalTag": "80X_dataRun2_SPECIALHIGHPUFILL_v0",
         "Group": "DATAOPS",
@@ -41,7 +41,6 @@
         "RequestPriority": 190000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "ReReco", 
-        "Requestor": "amaltaro", 
         "RunWhitelist": [
             283171
         ], 

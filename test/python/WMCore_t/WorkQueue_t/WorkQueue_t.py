@@ -17,6 +17,8 @@ import logging
 
 from retry import retry
 
+from Utils.PythonVersion import PY3
+
 from WMCore.WMBase import getTestBase
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Configuration import Configuration
@@ -96,19 +98,19 @@ class WorkQueueTest(WorkQueueTestCase):
     _WorkQueueTest_
 
     For /MinimumBias/ComissioningHI-v1/RAW the dataset has 47 blocks with 72 files.
-    The PhEDEx emulator sets the block locations like:
+    The Rucio emulator sets the block locations like:
         17 at 'T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'
         19 at 'T2_XX_SiteA', 'T2_XX_SiteB'
         11 at 'T2_XX_SiteA' only
     """
 
     def __init__(self, methodName='runTest'):
-        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
+        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockRucio=True)
         self.queueParams = {}
         self.queueParams['log_reporter'] = "WorkQueue_Unittest"
         self.queueParams['rucioAccount'] = "wma_test"
-        self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
-        self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
+        self.queueParams['rucioAuthUrl'] = "http://cms-rucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cms-rucio-auth-int.cern.ch"
 
 
     def setupConfigCacheAndAgrs(self):
@@ -283,6 +285,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                     dbinterface=threading.currentThread().dbi)
             addLocation = daofactory(classname="Locations.New")
             addLocation.execute(siteName=site, pnn=se)
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def setupReReco(self, assignArgs=None, **kwargs):
         # Sample Tier1 ReReco spec
@@ -492,16 +497,16 @@ class WorkQueueTest(WorkQueueTestCase):
         processedBlocks += len(work)
         for element in work:
             processedFiles += element["NumOfFilesAdded"]
-        self.assertEqual(processedBlocks, 17)
-        self.assertEqual(processedFiles, 22)
+        self.assertEqual(processedBlocks, 9)
+        self.assertEqual(processedFiles, 14)
 
         # Get the rest the of work available at site B
         work = self.queue.getWork({'T2_XX_SiteB': 1000}, {})
         processedBlocks += len(work)
         for element in work:
             processedFiles += element["NumOfFilesAdded"]
-        self.assertEqual(processedBlocks, 17 + 19)
-        self.assertEqual(processedFiles, 22 + 35)
+        self.assertEqual(processedBlocks, 31)
+        self.assertEqual(processedFiles, 52)
 
         # Make sure no work left for B or C
         work = self.queue.getWork({'T2_XX_SiteB': 1000, 'T2_XX_SiteC': 1000}, {})
@@ -538,7 +543,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # T2_XX_SiteB can run most blocks
         work = self.queue.getWork({'T2_XX_SiteB': 1000}, {})
-        self.assertEqual(len(work), 17 + 19)
+        self.assertEqual(len(work), 31)
 
     def testWhiteList(self):
         """
@@ -558,7 +563,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Site B can run
         work = self.queue.getWork({'T2_XX_SiteB': 1000, 'T2_XX_SiteAA': 1000}, {})
-        self.assertEqual(len(work), 17 + 19)
+        self.assertEqual(len(work), 31)
 
     def testQueueChaining(self):
         """
@@ -817,25 +822,31 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # queue work, globally for block, pass down, report back -> complete
         totalSpec = 1
-        dummyTotalBlocks = totalSpec * NBLOCKS_HICOMM
         self.assertEqual(0, len(self.globalQueue))
         for _ in range(totalSpec):
             self.globalQueue.queueWork(dqmWorkload.specUrl())
+        # now we have elements inserted in workqueue
+        self.assertEqual(len(self.globalQueue.status(status='Available')), totalSpec)
+        # this should be a continuous processing of the spec, so no changes
         self.globalQueue.processInboundWork()
         self.assertEqual(totalSpec, len(self.globalQueue))
+        self.assertEqual(len(self.globalQueue.status(status='Available')), totalSpec)
 
         # pull to local
         # self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1000}), totalSpec)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status='Available')), totalSpec)
+        self.assertEqual(len(self.globalQueue.status(status='Acquired')), totalSpec)
         self.localQueue.updateLocationInfo()
         work = self.localQueue.getWork({'T2_XX_SiteA': 1000}, {})
-        self.assertEqual(len(work), 0)
+        self.assertEqual(len(work), 1)
+        self.assertEqual(len(self.localQueue.status(status='Running')), totalSpec)
+        self.assertEqual(len(self.globalQueue.status(status='Acquired')), totalSpec)
         self.localQueue.doneWork([str(x.id) for x in work])
         self.assertEqual(len(self.localQueue.status(status='Done')), totalSpec)
         syncQueues(self.localQueue)
-        # elements are not deleted untill request status is changed
+        # elements are not deleted until request status is changed
         self.assertEqual(len(self.localQueue.status(status='Done')), totalSpec)
         self.assertEqual(len(self.globalQueue.status(status='Done')), totalSpec)
 
@@ -1412,8 +1423,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # Now pull the new work to the local queue
         self.localQueue.pullWork({'T2_XX_SiteB': 1000, 'T2_XX_SiteC': 1000})
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue), 35)
-        self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 35 - 1)
+        self.assertEqual(len(self.localQueue), 30)
+        self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 30 - 1)
 
         # FIXME: for some reason, it tries to reinsert all those elements again
         # however, if we call it again, it won't retry anything
@@ -1434,7 +1445,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertGreaterEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1,
                                                           'T2_XX_SiteB': 1,
                                                           'T2_XX_SiteC': 1}), 3)
-        # The PhEDEx emulator will move the pileup blocks to site A
+        # The Rucio emulator will move the pileup blocks to site A
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB': 1,
                                                    'T2_XX_SiteC': 1}), 0)

@@ -21,6 +21,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Rucio.Rucio import Rucio, WMRucioException, RUCIO_VALID_PROJECT
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from Utils.IteratorTools import grouper
 
 
 class RucioInjectorException(WMException):
@@ -61,6 +62,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.lastRulesExecTime = 0
         self.createBlockRules = config.RucioInjector.createBlockRules
         self.containerDiskRuleParams = config.RucioInjector.containerDiskRuleParams
+        self.blockRuleParams = config.RucioInjector.blockRuleParams
         self.containerDiskRuleRSEExpr = config.RucioInjector.containerDiskRuleRSEExpr
         if config.RucioInjector.metaDIDProject not in RUCIO_VALID_PROJECT:
             msg = "Component configured with an invalid 'project' DID: %s"
@@ -77,6 +79,9 @@ class RucioInjectorPoller(BaseWorkerThread):
                            hostUrl=config.RucioInjector.rucioUrl,
                            authUrl=config.RucioInjector.rucioAuthUrl,
                            configDict={'logger': self.logger})
+
+        self.useDsetReplicaDeep = getattr(config.RucioInjector, "useDsetReplicaDeep", False)
+        self.delBlockSlicesize = getattr(config.RucioInjector, "delBlockSlicesize", 100)
 
         # metadata dictionary information to be added to block/container rules
         # cannot be a python dictionary, but a JSON string instead
@@ -235,6 +240,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                           ignore_availability=True, meta=self.metaData)
             rseName = "%s_Test" % item['pnn'] if self.testRSEs else item['pnn']
             # DATASET = replicates all files in the same block to the same RSE
+            kwargs.update(self.blockRuleParams)
             resp = self.rucio.createReplicationRule(item['blockname'],
                                                     rseExpression=rseName, **kwargs)
             if resp:
@@ -341,69 +347,74 @@ class RucioInjectorPoller(BaseWorkerThread):
 
         logging.info("Found %d candidate blocks for rule deletion", len(blockDict))
 
-        blocksToDelete = []
-        containerDict = {}
-        # Populate containerDict, assigning each block to its correspondant container
-        for blockName in blockDict:
-            container = blockDict[blockName]['dataset']
-            # If the container is not in the dictionary, create a new entry for it
-            if container not in containerDict:
-                # Set of sites to which the container needs to be transferred
-                sites = set(x.replace("_MSS", "_Tape") for x in blockDict[blockName]['sites'])
-                containerDict[container] = {'blocks': [], 'rse': sites}
-            containerDict[container]['blocks'].append(blockName)
+        for blocksSlice in grouper(blockDict, self.delBlockSlicesize):
+            logging.info("Handeling %d candidate blocks", len(blocksSlice))
+            containerDict = {}
+            # Populate containerDict, assigning each block to its correspondant container
+            for blockName in blocksSlice:
+                container = blockDict[blockName]['dataset']
+                # If the container is not in the dictionary, create a new entry for it
+                if container not in containerDict:
+                    # Set of sites to which the container needs to be transferred
+                    sites = set(x.replace("_MSS", "_Tape") for x in blockDict[blockName]['sites'])
+                    containerDict[container] = {'blocks': [], 'rse': sites}
+                containerDict[container]['blocks'].append(blockName)
 
-        for contName in containerDict:
-            cont = containerDict[contName]
+            blocksToDelete = []
+            for contName in containerDict:
+                cont = containerDict[contName]
 
-            # Checks if the container is not requested in any sites.
-            # This should never be triggered, but better safe than sorry
-            if not cont['rse']:
-                logging.warning("No rules for container: %s. Its blocks won't be deleted.", contName)
-                continue
-
-            try:
-                # Get RSE in which each block is available
-                availableRSEs = self.rucio.getReplicaInfoForBlocks(block=cont['blocks'])
-            except Exception as exc:
-                msg = "Failed to get replica info for blocks in container: %s.\n" % contName
-                msg += "Will retry again in the next cycle. Error: %s" % str(exc)
-                logging.error(msg)
-                continue
-
-            for blockRSEs in availableRSEs:
-                # If block is available at every RSE its container needs to be transferred, the block can be deleted
-                blockSites = set(blockRSEs['replica'])
-                if cont['rse'].issubset(blockSites):
-                    blocksToDelete.append(blockRSEs['name'])
-
-        # Delete agent created rules locking the block
-        binds = []
-        logging.info("Going to delete %d block rules", len(blocksToDelete))
-        for block in blocksToDelete:
-            try:
-                rules = self.rucio.listDataRules(block, scope=self.scope, account=self.rucioAcct)
-            except WMRucioException as exc:
-                logging.warning("Unable to retrieve replication rules for block: %s. Will retry in the next cycle.", block)
-            else:
-                if not rules:
-                    logging.info("Block rule for: %s has been deleted by previous cycles", block)
-                    binds.append({'DELETED': 1, 'BLOCKNAME': block})
+                # Checks if the container is not requested in any sites.
+                # This should never be triggered, but better safe than sorry
+                if not cont['rse']:
+                    logging.warning("No rules for container: %s. Its blocks won't be deleted.", contName)
                     continue
-                for rule in rules:
-                    deletedRules = 0
-                    if self.rucio.deleteRule(rule['id'], purgeReplicas=True):
-                        logging.info("Successfully deleted rule: %s, for block %s.", rule['id'], block)
-                        deletedRules += 1
-                    else:
-                        logging.warning("Failed to delete rule: %s, for block %s. Will retry in the next cycle.", rule['id'], block)
-                if deletedRules == len(rules):
-                    binds.append({'DELETED': 1, 'BLOCKNAME': block})
-                    logging.info("Successfully deleted all rules for block %s.", block)
+
+                try:
+                    # Get RSE in which each block is available
+                    availableRSEs = self.rucio.getReplicaInfoForBlocks(block=cont['blocks'], deep=self.useDsetReplicaDeep)
+                except Exception as exc:
+                    msg = "Failed to get replica info for blocks in container: %s.\n" % contName
+                    msg += "Will retry again in the next cycle. Error: %s" % str(exc)
+                    logging.error(msg)
+                    continue
+
+                for blockRSEs in availableRSEs:
+                    # If block is available at every RSE its container needs to be transferred, the block can be deleted
+                    blockSites = set(blockRSEs['replica'])
+                    logging.debug("BlockName: %s", blockRSEs['name'])
+                    logging.debug("Needed: %s / Available: %s", str(cont['rse']), str(blockSites))
+                    if cont['rse'].issubset(blockSites):
+                        blocksToDelete.append(blockRSEs['name'])
+
+            # Delete agent created rules locking the block
+            binds = []
+            logging.info("Going to delete %d block rules", len(blocksToDelete))
+            for block in blocksToDelete:
+                try:
+                    rules = self.rucio.listDataRules(block, scope=self.scope, account=self.rucioAcct)
+                except WMRucioException as exc:
+                    logging.warning("Unable to retrieve replication rules for block: %s. Will retry in the next cycle.", block)
+                else:
+                    if not rules:
+                        logging.info("Block rule for: %s has been deleted by previous cycles", block)
+                        binds.append({'DELETED': 1, 'BLOCKNAME': block})
+                        continue
+                    for rule in rules:
+                        deletedRules = 0
+                        if self.rucio.deleteRule(rule['id'], purgeReplicas=True):
+                            logging.info("Successfully deleted rule: %s, for block %s.", rule['id'], block)
+                            deletedRules += 1
+                        else:
+                            logging.warning("Failed to delete rule: %s, for block %s. Will retry in the next cycle.", rule['id'], block)
+                    if deletedRules == len(rules):
+                        binds.append({'DELETED': 1, 'BLOCKNAME': block})
+                        logging.info("Successfully deleted all rules for block %s.", block)
 
 
-        self.markBlocksDeleted.execute(binds)
-        logging.info("Marked %d blocks as deleted in the database", len(binds))
+            self.markBlocksDeleted.execute(binds)
+            logging.info("Marked %d blocks as deleted in the database", len(binds))
+
         return
 
     def insertContainerRules(self):
@@ -436,6 +447,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         for subInfo in unsubscribedDatasets:
             rseName = subInfo['site'].replace("_MSS", "_Tape")
             container = subInfo['path']
+            lifetime = subInfo['dataset_lifetime']
             # Skip central production Tape rules
             if not self.isT0agent and rseName.endswith("_Tape"):
                 logging.info("Bypassing Production container Tape data placement for container: %s and RSE: %s",
@@ -464,6 +476,9 @@ class RucioInjectorPoller(BaseWorkerThread):
                     rseName = rseName.replace("cms_type=real", "cms_type=test")
             else:
                 # then it's a T0 container placement
+                ruleKwargs['priority'] = 4
+                if not rseName.endswith("_Tape") and lifetime > 0:
+                    ruleKwargs['lifetime'] = lifetime
                 if self.testRSEs:
                     rseName = "%s_Test" % rseName
                 #Checking whether we need to ask for rule approval

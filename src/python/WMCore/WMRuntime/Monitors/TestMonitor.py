@@ -152,7 +152,7 @@ class TestMonitor(WMRuntimeMonitor):
 
         # Check for events
         if self.cmsswFile:
-            run, event = searchForEvent(file)
+            run, event = searchForEvent(self.cmsswFile)
             if run and event:
                 # Then we actually found something, otherwise do nothing
                 # Right now I don't know what to do

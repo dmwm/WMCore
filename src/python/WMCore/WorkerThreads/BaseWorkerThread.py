@@ -204,8 +204,8 @@ class BaseWorkerThread(object):
                             # force entire component to terminate
                             try:
                                 self.component.prepareToStop()
-                            except Exception as ex:
-                                logging.error("Failed to halt component after worker crash: %s", str(ex))
+                            except Exception as ex1:
+                                logging.error("Failed to halt component after worker crash: %s", str(ex1))
                             raise ex
                         # Put the thread to sleep
                         self.sleepThread()

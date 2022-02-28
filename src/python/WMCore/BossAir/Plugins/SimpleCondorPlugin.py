@@ -16,6 +16,8 @@ import htcondor
 
 from Utils import FileTools
 from Utils.IteratorTools import grouper
+from Utils.PythonVersion import PY2
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
@@ -464,7 +466,7 @@ class SimpleCondorPlugin(BasePlugin):
 
         return
 
-    def updateJobInformation(self, workflow, task, **kwargs):
+    def updateJobInformation(self, workflow, **kwargs):
         """
         _updateJobInformation_
 
@@ -473,18 +475,21 @@ class SimpleCondorPlugin(BasePlugin):
 
         The currently supported changes are only priority for which both the task (taskPriority)
         and workflow priority (requestPriority) must be provided.
+
+        Since the default priority is very high, we only need to adjust new priorities
+        for processing/production task types (which have a task priority of 0)
         """
         schedd = htcondor.Schedd()
 
-        if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
-            newPriority = int(kwargs['requestPriority']) + int(kwargs['taskPriority'] * self.maxTaskPriority)
+        if 'requestPriority' in kwargs:
+            newPriority = int(kwargs['requestPriority'])
             try:
-                constraint = "WMAgent_SubTaskName =?= %s" % classad.quote(str(task))
-                constraint += " && WMAgent_RequestName =?= %s" % classad.quote(str(workflow))
+                constraint = "WMAgent_RequestName =?= %s" % classad.quote(str(workflow))
                 constraint += " && JobPrio =!= %d" % newPriority
+                constraint += " && stringListMember(CMS_JobType, %s) " % classad.quote(str("Production, Processing"))
                 schedd.edit(constraint, 'JobPrio', classad.Literal(newPriority))
             except Exception as ex:
-                logging.error("Failed to update JobPrio for WMAgent_SubTaskName=%s", task)
+                logging.error("Failed to update JobPrio for WMAgent_RequestName=%s", str(workflow))
                 logging.exception(ex)
 
         return
@@ -503,7 +508,7 @@ class SimpleCondorPlugin(BasePlugin):
         for job in jobList:
             ad = {}
 
-            ad['initial_Dir'] = job['cache_dir']
+            ad['initial_Dir'] = encodeUnicodeToBytesConditional(job['cache_dir'], condition=PY2)
             ad['transfer_input_files'] = "%s,%s/%s,%s" % (job['sandbox'], job['packageDir'],
                                                    'JobPackage.pkl', self.unpacker)
             ad['Arguments'] = "%s %i %s" % (os.path.basename(job['sandbox']), job['id'], job["retry_count"])
@@ -524,21 +529,22 @@ class SimpleCondorPlugin(BasePlugin):
             sites = ','.join(sorted(job.get('potentialSites')))
             ad['My.ExtDESIRED_Sites'] = classad.quote(str(sites))
             ad['My.CMS_JobRetryCount'] = str(job['retry_count'])
-            ad['My.WMAgent_RequestName'] = classad.quote(job['request_name'])
+            ad['My.WMAgent_RequestName'] = classad.quote(encodeUnicodeToBytesConditional(job['request_name'], condition=PY2))
             match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['request_name'])
             if match:
                 ad['My.CMSGroups'] = classad.quote(match.groups()[0])
             else:
                 ad['My.CMSGroups'] = undefined
             ad['My.WMAgent_JobID'] = str(job['jobid'])
-            ad['My.WMAgent_SubTaskName'] = classad.quote(job['task_name'])
-            ad['My.CMS_JobType'] = classad.quote(job['task_type'])
+            ad['My.WMAgent_SubTaskName'] = classad.quote(encodeUnicodeToBytesConditional(job['task_name'], condition=PY2))
+            ad['My.CMS_JobType'] = classad.quote(encodeUnicodeToBytesConditional(job['task_type'], condition=PY2))
             ad['My.CMS_Type'] = classad.quote(activityToType(job['activity']))
-     
+            ad['My.CMS_RequestType'] = classad.quote(job['requestType'])
+
             # Handling for AWS, cloud and opportunistic resources
             ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
             if job.get('inputDataset'):
-                ad['My.DESIRED_CMSDataset'] = classad.quote(job['inputDataset'])
+                ad['My.DESIRED_CMSDataset'] = classad.quote(encodeUnicodeToBytesConditional(job['inputDataset'], condition=PY2))
             else:
                 ad['My.DESIRED_CMSDataset'] = undefined
             if job.get('inputDatasetLocations'):
@@ -551,9 +557,25 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.DESIRED_CMSPileups'] = classad.quote(str(cmsPileups))
             else:
                 ad['My.DESIRED_CMSPileups'] = undefined
-            # HighIO and repack jobs
+            # HighIO
             ad['My.Requestioslots'] = str(1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0)
-            ad['My.RequestRepackslots'] = str(1 if job['task_type'] == 'Repack' else 0)
+            # GPU resource handling
+            # while we do not support a third option for RequiresGPU, make a binary decision
+            if job['requiresGPU'] == "required":
+                ad['My.RequiresGPU'] = "1"
+                ad['request_GPUs'] = "1"
+            else:
+                ad['My.RequiresGPU'] = "0"
+                ad['request_GPUs'] = "0"
+            if job.get('gpuRequirements', None):
+                ad['My.GPUMemoryMB'] = str(job['gpuRequirements']['GPUMemoryMB'])
+                cudaCapabilities = ','.join(sorted(job['gpuRequirements']['CUDACapabilities']))
+                ad['My.CUDACapability'] = classad.quote(str(cudaCapabilities))
+                ad['My.CUDARuntime'] = classad.quote(job['gpuRequirements']['CUDARuntime'])
+            else:
+                ad['My.GPUMemoryMB'] = undefined
+                ad['My.CUDACapability'] = undefined
+                ad['My.CUDARuntime'] = undefined
             # Performance and resource estimates (including JDL magic tweaks)
             origCores = job.get('numberOfCores', 1)
             estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60
@@ -598,15 +620,20 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.WMCore_ResizeJob'] = str(job.get('resizeJob', False))
             taskPriority = int(job.get('taskPriority', 1))
             priority = int(job.get('wf_priority', 0))
-            ad['My.JobPrio'] = str(int(priority + taskPriority * 1))
+            ad['My.JobPrio'] = str(int(priority + taskPriority * self.maxTaskPriority))
             ad['My.PostJobPrio1'] = str(int(-1 * len(job.get('potentialSites', []))))
             ad['My.PostJobPrio2'] = str(int(-1 * job['task_id']))
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
-            ad['My.REQUIRED_OS'] = classad.quote(requiredOSes)
+            ad['My.REQUIRED_OS'] = classad.quote(encodeUnicodeToBytesConditional(requiredOSes, condition=PY2))
             cmsswVersions = ','.join(job.get('swVersion'))
-            ad['My.CMSSW_Versions'] = classad.quote(cmsswVersions)
-     
+            ad['My.CMSSW_Versions'] = classad.quote(encodeUnicodeToBytesConditional(cmsswVersions, condition=PY2))
+            requiredArch = self.scramArchtoRequiredArch(job.get('scramArch'))
+            if not requiredArch:  # only Cleanup jobs should not have ScramArch defined
+                ad['Requirements'] = '(TARGET.Arch =!= Undefined)'
+            else:
+                ad['Requirements'] = '(TARGET.Arch =?= "{}")'.format(requiredArch)
+
             jobParameters.append(ad)    
              
         return jobParameters
@@ -649,5 +676,5 @@ class SimpleCondorPlugin(BasePlugin):
         sub['My.CMS_SubmissionTool'] = classad.quote("WMAgent")
 
         jobParameters = self.getJobParameters(jobList)
-       
+
         return sub, jobParameters

@@ -7,9 +7,9 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 from __future__ import division
 
 from builtins import range, object
-
 from future import standard_library
 standard_library.install_aliases()
+
 
 # system modules
 import time
@@ -19,8 +19,10 @@ import threading
 from queue import Queue
 
 # WMCore modules
+from Utils.PythonVersion import PY3
 from WMCore.MicroService.Tools.Common import getMSLogger
-from Utils.Utilities import encodeUnicodeToBytes
+from Utils.Utilities import encodeUnicodeToBytesConditional
+
 
 def genkey(query):
     """
@@ -31,12 +33,7 @@ def genkey(query):
         record = dict(query)
         query = json.JSONEncoder(sort_keys=True).encode(record)
     keyhash = hashlib.md5()
-    query = encodeUnicodeToBytes(query)
-    try:
-        keyhash.update(query)
-    except TypeError: # python3
-        # this may be avoided if we use encodeUnicodeToBytes(query) above
-        keyhash.update(query.encode('ascii'))
+    keyhash.update(encodeUnicodeToBytesConditional(query, condition=PY3))
     return keyhash.hexdigest()
 
 def set_thread_name(ident, name):

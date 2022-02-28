@@ -11,9 +11,11 @@ from __future__ import absolute_import, division, print_function
 from future.utils import listitems
 
 import sys
+import hashlib
 import time
 from functools import total_ordering
 
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.DataStructs.WMObject import WMObject
 
 
@@ -71,8 +73,16 @@ class WorkUnit(WMObject, dict):
         """
         Hash function for this dict.
         """
-
-        return hash(frozenset(listitems(self)))
+        # Generate an immutable sorted string representing this object
+        # NOTE: the run object needs to be hashed
+        immutableSelf = []
+        for keyName in sorted(self):
+            if keyName == "run_lumi":
+                immutableSelf.append((keyName, hash(self[keyName])))
+            else:
+                immutableSelf.append((keyName, self[keyName]))
+        hashValue = hashlib.sha1(encodeUnicodeToBytes(str(immutableSelf)))
+        return int(hashValue.hexdigest()[:15], 16)
 
     def json(self, thunker=None):
         """

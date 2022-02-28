@@ -80,7 +80,7 @@
     "BlockCloseMaxFiles": 500, 
     "VoGroup": "unknown", 
     "RequestType": "StepChain", 
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
     "SiteBlacklist": [], 
     "RequestStatus": "completed", 
     "SoftTimeout": 129600, 

@@ -12,6 +12,8 @@ import os
 import unittest
 from json import JSONDecoder
 
+from Utils.PythonVersion import PY3
+
 import WMCore.WMSpec.WMStep as WMStep
 import WMCore.WMSpec.WMTask as WMTask
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -43,6 +45,8 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         self.configDatabase = couchServer.connectDatabase("pileupfetcher_t")
         self.testDir = self.testInit.generateWorkDir()
         self.rucioAcct = "wmcore_transferor"
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """

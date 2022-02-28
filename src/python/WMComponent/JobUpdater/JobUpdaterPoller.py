@@ -58,7 +58,7 @@ class JobUpdaterPoller(BaseWorkerThread):
 
         self.listWorkflowsDAO = self.daoFactory(classname="Workflow.ListForJobUpdater")
         self.updateWorkflowPrioDAO = self.daoFactory(classname="Workflow.UpdatePriority")
-        self.executingJobsDAO = self.daoFactory(classname="Jobs.GetNumberOfJobsForWorkflowTaskStatus")
+        self.executingJobsDAO = self.daoFactory(classname="Jobs.GetNumberOfJobsForWorkflowStatus")
 
     def setup(self, parameters=None):
         """
@@ -109,6 +109,22 @@ class JobUpdaterPoller(BaseWorkerThread):
                 logging.exception(msg)
                 raise JobUpdaterException(msg)
 
+    def getWorkflowPrio(self, wflowName):
+        """
+        Given a request name, it fetches data from ReqMgr2 and returns
+        the request priority
+        :param wflowName: string with the request name
+        :return: integer with the request priority
+        """
+        result = None
+        try:
+            result = self.reqmgr2.getRequestByNames(wflowName)[0]
+            result = int(result[wflowName]['RequestPriority'])
+        except Exception as ex:
+            logging.error("Couldn't retrieve the priority of request %s", wflowName)
+            logging.error("Error: %s", str(ex))
+        return result
+
     def synchronizeJobPriority(self):
         """
         _synchronizeJobPriority_
@@ -121,46 +137,43 @@ class JobUpdaterPoller(BaseWorkerThread):
         # Update the priority of workflows that are not in WMBS and just in local queue
         priorityCache = {}
         workflowsToUpdate = {}
-        workflowsToCheck = [x for x in self.workqueue.getAvailableWorkflows()]
-        for workflow, priority in workflowsToCheck:
+        # this call returns workflows that only have Available elements in local queue
+        workflowsToCheck = self.workqueue.getAvailableWorkflows()
+        for workflow, workqueuePrio in workflowsToCheck:
             if workflow not in priorityCache:
-                try:
-                    result = self.reqmgr2.getRequestByNames(workflow)[0]
-                    priorityCache[workflow] = result[workflow]['RequestPriority']
-                except Exception as ex:
-                    logging.error("Couldn't retrieve the priority of request %s", workflow)
-                    logging.error("Error: %s", str(ex))
+                requestPrio = self.getWorkflowPrio(workflow)
+                if requestPrio is None:
                     continue
-            if priority != priorityCache[workflow]:
-                workflowsToUpdate[workflow] = priorityCache[workflow]
-        logging.info("Found %d workflows to update in workqueue", len(workflowsToUpdate))
-        for workflow in workflowsToUpdate:
-            self.workqueue.updatePriority(workflow, workflowsToUpdate[workflow])
+
+                priorityCache[workflow] = requestPrio
+                if workqueuePrio != priorityCache[workflow]:
+                    logging.info("Updating workqueue elements priority for request: %s", workflow)
+                    self.workqueue.updatePriority(workflow, priorityCache[workflow])
 
         # Check the workflows in WMBS
-        priorityCache = {}
         workflowsToUpdateWMBS = {}
         workflowsToCheck = self.listWorkflowsDAO.execute()
+        # this loop contains multiple entries for the same workflow
         for workflowEntry in workflowsToCheck:
             workflow = workflowEntry['name']
+            wmbsPrio = int(workflowEntry['workflow_priority'])
             if workflow not in priorityCache:
-                try:
-                    result = self.reqmgr2.getRequestByNames(workflow)[0]
-                    priorityCache[workflow] = result[workflow]['RequestPriority']
-                except Exception as ex:
-                    logging.error("Couldn't retrieve the priority of request %s", workflow)
-                    logging.error("Error: %s", str(ex))
+                requestPrio = self.getWorkflowPrio(workflow)
+                if requestPrio is None:
                     continue
-            requestPriority = int(priorityCache[workflow])
-            if requestPriority != int(workflowEntry['workflow_priority']):
-                # Update the workqueue priority for the Available elements
-                self.workqueue.updatePriority(workflow, requestPriority)
-                # Check if there are executing jobs for this particular task
-                if self.executingJobsDAO.execute(workflow, workflowEntry['task']) > 0:
-                    self.bossAir.updateJobInformation(workflow, workflowEntry['task'],
-                                                      requestPriority=priorityCache[workflow],
-                                                      taskPriority=workflowEntry['task_priority'])
-                workflowsToUpdateWMBS[workflow] = priorityCache[workflow]
+
+                priorityCache[workflow] = requestPrio
+                if wmbsPrio != priorityCache[workflow]:
+                    logging.info("Updating workqueue elements priority for request: %s", workflow)
+                    self.workqueue.updatePriority(workflow, priorityCache[workflow])
+
+                    # if there are jobs in wmbs executing state, update their prio in condor
+                    if self.executingJobsDAO.execute(workflow) > 0:
+                        logging.info("Updating condor jobs priority for request: %s", workflow)
+                        self.bossAir.updateJobInformation(workflow,
+                                                          requestPriority=priorityCache[workflow])
+                    workflowsToUpdateWMBS[workflow] = priorityCache[workflow]
+
         if workflowsToUpdateWMBS:
-            logging.info("Updating %d workflows in WMBS.", len(workflowsToUpdateWMBS))
+            logging.info("Updating WMBS workflow priority for %d workflows.", len(workflowsToUpdateWMBS))
             self.updateWorkflowPrioDAO.execute(workflowsToUpdateWMBS)

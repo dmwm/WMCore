@@ -11,6 +11,7 @@ import os
 import unittest
 
 # WMCore modules
+from Utils.PythonVersion import PY3
 from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
@@ -39,8 +40,8 @@ class TransferorTest(EmulatedUnitTestCase):
                          'rucioAccount': 'wma_test',  # it should be wmcore_transferor
                          # 'rucioAuthUrl': 'https://cms-rucio-auth.cern.ch',
                          # 'rucioUrl': 'http://cms-rucio.cern.ch',
-                         'rucioAuthUrl': 'https://cmsrucio-auth-int.cern.ch',
-                         'rucioUrl': 'http://cmsrucio-int.cern.ch',
+                         'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
+                         'rucioUrl': 'http://cms-rucio-int.cern.ch',
                          'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader'}
 
         self.msTransferor = MSTransferor(self.msConfig)
@@ -48,6 +49,8 @@ class TransferorTest(EmulatedUnitTestCase):
         self.taskChainTempl = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Prod.json')
         self.stepChainTempl = getTestFile('data/ReqMgr/requests/Integration/SC_LumiMask_PhEDEx.json')
         super(TransferorTest, self).setUp()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testGetPNNsFromPSNs(self):
         """Test MSTransferor private method _getPNNsFromPSNs()"""

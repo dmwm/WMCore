@@ -1,3 +1,372 @@
+2.0.1.pre2 to 2.0.1.pre3:
+  - Add mockMongoDB to MSUnmerged and MongoDB Class init options (Todor Ivanov) #11007
+  - Explicitly create proxies with 2048 bits (Alan Malta Rodrigues) #11008
+  - make sure proxy is 2048 bit. Fix #11005 (belforte) #11006
+  - fix uninitialized templates variable (Dirk Hufnagel) #11004
+
+
+2.0.1.pre1 to 2.0.1.pre2:
+  - Add lifetime to RucioContainers shipping to disk sites (Jhonatan Amado) #10950
+  - Send alerts to prometheus when a workflow fails to be processed. Rename notifyLargeData method. Fixes #10215 (Kenyi Hurtado) #10959
+  - Remove leftover requirements_py3.txt; update contribution doc (Alan Malta Rodrigues) #10997
+  - Simplify counters logic && Substitute rucioConMonErrors with rucioConMonStatus. (Todor Ivanov) #10993
+  - Add rucioConMonErrors counter. (Todor Ivanov) #10993
+
+
+2.0.0 to 2.0.1.pre1:
+  - Add parameters to rucio datasets (Jhonatan Amado) #10989
+  - Update requirements.txt and PyPI build scripts for py3 stack (Erik Gough) #10976
+  - Update mocked APIs and data (Alan Malta Rodrigues) #10990
+  - Fix a few DBS3Reader APIs, likely unused ones (Alan Malta Rodrigues) #10990
+  - Remove files from mongoProjection (Todor Ivanov) #10987
+  - Bump dbs3-client to 4.0.6 (Alan Malta Rodrigues) #10984
+
+
+2.0.0.pre3 to 2.0.0:
+
+
+2.0.0.pre2 to 2.0.0.pre3:
+  - Check that sdir exists on a file system (Valentin Kuznetsov) #10938
+
+
+2.0.0.pre1 to 2.0.0.pre2:
+  - Unittests: Add MSUnmergedRSE_t (Todor Ivanov) #10687
+  - Fix MSUnmerged logic and MSUnmergedRSE format to account for deletion errors. (Todor Ivanov) #10687
+  - Added MSUnmerged to the WM schematic (Alan Malta Rodrigues) #10974
+
+
+1.5.7 to 2.0.0.pre1:
+  - Aggregate DBS results from Go server (Valentin Kuznetsov) #10963
+  - Update diagrams and contribution documentation for end of support for Py2 (Alan Malta Rodrigues) #10968
+  - Update deploy-wmagent for 1.5.7.patch1; remove deprecated py2 option (Alan Malta Rodrigues) #10966
+  - DBS3Upload: check error message from the response body attribute (Alan Malta Rodrigues) #10961
+  - Update error message for jobs killed from site state transition (Alan Malta Rodrigues) #10958
+
+
+1.5.7.pre5 to 1.5.7:
+
+
+1.5.7.pre4 to 1.5.7.pre5:
+  - Properly update workqueue elements from JobUpdater (Alan Malta Rodrigues) #10944
+  - Update job priority only for processing and production task types, rather than every single subtask name, to reduce condor_qedit load. (Kenyi Hurtado) #10812
+
+
+1.5.7.pre3 to 1.5.7.pre4:
+  - Create the MariaDB wmcore unittest database with the current unix user (Alan Malta Rodrigues) #10934
+
+
+1.5.7.pre2 to 1.5.7.pre3:
+  - Stop using password for MariaDB localhost users (Alan Malta Rodrigues) #10932
+
+
+1.5.7.pre1 to 1.5.7.pre2:
+  - Bump dbs3-client to 4.0.5 (Alan Malta Rodrigues) #10931
+  - Add getStatsFromMongoDB to MSUnmerged. (Todor Ivanov) #10923
+  - fix DbsUrl in test modules and templates (Alan Malta Rodrigues) #10930
+  - Remove trailing slash from DBS URL (Alan Malta Rodrigues) #10930
+  - Fix logic which drops input blocks to be transferred (Alan Malta Rodrigues) #10928
+
+
+1.5.6 to 1.5.7.pre1:
+  - Add dbs3-pycurl and dbs3-client dependencies (Valentin Kuznetsov) #10919
+  - [py3] CredentialProxy - convert to bytes the input of hashlib.sha1() (Dario Mapelli) #10918
+  - [py3] REST/Server.py - encode to bytes input of hashlib.sha1 (Dario Mapelli) #10917
+  - Update pylint version required from 2.6.0 to 2.7.0 (Alan Malta Rodrigues) #10913
+
+
+1.5.6.pre1 to 1.5.6:
+
+
+1.5.5 to 1.5.6.pre1:
+  - Adapt MSUnmerged to sync RSE data with MongoDB properly (Todor Ivanov) #10906
+  - Add --deep option to getReplicaInfoForBlocks. Add slicing to deleteBlocks (germanfgv) #10902
+  - Use siteLocalConfig to get LogCollect stage out params (germanfgv) #10905
+  - Update CMSCouchapp version for python3 stack (Alan Malta Rodrigues) #10910
+  - Add replicaset opotion to the MongoDB wrapper. (Todor Ivanov) #10908
+  - Initial MongoDB setup. (Todor Ivanov) #10895
+  - Update request state diagram with archival done by MS (Alan Malta Rodrigues) #10899
+  - Fix path for Py2/Py3 WMAgent logs (Alan Malta Rodrigues) #10897
+
+
+1.5.5.pre6 to 1.5.5:
+
+
+1.5.5.pre5 to 1.5.5.pre6:
+  - Remove check of RSE dump root_failed attr in MSUnmerged (Alan Malta Rodrigues) #10894
+
+
+1.5.5.pre4 to 1.5.5.pre5:
+  - Temporary fix for the StatusChangeTasks ReqMgr2 thread (Alan Malta Rodrigues) #10693
+  - Keep workflows in running-open if they still have Available/Acquired GQEs (Alan Malta Rodrigues) #10693
+
+
+1.5.5.pre3 to 1.5.5.pre4:
+  - Add validation to the SubRequestType parameter (Alan Malta Rodrigues) #10890
+
+
+1.5.5.pre2 to 1.5.5.pre3:
+  - Remove unused Unified/MSTransferor code (Alan Malta Rodrigues) #10876
+  - Use the right COMP scramArch for PowerPC workflows (Alan Malta Rodrigues) #10871
+
+
+1.5.5.pre1 to 1.5.5.pre2:
+  - Remove PhEDEx library and any other use of PhEDEx (Alan Malta Rodrigues) #10856
+  - update campaigns used in our test setup (Alan Malta Rodrigues) #10859
+  - Update wmagent-deploy script to deploy Py3 WMAgent by default; update to cycle 1.5.4 (Alan Malta Rodrigues) #10859
+  - Check whether WMStep object has gpu attribute (Alan Malta Rodrigues) #10866
+  - Remove leading ../../ from logArchive tarballs (Alan Malta Rodrigues) #10868
+  - Support different architectures during job submission and runtime (Alan Malta Rodrigues) #10853
+
+
+1.5.4 to 1.5.5.pre1:
+  - Updating workflow json templates; adding working PY3 templates (Alan Malta Rodrigues) #10761
+  - Update Rucio Int url (Alan Malta Rodrigues) #10855
+  - Skip ErrorHandler cycle if agent configuration fails to be retrieved - take2 (Alan Malta Rodrigues) #10852
+  - add two new CMSSW exit code: 8034 and 8501 (Stefano Belforte) #10850
+  - Set request_GPUs classad according to RequiresGPU (Alan Malta Rodrigues) #10849
+
+
+1.5.4.pre2 to 1.5.4:
+  - Fix python version in subprocess call for inject-test-wfs (Alan Malta Rodrigues) #10847
+
+
+1.5.4.pre1 to 1.5.4.pre2:
+  - Provide request type via job classad (Alan Malta Rodrigues) #10821
+
+
+1.5.3 to 1.5.4.pre1:
+  - [py2py3] modernize WMCore_t/REST_t/Api_t.py (Dario Mapelli) #10757
+  - Propagate GPU requirements to job creation and submission (Alan Malta Rodrigues) #10811
+  - Skip ErrorHandler cycle if agent configuration fails to be retrieved (Alan Malta Rodrigues) #10817
+  - PhysicsSkim issue (Jhonatan Amado) #10809
+  - Add a step to change rucio instance during deployment. (Todor Ivanov) #10803
+
+
+1.5.3.pre4 to 1.5.3:
+
+
+1.5.3.pre3 to 1.5.3.pre4:
+  - Add support to GPUs in TaskChain spec (Alan Malta Rodrigues) #10805
+  - GPU getters/setters implemented for Workload/Task/Step/CMSSW (Alan Malta Rodrigues) #10799
+  - Support GPU parameters at StdBase; validation functions implemented (Alan Malta Rodrigues) #10799
+
+
+1.5.3.pre2 to 1.5.3.pre3:
+  - Delete file lists in slices. (Todor Ivanov) #10792
+  - Fix Multicore/EventStreams override in Resubmission of StepChains (Alan Malta Rodrigues) #10795
+  - Update Python3 requirements list with Sphinx and Jinja2 (Alan Malta Rodrigues) #10794
+  - Keep Resubmission spec and json data consistent (Alan Malta Rodrigues) #10789
+
+
+1.5.3.pre1 to 1.5.3.pre2:
+  - Override factoryWorkloadConstruction in the Resubmission spec (Alan Malta Rodrigues) #10781
+  - CouchDB 3: Add new Error HTTP Status Codes to CMSCouch.py (phenomax) #10785
+  - Fix spec validation for Multicore/Memory/Streams/TpE (Alan Malta Rodrigues) #10781
+  - RESTFormatter.to_string returns 'native str' (Dario Mapelli) #10753
+
+
+1.5.2 to 1.5.3.pre1:
+  - Define pylint message template in the pylintrc file (Alan Malta Rodrigues) #10776
+  - MSOutput: only produce documents for workflows not yet in the database (Alan Malta Rodrigues) #10773
+  - Update WM_Schematic. (Todor Ivanov) #10777
+  - fix unittest pycurl_manager_t.PyCurlManager:testHeadRequest (Dario Mapelli) #10772
+  - Fix missing parenthesis (Kenyi Hurtado) #10771
+  - [py2py3] modernization of leftover files - src (Dario Mapelli) #10768
+  - Fix undefined variable in MSTransferor (Alan Malta Rodrigues) #10769
+  - Update deploy-wmagent script to latest production tag: 1.5.2 (Alan Malta Rodrigues) #10767
+
+
+1.5.2.pre4 to 1.5.2:
+
+
+1.5.2.pre3 to 1.5.2.pre4:
+  - [py2py3] More job runtime places to encode pickledarguments to bytes (Alan Malta Rodrigues) #10766
+  - Split initial data fethig steps && Return from handled exceptions. (Todor Ivanov) #10762
+  - [py2py3] modernize scripts that rely on urllib (Dario Mapelli) #10754
+  - Fix job priority at submission time, taking into account  maxTaskPriority, as it was originally. (Kenyi Hurtado) #10760
+
+
+1.5.2.pre2 to 1.5.2.pre3:
+  - Define cms_type=int for rucio rules created against Rucio Int (Alan Malta Rodrigues) #10756
+  - [py2py3] modernize DQMUpload.py (Dario Mapelli) #9934
+  - [py2py3] fix Services_t/pycurlFileUpload_t and WebTools/REST_t - src (Dario Mapelli) #10650
+  - Convert a WorkQueueManagerCleaner log info to debug (Alan Malta Rodrigues) #10755
+  - Cast performance values to float in MathAlgos (Alan Malta Rodrigues) #10750
+  - Add new attribute for T0 Container rules (Jhonatan Amado) #10738
+
+
+1.5.2.pre1 to 1.5.2.pre2:
+  - PY3: Pass byte string to subprocess.stdin in Scram runtime (Alan Malta Rodrigues) #10736
+  - Provide standard/unicode string to the PSet handlePileup method (Alan Malta Rodrigues) #10740
+  - Decode byte string to unicode for json.dumps (Alan Malta Rodrigues) #10740
+  - Define funcName variable in the right place (Alan Malta Rodrigues) #10744
+  - Create unit test for ConfigSecion.getInternalName() (Kenyi Hurtado) #10593
+  - Fix issue with merge process and output labels (Merged and MergedError) (Kenyi Hurtado) #10593
+  - Implement py3 sorting for JobSplitting (Erik Gough) #10720
+  - [py2py3] modernize use of mylist.sort() in REST/Server.py (Dario Mapelli) #10743
+  - [py2py3] modernize use of pickle.load/dump - src (Dario Mapelli) #10742 
+  - Created new job wrapper script for Python3 environment (Alan Malta Rodrigues) #10726
+
+
+1.5.1 to 1.5.2.pre1:
+  - PY3: Create job package with pickle protocol=4 for Python3 agents (Alan Malta Rodrigues) #10731
+  - Load workload pickle object during runtime in binary mode (Alan Malta Rodrigues) #10729
+  - Revert CouchDB replication port forward (Alan Malta Rodrigues) #10727
+  - [py2py3] #10371 check - fix JobCreator_t.py - test (Dario Mapelli) #10724
+  - Encode a few job classads from unicode to bytes (Alan Malta Rodrigues) #10711
+  - [py2py3] Properly deal with strings location in the File module (Alan Malta Rodrigues) #10723
+  - [py2py3] #10349 - JobSubmitter_t and JobSubmitterCaching_t - test (Dario Mapelli) #10608
+  - MSOutput: skip inexistent containers in the Tape data placement (Alan Malta Rodrigues) #10717
+  - MSUnmerged: make rucioConMon parameter mandatory (Alan Malta Rodrigues) #10715
+  - Temporarily stop staging out log tarball to CASTOR (Alan Malta Rodrigues) #10712
+
+
+1.5.1.pre6 to 1.5.1:
+
+
+1.5.1.pre5 to 1.5.1.pre6:
+  - Introduce include and exclude directory filters. (Todor Ivanov) #10706
+
+
+1.5.1.pre4 to 1.5.1.pre5:
+  - Fix error message reported via MSUnmerged/MSRuleCleaner REST API (Alan Malta Rodrigues) #10700
+  - MSUnmerged: support detail and rse_type in the RESTful APIs (Alan Malta Rodrigues) #10700
+  - MSOutput: do not fail workflow if there are containers unknown to Rucio (Alan Malta Rodrigues) #10699
+
+
+1.5.1.pre3 to 1.5.1.pre4:
+  - Import micro services on demand in MSManager. (Todor Ivanov) #10698
+  - Provide a configurable weight value for MSTransferor Rucio rules (Alan Malta Rodrigues) #10696
+  - Performance improvements for WorkQueueManagerCleaner thread (Alan Malta Rodrigues) #10695
+  - Fix unnecessary traceback dumps. (Todor Ivanov) #10691
+  - Keep all relval output datatiers on disk by bypassing all MSOutput configurations (haozturk) #10669
+
+
+1.5.1.pre2 to 1.5.1.pre3:
+  - Fix RucioConMon.rseUnmerged cache name && Log full list of RSEs. (Todor Ivanov) #10689
+
+
+1.5.1.pre1 to 1.5.1.pre2:
+  - Limit PFNList entries logged (Todor Ivanov) #10685
+
+
+1.5.0 to 1.5.1.pre1:
+  - Substitute pretty function from IPython. (Todor Ivanov) #10679
+  - Add IPython dependency for reqmgr2ms. (Todor Ivanov) #10677
+  - Fix review comments. (Todor Ivanov) #10671
+  - pylint fixes (Todor Ivanov) #10671
+  - Unit tests (Todor Ivanov) #10671
+  - Add lfn2pfn resolve logic. (Todor Ivanov) #10671
+  - Shift from datetime to time (Todor Ivanov) #10666
+  - Unit tests (Todor Ivanov) #10666
+  - Add logic for cutting the path depth as provided by RucioConMon (Todor Ivanov) #10666
+  - Fix broken variable reference in TestMonitor (Alan Malta Rodrigues) #10665
+  - pylint fixes (Todor Ivanov) 
+  - pylint fixes (Todor Ivanov) 
+  - Add RucioConMon API to WMCore.Services. (Todor Ivanov) 
+  - 1.5.0.cmsweb1 (Alan Malta Rodrigues) 
+  - Fix object type passed to time.mktime (Alan Malta Rodrigues) 
+
+
+1.5.0 to 1.5.0.cmsweb1:
+  - Fix object type passed to time.mktime (Alan Malta Rodrigues) #10663 
+
+
+1.5.0.pre6 to 1.5.0:
+
+
+1.5.0.pre5 to 1.5.0.pre6:
+  - Print request name in the InvalidStateTransition exception (Alan Malta Rodrigues) #10649
+  - Encode CMSSW picklearguments to bytes before loading it (Alan Malta Rodrigues) #10648
+  - Keep buffering enabled when creating a component daemon (Alan Malta Rodrigues) #10645
+
+
+1.5.0.pre4 to 1.5.0.pre5:
+  - [py2py3] Fix AgentStatusWatcher subprocess.Popen calls (Alan Malta Rodrigues) #10635
+  - DBFormatter formatDict/formatList to native string instead of bytes (Alan Malta Rodrigues) #10639
+  - [py2py3] Open file in binary mode for pickle load/dump (Alan Malta Rodrigues) #10637
+  - Force pickle protocol=0 for the spec creation to be compatible with Py2/Py3 (Alan Malta Rodrigues) #10628
+
+
+1.5.0.pre3 to 1.5.0.pre4:
+  - Fix WMAgent component Daemon read/write operations (Alan Malta Rodrigues) #10632
+  - Remove repack slots flag (germanfgv) #10629
+  - Building the MSUnmerged construction arround functional Plines and configurable RSE lists. (Todor Ivanov) #10621
+  - Make output module ordering consistent between Py2/Py3 (Alan Malta Rodrigues) #10610
+  - Create workload sandbox efficiently (Alan Malta Rodrigues) #10612
+
+
+1.5.0.pre2 to 1.5.0.pre3:
+  - Replace built-in hash function by hashlib.sha1 (Alan Malta Rodrigues) #10605
+  - [py2py3] Fixing unittests from #10329 - src (Dario Mapelli) #10606
+  - Create function to elements being acquired in WorkQueue (Alan Malta Rodrigues) #10605
+  - added unstable unittests (Dario Mapelli) #10603
+  - [py2py3] fix some unittests from #10307 - src (Dario Mapelli) #10603
+  - Format REST response to bytes in Python3 (Alan Malta Rodrigues) #10601
+
+
+1.5.0.pre1 to 1.5.0.pre2:
+  - MSUnmerged basic skeleton. (Todor Ivanov) #10598
+  - added unstable unittest in py3 (Dario Mapelli) #10590
+  - [py2py3] fix unittest from #10262 - src (Dario Mapelli) #10590
+  - Ensure input for md5 algorithm is a bytes-object in Python3 (Alan Malta Rodrigues) #10595
+  - [py2py3] MockRucioApi.py - proposal (Dario Mapelli) #10584
+  - [py2py3] WMCore/Services/Service - suggestion (Dario Mapelli) #10584
+
+
+1.4.9 to 1.5.0.pre1:
+  - Deal with EventStreams=None in StepChain step level (Alan Malta Rodrigues) #10594
+  - Fix string type for DBS mock calls in python2 (Alan Malta Rodrigues) #10588
+  - Update code creating DBS mocked data; ditched unicode signatures (Alan Malta Rodrigues) #10585
+  - Fixes for slice 13: file open mode; pickle operations; stdout/stderr (Alan Malta Rodrigues) #10585
+  - [py2py3] fix unittests from #10289 - json (Dario Mapelli) #10580
+  - [py2py3] fix unittests from #10289 - src (Dario Mapelli) #10580
+  - Fix problem with T0 processes (Kenyi Hurtado) #10527
+
+1.4.9.pre8 to 1.4.9:
+
+
+1.4.9.pre7 to 1.4.9.pre8:
+  - [py2py3] fix unittests from #10295 - src (Dario Mapelli) #10581
+  - remove EventAwareLumiByWork_t unit tests from the py3 unstable list (Alan Malta Rodrigues) #10583
+  - Sort files by name in EventAwareLumiByWork; fix slice 7 unit tests (Alan Malta Rodrigues) #10583
+  - [py2py3] fix unittests from #10117 - src (Dario Mapelli) #10579
+  - added one item to and sorted list of py3 unstable unittests (Dario Mapelli) #10575
+  - [py2py3] fix unittests from #10057, improving REST_t/Simple_t - src (Dario Mapelli) #10575
+  - Fix Py3 unit tests for slice 6, CouchService_t (Alan Malta Rodrigues) #10578
+  - Fix unittest from dmwm#10529, Proxy_t (Erik Gough) 
+
+
+1.4.9.pre6 to 1.4.9.pre7:
+  - fix globalQueue initialization in WorkQueueReqMgrInterface_t (Alan Malta Rodrigues) #10576
+  - Fix Rucio-related unit tests (Alan Malta Rodrigues) #10576
+  - Open parsed file in bytes. (Todor Ivanov) #10571
+  - two more python3 unstable unit tests (Alan Malta Rodrigues) #10574
+  - Fix DBFormatter unit test (Alan Malta Rodrigues) #10574
+  - Re-execute REST/Main with the correct python version (Alan Malta Rodrigues) #10573
+  - [py2py3] fix unittests from #10012 - src (Dario Mapelli) #10562
+  - [py2py3] assertItemsEqual as alias for assertCountEqual - test (Dario Mapelli) #10563
+  - Ramp up Rucio Client vesion (Todor Ivanov) #10567
+  - List of unstable python3 unit tests (Alan Malta Rodrigues) #10565 
+
+
+1.4.9.pre5 to 1.4.9.pre6:
+  - [py2py3] fix unittests from #10011 - src (Dario Mapelli) #10561
+  - [py2py3] fix unittests from #9818 - src (Dario Mapelli) #10522
+  - Flowchart with the WMCore Jenkins CI setup (Alan Malta Rodrigues) #10560
+  - Fix DID existence check in global workqueue (Alan Malta Rodrigues) #10557
+
+
+1.4.9.pre4 to 1.4.9.pre5:
+  - Fix missing exceptions module in python3 (Todor Ivanov) #10524
+  - [py2py3] modernize WMCore/Services/Requests.py (Dario Mapelli) #10508
+  - [py2py3] modernize src/python/WMCore/Configuration.py (Dario Mapelli) #9974
+  - [py2py3] fix unittests in test/python/Utils_t - #10500 - src (Dario Mapelli) #10500
+  - [py2py3] Use Utils.PythonVersion.PY2/3 consistently (Dario Mapelli) #10518
+  - [py2py3] new module: Utils/PythonVersion.py (Dario Mapelli) #10518
+  - [py2py3] adapt MySQLCore.substitute to new list.sort() interface (Dario Mapelli) #10506
+
+
 1.4.9.pre3 to 1.4.9.pre4:
   - [py2py3] fix stuck unittest in test/python/Utils_t (Dario Mapelli) #10503
   - [py2py3] attempt to fix problem with formatting data from DB (Dario Mapelli) #10504

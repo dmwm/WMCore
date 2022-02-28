@@ -48,9 +48,8 @@ class PyCurlRESTModel(RESTModel):
         Saves the file passed by the client in the current directory
         """
         try:
-            f = open('UploadedFile.txt', 'wt')
-            f.write( file1.file.read() )
-            f.close()
+            with open('UploadedFile.txt', 'wb') as f:
+                f.write( file1.file.read() )
         except Exception as e:
             logging.exception(e)
 

@@ -851,6 +851,31 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+    def setGPUSettings(self, requiresGPU, gpuParams, initialTask=None):
+        """
+        Setter method for the workload GPU parameters.
+        It's responsible for setting whether GPUs are required or not; and
+        which GPU parameters to be used for that. This is done for every
+        task of this spec.
+        :param requiresGPU: string defining whether GPUs are needed. For TaskChains, it
+            could be a dictionary key'ed by the taskname.
+        :param gpuParams: GPU settings. A JSON encoded object, from either a None object
+            or a dictionary. For TaskChains, it could be a dictionary key'ed by the taskname
+        :param initialTask: parent task object
+        """
+        if not requiresGPU:
+            return
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setTaskGPUSettings(requiresGPU, gpuParams)
+            self.setGPUSettings(requiresGPU, gpuParams, task)
+        return
+
     def setMemory(self, memory, initialTask=None):
         """
         _setMemory_
@@ -1102,7 +1127,9 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the workload level DbsUrl.
         """
         # TODO: this replace can be removed in one year from now, thus March 2022
-        self.data.dbsUrl = dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+        dbsUrl = dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+        # stripping any end slashes, which no longer work in the Go-based server
+        self.data.dbsUrl = dbsUrl.rstrip("/")
 
     def getDbsUrl(self):
         """
@@ -1458,7 +1485,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                    custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
                                    useSkim=False, isSkim=False,
-                                   dataTier=None, deleteFromSource=False):
+                                   dataTier=None, deleteFromSource=False,
+                                   datasetLifetime=None):
         """
         _setSubscriptionInformation_
 
@@ -1485,7 +1513,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                             custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
                                             useSkim, isSkim,
-                                            dataTier, deleteFromSource)
+                                            dataTier, deleteFromSource,
+                                            datasetLifetime)
             self.setSubscriptionInformation(task,
                                             custodialSites, nonCustodialSites,
                                             autoApproveSites,
@@ -1493,7 +1522,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                             custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
                                             useSkim, isSkim,
-                                            dataTier, deleteFromSource)
+                                            dataTier, deleteFromSource,
+                                            datasetLifetime)
 
         return
 
@@ -1548,6 +1578,7 @@ class WMWorkloadHelper(PersistencyHelper):
                     subInfo[dataset]["NonCustodialGroup"] = solveGroupConflicts(
                         taskSubInfo[dataset]["NonCustodialGroup"],
                         subInfo[dataset]["NonCustodialGroup"])
+
                 else:
                     subInfo[dataset] = taskSubInfo[dataset]
                 subInfo[dataset]["CustodialSites"] = list(

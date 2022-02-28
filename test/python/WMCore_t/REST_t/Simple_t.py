@@ -5,6 +5,7 @@ from cherrypy import expose
 from multiprocessing import Process
 
 # WMCore modules
+from WMCore.REST.Auth import user_info_from_headers
 from WMCore.REST.Test import setup_dummy_server, fake_authz_headers
 from WMCore.REST.Test import fake_authz_key_file
 from WMCore.REST.Tools import tools
@@ -54,6 +55,25 @@ class SimpleTest(webtest.WebCase):
         self.getPage("/test/global_admin", headers = self.hglobal)
         self.assertStatus("200 OK")
         self.assertBody("ok")
+
+class AuthTest(webtest.WebCase, cherrypy.Tool):
+
+    def setUp(self):
+        cherrypy.Tool.__init__(self, 'before_request_body', user_info_from_headers, priority=60)
+        webtest.WebCase.PORT = PORT
+        self.engine = cherrypy.engine
+        self.proc = load_server(self.engine)
+
+    def tearDown(self):
+        print("teardown")
+        stop_server(self.proc, self.engine)
+
+    def testAuth(self):
+        myHeaders = [('cms-authn-name', 'Blah'), ('cms-auth-status', 'OK'),
+                     ('cms-authn-login', 'blah'), ('cms-authn-hmac', '1234')]
+        self.getPage("/test", headers=myHeaders)
+        self.assertTrue(True)  # Do not remove this line! otherwise the test hangs
+
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]

@@ -16,7 +16,8 @@ import sys
 import time
 import traceback
 
-from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+from Utils.PythonVersion import PY3
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
 from WMCore.Configuration import ConfigSection
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
@@ -378,9 +379,12 @@ class Report(object):
 
         Pickle this object and save it to disk.
         """
-        with open(filename, 'w') as handle:
-            pickle.dump(self.data, handle)
-
+        if PY3:
+            with open(filename, 'wb') as handle:
+                pickle.dump(encodeUnicodeToBytes(self.data), handle)
+        else:
+            with open(filename, 'w') as handle:
+                pickle.dump(self.data, handle)
         return
 
     def unpersist(self, filename, reportname=None):
@@ -389,8 +393,12 @@ class Report(object):
 
         Load a pickled FWJR from disk.
         """
-        with open(filename, 'r') as handle:
-            self.data = pickle.load(handle)
+        if PY3:
+            with open(filename, 'rb') as handle:
+                self.data = decodeBytesToUnicode(pickle.load(handle))
+        else:
+            with open(filename, 'r') as handle:
+                self.data = pickle.load(handle)
 
         # old self.report (if it existed) became unattached
         if reportname:

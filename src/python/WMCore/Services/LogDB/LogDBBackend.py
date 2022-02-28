@@ -6,7 +6,9 @@ Interface to LogDB persistent storage
 """
 
 from builtins import object, bytes
-from Utils.Utilities import encodeUnicodeToBytes
+
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 
 # system modules
 import datetime
@@ -26,7 +28,7 @@ def gen_hash(key):
     if not isinstance(key, bytes):
         raise NotImplementedError
     keyhash = hashlib.md5()
-    keyhash.update(key)
+    keyhash.update(encodeUnicodeToBytesConditional(key, condition=PY3))
     return keyhash.hexdigest()
 
 def tstamp():

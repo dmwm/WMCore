@@ -367,7 +367,7 @@ class PSetTweak(object):
             with open(filename, "w") as handle:
                 handle.write(self.jsonise())
         if formatting == "pickle":
-            with open(filename, "w") as handle:
+            with open(filename, "wb") as handle:
                 pickle.dump(self, handle)
         if formatting == "simplejson":
             with open(filename, "w") as handle:
@@ -396,7 +396,7 @@ class PSetTweak(object):
             raise RuntimeError(msg)
 
         if formatting == "pickle":
-            with open(filename, 'r') as handle:
+            with open(filename, 'rb') as handle:
                 unpickle = pickle.load(handle)
             self.process.__dict__.update(unpickle.__dict__)
 
@@ -420,6 +420,16 @@ class PSetTweak(object):
 
             for param, value in viewitems(jsoniser.parameters):
                 self.addParameter(param , value)
+
+    def reset(self):
+        """
+        _reset_
+
+        Reset pset holder process
+
+        """
+        del self.process
+        self.process = PSetHolder("process")
 
 
 def makeTweakFromJSON(jsonDictionary):

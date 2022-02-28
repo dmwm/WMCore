@@ -8,6 +8,8 @@ from copy import deepcopy
 
 from builtins import range
 
+from Utils.PythonVersion import PY3
+
 from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
 
 
@@ -87,6 +89,10 @@ class MSOutputTemplateTest(unittest.TestCase):
 
     outputMapKeys = ["Campaign", "Copies", "Dataset", "DatasetSize", "DiskDestination",
                      "DiskRuleID", "TapeDestination", "TapeRuleID"]
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testTaskChainSpec(self):
         """

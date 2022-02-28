@@ -5,7 +5,7 @@ _EventBased_t_
 Event based splitting test.
 """
 
-
+from __future__ import division
 
 
 import unittest

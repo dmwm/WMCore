@@ -315,7 +315,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 badJobs[71104].append(newJob)
                 continue
             try:
-                with open(pickledJobPath, 'r') as jobHandle:
+                with open(pickledJobPath, 'rb') as jobHandle:
                     loadedJob = pickle.load(jobHandle)
             except Exception as ex:
                 logging.warning("Failed to load job pickle object %s", pickledJobPath)
@@ -406,7 +406,11 @@ class JobSubmitterPoller(BaseWorkerThread):
                        'inputDataset': loadedJob.get('inputDataset', None),
                        'inputDatasetLocations': loadedJob.get('inputDatasetLocations', None),
                        'inputPileup': loadedJob.get('inputPileup', None),
-                       'allowOpportunistic': loadedJob.get('allowOpportunistic', False)}
+                       'allowOpportunistic': loadedJob.get('allowOpportunistic', False),
+                       'requiresGPU': loadedJob.get('requiresGPU', "forbidden"),
+                       'gpuRequirements': loadedJob.get('gpuRequirements', None),
+                       'requestType': loadedJob['requestType'],
+                       }
             # then update it with the info retrieved from the database
             jobInfo.update(newJob)
 

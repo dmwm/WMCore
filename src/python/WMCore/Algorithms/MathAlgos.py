@@ -193,7 +193,7 @@ def sortDictionaryListByKey(dictList, key, reverse=False):
     And not all histograms have the same value
     """
 
-    return sorted(dictList, key=lambda k: k.get(key, 0.0), reverse=reverse)
+    return sorted(dictList, key=lambda k: float(k.get(key, 0.0)), reverse=reverse)
 
 
 def getLargestValues(dictList, key, n=1):

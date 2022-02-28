@@ -16,7 +16,8 @@ import subprocess
 import sys
 
 from Utils.FileTools import getFullPath
-from Utils.Utilities import zipEncodeStr
+from Utils.PythonVersion import PY3
+from Utils.Utilities import zipEncodeStr, decodeBytesToUnicodeConditional
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.Steps.StepFactory import getStepEmulator
 from WMCore.WMSpec.WMStep import WMStepHelper
@@ -177,9 +178,12 @@ class Executor(object):
         Util to call condor_chirp and publish the key/value pair
 
         """
+
         if compress:
             value = zipEncodeStr(value, maxLen=maxLen)
 
+        # bytes object is not JSON serializable in Python3
+        value = decodeBytesToUnicodeConditional(value, condition=PY3)
         # construct condor_chirp binary location from CONDOR_CONFIG
         # Note: This works when we do not use containers.
         condor_chirp_bin = None

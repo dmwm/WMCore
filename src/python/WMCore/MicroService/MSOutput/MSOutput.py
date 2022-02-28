@@ -7,9 +7,10 @@ the Output data placement in WMCore MicroServices.
 
 # futures
 from __future__ import division, print_function
-from future.utils import viewitems, viewvalues
+from future.utils import viewitems
 
 # system modules
+import time
 from pymongo import IndexModel, ReturnDocument, errors
 from pprint import pformat
 from threading import current_thread
@@ -66,7 +67,7 @@ class MSOutput(MSCore):
     in MicroServices.
     """
 
-    def __init__(self, msConfig, mode, reqCache, logger=None):
+    def __init__(self, msConfig, mode, logger=None):
         """
         Runs the basic setup and initialization for the MSOutput module
         :microConfig: microservice configuration
@@ -91,6 +92,8 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
+        # fetch documents created in the last 6 months (default value)
+        self.msConfig.setdefault("mongoDocsCreatedSecs", 6 * 30 * 24 * 60 * 60)
         self.msConfig.setdefault("sendNotification", False)
         self.uConfig = {}
         # service name used to route alerts via AlertManager
@@ -101,8 +104,6 @@ class MSOutput(MSCore):
         self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
-        # cache to store request names shared between the Producer and Consumer threads
-        self.requestNamesCached = reqCache
 
         self.tapeStatus = dict()
         for endpoint, quota in viewitems(self.msConfig['tapePledges']):
@@ -123,7 +124,6 @@ class MSOutput(MSCore):
         self.msOutRelValColl = self.msOutDB['msOutRelValColl']
         self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
 
-
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
         """
@@ -131,7 +131,6 @@ class MSOutput(MSCore):
         * unified configuration
         """
         self.logger.info("%s: Updating local cache information.", self.currThreadIdent)
-        self.logger.info("%s: Request names cache size: %s", self.currThreadIdent, len(self.requestNamesCached))
 
         self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
@@ -199,6 +198,14 @@ class MSOutput(MSCore):
         self.logger.info(msg)
 
         try:
+            mongoDocNames = self.getRecentDocNamesFromMongo()
+        except Exception as err:  # general error
+            mongoDocNames = []
+            msg = "{}: Unknown exception while fetching documents from MongoDB. ".format(self.currThreadIdent)
+            msg += "Error: {}".format(str(err))
+            self.logger.exception(msg)
+
+        try:
             requestRecords = {}
             for status in reqStatus:
                 requestRecords.update(self.getRequestRecords(status))
@@ -207,8 +214,20 @@ class MSOutput(MSCore):
             msg += "Error: {}".format(str(err))
             self.logger.exception(msg)
 
+        # filter out documents already produced
+        finalRequests = []
+        for reqName, reqData in viewitems(requestRecords):
+            if reqName in mongoDocNames:
+                self.logger.info("Mongo document already created for %s, skipping it.", reqName)
+            else:
+                finalRequests.append(reqData)
+        msg = "Retrieved {} recent docs from MongoDB, ".format(len(mongoDocNames))
+        msg += "{} requests from ReqMgr2, and {} are new requests to be processed.".format(len(requestRecords),
+                                                                                           len(finalRequests))
+        self.logger.info(msg)
+
         try:
-            total_num_requests = self.msOutputProducer(requestRecords)
+            total_num_requests = self.msOutputProducer(finalRequests)
             msg = "{}: Total {} requests processed from the streamer. ".format(self.currThreadIdent,
                                                                                total_num_requests)
             self.logger.info(msg)
@@ -482,8 +501,6 @@ class MSOutput(MSCore):
                 #    To redefine those exceptions as MSoutputExceptions and
                 #    start using those here so we do not mix with general errors
                 try:
-                    # If it's in MongoDB, it can get into our in-memory cache
-                    self.requestNamesCached.append(docOut['RequestName'])
                     pipeLine.run(docOut)
                 except (KeyError, TypeError) as ex:
                     msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
@@ -537,10 +554,7 @@ class MSOutput(MSCore):
         # TODO:
         #    To generate the object from within the Function scope see above.
         counter = 0
-        for request in viewvalues(requestRecords):
-            if request['RequestName'] in self.requestNamesCached:
-                # if it's cached, then it's already in MongoDB, no need to redo this thing!
-                continue
+        for request in requestRecords:
             counter += 1
             try:
                 pipeLineName = msPipeline.getPipelineName()
@@ -613,6 +627,7 @@ class MSOutput(MSCore):
         """
         self.logger.info("Producing MongoDB record for workflow: %s", msOutDoc["RequestName"])
         updatedOutputMap = []
+        notFoundDIDs = []
         for dataItem in msOutDoc['OutputMap']:
             if msOutDoc['RequestType'] == "Resubmission":
                 # make sure not to subscribe the same datasets multiple times, even
@@ -620,8 +635,18 @@ class MSOutput(MSCore):
                 dataItem['Copies'] = 0
                 updatedOutputMap.append(dataItem)
                 continue
-            ### Fetch the dataset size, even if it does not go to Disk (it might go to Tape)
-            bytesSize = self._getDatasetSize(dataItem['Dataset'])
+            # Fetch the dataset size, even if it does not go to Disk (it might go to Tape)
+            try:
+                bytesSize = self._getDatasetSize(dataItem['Dataset'])
+            except KeyError as exc:
+                # then this container is unknown to Rucio, bypass and make an alert
+                # Error is already reported in the Rucio module, do not spam here!
+                dataItem['DatasetSize'] = 0
+                dataItem['Copies'] = 0
+                updatedOutputMap.append(dataItem)
+                notFoundDIDs.append(dataItem['Dataset'])
+                continue
+
             dataItem['DatasetSize'] = bytesSize
 
             if not self.canDatasetGoToDisk(dataItem, msOutDoc['IsRelVal']):
@@ -661,20 +686,25 @@ class MSOutput(MSCore):
                     updatedOutputMap.append(dataItem)
                     continue
             else:
-                # FIXME:
-                #    Here we need to use the already created campaignMap for
-                #    building the destinationOutputMap for nonRelVal workflows.
-                #    For the time being it is a fallback to all T1_* and all T2_*.
-                #    Once we migrate to Rucio we should change those defaults to
-                #    whatever is the format in Rucio (eg. referring a subscription
-                #    rule like: "store it at a good site" or "Store in the USA" etc.)
-
                 # NOTE: This default rseExpression should target all T1_*_Disk and T2_*
                 # sites, where the first part is a Union of those Tiers and the second
                 # part is a general constraint for those to be real entries (not `Test`
                 # or `Temp`) and we also target only Disk endpoints
                 dataItem['DiskDestination'] = '(tier=2|tier=1)&cms_type=real&rse_type=DISK'
             updatedOutputMap.append(dataItem)
+
+        # if there were containers not found in Rucio, create an email alert
+        if notFoundDIDs:
+            # send alert via AlertManager API
+            alertName = "ms-output: output containers not found for workflow: {}".format(msOutDoc["RequestName"])
+            alertSeverity = "high"
+            alertSummary = "[MSOutput] Workflow '{}' has output datasets unknown to Rucio".format(msOutDoc["RequestName"])
+            alertDescription = "Dataset(s): {} cannot be found in Rucio. ".format(notFoundDIDs)
+            alertDescription += "Thus, we are skipping these datasets from the final output "
+            alertDescription += "data placement, such that this workflow can get archived."
+            self.logger.warning(alertDescription)
+            if self.msConfig["sendNotification"]:
+                self.alertManagerAPI.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
 
         try:
             msOutDoc.updateDoc({"OutputMap": updatedOutputMap}, throw=True)
@@ -707,6 +737,9 @@ class MSOutput(MSCore):
         :param isRelVal: boolean flag identifying if dataset belongs to a RelVal request
         :return: True if the dataset is allowed to pass, False otherwise
         """
+        # Bypass every configuration for RelVals, keep everything on disk
+        if isRelVal:
+            return True
         dataTier = dataItem['Dataset'].split('/')[-1]
         if dataTier in self.msConfig['excludeDataTier']:
             self.logger.warning("Skipping dataset: %s because it's excluded in the MS configuration",
@@ -778,11 +811,11 @@ class MSOutput(MSCore):
 
     def canDatasetGoToTape(self, dataItem, workflow):
         """
-        This function evaluates whether a dataset can be passed to the
+        This function evaluates whether a container can be passed to the
         Data Management system, considering the following configurations:
-          1) list of blacklisted tiers in the MicroService configuration
-          2) list of white listed tiers bypassing the Unified configuration
-          3) list of black and white listed tiers in the Unified config
+          1) list of tiers banned in the MicroService configuration
+          2) list of tiers allowed to bypass the Unified configuration
+          3) list of allowed and banned tiers in the Unified config
         :param dataItem: output map dictionary present in the MongoDB record
         :param workflow: MSOutputTemplate object retrieved from MongoDB
         :return: True if the dataset is allowed to pass, False otherwise
@@ -796,6 +829,9 @@ class MSOutput(MSCore):
             return False
         if workflow['RequestType'] == "Resubmission":
             # their parent/original workflow will take care of all the data placement
+            return False
+        if int(dataItem['DatasetSize']) == 0:
+            # container hasn't been produced in the workflow
             return False
 
         if dataItem['TapeRuleID']:
@@ -869,6 +905,24 @@ class MSOutput(MSCore):
                     {'$set': msOutDoc},
                     return_document=ReturnDocument.AFTER)
         return msOutDoc
+
+    def getRecentDocNamesFromMongo(self):
+        """
+        Fetch a list of workflow names already inserted into MongoDB.
+        :param dbColl: connection object to the database/collection
+        :return: a flat list of workflow names
+        """
+        recordList = []
+        # query for documents created after this timestamp
+        createdAfter = int(time.time()) - self.msConfig['mongoDocsCreatedSecs']
+        thisQuery = {"CreationTime": {"$gte": createdAfter}}
+        projectionFields = {"RequestName": 1, "_id": 0}
+        for dbColl in [self.msOutNonRelValColl, self.msOutRelValColl]:
+            self.logger.info("Querying %s for docs created after timestamp: %s", dbColl.name, createdAfter)
+            for mongoDoc in dbColl.find(thisQuery, projectionFields):
+                recordList.append(mongoDoc["RequestName"])
+        self.logger.info("Retrieved a total of %s recent requests from MongoDB", len(recordList))
+        return recordList
 
     def getDocsFromMongo(self, mQueryDict, dbColl, limit=1000):
         """

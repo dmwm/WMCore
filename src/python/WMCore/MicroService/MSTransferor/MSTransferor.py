@@ -80,6 +80,8 @@ class MSTransferor(MSCore):
         # Send warning messages for any data transfer above this threshold.
         # Set to negative to ignore.
         self.msConfig.setdefault("warningTransferThreshold", 100. * (1000 ** 4))  # 100TB
+        # weight expression for the input replication rules
+        self.msConfig.setdefault("rucioRuleWeight", 'ddm_quota')
 
         quotaAccount = self.msConfig["rucioAccount"]
 
@@ -158,6 +160,7 @@ class MSTransferor(MSCore):
             msg += "Service set to process up to %s requests per cycle." % self.msConfig["limitRequestsPerCycle"]
             self.logger.info(msg)
         except Exception as err:  # general error
+            requestRecords = []
             msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
@@ -196,8 +199,7 @@ class MSTransferor(MSCore):
                 self.checkPUDataLocation(wflow)
                 if wflow.getSecondarySummary() and not wflow.getPURSElist():
                     # then we still have pileup to be transferred, but with incorrect locations
-                    msg = "Workflow: %s cannot proceed due to some PU misconfiguration. Check previous logs..."
-                    self.logger.critical(msg, wflow.getName())
+                    self.alertPUMisconfig(wflow.getname())
                     # FIXME: this needs to be logged somewhere and workflow be set to failed
                     counterProblematicRequests += 1
                     continue
@@ -209,8 +211,9 @@ class MSTransferor(MSCore):
                     success, transfers = self.makeTransferRequest(wflow)
                 except Exception as ex:
                     success = False
-                    msg = "Unknown exception while making Transfer Request for %s " % wflow.getName()
-                    msg += "\tError: %s" % str(ex)
+                    self.alertUnknownTransferError(wflow.getName())
+                    msg = "Unknown exception while making transfer request for %s " % wflow.getName()
+                    msg = "\tError: %s" % str(ex)
                     self.logger.exception(msg)
                 if success:
                     self.logger.info("Transfer requests successful for %s. Summary: %s",
@@ -222,6 +225,7 @@ class MSTransferor(MSCore):
                         counterSuccessRequests += 1
                     else:
                         counterFailedRequests += 1
+                        self.alertTransferCouchDBError(wflow.getname())
                 else:
                     counterFailedRequests += 1
             # it can go slightly beyond the limit. It's evaluated for every slice
@@ -670,20 +674,21 @@ class MSTransferor(MSCore):
         subLevel = "ALL" if subLevel == "container" else "DATASET"
         dids = blocks if blocks else [dataIn['name']]
 
-        rule = {'copies': 1,
-                'activity': 'Production Input',
-                'lifetime': self.msConfig['rulesLifetime'],
-                'account': self.msConfig['rucioAccount'],
-                'grouping': subLevel,
-                'meta': {'workflow_group': wflow.getWorkflowGroup()},
-                'comment': 'WMCore MSTransferor input data placement'}
+        ruleAttrs = {'copies': 1,
+                     'activity': 'Production Input',
+                     'lifetime': self.msConfig['rulesLifetime'],
+                     'account': self.msConfig['rucioAccount'],
+                     'grouping': subLevel,
+                     'weight': self.msConfig['rucioRuleWeight'],
+                     'meta': {'workflow_group': wflow.getWorkflowGroup()},
+                     'comment': 'WMCore MSTransferor input data placement'}
 
         if wflow.getParentDataset():
             # then we need to make sure the child and its parent blocks end up in the same RSE
             rseExpr = nodes[nodeIdx]
             msg = "Primary data placement with parent blocks, putting all in the same RSE: {}".format(rseExpr)
             self.logger.info(msg)
-        elif rule['grouping'] == "ALL":
+        elif ruleAttrs['grouping'] == "ALL":
             # this means we are placing the whole container under the same RSE.
             # Ask Rucio which RSE we should use, provided a list of them
             rseExpr = "|".join(nodes)
@@ -712,7 +717,7 @@ class MSTransferor(MSCore):
             self.logger.info("Creating rule for workflow %s with %d DIDs in container %s, RSEs: %s, grouping: %s",
                              wflow.getName(), len(dids), dataIn['name'], rseExpr, subLevel)
             try:
-                res = self.rucio.createReplicationRule(dids, rseExpr, **rule)
+                res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
             except Exception as exc:
                 msg = "Hit a bad exception while creating replication rules for DID: %s. Error: %s"
                 self.logger.error(msg, dids, str(exc))
@@ -725,16 +730,67 @@ class MSTransferor(MSCore):
                     self.logger.info("Rules successful created for %s : %s", dataIn['name'], res)
                     transferId.update(res)
                     # send an alert, if needed
-                    self.notifyLargeData(aboveWarningThreshold, transferId, wflow.getName(), dataSize, dataIn)
+                    self.alertLargeInputData(aboveWarningThreshold, transferId, wflow.getName(), dataSize, dataIn)
                 else:
                     self.logger.error("Failed to create rule for %s, will retry later", dids)
                     success = False
         else:
             msg = "DRY-RUN: making Rucio rule for workflow: %s, dids: %s, rse: %s, kwargs: %s"
-            self.logger.info(msg, wflow.getName(), dids, rseExpr, rule)
+            self.logger.info(msg, wflow.getName(), dids, rseExpr, ruleAttrs)
         return success, transferId
 
-    def notifyLargeData(self, aboveWarningThreshold, transferId, wflowName, dataSize, dataIn):
+    def sendAlert(self, alertName, severity, summary, description, service, endSecs = 1 * 60 * 60):
+        """
+        Send alert to Prometheus, wrap function in a try-except clause
+        """
+        try:
+            # alert to expiry in an hour from now
+            self.alertManagerApi.sendAlert(alertName, severity, summary, description,
+                                           service, endSecs)
+        except Exception as ex:
+            self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))
+
+    def alertPUMisconfig(self, workflowName):
+        """
+        Send alert to Prometheus with PU misconfiguration error
+        """
+        alertName = "{}: PU misconfiguration error. Workflow: {}".format(self.alertServiceName,
+                                                                         workflowName)
+        alertSeverity = "high"
+        alertSummary = "[MSTransferor] Workflow cannot proceed due to some PU misconfiguration."
+        alertDescription = "Workflow: {} could not proceed due to some PU misconfiguration,".format(workflowName)
+        alertDescription += "so it will be skipped."
+        self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                       self.alertServiceName)
+        self.logger.critical(alertDescription)
+
+    def alertUnknownTransferError(self, workflowName):
+        """
+        Send alert to Prometheus with unknown transfer error
+        """
+        alertName = "{}: Transfer request error. Workflow: {}".format(self.alertServiceName,
+                                                                         workflowName)
+        alertSeverity = "high"
+        alertSummary = "[MSTransferor] Unknown exception while making transfer request."
+        alertDescription = "Unknown exception while making Transfer request for workflow: {}".format(workflowName)
+        self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                       self.alertServiceName)
+
+    def alertTransferCouchDBError(self, workflowName):
+        """
+        Send alert to Prometheus with CouchDB transfer error
+        """
+        alertName = "{}: Failed to create a transfer document in CouchDB for workflow: {}".format(self.alertServiceName,
+                                                                         workflowName)
+        alertSeverity = "high"
+        alertSummary = "[MSTransferor] Transfer document could not be created in CouchDB."
+        alertDescription = "Workflow: {}, failed request  due to error posting to CouchDB".format(workflowName)
+        self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                       self.alertServiceName)
+        self.logger.warning(alertDescription)
+
+
+    def alertLargeInputData(self, aboveWarningThreshold, transferId, wflowName, dataSize, dataIn):
         """
         Evaluates whether the amount of data placed is too big, if so, send an alert
         notification to a few persons
@@ -754,12 +810,8 @@ class MSTransferor(MSCore):
             alertDescription += "data subscribed: {} TB, ".format(teraBytes(dataSize))
             alertDescription += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
 
-            try:
-                # alert to expiry in an hour from now
-                self.alertManagerApi.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                                               self.alertServiceName, endSecs=1 * 60 * 60)
-            except Exception as ex:
-                self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                           self.alertServiceName)
             self.logger.warning(alertDescription)
 
     def _getValidSites(self, wflow, dataIn):

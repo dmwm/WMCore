@@ -77,16 +77,18 @@ then
     source ./env_unittest_py3.sh
     update_src $REPOSITORY $BRANCH
 else
-    echo "--- deploying agent $VERSION"
+    echo "--- deploying agent $VERSION with local user $USER"
     # deploy agent
     deploy_agent $VERSION
-    echo "--- updating agent source repository $REPOSITORY,  branch $BRANCH"
+    echo "--- updating agent source repository $REPOSITORY, branch $BRANCH"
     # checkout test source
     setup_test_src $REPOSITORY $BRANCH
 
     # swap the source code from deployed one test source
     source ./env_unittest_py3.sh
+    echo "--- starting services"
     $manage start-services
 
-    mysql -u unittestagent --password=passwd --sock $INSTALL_DIR/current/install/mysql/logs/mysql.sock --exec "create database wmcore_unittest"
+    echo "--- creating MariaDB database"
+    mysql -u $USER --socket=$INSTALL_DIR/current/install/mysql/logs/mysql.sock --execute "create database wmcore_unittest"
 fi

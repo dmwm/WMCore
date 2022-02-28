@@ -12,9 +12,6 @@ from __future__ import division, print_function
 from future import standard_library
 standard_library.install_aliases()
 
-from future import standard_library
-standard_library.install_aliases()
-
 from builtins import str, bytes, object
 from future.utils import viewvalues
 
@@ -24,7 +21,6 @@ import os
 import shutil
 import socket
 import stat
-import sys
 import tempfile
 import traceback
 import types
@@ -36,6 +32,7 @@ from json import JSONEncoder, JSONDecoder
 
 from Utils.CertTools import getKeyCertFromEnv, getCAPathFromEnv
 from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+from Utils.PythonVersion import PY3
 from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
@@ -303,6 +300,8 @@ class Requests(dict):
     def decodeResult(self, result, decoder):
         """
         Decode the http/pycurl request result
+        NOTE: if decoder is provided with a False value, then it means no
+        decoding is applied on the results at all
         """
         if isinstance(decoder, (types.MethodType, types.FunctionType)):
             result = decoder(result)
@@ -320,6 +319,8 @@ class Requests(dict):
         """
         decode data to some appropriate format, for now make it a string...
         """
+        if PY3:
+            return decodeBytesToUnicode(data)
         return data.__str__()
 
     def cachePath(self, given_path, service_name):
@@ -418,7 +419,7 @@ class Requests(dict):
         password = encodeUnicodeToBytes(password)
         encodedauth = base64.encodestring(b'%s:%s' % (
             username, password)).strip()
-        if sys.version_info[0] == 3:
+        if PY3:
             encodedauth = decodeBytesToUnicode(encodedauth)
         auth_string = "Basic %s" % encodedauth
         self.additionalHeaders["Authorization"] = auth_string
@@ -463,6 +464,8 @@ class Requests(dict):
     def uploadFile(self, fileName, url, fieldName='file1', params=[], verb='POST'):
         """
         Upload a file with curl streaming it directly from disk
+
+        :rtype: bytes (both py2 and py3)
         """
         ckey, cert = self.getKeyCert()
         capath = self.getCAPath()
@@ -568,7 +571,7 @@ class JSONRequests(Requests):
         if data:
             decoder = JSONDecoder()
             thunker = JSONThunker()
-            if sys.version_info[0] == 3:
+            if PY3:
                 data = decodeBytesToUnicode(data)
             data = decoder.decode(data)
             unthunked = thunker.unthunk(data)

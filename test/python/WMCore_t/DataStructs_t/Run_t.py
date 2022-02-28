@@ -102,82 +102,74 @@ class RunTest(unittest.TestCase):
         comparision and sorting
 
         """
+        def cmp_runs(run_x, run_y):
+            return [
+                run_x < run_y, run_x <= run_y,
+                run_x == run_y, run_x != run_y,
+                run_x > run_y, run_x >= run_y,]
+
         run1 = Run(1, 1, 2, 3)
         run2 = Run(2, 4, 5, 6)
         run3 = Run(3, 7, 8, 9)
 
-        runlist = sorted([run2, run3, run1])
-        self.assertEqual(runlist[0], run1)
-        self.assertEqual(runlist[1], run2)
-        self.assertEqual(runlist[2], run3)
-
-        comparisons_0 = [
-            run1 < run2, run1 <= run2,
-            run1 == run2, run1 != run2,
-            run1 > run2, run1 >= run2,
-            ]
-        self.assertListEqual(comparisons_0,
-                             [True, True,
-                              False, True,
-                              False, False])
+        runlist = list(sorted([run2, run3, run1]))
+        self.assertListEqual(runlist, [run1, run2, run3])
+        self.assertListEqual(cmp_runs(run1, run2),
+                             [True, True, False, True, False, False])
 
         run4 = Run(4, 1, 2, 3)
         run5 = Run(4, 4, 5, 6)
         run6 = Run(4, 7, 8, 9)
 
-        runlist = sorted([run5, run6, run4])
-        self.assertEqual(runlist[0], run4)
-        self.assertEqual(runlist[1], run5)
-        self.assertEqual(runlist[2], run6)
+        runlist = list(sorted([run5, run6, run4]))
+        self.assertListEqual(runlist, [run4, run5, run6])
 
-        runlist = sorted([run5, run1, run3, run4, run6, run2])
-        self.assertEqual(runlist[0], run1)
-        self.assertEqual(runlist[1], run2)
-        self.assertEqual(runlist[2], run3)
-        self.assertEqual(runlist[3], run4)
-        self.assertEqual(runlist[4], run5)
-        self.assertEqual(runlist[5], run6)
+        runlist = list(sorted([run5, run1, run3, run4, run6, run2]))
+        self.assertListEqual(runlist, [run1, run2, run3, run4, run5, run6])
 
-        run7 = Run(9, 1, 2, 3)
-        run8 = Run(9, 1, 2, 3)
-        run9 = Run(9, 2)
-        run10 = Run(9, 3, 4, 5)
-        run11 = Run(9, 8, 9, 10)
+        run7  = Run(9, 1, 2)
+        run8  = Run(9, 1, 2, 3)
+        run9  = Run(9, 1, 2, 3)
+        run10 = Run(9, 1, 2, 3, 4)
+        run11 = Run(9, 1, 2, 4)
+        run12 = Run(9, 1, 4)
+        run13 = Run(9, 2)
+        run14 = Run(9, 3, 4, 5)
+        run15 = Run(9, 8, 9, 10)
 
-        runlist = sorted([run10, run8, run11, run7, run9])
-        self.assertEqual(runlist[0], run7)
-        self.assertEqual(runlist[1], run8)
-        self.assertEqual(runlist[2], run9)
-        self.assertEqual(runlist[3], run10)
-        self.assertEqual(runlist[4], run11)
+        runlist = list(sorted([run10, run15, run8,  run11, run13,
+                               run7,  run9,  run14, run12]))
+        self.assertListEqual(runlist,
+                            [run7, run8, run9, run10, run11,
+                             run12, run13, run14, run15])
 
-        comparisons_1 = [
-            run10 < run11, run10 <= run11,
-            run10 == run11, run10 != run11,
-            run10 > run11, run10 >= run11,
-            ]
-        self.assertListEqual(comparisons_1,
-                             [True, True,
-                              False, True,
-                              False, False])
-        comparisons_2_same = [
-            run7 < run7, run7 <= run7,
-            run7 == run7, run7 != run7,
-            run7 > run7, run7 >= run7,
-            ]
-        self.assertListEqual(comparisons_2_same,
-                             [False, True,
-                              True, False,
-                              False, True])
-        comparisons_3_same = [
-            run7 < run8, run7 <= run8,
-            run7 == run8, run7 != run8,
-            run7 > run8, run7 >= run8,
-            ]
-        self.assertListEqual(comparisons_3_same,
-                             [False, True,
-                              True, False,
-                              False, True])
+        self.assertListEqual(cmp_runs(run14, run15),
+                             [True, True, False, True, False, False])
+        self.assertListEqual(cmp_runs(run8, run8),
+                             [False, True, True, False, False, True])
+        self.assertListEqual(cmp_runs(run8, run9),
+                             [False, True, True, False, False, True])
+
+        run20 = Run(666, [(1, 11), (2, 22), (3, 33)])
+        run21 = Run(666, [(1, 11), (2, 22), (3, 33)])
+        run22 = Run(666, [(1, 11), (2, 22), (3, 32)])
+        run23 = Run(666, [(1, 11), (2, 22), (3, 34)])
+        run24 = Run(666, [(1, 11), (2, 21), (3, 33)])
+        run25 = Run(666, [(1, 11), (2, 21), (3, 34)])
+        run26 = Run(666, [(1, 11), (2, 23), (3, 32)])
+
+        self.assertListEqual(cmp_runs(run20, run21),
+                             [False, True, True, False, False, True])
+        self.assertListEqual(cmp_runs(run20, run22),
+                             [False, False, False, True, True, True])
+        self.assertListEqual(cmp_runs(run20, run23),
+                             [True, True, False, True, False, False])
+        self.assertListEqual(cmp_runs(run20, run24),
+                             [False, False, False, True, True, True])
+        self.assertListEqual(cmp_runs(run20, run25),
+                             [False, False, False, True, True, True])
+        self.assertListEqual(cmp_runs(run20, run26),
+                             [True, True, False, True, False, False])
 
     def testD(self):
         """
@@ -208,6 +200,15 @@ class RunTest(unittest.TestCase):
         s.add(run9)
         s.add(run10)
         s.add(run11)
+        self.assertEqual(run7, run8)
+        self.assertNotEqual(run7, run9)
+        self.assertNotEqual(run7, run10)
+
+    def testNewHash(self):
+        run1 = Run(1, 1, 2, 3)
+        self.assertEqual(hash(run1), 79038151938585768)
+        run666 = Run(666, [(1, 111), (3, 33), (2, 22)])
+        self.assertEqual(hash(run666), 21721583371131476)
 
 
 if __name__ == '__main__':

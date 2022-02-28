@@ -9,6 +9,8 @@ from __future__ import print_function
 import time
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 from WMQuality.TestInit import TestInit
 
@@ -27,6 +29,9 @@ class HeartbeatTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules=["WMCore.Agent.Database"],
                                 useDefault=False)
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """

@@ -8,6 +8,8 @@ import unittest
 
 from future.utils import viewvalues
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import (JobSummary, ProgressSummary,
                                                                       TaskInfo, RequestInfo)
 
@@ -28,6 +30,10 @@ class DummyTask(object):
 
 
 class MyTestCase(unittest.TestCase):
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testJobSummary(self):
         """some very basic unit tests for the JobSummary class"""

@@ -315,9 +315,8 @@ class BossAirTest(unittest.TestCase):
             testJob['cache_dir'] = jobCache
             testJob.save()
             jobGroup.add(testJob)
-            output = open(os.path.join(jobCache, 'job.pkl'), 'w')
-            pickle.dump(testJob, output)
-            output.close()
+            with open(os.path.join(jobCache, 'job.pkl'), 'wb') as output:
+                pickle.dump(testJob, output)
 
         return testJob, testFile
 

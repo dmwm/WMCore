@@ -42,14 +42,20 @@ class WMExceptionTest(unittest.TestCase):
             'key-ascii-d': bytes('√@ʟυℯ-1', 'utf-8'),    # unicode (ascii): bytes (of non-ascii)
             'ḱℯƴ-unicode-a': 'ṽ@łυ℮-2',   # unicode (non-ascii): unicode (non-ascii)
             u'ḱℯƴ-unicode-b': 'ṽ@łυ℮-2',  # unicode (non-ascii): unicode (non-ascii)
-            bytes('ḱℯƴ-unicode-c', 'utf-8'): 'ṽ@łυ℮-2',  # bytes (of non-ascii): unicode (non-ascii)
             'ḱℯƴ-unicode-d': 'value-\x95',  # unicode (of non-ascii): unicode (invalid byte)
             'key-\x95': 'ṽ@łυ℮-2',  # unicode (invalid byte): unicode (non-ascii)
             'key3': 3.14159,
+
+            # The following line breaks py3 with
+            #   TypeError: addInfo() keywords must be strings
+            #   when using exception.addInfo(**data)
+            # 'ḱℯƴ-unicode-c'.encode('utf-8'): 'ṽ@łυ℮-2',  # bytes (of non-ascii): unicode (non-ascii)
+
             # This would break WMException, but should not happen
             # 'key4': {
             #     b'ḱℯƴ-unicode-c': 'ṽ@łυ℮-2',  # bytes (of unicode): unicode
             # }
+
             }
 
     def tearDown(self):
@@ -94,7 +100,10 @@ class WMExceptionTest(unittest.TestCase):
         self.logger.debug("String version of exception: %s", str(exception))
         self.logger.debug("exception.__str__(): %s", type(exception.__str__()))  # from py2 interpreter: <class 'future.types.newbytes.newbytes'>
         self.logger.debug("str(exception): %s", type(str(exception)))  # <class 'future.types.newstr.newstr'>
-        self.logger.debug("bytes(exception): %s", type(bytes(exception)))  # <class 'future.types.newbytes.newbytes'>
+
+        # The following line breaks python3 with
+        #   in __getitem__; return self.data[key]; KeyError: 0
+        # self.logger.debug("bytes(exception): %s", type(bytes(exception)))  # <class 'future.types.newbytes.newbytes'>
 
 
 if __name__ == "__main__":

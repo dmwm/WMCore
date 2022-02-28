@@ -1,0 +1,102 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
+        "ProcessingString": {
+            "DIGIPROD1": "ProcessingString-OVERRIDE-ME", 
+            "ProdMinBias": "ProcessingString-OVERRIDE-ME", 
+            "RECOPROD1": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "CMSSW_8_1_0", 
+        "CMSSWVersion": "CMSSW_8_1_0", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {"WorkFlowDesc": ["MC from scratch; Given 100 EpLumi for Task1, set EpJob and EpLumi to 41 (instead of 100), so 1LpJob;",
+                                      "Task2 and Task3 EventAwareLumiBased with 800 and 900 EpJob; diff ProcStr"],
+	                 "CheckList": ["TaskChain: MC from scratch", "Correct EventAwareLumiBased splitting"]},
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
+        "EnableHarvesting": false, 
+        "GlobalTag": "81X_mcRun1_realistic_v5", 
+        "Group": "DATAOPS",
+        "RequiresGPU": "forbidden",
+        "GPUParams": "null",
+        "IncludeParents": false, 
+        "Memory": 2300, 
+        "ProcessingString": {
+            "DIGIPROD1": "81X_mcRun1_realistic_v5", 
+            "ProdMinBias": "81X_mcRun1_realistic_v5", 
+            "RECOPROD1": "81X_mcRun1_realistic_v5"
+        }, 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": "slc6_amd64_gcc530",
+        "SizePerEvent": 1234, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "fd79406f016da454e5ac53c393476d2d", 
+            "EventsPerLumi": 100,
+            "GlobalTag": "81X_mcRun1_realistic_v5", 
+            "RequiresGPU": "required",
+            "GPUParams": "{\"GPUMemoryMB\": 123, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+            "KeepOutput": true, 
+            "Memory": 1200, 
+            "PrimaryDataset": "RelValProdMinBias", 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "RequestNumEvents": 9000, 
+            "Seeding": "AutomaticSeeding", 
+            "SplittingAlgo": "EventBased",
+            "TimePerEvent": 700,
+            "TaskName": "ProdMinBias"
+        }, 
+        "Task2": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "fd79406f016da454e5ac53c393491320", 
+            "GlobalTag": "81X_mcRun1_realistic_v5", 
+            "RequiresGPU": "forbidden",
+            "GPUParams": "null",
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputTask": "ProdMinBias", 
+            "KeepOutput": true, 
+            "Memory": 1500, 
+            "TimePerEvent": 36,
+            "ProcessingString": "Task2_WMCore_TEST", 
+            "SplittingAlgo": "EventAwareLumiBased",
+            "TaskName": "DIGIPROD1"
+        }, 
+        "Task3": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "fd79406f016da454e5ac53c3934a46df", 
+            "GlobalTag": "81X_mcRun1_realistic_v5", 
+            "RequiresGPU": "optional",
+            "GPUParams": "{\"GPUMemoryMB\": 123, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputTask": "DIGIPROD1", 
+            "KeepOutput": true, 
+            "Memory": 2000, 
+            "TimePerEvent": 32,
+            "ProcessingString": "Task3_WMCore_TEST", 
+            "SplittingAlgo": "EventAwareLumiBased",
+            "TaskName": "RECOPROD1"
+        }, 
+        "TaskChain": 3, 
+        "TimePerEvent": 0.10000000000000001
+    }
+}

@@ -9,12 +9,10 @@ from __future__ import print_function
 import os
 import unittest
 
-from WMQuality.TestInit import TestInit
 from WMCore.WMBase import getTestBase
 
 from WMCore.Storage.SiteLocalConfig import SiteLocalConfig, SiteConfigError
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 from nose.plugins.attrib import attr
 
@@ -159,8 +157,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         """
         os.environ["CMS_PATH"] = "/cvmfs/cms.cern.ch"
 
-        phedex = PhEDEx()
-        nodes = [node[u'name'] for node in phedex.getNodeMap()["phedex"]["node"]]
+        nodes = ['FIXME']
 
         for d in os.listdir("/cvmfs/cms.cern.ch/SITECONF/"):
             # Only T0_, T1_... folders are needed

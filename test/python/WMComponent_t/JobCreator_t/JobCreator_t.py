@@ -16,6 +16,8 @@ import threading
 import time
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
@@ -91,6 +93,9 @@ class JobCreatorTest(EmulatedUnitTestCase):
         self.componentName = 'JobCreator'
         self.heartbeatAPI = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 
@@ -282,7 +287,7 @@ class JobCreatorTest(EmulatedUnitTestCase):
         jobDir = os.listdir(groupDirectory)[0]
         jobFile = os.path.join(groupDirectory, jobDir, 'job.pkl')
         self.assertTrue(os.path.isfile(jobFile))
-        f = open(jobFile, 'r')
+        f = open(jobFile, 'rb')
         job = pickle.load(f)
         f.close()
 

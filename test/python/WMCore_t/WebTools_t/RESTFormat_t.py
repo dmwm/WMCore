@@ -18,6 +18,8 @@ from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
+from Utils.PythonVersion import PY3
+
 class RESTFormatTest(RESTBaseUnitTest):
 
     def initialize(self):
@@ -74,7 +76,9 @@ class RESTFormatTest(RESTBaseUnitTest):
                          output={'code':200, 'data':'{"a": "a%", "b": "b"}'})
 
         url = self.urlbase + 'list?input_int=a&input_str=a'
-        expected_data = '''{"exception": 400, "message": "Invalid input: Input data failed validation.", "type": "HTTPError"}'''
+        expected_data_py2 = '{"exception": 400, "message": "Invalid input: Input data failed validation.", "type": "HTTPError"}'
+        expected_data_py3 = '{"exception": 400, "type": "HTTPError", "message": "Invalid input: Input data failed validation."}'
+        expected_data = expected_data_py3 if PY3 else expected_data_py2
         methodTest('GET', url, accept=return_type,
                          output={'code':400, 'data':expected_data})
 
@@ -84,7 +88,9 @@ class RESTFormatTest(RESTBaseUnitTest):
         """
         return_type = 'application/json'
         url = self.urlbase + 'list1?int=a'
-        expected_data = """{"exception": 400, "message": "Invalid input: Arguments added where none allowed", "type": "HTTPError"}"""
+        expected_data_py2 = '{"exception": 400, "message": "Invalid input: Arguments added where none allowed", "type": "HTTPError"}'
+        expected_data_py3 = '{"exception": 400, "type": "HTTPError", "message": "Invalid input: Arguments added where none allowed"}'
+        expected_data = expected_data_py3 if PY3 else expected_data_py2
         methodTest('GET', url, accept=return_type, output={'code':400, 'data':expected_data})
 
     def testGenerator(self):

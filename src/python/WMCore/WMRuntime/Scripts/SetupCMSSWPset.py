@@ -15,6 +15,8 @@ import socket
 
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.WMTweak import  makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
+from Utils.PythonVersion import PY3
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytesConditional
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
@@ -127,33 +129,25 @@ class SetupCMSSWPset(ScriptInterface):
         """
 
         procScript = "cmssw_wm_create_process.py"
-
-        processDic = {"scenario": scenario}
-        processJson = os.path.join(self.stepSpace.location, "process_scenario.json")
         funcArgsJson = os.path.join(self.stepSpace.location, "process_funcArgs.json")
 
-        if funcName == "merge" or funcName == "repack":
-            try:
-                with open(funcArgsJson, 'wb') as f:
-                    json.dump(funcArgs, f)
-            except Exception as ex:
-                self.logger.exception("Error writing out process funcArgs json")
-                raise ex
-            funcArgsParam = funcArgsJson
-        else:
-            try:
-                with open(processJson, 'wb') as f:
-                    json.dump(processDic, f)
-            except Exception as ex:
-                self.logger.exception("Error writing out process scenario json")
-                raise ex
-            funcArgsParam = processJson
+        if funcName not in ("merge", "repack"):
+            funcArgs['scenario'] = scenario
+
+        try:
+            with open(funcArgsJson, 'w') as f:
+                json.dump(funcArgs, f)
+        except Exception as ex:
+            msg = "Error writing out process funcArgs json."
+            msg += "Type: {} and content: {}".format(type(funcArgs), funcArgs)
+            self.logger.exception(msg)
+            raise ex
 
         cmd = "%s --output_pkl %s --funcname %s --funcargs %s" % (
             procScript,
             os.path.join(self.stepSpace.location, self.configPickle),
             funcName,
-            funcArgsParam)
+            funcArgsJson)
 
         if funcName == "merge":
             if getattr(self.jobBag, "useErrorDataset", False):
@@ -228,6 +222,15 @@ class SetupCMSSWPset(ScriptInterface):
         return
 
     def applyPsetTweak(self, psetTweak, skipIfSet=False, allowFailedTweaks=False, name='', cleanupTweak=False):
+        """
+        _applyPsetTweak_
+        Apply a tweak to a pset process.
+        Options:
+          skipIfSet: Do not apply a tweak to a parameter that has a value set already.
+          allowFailedTweaks: If the tweak of a parameter fails, do not abort and continue tweaking the rest.
+          name: Extra string to add to the name of the json file that will be createed.
+          cleanupTweak: Reset pset tweak object after applying all tweaks. Mostly used after using self.tweak
+        """
         procScript = "edm_pset_tweak.py"
         psetTweakJson = os.path.join(self.stepSpace.location, "PSetTweak%s.json" % name)
         psetTweak.persist(psetTweakJson, formatting='simplejson')
@@ -243,8 +246,8 @@ class SetupCMSSWPset(ScriptInterface):
             cmd += " --allow_failed_tweaks"
         self.scramRun(cmd)
 
-        if cleanupTweak is True:
-            psetTweak = PSetTweak()
+        if cleanupTweak:
+            psetTweak.reset()
 
         return
 
@@ -405,6 +408,7 @@ class SetupCMSSWPset(ScriptInterface):
         fileList = []
         eventsAvailable = 0
         for pileupType in self.step.data.pileup.listSections_():
+            pileupType = decodeBytesToUnicode(pileupType)
             useAAA = True if getattr(self.jobBag, 'trustPUSitelists', False) else False
             self.logger.info("Pileup set to read data remotely: %s", useAAA)
             for blockName in sorted(pileupDict[pileupType].keys()):
@@ -412,12 +416,13 @@ class SetupCMSSWPset(ScriptInterface):
                 if PhEDExNodeName in blockDict["PhEDExNodeNames"] or useAAA:
                     eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                     for fileLFN in blockDict["FileList"]:
-                        fileList.append(str(fileLFN))
+                        fileList.append(decodeBytesToUnicode(fileLFN))
             newPileupDict[pileupType] = {"eventsAvailable": eventsAvailable, "FileList": fileList}
         newJsonPileupConfig = os.path.join(self.stepSpace.location, "CMSSWPileupConfig.json")
         self.logger.info("Generating json for CMSSW pileup script")
         try:
-            with open(newJsonPileupConfig, 'wb') as f:
+            # If it's a python2 unicode, cmssw_handle_pileup will cast it to str
+            with open(newJsonPileupConfig, 'w') as f:
                 json.dump(newPileupDict, f)
         except Exception as ex:
             self.logger.exception("Error writing out process filelist json:")
@@ -483,7 +488,9 @@ class SetupCMSSWPset(ScriptInterface):
             os.path.join(self.stepSpace.location, self.configPickle))
 
         if hasattr(self.step.data.application.configuration, "pickledarguments"):
-            args = pickle.loads(self.step.data.application.configuration.pickledarguments)
+            pklArgs = encodeUnicodeToBytesConditional(self.step.data.application.configuration.pickledarguments,
+                                                      condition=PY3)
+            args = pickle.loads(pklArgs)
             datasetName = args.get('datasetName', None)
         if datasetName:
             cmd += " --datasetName %s" % (datasetName)
@@ -673,12 +680,13 @@ class SetupCMSSWPset(ScriptInterface):
         self.scram = self.createScramEnv()
 
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
+        funcName = getattr(self.step.data.application.configuration, "function", None)
         if scenario is not None and scenario != "":
-            self.logger.info("DEBUG: I'm in scenario")
             self.logger.info("Setting up job scenario/process")
-            funcName = getattr(self.step.data.application.configuration, "function", None)
             if getattr(self.step.data.application.configuration, "pickledarguments", None) is not None:
-                funcArgs = pickle.loads(self.step.data.application.configuration.pickledarguments)
+                pklArgs = encodeUnicodeToBytesConditional(self.step.data.application.configuration.pickledarguments,
+                                                          condition=PY3)
+                funcArgs = pickle.loads(pklArgs)
             else:
                 funcArgs = {}
 
@@ -758,8 +766,22 @@ class SetupCMSSWPset(ScriptInterface):
         cmsswStep = self.step.getTypeHelper()
         for om in cmsswStep.listOutputModules():
             mod = cmsswStep.getOutputModule(om)
+            modName = mod.getInternalName()
+
+            if funcName == 'merge':
+                # Do not use both Merged output label unless useErrorDataset is False
+                # Do not use both MergedError output label unless useErrorDataset is True 
+                useErrorDataset = getattr(self.jobBag, "useErrorDataset", False)
+
+                if useErrorDataset and modName != 'MergedError':
+                    continue
+                if not useErrorDataset and modName == 'MergedError':
+                    continue
+
             makeOutputTweak(mod, self.job, self.tweak)
-        self.applyPsetTweak(self.tweak, cleanupTweak=True)
+        # allow failed tweaks in this case, to replicate the previous implementation, where it would ignore 
+        # and continue if it found an output module that  doesn't exist and don't want in the pset like: process.Sqlite
+        self.applyPsetTweak(self.tweak, allowFailedTweaks=True, cleanupTweak=True)
 
         # revlimiter for testing
         if getattr(self.step.data.application.command, "oneEventMode", False):
@@ -793,7 +815,7 @@ class SetupCMSSWPset(ScriptInterface):
         # limit run time if desired
         if hasattr(self.step.data.application.configuration, "maxSecondsUntilRampdown"):
             self.tweak.addParameter("process.maxSecondsUntilRampdown.input",
-                "customTypeCms.untracked.PSet(input=cms.untracked.int32(%s)" % self.step.data.application.configuration.maxSecondsUntilRampdown)
+                "customTypeCms.untracked.PSet(input=cms.untracked.int32(%s))" % self.step.data.application.configuration.maxSecondsUntilRampdown)
 
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application, 'overrideCatalog'):

@@ -1,5 +1,8 @@
 from __future__ import (division, print_function)
 from future import standard_library
+
+from Utils.Utilities import decodeBytesToUnicode
+
 standard_library.install_aliases()
 
 import logging
@@ -60,7 +63,7 @@ class TagCollector(Service):
 
         # Note cFile is just the base name pattern, args 
         # are also considered for the end filename in the method below
-        f = self.refreshCache(cFile, callname, args, encoder=encoder,
+        f = self.refreshCache(cFile, callname, args, encoder=encoder, decoder=decodeBytesToUnicode,
                               verb=verb, contentType=contentType)
         result = f.read()
         f.close()

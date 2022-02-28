@@ -1,8 +1,12 @@
 
+from Utils.Utilities import encodeUnicodeToBytes
 from future.utils import viewitems, viewvalues, listitems
 
 import os, hmac, hashlib, cherrypy
 from tempfile import NamedTemporaryFile
+
+from Utils.PythonVersion import PY3
+
 from WMCore.REST.Main import RESTMain
 from WMCore.REST.Auth import authz_canonical
 from WMCore.Configuration import Configuration
@@ -48,7 +52,11 @@ def fake_authz_headers(hmac_key, method = 'HNLogin',
             prefix += "h%xv%x" % (len(hk), len(headers[hk]))
             suffix += "%s%s" % (hk, headers[hk])
 
-    cksum = hmac.new(hmac_key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
+    msg = prefix + "#" + suffix
+    if PY3:
+        hmac_key = encodeUnicodeToBytes(hmac_key)
+        msg = encodeUnicodeToBytes(msg)
+    cksum = hmac.new(hmac_key, msg, hashlib.sha1).hexdigest()
     headers['cms-authn-hmac'] = cksum
     if format == "list":
         return listitems(headers)
@@ -61,7 +69,7 @@ def fake_authz_key_file(delete=True):
     :returns: Instance of :class:`~.NamedTemporaryFile`, whose *data*
       attribute contains the HMAC signing binary key."""
     t = NamedTemporaryFile(delete=delete)
-    with open("/dev/urandom") as fd:
+    with open("/dev/urandom", "rb") as fd:
         t.data = fd.read(20)
     t.write(t.data)
     t.seek(0)

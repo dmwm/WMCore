@@ -3,8 +3,10 @@
 Unittest for WMStep
 """
 
-
 import unittest
+
+import WMCore.WMSpec.Steps.StepFactory as StepFactory
+from Utils.PythonVersion import PY3
 from WMCore.WMSpec.WMStep import WMStep, makeWMStep
 
 
@@ -12,6 +14,16 @@ class WMStepTest(unittest.TestCase):
     """
     TestCase for WMStep class
     """
+
+    def setUp(self):
+        """set up"""
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
+    def tearDown(self):
+        """clean up"""
+        pass
+
     def testA(self):
         """instantiation"""
 
@@ -28,8 +40,6 @@ class WMStepTest(unittest.TestCase):
             msg = "Failed to instantiate WMStep via makeWMStep:\n"
             msg += str(ex)
             self.fail(msg)
-
-
 
     def testB(self):
         """tree building"""
@@ -72,19 +82,17 @@ class WMStepTest(unittest.TestCase):
                      'TYPE3', 'TYPE8', 'TYPE9', 'TYPE10', 'TYPE4',
                      'TYPE11', 'TYPE12', 'TYPE13']
 
-        checkType = [ x.stepType for x in wmStep1.nodeIterator()]
-        checkOrder = [ x._internal_name for x in wmStep1.nodeIterator()]
+        checkType = [x.stepType for x in wmStep1.nodeIterator()]
+        checkOrder = [x._internal_name for x in wmStep1.nodeIterator()]
 
         self.assertEqual(nameOrder, checkOrder)
         self.assertEqual(typeOrder, checkType)
-
 
     def testC_testGetSetOverrides(self):
         """
         Test whether we can use the override manipulation tools in StepTypeHelper
 
         """
-
 
         wmStep = makeWMStep("step2")
 
@@ -93,7 +101,7 @@ class WMStepTest(unittest.TestCase):
         # This should be empty since we haven't put anything in it
         self.assertEqual(output, {})
 
-        wmStep.addOverride(override = 'test', overrideValue = 'nonsense')
+        wmStep.addOverride(override='test', overrideValue='nonsense')
 
         self.assertTrue(hasattr(wmStep.data, 'override'))
         self.assertTrue(hasattr(wmStep.data.override, 'test'))
@@ -104,7 +112,6 @@ class WMStepTest(unittest.TestCase):
         self.assertEqual(output, {'test': 'nonsense'})
 
         return
-
 
     def testD_getOutputModule(self):
         """
@@ -118,7 +125,7 @@ class WMStepTest(unittest.TestCase):
         wmStep.data.output.modules.section_('test')
         setattr(wmStep.data.output.modules.test, 'tester', 'nonsense')
 
-        testModule = wmStep.getOutputModule(moduleName = 'test')
+        testModule = wmStep.getOutputModule(moduleName='test')
 
         self.assertEqual(testModule.tester, 'nonsense')
 
@@ -135,7 +142,7 @@ class WMStepTest(unittest.TestCase):
 
         # errorDestinatio
         self.assertEqual(wmStep.getErrorDestinationStep(), None)
-        wmStep.setErrorDestinationStep(stepName = 'testStep')
+        wmStep.setErrorDestinationStep(stepName='testStep')
         self.assertEqual(wmStep.getErrorDestinationStep(), 'testStep')
 
         self.assertEqual(wmStep.getConfigInfo(), (None, None, None))
@@ -145,6 +152,32 @@ class WMStepTest(unittest.TestCase):
         wmStep.data.application.configuration.configId = 'test3'
 
         self.assertEqual(wmStep.getConfigInfo(), ('test1', 'test2', 'test3'))
+        return
+
+    def testGPUSettings(self):
+        """
+        Test GPU settings and the 'getGPURequired' and 'getGPURequirements' methods
+        """
+        # create a standard step object - without the CMSSW template applied
+        wmStep = makeWMStep("step1")
+        self.assertIsNone(wmStep.stepType())
+        self.assertFalse(hasattr(wmStep.data, "gpu"))
+        self.assertIsNone(wmStep.getGPURequired())
+
+        # now apply the CMSSW template
+        wmStep.setStepType("CMSSW")
+        self.assertEqual(wmStep.stepType(), "CMSSW")
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(wmStep.data)
+        wmStepHelper = wmStep.getTypeHelper()
+        self.assertEqual(wmStepHelper.getGPURequired(), "forbidden")
+        self.assertIsNone(wmStepHelper.getGPURequirements())
+
+        gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
+        wmStepHelper.setGPUSettings("required", gpuParams)
+        self.assertEqual(wmStepHelper.getGPURequired(), "required")
+        self.assertItemsEqual(wmStepHelper.getGPURequirements(), gpuParams)
+
         return
 
 

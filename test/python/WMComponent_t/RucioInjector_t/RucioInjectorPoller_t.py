@@ -8,6 +8,8 @@ from __future__ import division
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.RucioInjector.RucioInjectorPoller import RucioInjectorPoller, RucioInjectorException
@@ -51,6 +53,9 @@ class RucioInjectorPollerTest(EmulatedUnitTestCase):
         self.testDatasetA = "/SampleA/PromptReco-v1/RECO"
         self.testDatasetB = "/SampleB/CRUZET11-v1/RAW"
 
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
         return
 
     def tearDown(self):
@@ -72,10 +77,11 @@ class RucioInjectorPollerTest(EmulatedUnitTestCase):
         config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
         config.RucioInjector.metaDIDProject = "Production"
         config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
+        config.RucioInjector.blockRuleParams = {}
         config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
         config.RucioInjector.rucioAccount = "wma_test"
-        config.RucioInjector.rucioUrl = "http://cmsrucio-int.cern.ch"
-        config.RucioInjector.rucioAuthUrl = "https://cmsrucio-auth-int.cern.ch"
+        config.RucioInjector.rucioUrl = "http://cms-rucio-int.cern.ch"
+        config.RucioInjector.rucioAuthUrl = "https://cms-rucio-auth-int.cern.ch"
         return config
 
     def stuffDatabase(self):

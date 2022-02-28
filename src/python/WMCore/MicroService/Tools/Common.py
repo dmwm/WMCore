@@ -8,8 +8,6 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 # futures
 from __future__ import division, print_function, absolute_import
 
-from future.utils import viewitems
-
 from future import standard_library
 standard_library.install_aliases()
 
@@ -27,11 +25,30 @@ from Utils.CertTools import getKeyCertFromEnv
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
+# DBS agregators
+from dbs.apis.dbsClient import aggRuns, aggFileLumis
+
 
 # static variables
 STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
 
+
+def isEmptyResults(row):
+    """
+    _isEmptyResults_
+
+    Evaluates whether row data contains empty result set
+    :return: bool
+    """
+    if 'data' not in row:
+        raise Exception("provided result dict does not contain 'data' key")
+    # if code is not present in row it means it was success (HTTP status code 200)
+    code = int(row.get('code', 200))
+    data = row['data']
+    if (code >= 200 and code < 400) and data in (None, []):
+        return True
+    return False
 
 def getMSLogger(verbose, logger=None):
     """
@@ -65,7 +82,7 @@ def dbsInfo(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("FAILURE: dbsInfo for %s. Error: %s %s" % (dataset, row.get('code'), row.get('error')))
             continue
         rows = json.loads(row['data'])
@@ -234,7 +251,7 @@ def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
 
     for row in data:
         dataset = row['url'].rsplit('=')[-1]
-        if row['data'] is None:
+        if isEmptyResults(row):
             msg = "Failure in getBlocksByDsetAndRun for %s. Error: %s %s" % (dataset,
                                                                              row.get('code'),
                                                                              row.get('error'))
@@ -263,12 +280,13 @@ def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
 
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
-        if row['data'] is None:
+        if isEmptyResults(row):
             msg = "Failure in getFileLumisInBlock for block %s. Error: %s %s" % (blockName,
                                                                                  row.get('code'),
                                                                                  row.get('error'))
             raise RuntimeError(msg)
         rows = json.loads(row['data'])
+        rows = aggFileLumis(rows) # adjust to DBS Go server output
         runLumisByBlock.setdefault(blockName, [])
         for item in rows:
             runLumisByBlock[blockName].append(item)
@@ -290,7 +308,7 @@ def findBlockParents(blocks, dbsUrl):
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
         dataset = blockName.split("#")[0]
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("Failure in findBlockParents for block %s. Error: %s %s" % (blockName,
                                                                               row.get('code'),
                                                                               row.get('error')))
@@ -324,34 +342,15 @@ def getRunsInBlock(blocks, dbsUrl):
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
-        if row['data'] is None:
+        if isEmptyResults(row):
             msg = "Failure in getRunsInBlock for block %s. Error: %s %s" % (blockName,
                                                                             row.get('code'),
                                                                             row.get('error'))
             raise RuntimeError(msg)
         rows = json.loads(row['data'])
+        rows = aggRuns(rows) # adjust to DBS Go server output
         runsByBlock[blockName] = rows[0]['run_num']
     return runsByBlock
-
-
-def phedexInfo(datasets, phedexUrl):
-    "Fetch PhEDEx info about nodes for all datasets"
-    urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl, d) for d in datasets]
-    logging.info("Executing %d requests against PhEDEx 'blockreplicasummary' API", len(urls))
-    data = multi_getdata(urls, ckey(), cert())
-    blockNodes = {}
-    for row in data:
-        dataset = row['url'].rsplit('=')[-1]
-        if row['data'] is None:
-            print("FAILURE: phedexInfo for %s. Error: %s %s" % (dataset,
-                                                                row.get('code'),
-                                                                row.get('error')))
-            continue
-        rows = json.loads(row['data'])
-        for item in rows['phedex']['block']:
-            nodes = [r['node'] for r in item['replica'] if r['complete'] == 'y']
-            blockNodes[item['name']] = nodes
-    return blockNodes
 
 
 def getWorkflow(requestName, reqMgrUrl):
@@ -375,40 +374,6 @@ def getDetoxQuota(url):
     return res
 
 
-def workflowsInfo(workflows):
-    "Return minimum info about workflows in flat format"
-    winfo = {}
-    for wflow in workflows:
-        for key, val in viewitems(wflow):
-            datasets = set()
-            pileups = set()
-            selist = []
-            priority = 0
-            campaign = ''
-            for kkk, vvv in viewitems(val):
-                if STEP_PAT.match(kkk) or TASK_PAT.match(kkk):
-                    dataset = vvv.get('InputDataset', '')
-                    pileup = vvv.get('MCPileup', '')
-                    if dataset:
-                        datasets.add(dataset)
-                    if pileup:
-                        pileups.add(pileup)
-                if kkk == 'SiteWhiteList':
-                    selist = vvv
-                if kkk == 'RequestPriority':
-                    priority = vvv
-                if kkk == 'Campaign':
-                    campaign = vvv
-                if kkk == 'InputDataset':
-                    datasets.add(vvv)
-                if kkk == 'MCPileup':
-                    pileups.add(vvv)
-            winfo[key] = \
-                dict(datasets=list(datasets), pileups=list(pileups),
-                     priority=priority, selist=selist, campaign=campaign)
-    return winfo
-
-
 def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
     "Get information about events and lumis for given set of inputs: blocks or datasets"
     what = 'dataset'
@@ -422,7 +387,7 @@ def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         data = unquote(row['url'].split('=')[-1])
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("FAILURE: eventsLumisInfo for %s. Error: %s %s" % (data,
                                                                     row.get('code'),
                                                                     row.get('error')))
@@ -641,7 +606,7 @@ def findParent(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
-        if row['data'] is None:
+        if isEmptyResults(row):
             print("Failure in findParent for dataset %s. Error: %s %s" % (dataset,
                                                                           row.get('code'),
                                                                           row.get('error')))

@@ -224,6 +224,7 @@ class Root(Harness):
             'tools.etags.on': True,
             'tools.etags.autotags': True,
             'tools.encode.on': True,
+            'tools.encode.text_only': False,
             'tools.gzip.on': True,
         })
 

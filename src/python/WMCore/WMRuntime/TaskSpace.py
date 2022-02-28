@@ -73,7 +73,7 @@ class TaskSpace(object):
         wmsandboxLoc = inspect.getsourcefile(WMSandbox)
         workloadPcl = wmsandboxLoc.replace("__init__.py","WMWorkload.pkl")
 
-        with open(workloadPcl, 'r') as handle:
+        with open(workloadPcl, 'rb') as handle:
             wmWorkload = pickle.load(handle)
         self.workload = WMWorkloadHelper(wmWorkload)
         return

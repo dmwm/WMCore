@@ -5,6 +5,9 @@ _ReReco_
 Standard ReReco workflow.
 """
 from __future__ import division
+
+import json
+
 from future.utils import viewitems
 
 from Utils.Utilities import makeList
@@ -59,7 +62,8 @@ class ReRecoWorkloadFactory(DataProcessing):
                                               stepType=cmsswStepType)
         self.addLogCollectTask(procTask)
 
-        for outputModuleName in outputMods:
+        # no real need to sort it, but we better have the same order between Py2/Py3
+        for outputModuleName in sorted(list(outputMods)):
             # Only merge the desired outputs
             if outputModuleName not in self.transientModules:
                 self.addMergeTask(procTask, self.procJobSplitAlgo, outputModuleName)
@@ -252,6 +256,8 @@ class ReRecoWorkloadFactory(DataProcessing):
                 instanceArguments[realArg] = skimArguments[argument]
             try:
                 validateArgumentsCreate(skimSchema, instanceArguments)
+                # Validate GPU-related spec parameters
+                DataProcessing.validateGPUSettings(schema)
             except Exception as ex:
                 self.raiseValidationException(str(ex))
 

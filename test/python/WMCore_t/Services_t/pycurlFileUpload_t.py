@@ -44,7 +44,7 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         self.assertEqual(open(uploadedFilename).read(), open(fileName).read())
         # delete the uploaded file
         os.remove(uploadedFilename)
-        self.assertTrue('Success' in res)
+        self.assertTrue(b'Success' in res)
 
     def testFailingFileUpload(self):
         """

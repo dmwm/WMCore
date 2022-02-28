@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__  import division
 
 import os
 import time
@@ -445,9 +446,8 @@ class WMAgentTest(unittest.TestCase):
         self.assertTrue('job_1' in os.listdir(groupDirectory))
         jobFile = os.path.join(groupDirectory, 'job_1', 'job.pkl')
         self.assertTrue(os.path.isfile(jobFile))
-        f = open(jobFile, 'r')
-        job = pickle.load(f)
-        f.close()
+        with open(jobFile, 'rb') as f:
+            job = pickle.load(f)
 
 
         self.assertEqual(job['workflow'], name)

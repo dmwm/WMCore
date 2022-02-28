@@ -17,6 +17,8 @@ import time
 from WMCore.Database.CMSCouch import (CouchServer, Document, Database,
                         CouchInternalServerError, CouchNotFoundError)
 
+from Utils.Utilities import encodeUnicodeToBytes
+
 class CMSCouchTest(unittest.TestCase):
 
     test_counter = 0
@@ -176,7 +178,7 @@ class CMSCouchTest(unittest.TestCase):
         attachment4 = "Lovely weather we're having"
         attachment5 = "Goodbye"
         keyhash = hashlib.md5()
-        keyhash.update(attachment5)
+        keyhash.update(encodeUnicodeToBytes(attachment5))
         attachment5_md5 = keyhash.digest()
         attachment5_md5 = base64.b64encode(attachment5_md5)
         attachment6 = "Good day to you, sir!"

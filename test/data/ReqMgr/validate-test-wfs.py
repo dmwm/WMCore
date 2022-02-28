@@ -1,21 +1,41 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from future.utils import viewitems
 
 import argparse
 import getpass
-import httplib
 import json
 import os
 import pwd
 import sys
-import urllib
-import urllib2
 from collections import OrderedDict
 from textwrap import TextWrapper
-from urllib import quote_plus
-from urllib2 import HTTPError, URLError
 
-from future.utils import viewitems
+try:
+    # python2
+    import urllib2
+    HTTPError = urllib2.HTTPError
+    URLError = urllib2.URLError
+    build_opener = urllib2.build_opener
+    HTTPSHandler = urllib2.HTTPSHandler
+    import urllib
+    urlencode = urllib.urlencode
+    quote_plus = urllib.quote_plus
+    import httplib
+    HTTPSConnection = httplib.HTTPSConnection
+except:
+    # python3
+    import urllib.error
+    HTTPError = urllib.error.HTTPError, 
+    URLError = urllib.error.URLError
+    import urllib.request
+    build_opener = urllib.request.build_opener
+    HTTPSHandler = urllib.request.HTTPSHandler
+    import urllib.parse
+    urlencode = urllib.parse.urlencode
+    quote_plus = urllib.parse.quote_plus
+    import http.client
+    HTTPSConnection = http.client.HTTPSConnection
 
 # table parameters
 SEPARATELINE = "|" + "-" * 51 + "|"
@@ -28,13 +48,13 @@ CLIENT_ID = 'validate-test-wfs/1.2::python/%s.%s' % sys.version_info[:2]
 cachedDqmgui = None
 
 
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
+class HTTPSClientAuthHandler(HTTPSHandler):
     """
     Basic HTTPS class
     """
 
     def __init__(self, key, cert):
-        urllib2.HTTPSHandler.__init__(self)
+        HTTPSHandler.__init__(self)
         self.key = key
         self.cert = cert
 
@@ -45,7 +65,7 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=290):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
 def getX509():
@@ -67,7 +87,7 @@ def getContent(url, params=None, headers=None):
     certFile, keyFile = getX509()
     client = '%s (%s)' % (CLIENT_ID, os.environ.get('USER', ''))
     handler = HTTPSClientAuthHandler(keyFile, certFile)
-    opener = urllib2.build_opener(handler)
+    opener = build_opener(handler)
     if headers:
         opener.addheaders = headers
     else:
@@ -77,7 +97,8 @@ def getContent(url, params=None, headers=None):
     try:
         response = opener.open(url, params)
         if "auth/x509" in url:
-            output = response.headers.getheader('X-Rucio-Auth-Token')
+            output = response.headers.get('X-Rucio-Auth-Token', '')  # option 1
+            # output = response.getheader('X-Rucio-Auth-Token')  # option 2
         else:
             output = response.read()
     except HTTPError as e:
@@ -96,7 +117,7 @@ def getRucioToken(rucioUrl):
     """
     Get a Rucio token for this account
     """
-    mapHosts = {"http://cmsrucio-int.cern.ch": "https://cmsrucio-auth-int.cern.ch",
+    mapHosts = {"http://cms-rucio-int.cern.ch": "https://cms-rucio-auth-int.cern.ch",
                 "http://cms-rucio.cern.ch": "https://cms-rucio-auth.cern.ch"}
 
     rucioAuth = None
@@ -190,7 +211,7 @@ def reader(stream):
     """
     Home-made function to consume newline delimited json streaming data
     """
-    for line in stream.split("\n"):
+    for line in stream.split(b"\n"):
         if line:
             yield json.loads(line)
 
@@ -230,12 +251,12 @@ def getDbsInfo(dataset, baseUrl):
     dbsOutput = {}
     dbsOutput[dataset] = {"blockorigin": [], "filesummaries": [], "outputconfigs": []}
     for api in dbsOutput[dataset]:
-        fullUrl = dbsUrl + api + "?" + urllib.urlencode({'dataset': dataset})
+        fullUrl = dbsUrl + api + "?" + urlencode({'dataset': dataset})
         data = json.loads(getContent(fullUrl))
         dbsOutput[dataset][api] = data
 
     # Separate query for prep_id, since we want any access_type
-    fullUrl = dbsUrl + "datasets?" + urllib.urlencode({'dataset': dataset})
+    fullUrl = dbsUrl + "datasets?" + urlencode({'dataset': dataset})
     fullUrl += "&dataset_access_type=*&detail=True"
     data = json.loads(getContent(fullUrl))
     dbsOutput[dataset]["prep_id"] = data[0]["prep_id"] if data else ''
@@ -338,7 +359,7 @@ def compareSpecial(d1, d2, key=None):
 
         if key == 'PNN':
             for dset in d2:
-                for block, value in d2[dset].iteritems():
+                for block, value in viewitems(d2[dset]):
                     if isinstance(value, dict):
                         if d1[dset][block][key] != d2[dset][block][key]:
                             return outcome
@@ -382,7 +403,7 @@ def twClosure(replace_whitespace=False,
             if reCall:
                 output += '\n'
             ind += '    '
-            for key, value in obj.iteritems():
+            for key, value in viewitems(obj):
                 output += "%s%s: %s" % (ind,
                                         ''.join(twr.wrap(key)),
                                         twEnclosed(value, ind, reCall=True))
@@ -592,7 +613,7 @@ def validateAll(reqmgrInputDset, couchInfo, rucioInfo, dbsInfo):
     print('|' + ' ' * 25 + '| CouchDB | Rucio  | DBS  |')
     print(SEPARATELINE)
 
-    compRes = compareLists(couchInfo.keys(), rucioInfo.keys(), dbsInfo.keys())
+    compRes = compareLists(list(couchInfo.keys()), list(rucioInfo.keys()), list(dbsInfo.keys()))
     print('| Same dataset name       | {compRes:7s} | {compRes:6s} | {compRes:4s} |'.format(compRes=compRes))
 
     compRes = compareLists(couchInfo, rucioInfo, dbsInfo, key='dsetSize')
@@ -633,7 +654,7 @@ def main():
     parser.add_argument('-c', '--cms', help='CMSWEB url to talk to DBS. E.g: cmsweb.cern.ch')
     parser.add_argument('-r', '--reqmgr', help='Request Manager URL. Example: couch-dev1.cern.ch')
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action="store_true")
-    parser.add_argument('-x', '--rucio', help='Rucio url', default='cmsrucio-int.cern.ch')
+    parser.add_argument('-x', '--rucio', help='Rucio url', default='cms-rucio-int.cern.ch')
     args = parser.parse_args()
 
     if args.workflow:
@@ -648,7 +669,7 @@ def main():
     verbose = True if args.verbose else False
     cmswebUrl = "https://" + args.cms if args.cms else "https://cmsweb-testbed.cern.ch"
     reqmgrUrl = "https://" + args.reqmgr if args.reqmgr else "https://cmsweb-testbed.cern.ch"
-    rucioUrl = "http://" + args.rucio if args.rucio else "http://cmsrucio-int.cern.ch"
+    rucioUrl = "http://" + args.rucio if args.rucio else "http://cms-rucio-int.cern.ch"
 
     rucioToken = getRucioToken(rucioUrl)
 

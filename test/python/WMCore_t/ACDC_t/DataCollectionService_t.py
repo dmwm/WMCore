@@ -10,6 +10,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 from builtins import range
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from nose.plugins.attrib import attr
 
 from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFilesInfo
@@ -30,6 +32,10 @@ class DataCollectionService_t(unittest.TestCase):
         self.testInit.setSchema(customModules=["WMCore.WMBS"],
                                 useDefault=False)
         self.testInit.setupCouch("wmcore-acdc-datacollectionsvc", "GroupUser", "ACDC")
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
         return
 
     def tearDown(self):

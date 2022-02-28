@@ -512,7 +512,10 @@ def main():
     # when infrequently accessed server redirects output to 'rotatelogs'.
     if 'PYTHONUNBUFFERED' not in os.environ:
         os.environ['PYTHONUNBUFFERED'] = "1"
-        os.execvp("python", ["python"] + sys.argv)
+        if PY2:
+            os.execvp("python", ["python"] + sys.argv)
+        else:
+            os.execvp("python3", ["python3"] + sys.argv)
 
     opt = ArgumentParser(usage=__doc__)
     opt.add_argument("-q", "--quiet", action="store_true", dest="quiet", default=False,

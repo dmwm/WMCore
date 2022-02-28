@@ -20,6 +20,8 @@ try:
 except ImportError:
     import pickle
 
+from Utils.PythonVersion import PY3
+
 from logging.handlers import RotatingFileHandler
 
 from WMCore.WMFactory import WMFactory
@@ -95,7 +97,7 @@ class ProcessPool(object):
         self.slaveClassName = slaveClassName
         self.componentDir = componentDir
         self.config = config
-        self.versionString = "python2"
+        self.versionString = "python3" if PY3 else "python2"
 
         self.workers = []
         self.nSlaves = totalSlaves
@@ -110,7 +112,7 @@ class ProcessPool(object):
             # Then we note it and overwrite it
             msg = "Something's in the way of the ProcessPool config: %s" % self.configPath
             logging.error(msg)
-        with open(self.configPath, 'w') as f:
+        with open(self.configPath, 'wb') as f:
             pickle.dump(config, f)
 
         # Set up ZMQ
@@ -206,7 +208,10 @@ class ProcessPool(object):
         for i in range(self.nSlaves):
             try:
                 encodedWork = self.jsonHandler.encode('STOP')
-                self.sender.send(encodedWork)
+                if PY3:
+                    self.sender.send_string(encodedWork)
+                else:
+                    self.sender.send(encodedWork)
             except Exception as ex:
                 # Might be already failed.  Nothing you can
                 # really do about that.
@@ -257,11 +262,17 @@ class ProcessPool(object):
         if not list:
             for w in work:
                 encodedWork = self.jsonHandler.encode(w)
-                self.sender.send(encodedWork)
+                if PY3:
+                    self.sender.send_string(encodedWork)
+                else:
+                    self.sender.send(encodedWork)
                 self.runningWork += 1
         else:
             encodedWork = self.jsonHandler.encode(work)
-            self.sender.send(encodedWork)
+            if PY3:
+                self.sender.send_string(encodedWork)
+            else:
+                self.sender.send(encodedWork)
             self.runningWork += 1
 
         return
@@ -392,7 +403,7 @@ if __name__ == "__main__":
         logging.error("Something in the way of the config path")
         sys.exit(1)
 
-    with open(configPath, 'r') as f:
+    with open(configPath, 'rb') as f:
         config = pickle.load(f)
 
 
@@ -435,7 +446,10 @@ if __name__ == "__main__":
             try:
                 output = {'type': 'ERROR', 'msg': crashMessage}
                 encodedOutput = jsonHandler.encode(output)
-                sender.send(encodedOutput)
+                if PY3:
+                    sender.send_string(encodedOutput)
+                else:
+                    sender.send(encodedOutput)
                 logging.error("Sent error message and now breaking")
                 break
             except Exception as ex:
@@ -448,10 +462,16 @@ if __name__ == "__main__":
             if isinstance(output, list):
                 for item in output:
                     encodedOutput = jsonHandler.encode(item)
-                    sender.send(encodedOutput)
+                    if PY3:
+                        sender.send_string(encodedOutput)
+                    else:
+                        sender.send(encodedOutput)
             else:
                 encodedOutput = jsonHandler.encode(output)
-                sender.send(encodedOutput)
+                if PY3:
+                    sender.send_string(encodedOutput)
+                else:
+                    sender.send(encodedOutput)
 
     logging.info("Process with PID %s finished" % (os.getpid()))
     del jsonHandler

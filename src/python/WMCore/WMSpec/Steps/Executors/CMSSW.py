@@ -12,6 +12,8 @@ import socket
 import subprocess
 import sys
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMCore.FwkJobReport.Report import addAttributesToFile
 from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 from WMCore.WMRuntime.Tools.Scram import Scram
@@ -131,12 +133,19 @@ class CMSSW(Executor):
 
         scramArch = getSingleScramArch(scramArch)
 
-        multicoreSettings = self.step.application.multicore
         try:
+            multicoreSettings = self.step.application.multicore
             logging.info("CMSSW configured for %s cores and %s event streams",
                          multicoreSettings.numberOfCores, multicoreSettings.eventStreams)
         except AttributeError:
             logging.info("No value set for multicore numberOfCores or eventStreams")
+
+        try:
+            gpuSettings = self.step.application.gpu
+            logging.info("CMSSW configured for GPU required: %s, with these settings: %s",
+                         gpuSettings.gpuRequired, gpuSettings.gpuRequirements)
+        except AttributeError:
+            logging.info("No value set for GPU gpuRequired and/or gpuRequirements")
 
         logging.info("Executing CMSSW step")
 
@@ -194,13 +203,12 @@ class CMSSW(Executor):
                 stdin=subprocess.PIPE,
             )
             # BADPYTHON
-            scriptProcess.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH\n")
-            invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
-                sys.executable,
-                stepModule,
-                script)
-            logging.info("    Invoking command: %s", invokeCommand)
-            scriptProcess.stdin.write(invokeCommand)
+            invokeCommand = "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH\n"
+            invokeCommand += "{} -m WMCore.WMRuntime.ScriptInvoke {} {} \n".format(sys.executable,
+                                                                                   stepModule,
+                                                                                   script)
+            logging.info("    Invoking command:\n%s", invokeCommand)
+            scriptProcess.stdin.write(encodeUnicodeToBytesConditional(invokeCommand, condition=PY3))
             stdout, stderr = scriptProcess.communicate()
             retCode = scriptProcess.returncode
             if retCode > 0:

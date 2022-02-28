@@ -10,7 +10,7 @@ from __future__ import print_function, division
 from builtins import object, str, bytes
 from future.utils import viewitems
 
-from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytesConditional
 
 import logging
 from collections import defaultdict
@@ -21,6 +21,7 @@ from dbs.exceptions.dbsClientException import dbsClientException
 from retry import retry
 
 from Utils.IteratorTools import grouper
+from Utils.PythonVersion import PY2
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 
 
@@ -42,7 +43,7 @@ def remapDBS3Keys(data, stringify=False, **others):
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
     mapping.update(others)
-    formatFunc = lambda x: encodeUnicodeToBytes(x) if stringify else x
+    formatFunc = lambda x: encodeUnicodeToBytesConditional(x, condition=PY2 and stringify)
     for name, newname in viewitems(mapping):
         if name in data:
             data[newname] = formatFunc(data[name])
@@ -79,7 +80,7 @@ class DBS3Reader(object):
             self.dbsURL = url.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
             self.dbs = DbsApi(self.dbsURL, **contact)
             self.logger = logger or logging.getLogger(self.__class__.__name__)
-        except dbsClientException as ex:
+        except Exception as ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -99,7 +100,7 @@ class DBS3Reader(object):
                 # shouldn't call this with both blockName and lfns empty
                 # but still returns empty dict for that case
                 return {}
-        except dbsClientException as ex:
+        except Exception as ex:
             msg = "Error in "
             msg += "DBSReader.listFileLumiArray(%s)\n" % lfns
             msg += "%s\n" % formatEx3(ex)
@@ -124,7 +125,7 @@ class DBS3Reader(object):
         """
         try:
             return self.dbs.serverinfo()
-        except dbsClientException as ex:
+        except Exception as ex:
             msg = "Error in "
             msg += "DBS server is not up: %s" % self.dbsURL
             msg += "%s\n" % formatEx3(ex)
@@ -140,7 +141,7 @@ class DBS3Reader(object):
         """
         try:
             result = self.dbs.listPrimaryDatasets(primary_ds_name=match)
-        except dbsClientException as ex:
+        except Exception as ex:
             msg = "Error in DBSReader.listPrimaryDataset(%s)\n" % match
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -336,9 +337,15 @@ class DBS3Reader(object):
         in the dataset.
 
         Return the list of lfns that are in the dataset
-
         """
-        allLfns = self.dbs.listFileArray(dataset=datasetPath, validFileOnly=1, detail=False)
+        allLfns = []
+        try:
+            for fileDict in self.dbs.listFileArray(dataset=datasetPath, validFileOnly=1, detail=False):
+                allLfns.append(fileDict['logical_file_name'])
+        except Exception as exc:
+            msg = "Error in DBSReader.crossCheck({}) with {} lfns.".format(datasetPath, len(lfns))
+            msg += "\nDetails: {}\n".format(formatEx3(exc))
+            raise DBSReaderError(msg)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         return list(setOfAllLfns.intersection(setOfKnownLfns))
@@ -349,9 +356,15 @@ class DBS3Reader(object):
 
         As cross check, but return value is a list of files that
         are *not* known by DBS
-
         """
-        allLfns = self.dbs.listFileArray(dataset=datasetPath, validFileOnly=1, detail=False)
+        allLfns = []
+        try:
+            for fileDict in self.dbs.listFileArray(dataset=datasetPath, validFileOnly=1, detail=False):
+                allLfns.append(fileDict['logical_file_name'])
+        except Exception as exc:
+            msg = "Error in DBSReader.crossCheckMissing({}) with {} lfns.".format(datasetPath, len(lfns))
+            msg += "\nDetails: {}\n".format(formatEx3(exc))
+            raise DBSReaderError(msg)
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         knownFiles = setOfAllLfns.intersection(setOfKnownLfns)
@@ -723,18 +736,18 @@ class DBS3Reader(object):
             raise DBSReaderError(msg)
 
         if not blocksInfo:  # no data location from dbs
-            return list()
+            return list(locations)
 
         for blockInfo in blocksInfo:
-            locations.update(blockInfo['origin_site_name'])
-
-        locations.difference_update(['UNKNOWN', None])  # remove entry when SE name is 'UNKNOWN'
+            if blockInfo.get("origin_site_name", None) not in ['UNKNOWN', None]:
+                locations.add(blockInfo['origin_site_name'])
 
         return list(locations)
 
     def checkDatasetPath(self, pathName):
         """
-         _checkDatasetPath_
+        This method raises an exception for any invalid dataset name
+        and datasets unknown to DBS. Otherwise None is returned.
         """
         if pathName in ("", None):
             raise DBSReaderError("Invalid Dataset Path name: => %s <=" % pathName)
@@ -783,7 +796,7 @@ class DBS3Reader(object):
         try:
             parentList = self.dbs.listDatasetParents(dataset=childDataset)
             return parentList
-        except dbsClientException as ex:
+        except Exception as ex:
             msg = "Error in "
             msg += "DBSReader.listDatasetParents(%s)\n" % childDataset
             msg += "%s\n" % formatEx3(ex)
@@ -837,7 +850,7 @@ class DBS3Reader(object):
             parents = self.dbs.listDatasetParents(dataset=i["dataset"])
             for parent in parents:
                 parentFiles = self.getParentFilesGivenParentDataset(parent['parent_dataset'], childLFN)
-                result.append({"ParentDataset": parent['parent_dataset'], "ParentFiles": list(parentFiles)})
+                result.append({"ParentDataset": parent['parent_dataset'], "ParentFiles": list(parentFiles[childLFN])})
         return result
 
     def insertFileParents(self, childBlockName, childParentsIDPairs):
@@ -959,7 +972,7 @@ class DBS3Reader(object):
         :return: a dictionary where the key is a set of run/lumi, its value is the fileid
         """
         # this will return data in the format of:
-        # {'554307997': [[1, 557179], [1, 557178],...
+        # {554307997: [[1, 557179], [1, 557178],...
         # such that: key is file id, in each list is [run_number, lumi_section_numer].
         parentFullInfo = self.dbs.listParentDSTrio(dataset=childDataset)
 

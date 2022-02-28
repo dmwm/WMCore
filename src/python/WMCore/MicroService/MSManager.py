@@ -28,22 +28,27 @@ from __future__ import division, print_function
 from builtins import object
 from time import sleep
 from datetime import datetime
-from collections import deque
 
 # WMCore modules
 from WMCore.MicroService.Tools.Common import getMSLogger
-from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
-from WMCore.MicroService.MSMonitor.MSMonitor import MSMonitor
-from WMCore.MicroService.MSOutput.MSOutput import MSOutput
-from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
 from WMCore.MicroService.TaskManager import start_new_thread
-
+from Utils.Utilities import strToBool
 
 def daemon(func, reqStatus, interval, logger):
     "Daemon to perform given function action for all request in our store"
     while True:
         try:
             func(reqStatus)
+        except Exception as exc:
+            logger.exception("MS daemon error: %s", str(exc))
+        sleep(interval)
+
+
+def daemonOpt(func, interval, logger, *args, **kwargs):
+    "Daemon to perform given function action for all request in our store"
+    while True:
+        try:
+            func(*args, **kwargs)
         except Exception as exc:
             logger.exception("MS daemon error: %s", str(exc))
         sleep(interval)
@@ -71,9 +76,11 @@ class MSManager(object):
         self.statusMon = {}
         self.statusOutput = {}
         self.statusRuleCleaner = {}
+        self.statusUnmerged = {}
 
         # initialize transferor module
         if 'transferor' in self.services:
+            from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
             self.msTransferor = MSTransferor(self.msConfig, logger=self.logger)
             thname = 'MSTransferor'
             self.transfThread = start_new_thread(thname, daemon,
@@ -85,6 +92,7 @@ class MSManager(object):
 
         # initialize monitoring module
         if 'monitor' in self.services:
+            from WMCore.MicroService.MSMonitor.MSMonitor import MSMonitor
             self.msMonitor = MSMonitor(self.msConfig, logger=self.logger)
             thname = 'MSMonitor'
             self.monitThread = start_new_thread(thname, daemon,
@@ -96,13 +104,11 @@ class MSManager(object):
 
         # initialize output module
         if 'output' in self.services:
+            from WMCore.MicroService.MSOutput.MSOutput import MSOutput
             reqStatus = ['closed-out', 'announced']
-            # thread safe cache to keep the last X requests processed in MSOutput
-            requestNamesCached = deque(maxlen=self.msConfig.get("cacheRequestSize", 10000))
 
             thname = 'MSOutputConsumer'
-            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname,
-                                             reqCache=requestNamesCached, logger=self.logger)
+            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
             # set the consumer to run twice faster than the producer
             consumerInterval = self.msConfig['interval'] // 2
             self.outputConsumerThread = start_new_thread(thname, daemon,
@@ -113,8 +119,7 @@ class MSManager(object):
             self.logger.info("=== Running %s thread %s", thname, self.outputConsumerThread.running())
 
             thname = 'MSOutputProducer'
-            self.msOutputProducer = MSOutput(self.msConfig, mode=thname,
-                                             reqCache=requestNamesCached, logger=self.logger)
+            self.msOutputProducer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
             self.outputProducerThread = start_new_thread(thname, daemon,
                                                          (self.outputProducer,
                                                           reqStatus,
@@ -124,6 +129,7 @@ class MSManager(object):
 
         # initialize rule cleaner module
         if 'ruleCleaner' in self.services:
+            from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
             reqStatus = ['announced', 'aborted-completed', 'rejected']
             self.msRuleCleaner = MSRuleCleaner(self.msConfig, logger=self.logger)
             thname = 'MSRuleCleaner'
@@ -133,6 +139,17 @@ class MSManager(object):
                                                        self.msConfig['interval'],
                                                        self.logger))
             self.logger.info("--- Running %s thread %s", thname, self.ruleCleanerThread.running())
+
+        # initialize unmerged module
+        if 'unmerged' in self.services:
+            from WMCore.MicroService.MSUnmerged.MSUnmerged import MSUnmerged
+            self.msUnmerged = MSUnmerged(self.msConfig, logger=self.logger)
+            thname = 'MSUnmerged'
+            self.unmergedThread = start_new_thread(thname, daemonOpt,
+                                                   (self.unmerged,
+                                                    self.msConfig['interval'],
+                                                    self.logger))
+            self.logger.info("--- Running %s thread %s", thname, self.unmergedThread.running())
 
     def _parseConfig(self, config):
         """
@@ -229,6 +246,21 @@ class MSManager(object):
         self.logger.info("Total ruleCleaner execution time: %d secs", res['execution_time'])
         self.statusRuleCleaner = res
 
+    def unmerged(self, *args, **kwargs):
+        """
+        MSManager unmerged function.
+        It cleans the Unmerged area of the CMS LFN Namespace
+        For references see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Unmerged
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the unmerged thread...")
+        res = self.msUnmerged.execute()
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total Unmerged execution time: %d secs", res['execution_time'])
+        self.statusUnmerged = res
+
     def stop(self):
         "Stop MSManager"
         status = None
@@ -251,16 +283,27 @@ class MSManager(object):
         if 'ruleCleaner' in self.services and hasattr(self, 'ruleCleanerThread'):
             self.ruleCleanerThread.stop()
             status = self.ruleCleanerThread.running()
+        # stop MSUnmerged thread
+        if 'unmerged' in self.services and hasattr(self, 'unmergedThread'):
+            self.unmergedThread.stop()
+            status = self.unmergedThread.running()
         return status
 
-    def info(self, reqName=None):
+    def info(self, reqName=None, **kwargs):
         """
         Return transfer information for a given request
         :param reqName: request name
+        :param kwargs: other arguments that can be provided for different
+            microservices. Examples:
+            rse: string with the name of the RSE (e.g 'T2_DE_DESY')
         :return: data transfer information for this request
         """
-        data = {"request": reqName, "transferDoc": None}
+        if 'ruleCleaner' in self.services or 'unmerged' in self.services:
+            data = {}
+        else:
+            data = {"request": reqName, "transferDoc": None}
         if reqName:
+            transferDoc = None
             # obtain the transfer information for a given request records from couchdb for given request
             if 'monitor' in self.services:
                 transferDoc = self.msMonitor.reqmgrAux.getTransferInfo(reqName)
@@ -271,18 +314,28 @@ class MSManager(object):
             if transferDoc:
                 # it's always a single document in Couch
                 data['transferDoc'] = transferDoc[0]
+
+        if 'unmerged' in self.services:
+            detail = strToBool(kwargs.get('detail', False))
+
+            if kwargs.get("rse"):
+                data = self.msUnmerged.getStatsFromMongoDB(detail=detail, rse=kwargs['rse'])
         return data
 
     def delete(self, request):
         "Delete request in backend"
         pass
 
-    def status(self, detail):
+    def status(self, detail, **kwargs):
         """
         Return the current status of a MicroService and a summary
         of its last execution activity.
         :param detail: boolean used to retrieve some extra information
           regarding the service
+        :param kwargs: other arguments that can be provided for different
+            microservices. Examples:
+            rse_type: string with the type of the RSEs to fetch (MSUnmerged)
+                      Meaningful values at the moment are: "t1", "t2t3" and "t2t3us"
         :return: a dictionary
         """
         data = {"status": "OK"}
@@ -294,6 +347,11 @@ class MSManager(object):
             data.update(self.statusOutput)
         elif detail and 'ruleCleaner' in self.services:
             data.update(self.statusRuleCleaner)
+        elif 'unmerged' in self.services:
+            if kwargs.get("rse_type"):
+                data.update({"rse_type": kwargs.get("rse_type")})
+            if detail:
+                data.update(self.statusUnmerged)
         return data
 
     def updateTimeUTC(self, reportDict, startT, endT):

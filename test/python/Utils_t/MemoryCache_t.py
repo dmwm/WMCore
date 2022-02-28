@@ -16,53 +16,57 @@ class MemoryCacheTest(unittest.TestCase):
     unittest for MemoryCache functions
     """
 
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
     def testBasics(self):
         cache = MemoryCache(1, [])
-        self.assertCountEqual(cache.getCache(), []) if PY3 else self.assertItemsEqual(cache.getCache(), [])
+        self.assertItemsEqual(cache.getCache(), [])
         cache.setCache(["item1", "item2"])
-        self.assertCountEqual(cache.getCache(), ["item1", "item2"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2"])
         # wait for cache to expiry, wait for 2 secs
         sleep(2)
         self.assertRaises(MemoryCacheException, cache.getCache)
         cache.setCache(["item4"])
         # and the cache is alive again
-        self.assertCountEqual(cache.getCache(), ["item4"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item4"])
+        self.assertItemsEqual(cache.getCache(), ["item4"])
 
     def testCacheSet(self):
         cache = MemoryCache(2, set())
-        self.assertCountEqual(cache.getCache(), set()) if PY3 else self.assertItemsEqual(cache.getCache(), set())
+        self.assertItemsEqual(cache.getCache(), set())
         cache.setCache(set(["item1", "item2"]))
-        self.assertCountEqual(cache.getCache(), ["item1", "item2"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2"])
         cache.addItemToCache("item3")
-        self.assertCountEqual(cache.getCache(), ["item1", "item2", "item3"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3"])
         cache.addItemToCache(["item4"])
-        self.assertCountEqual(cache.getCache(), ["item1", "item2", "item3", "item4"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4"])
         cache.addItemToCache(set(["item5"]))
-        self.assertCountEqual(cache.getCache(), ["item1", "item2", "item3", "item4", "item5"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4", "item5"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4", "item5"])
         self.assertTrue("item2" in cache)
         self.assertFalse("item222" in cache)
 
     def testCacheList(self):
         cache = MemoryCache(2, [])
-        self.assertCountEqual(cache.getCache(), []) if PY3 else self.assertItemsEqual(cache.getCache(), [])
+        self.assertItemsEqual(cache.getCache(), [])
         cache.setCache(["item1", "item2"])
-        self.assertCountEqual(cache.getCache(), ["item1", "item2"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2"])
         cache.addItemToCache("item3")
-        self.assertCountEqual(cache.getCache(), ["item1", "item2", "item3"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3"])
         cache.addItemToCache(["item4"])
-        self.assertCountEqual(cache.getCache(), ["item1", "item2", "item3", "item4"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4"])
         cache.addItemToCache(set(["item5"]))
-        self.assertCountEqual(cache.getCache(), ["item1", "item2", "item3", "item4", "item5"]) if PY3 else self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4", "item5"])
+        self.assertItemsEqual(cache.getCache(), ["item1", "item2", "item3", "item4", "item5"])
         self.assertTrue("item2" in cache)
         self.assertFalse("item222" in cache)
 
     def testCacheDict(self):
         cache = MemoryCache(2, {})
-        self.assertCountEqual(cache.getCache(), {}) if PY3 else self.assertItemsEqual(cache.getCache(), {})
+        self.assertItemsEqual(cache.getCache(), {})
         cache.setCache({"item1": 11, "item2": 22})
-        self.assertCountEqual(cache.getCache(), {"item1": 11, "item2": 22}) if PY3 else self.assertItemsEqual(cache.getCache(), {"item1": 11, "item2": 22})
+        self.assertItemsEqual(cache.getCache(), {"item1": 11, "item2": 22})
         cache.addItemToCache({"item3": 33})
-        self.assertCountEqual(cache.getCache(), {"item1": 11, "item2": 22, "item3": 33}) if PY3 else self.assertItemsEqual(cache.getCache(), {"item1": 11, "item2": 22, "item3": 33})
+        self.assertItemsEqual(cache.getCache(), {"item1": 11, "item2": 22, "item3": 33})
         self.assertTrue("item2" in cache)
         self.assertFalse("item222" in cache)
         # test exceptions
@@ -71,7 +75,7 @@ class MemoryCacheTest(unittest.TestCase):
 
     def testSetDiffTypes(self):
         cache = MemoryCache(2, set())
-        self.assertCountEqual(cache.getCache(), set()) if PY3 else self.assertItemsEqual(cache.getCache(), set())
+        self.assertItemsEqual(cache.getCache(), set())
         cache.setCache({"item1", "item2"})
         self.assertRaises(TypeError, cache.setCache, ["item3"])
 

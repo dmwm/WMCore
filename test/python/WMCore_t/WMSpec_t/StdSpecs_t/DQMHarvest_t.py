@@ -9,6 +9,8 @@ import os
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
@@ -28,7 +30,7 @@ REQUEST = {
     "DQMConfigCacheID": "253c586d672c6c7a88c048d8c7b62135",
     "DQMHarvestUnit": "byRun",
     "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
-    "DbsUrl": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/",
+    "DbsUrl": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader",
     "GlobalTag": "80X_dataRun2_2016SeptRepro_v3",
     "InputDataset": "/NoBPTX/Run2016F-23Sep2016-v1/DQMIO",
     "Memory": 1000,
@@ -77,7 +79,8 @@ class DQMHarvestTests(EmulatedUnitTestCase):
         self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
         self.listFilesets = self.daoFactory(classname="Fileset.List")
         self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):

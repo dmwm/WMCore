@@ -5,7 +5,7 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-from builtins import next
+from builtins import next, str, bytes
 
 import logging
 import threading
@@ -30,7 +30,7 @@ class File(WMBSBase, WMFile):
         if locations is None:
             self.setdefault("newlocations", set())
         else:
-            if isinstance(locations, str):
+            if isinstance(locations, (str, bytes)):
                 self.setdefault("newlocations", set())
                 self['newlocations'].add(locations)
             else:
@@ -399,7 +399,7 @@ class File(WMBSBase, WMFile):
         locations could be added - confusing when file requires locations on its
         first creation (breaks transaction model in Fileset commits etc)
         """
-        if isinstance(pnn, str):
+        if isinstance(pnn, (str, bytes)):
             self['newlocations'].add(pnn)
             self['locations'].add(pnn)
         else:

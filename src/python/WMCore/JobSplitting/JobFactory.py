@@ -8,6 +8,7 @@ from builtins import range
 
 import logging
 import threading
+import operator
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.WMObject import WMObject
@@ -242,7 +243,11 @@ class JobFactory(WMObject):
             logging.debug("About to load files by DAO")
             fileset = self.subscription.availableFiles(limit=self.limit, doingJobSplitting=True)
 
-        for fileInfo in fileset:
+        # Reverse sorting this set by location is required to match how sorting was done in py2
+        # Unittests that rely on this sorting method
+        # - WMCore_t.WMBS_t.JobSplitting_t.FileBased_t.FileBasedTest:testSiteWhiteBlacklist
+        # - WMCore_t.WMBS_t.JobSplitting_t.FileBased_t.FileBasedTest:testLocationSplit
+        for fileInfo in sorted(fileset, key=operator.itemgetter('locations'), reverse=True):
 
             if self.trustSitelists:
                 locSet = frozenset(set(['AAA']))

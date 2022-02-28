@@ -50,11 +50,10 @@ class UUIDTest(unittest.TestCase):
     def testTime(self):
 
         nUIDs     = 100000
-        startTime = time.clock()
+        startTime = time.time()
         for i in range(0,nUIDs):
             makeUUID()
-        print("We can make %i UUIDs in %f seconds" %(nUIDs, time.clock() - startTime))
-
+        print("We can make %i UUIDs in %f seconds" %(nUIDs, time.time() - startTime))
 
 if __name__ == '__main__':
     unittest.main()

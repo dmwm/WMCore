@@ -149,7 +149,7 @@ class PyCurlManager(unittest.TestCase):
         self.assertTrue(len(res.getHeader()) > 10)
         # Kubernetes cluster responds with a different Server header
         serverHeader = res.getHeaderKey("Server")
-        self.assertTrue(serverHeader.startswith("CherryPy/") or serverHeader.startswith("openresty/"))
+        self.assertTrue(serverHeader.startswith("nginx/") or serverHeader.startswith("CherryPy/") or serverHeader.startswith("openresty/"))
 
 if __name__ == "__main__":
     unittest.main()

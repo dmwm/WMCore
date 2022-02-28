@@ -7,7 +7,6 @@ A unittest for seeing if we can pull code the configCache to the WN
 Written by someone who has no idea what CMSSWFetcher is supposed to do.
 """
 import os
-import re
 import os.path
 import unittest
 
@@ -17,7 +16,7 @@ from WMCore.WMSpec.Steps.Fetchers.CMSSWFetcher import CMSSWFetcher
 from WMQuality.TestInitCouchApp                import TestInitCouchApp as TestInit
 from WMCore.Cache.WMConfigCache                import ConfigCache
 
-class URLFetcherTest(unittest.TestCase):
+class CMSSWFetcherTest(unittest.TestCase):
     """
     Main test for the URLFetcher
 
@@ -96,14 +95,14 @@ class URLFetcherTest(unittest.TestCase):
         task        = self.createTask(configCache = configCache)
         fetcher     = CMSSWFetcher()
         fetcher.setWorkingDirectory(workingDir = self.testDir)
+        self.assertEqual(fetcher.workingDirectory(), self.testDir)
+
         fetcher(wmTask = task)
+        configFilePath = os.path.join(self.testDir, 'step2', 'configCache.file')
+        self.assertTrue(os.path.isfile(configFilePath))
 
-        self.assertTrue(os.path.isfile(os.path.join(self.testDir,
-                                                    'step2', 'tweak')))
-
-        f = open(os.path.join(self.testDir, 'step2', 'configCache.file'))
-        content = f.read()
-        f.close()
+        with open(configFilePath) as f:
+            content = f.read()
 
         self.assertEqual(content, 'This Is A Test Config')
         return

@@ -4,6 +4,8 @@
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Configuration import ConfigSection
 from WMCore.Configuration import Configuration
 from WMCore.Configuration import ConfigurationEx
@@ -64,7 +66,8 @@ class ConfigurationTest(unittest.TestCase):
         self.normalSave = "%s/WMCore_Agent_Configuration_t_normal.py" % self.testDir
         self.docSave = "%s/WMCore_Agent_Configuration_t_documented.py" % self.testDir
         self.commentSave = "%s/WMCore_Agent_Configuration_t_commented.py" % self.testDir
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """clean up"""
@@ -287,8 +290,8 @@ class ConfigurationTest(unittest.TestCase):
         assert "SectionA.section_('Section1')" in pythonise, "Pythonise failed: Could not find Section1"
         assert "SectionA.Section1.x = 100"     in pythonise, "Pythonise failed: Could not find x"
 
-        self.assertEqual(config.listSections_(), ['SectionB', 'SectionA'])
-        self.assertEqual(config.SectionA.listSections_(), ['Section2', 'Section1'])
+        self.assertItemsEqual(config.listSections_(), ['SectionB', 'SectionA'])
+        self.assertItemsEqual(config.SectionA.listSections_(), ['Section2', 'Section1'])
 
 
     def testG_testStaticReferenceToConfigurationInstance(self):
@@ -322,6 +325,16 @@ class ConfigurationTest(unittest.TestCase):
         for values in d.values():
             self.assertFalse(isinstance(values, ConfigSection))
         self.assertEqual(d["Task1"]["subSection"]["value3"], "MyValue3")
+
+
+    def testI_testGetInternalName(self):
+        """
+        Test we properly retrieve the internal name of the configuration object
+
+        """
+        config = ConfigSection("config")
+        name = config.getInternalName()
+        self.assertEqual(name, "config")
 
 
 if __name__ == '__main__':

@@ -140,9 +140,10 @@ class JobSubmitterCachingTest(EmulatedUnitTestCase):
             os.mkdir(jobCacheDir)
             newJobA["cache_dir"] = jobCacheDir
             newJobA["type"] = "Processing"
+            newJobA['requestType'] = 'ReReco'
             newJobA.create(testGroupA)
 
-            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "w")
+            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "wb")
             pickle.dump(newJobA, jobHandle)
             jobHandle.close()
 
@@ -158,9 +159,10 @@ class JobSubmitterCachingTest(EmulatedUnitTestCase):
             os.mkdir(jobCacheDir)
             newJobB["cache_dir"] = jobCacheDir
             newJobB["type"] = "Processing"
+            newJobB['requestType'] = 'ReReco'
             newJobB.create(testGroupB)
 
-            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "w")
+            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "wb")
             pickle.dump(newJobB, jobHandle)
             jobHandle.close()
 

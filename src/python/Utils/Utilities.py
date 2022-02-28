@@ -15,7 +15,6 @@ import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
 
-
 def lowerCmsHeaders(headers):
     """
     Lower CMS headers in provided header's dict. The WMCore Authentication
@@ -94,7 +93,8 @@ def diskUse():
     """
     diskPercent = []
     df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
-    output = df.communicate()[0].split("\n")
+    output = df.communicate()[0]
+    output = decodeBytesToUnicode(output).split("\n")
     for x in output:
         split = x.split()
         if split != [] and split[0] != 'Filesystem':
@@ -108,7 +108,8 @@ def numberCouchProcess():
     This returns the number of couch process
     """
     ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
-    process = ps.communicate()[0].count('couchjs')
+    process = ps.communicate()[0]
+    process = decodeBytesToUnicode(process).count('couchjs')
 
     return process
 
@@ -225,6 +226,26 @@ def decodeBytesToUnicode(value, errors="strict"):
         return value.decode("utf-8", errors)
     return value
 
+def decodeBytesToUnicodeConditional(value, errors="ignore", condition=True):
+    """
+    if *condition*, then call decodeBytesToUnicode(*value*, *errors*),
+    else return *value*
+    
+    This may be useful when we want to conditionally apply decodeBytesToUnicode,
+    maintaining brevity.
+
+    Parameters
+    ----------
+    value : any
+        passed to decodeBytesToUnicode
+    errors: str
+        passed to decodeBytesToUnicode
+    condition: boolean of object with attribute __bool__()
+        if True, then we run decodeBytesToUnicode. Usually PY2/PY3
+    """
+    if condition:
+        return decodeBytesToUnicode(value, errors)
+    return value
 
 def encodeUnicodeToBytes(value, errors="strict"):
     """
@@ -251,4 +272,25 @@ def encodeUnicodeToBytes(value, errors="strict"):
     """
     if isinstance(value, str):
         return value.encode("utf-8", errors)
+    return value
+
+def encodeUnicodeToBytesConditional(value, errors="ignore", condition=True):
+    """
+    if *condition*, then call encodeUnicodeToBytes(*value*, *errors*),
+    else return *value*
+    
+    This may be useful when we want to conditionally apply encodeUnicodeToBytes,
+    maintaining brevity.
+
+    Parameters
+    ----------
+    value : any
+        passed to encodeUnicodeToBytes
+    errors: str
+        passed to encodeUnicodeToBytes
+    condition: boolean of object with attribute __bool__()
+        if True, then we run encodeUnicodeToBytes. Usually PY2/PY3
+    """
+    if condition:
+        return encodeUnicodeToBytes(value, errors)
     return value

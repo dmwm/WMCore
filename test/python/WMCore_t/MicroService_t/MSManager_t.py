@@ -8,6 +8,8 @@ from __future__ import division, print_function
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Agent.Configuration import Configuration
 from WMCore.MicroService.MSManager import MSManager
 
@@ -26,8 +28,8 @@ class MSManagerTest(unittest.TestCase):
         data.quotaAccount = "DataOps"
         data.enableStatusTransition = True
         data.rucioAccount = "wma_test"
-        data.rucioUrl = "http://cmsrucio-int.cern.ch"
-        data.rucioAuthUrl = "https://cmsrucio-auth-int.cern.ch"
+        data.rucioUrl = "http://cms-rucio-int.cern.ch"
+        data.rucioAuthUrl = "https://cms-rucio-auth-int.cern.ch"
         data.phedexUrl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
         data.dbsUrl = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
         data.smtpServer = "localhost"
@@ -43,6 +45,9 @@ class MSManagerTest(unittest.TestCase):
         data.limitRequestsPerCycle = 50
         data.enableDataTransfer = True
         self.mgr_trans = MSManager(data)
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         "Tear down MSManager"

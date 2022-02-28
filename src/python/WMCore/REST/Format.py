@@ -1,11 +1,12 @@
 from __future__ import print_function
 
 from builtins import str, bytes, object
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 from future.utils import viewitems
 
 import hashlib
 import json
-import types
 import xml.sax.saxutils
 import zlib
 from traceback import format_exc
@@ -435,7 +436,7 @@ class DigestETag(object):
     def update(self, val):
         """Process response data `val`."""
         if self.digest:
-            self.digest.update(val)
+            self.digest.update(encodeUnicodeToBytes(val))
 
     def value(self):
         """Return ETag header value for current input."""
@@ -476,14 +477,14 @@ def _stream_compress_deflate(reply, compress_level, max_chunk):
         pending.append(chunk)
         npending += len(chunk)
         if npending >= max_chunk:
-            part = z.compress("".join(pending)) + z.flush(zlib.Z_FULL_FLUSH)
+            part = z.compress(encodeUnicodeToBytes("".join(pending))) + z.flush(zlib.Z_FULL_FLUSH)
             pending = []
             npending = 0
             yield part
 
     # Crank the compressor one more time for remaining output.
     if npending:
-        yield z.compress("".join(pending)) + z.flush(zlib.Z_FINISH)
+        yield z.compress(encodeUnicodeToBytes("".join(pending))) + z.flush(zlib.Z_FINISH)
 
 # : Stream compression methods.
 _stream_compressor = {
@@ -536,10 +537,10 @@ def _etag_tail(head, tail, etag):
     Sets ETag header at the end to value of `etag` if it's defined and
     yields a value."""
     for chunk in head:
-        yield chunk
+        yield encodeUnicodeToBytes(chunk)
 
     for chunk in tail:
-        yield chunk
+        yield encodeUnicodeToBytes(chunk)
 
     etagval = (etag and etag.value())
     if etagval:
@@ -612,6 +613,10 @@ def stream_maybe_etag(size_limit, etag, reply):
 
     # OK, respond with the buffered reply as a plain string.
     res.headers['Content-Length'] = size
-    result = "".join(result)
-    assert len(result) == size
-    return result
+    # TODO investigate why `result` is a list of bytes strings in py3
+    # The current solution seems to work in both py2 and py3
+    resp = b"" if PY3 else ""
+    for item in result:
+        resp += encodeUnicodeToBytesConditional(item, condition=PY3)
+    assert len(resp) == size
+    return resp

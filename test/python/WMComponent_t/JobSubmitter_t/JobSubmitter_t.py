@@ -16,6 +16,8 @@ import threading
 import time
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
@@ -82,6 +84,10 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         config = self.getConfig()
         myThread.logdbClient = MockLogDB(config.General.central_logdb_url,
                                          config.Agent.hostName, logger=None)
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
         return
 
     def tearDown(self):
@@ -220,13 +226,14 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             testJob['mask']['FirstEvent'] = 101
             testJob['priority'] = 101
             testJob['numberOfCores'] = 1
+            testJob['requestType'] = 'ReReco'
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
             testJob['cache_dir'] = jobCache
             testJob.save()
             jobGroup.add(testJob)
-            output = open(os.path.join(jobCache, 'job.pkl'), 'w')
+            output = open(os.path.join(jobCache, 'job.pkl'), 'wb')
             pickle.dump(testJob, output)
             output.close()
 

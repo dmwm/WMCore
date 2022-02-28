@@ -9,10 +9,12 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function, division
+from builtins import str as newstr, bytes as newbytes, object
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes, decodeBytesToUnicodeConditional
+from Utils.PythonVersion import PY3
 
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str, object
 from future.utils import viewitems
 import urllib.request, urllib.parse, urllib.error
 
@@ -42,6 +44,9 @@ def check_server_url(srvurl):
         raise ValueError('You must include http(s):// in your servers address')
 
 
+PY3_STR_DECODER = lambda x: decodeBytesToUnicodeConditional(x, condition=PY3)
+
+
 class Document(dict):
     """
     Document class is the instantiation of one document in the CouchDB
@@ -65,7 +70,7 @@ class Document(dict):
         # https://issues.apache.org/jira/browse/COUCHDB-1141
         deletedDict = {'_id': self['_id'], '_rev': self['_rev'], '_deleted': True}
         self.update(deletedDict)
-        for key in self.keys():
+        for key in list(self.keys()):
             if key not in deletedDict:
                 del self[key]
 
@@ -147,10 +152,16 @@ class CouchDBRequests(JSONRequests):
             raise CouchNotFoundError(reason, data, result)
         elif status == 405:
             raise CouchNotAllowedError(reason, data, result)
+        elif status == 406:
+            raise CouchNotAcceptableError(reason, data, result)
         elif status == 409:
             raise CouchConflictError(reason, data, result)
         elif status == 412:
             raise CouchPreconditionFailedError(reason, data, result)
+        elif status == 416:
+            raise CouchRequestedRangeNotSatisfiableError(reason, data, result)
+        elif status == 417:
+            raise CouchExpectationFailedError(reason, data, result)
         elif status == 500:
             raise CouchInternalServerError(reason, data, result)
         elif status in [502, 503, 504]:
@@ -351,11 +362,11 @@ class Database(CouchDBRequests):
             updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
                         (self.name, design, update_func, doc_id, urllib.parse.urlencode(fields))
 
-            return self.put(uri=updateUri, decode=False)
+            return self.put(uri=updateUri, decode=PY3_STR_DECODER)
         else:
             updateUri = '/%s/_design/%s/_update/%s/%s' % \
                         (self.name, design, update_func, doc_id)
-            return self.put(uri=updateUri, data=fields, decode=False)
+            return self.put(uri=updateUri, data=fields, decode=PY3_STR_DECODER)
 
     def updateBulkDocuments(self, doc_ids, paramsToUpdate, updateLimits=1000):
 
@@ -408,7 +419,7 @@ class Database(CouchDBRequests):
         doc_id = urllib.parse.quote_plus(doc_id)
 
         updateUri = '/%s/%s' % (self.name, doc_id)
-        return self.put(uri=updateUri, data=fields, decode=False)
+        return self.put(uri=updateUri, data=fields, decode=PY3_STR_DECODER)
 
     def documentExists(self, id, rev=None):
         """
@@ -568,15 +579,15 @@ class Database(CouchDBRequests):
                 data = urllib.parse.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
                                    (self.name, design, list, view, data), {'keys': keys},
-                                   decode=False)
+                                   decode=PY3_STR_DECODER)
             else:
                 retval = self.post('/%s/_design/%s/_list/%s/%s' % \
                                    (self.name, design, list, view), {'keys': keys},
-                                   decode=False)
+                                   decode=PY3_STR_DECODER)
         else:
             retval = self.get('/%s/_design/%s/_list/%s/%s' % \
                               (self.name, design, list, view), encodedOptions,
-                              decode=False)
+                              decode=PY3_STR_DECODER)
 
         return retval
 
@@ -642,10 +653,12 @@ class Database(CouchDBRequests):
         if add_checksum:
             # calculate base64 encoded MD5
             keyhash = hashlib.md5()
-            keyhash.update(str(value))
-            req_headers['Content-MD5'] = base64.b64encode(keyhash.digest())
+            value_str = str(value) if not isinstance(value, (newstr, newbytes)) else value
+            keyhash.update(encodeUnicodeToBytes(value_str))
+            content_md5 = base64.b64encode(keyhash.digest())
+            req_headers['Content-MD5'] = decodeBytesToUnicode(content_md5) if PY3 else content_md5
         elif checksum:
-            req_headers['Content-MD5'] = checksum
+            req_headers['Content-MD5'] = decodeBytesToUnicode(checksum) if PY3 else checksum
         return self.put('/%s/%s/%s?rev=%s' % (self.name, id, name, rev),
                         value, encode=False,
                         contentType=contentType,
@@ -658,7 +671,7 @@ class Database(CouchDBRequests):
         Retrieve an attachment for a couch document.
         """
         url = "/%s/%s/%s" % (self.name, id, name)
-        attachment = self.get(url, None, encode=False, decode=False)
+        attachment = self.get(url, None, encode=False, decode=PY3_STR_DECODER)
 
         # there has to be a better way to do this but if we're not de-jsoning
         # the return values, then this is all I can do for error checking,
@@ -1091,17 +1104,30 @@ class CouchNotAllowedError(CouchError):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchNotAllowedError"
 
+class CouchNotAcceptableError(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchNotAcceptableError"
 
 class CouchConflictError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchConflictError"
 
-
 class CouchPreconditionFailedError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchPreconditionFailedError"
+
+class CouchExpectationFailedError(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchExpectationFailedError"
+
+class CouchRequestedRangeNotSatisfiableError(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchRequestedRangeNotSatisfiableError"
 
 
 class CouchInternalServerError(CouchError):

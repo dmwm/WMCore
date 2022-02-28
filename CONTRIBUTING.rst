@@ -1,15 +1,16 @@
 ===========================
 How to contribute to WMCore
 ===========================
-Thank you for participating to WMCore!
+Thank you for participating in WMCore!
 
-* Please ensure that an `issue <https://github.com/dmwm/WMCore/issues/new/choose>`_ exists before submitting your contribution as a pull request.
-  * There are two templates available to create a new issue, select the one matching your issue type.
+* Please ensure that a GitHub `issue <https://github.com/dmwm/WMCore/issues/new/choose>`_ exists before submitting your contribution through a pull request.
+    * There are two templates available to create a new Github issue, select the one matching your issue type.
 * Pull request will only be merged if there is an associated issue (different solutions/implementations can be discussed on the issue).
+    * And at least one approval through the GitHub review process.
 
 A contribution can be either a **patch** or a **feature**:
- * **patch**: includes a bugfixes or an outstanding enhancement; besides going to the **master** branch, we also backport the same contribution to the latest **wmagent** branch.
- * **feature**: includes major developments or potentially disruptive changes and are included in feature releases made multiple times a year.
+ * **patch**: includes a bug-fixes or an outstanding enhancement; besides going to the **master** branch, we also backport the same contribution to the latest **wmagent** branch.
+ * **feature**: includes major developments or potentially disruptive changes and are included in feature releases following a monthly cycle.
 
 From the contribution types, we can also define at least two different branches:
  * **master**: it includes both features and patches contributions and it only reaches production when there is a CMSWEB/WMAgent upgrade.
@@ -34,8 +35,8 @@ Setting up the development environment
 --------------------------------------
 
 There is no real recipe here, people use different operating systems and different IDE (Integrated Development Environment).
-However, please make sure you implement using the python 2.7 interpreter (having a virtualenv to switch between python2 and python3 is practically a must for the near future).
-A non-exhaustive list of libraries which WMCore depend on can be found on the `requirements <https://github.com/dmwm/WMCore/blob/master/requirements.txt>`_ file.
+However, please make sure your dev environment defaults to python 3.8 interpreter.
+A non-exhaustive list of libraries which WMCore depends on can be found on the `requirements <https://github.com/dmwm/WMCore/blob/master/requirements.txt>`_ file.
 Last but not least, please also have a look at the `Coding Style and checks` section below
 
 Setting up the testing environment
@@ -47,7 +48,7 @@ You can find an extensive documentation on this `wiki_page <https://github.com/d
 Contributing
 ------------
 
-**Step 1**: Make sure there is already an `issue <https://github.com/dmwm/WMCore/issues/new/choose>`_ created, if not, then create one following one of the templates and providing all the necessary information.
+**Step 1**: Make sure there is already an `issue <https://github.com/dmwm/WMCore/issues/new/choose>`_ created, if not, then create one according to the templates and providing all the necessary information. Note that there is text in the templates that you must replace by the description you are going to provide.
 
 **Step 2**: Create a local branch to start working on a proposal for that issue, branching off the "master" branch::
 
@@ -68,23 +69,26 @@ Contributing
 **Step 6**: repeat the Step 4 to add and create a new commit. We **highly recommend** a separate commit for test-related changes like unit tests, emulation, json data,templates and so on.
 In addition to unit tests, we ask you that any code refactoring **not changing any logical blocks**, as pylint, pep8 convention, fixing typos, etc; to be added to the same test commit.
 
-**Step 7**: At this point you should have 2 commits in your branch: where the 1st commit contains real changes the proposed fix and; the 2nd commit contains aesthetic and unit tests changes.
-Check the commits you have on your branch and then push your them to your forked repository::
+**Step 7**: At this point you should have 2 commits in your branch: where the 1st commit contains the real logic for your feature and/or bug-fix; and the 2nd commit contains aesthetic and unit tests changes.
+Check the commits you have on your branch and then push them to your forked repository (amend commit messages if needed)::
 
         git log -10 --pretty=oneline --decorate
         git push origin your-branch-name
 
 **Step 8**: then create a pull request either from your fork, or from the official github repository. There is a pull request template that you need to edit/update before confirming the pull request creation.
-If you're proposing a **patch** that needs to be backported to a specific branch, please make sure to mention it in your pull request, such that the project responsible can properly label it.
+If you're proposing a **patch** that needs to be backported to a specific branch, please make sure to mention it in your pull request, such that the project responsible can properly label it. If your pull request requires further effort, please use the labels "Do not merge yet" and "Work in progress".
 The pull request title has to be meaningful as well, even though it's not used for the release notes. You might want to describe your changes and the reason behind that, it's quite helpful when we need to check a module's history.
 
-**Step 9**: watch the pull request for comments and; if your pull request is ready to be reviewed, use the `Reviewers` option to ask a specific person(s) to review it.
-If further changes are required to your pull request, please make sure to squash your commits in order to keep a clean commit history (remember, if you need to update both src/ and test/ files, then you need to squash them into the correct commits).
+**Step 9**: once your pull request is ready to be reviewed, use the `Reviewers` option to ask a specific person(s) to review it. Watch your pull request for comments and feedback.
+If further changes are required to your pull request, you might want to provide them in a separate commit, making it easier to review only the latest difference.
+
+**Step 10**: when your pull request gets approved by at least one reviewer, you must squash your commits accordingly in order to keep a clean commit history (remember, if you need to update both src/ and test/ files, then you need to squash them into the correct commits).
+If you need further instructions for squashing your commits, please check `this <https://steveklabnik.com/writing/how-to-squash-commits-in-a-github-pull-request>`_ quick and simple document.
 
 Automatic Tests
 ----------------
 
-Every pull request - and further updates to that - trigger an automatic evaluation of your changes through our DMWM Jenkins infrastructure (only pull requests made against the **master** branch) and results are expected to come back within 30min.
+Every pull request - and further updates made to it - trigger an automatic evaluation of your changes through our DMWM Jenkins infrastructure (only pull requests made against the **master** branch) and results are expected to come back within 20min.
 This infrastructure is thoroughly described in this `wiki_section <https://github.com/dmwm/WMCore/wiki/Understanding-Jenkins>`_. However, in short there are 4 types of checks done by jenkins:
 
 1. **unit tests**: all the WMCore unit tests are executed on top of your changes and compared against a master/HEAD baseline (which gets created twice a day). Besides unstable unit tests, your pull request will only be accepted once **all** unit tests succeed.
@@ -96,7 +100,7 @@ This infrastructure is thoroughly described in this `wiki_section <https://githu
 
 3. **pycodestyle**: it corresponds to the pep8 checks and it should usually not report anything, these issues can be easily fixed by an IDE.
 
-4. **python3 compatibility**: runs the futurize check to make pre-python 2.7 idions aren't reinserted in the code. We're currently using python 2.7 and trying to be as compatible as possible with python 3.
+4. **python3 compatibility**: runs the futurize check to ensure that pre-python 2.7 idioms aren't reinserted in the code.
 
 Human Review
 ------------
@@ -115,5 +119,5 @@ Extra documentation
 -------------------
 
 In case you're having issues with git and working through a branch feature, you might want to have a look at this old'ish `wiki <https://github.com/dmwm/WMCore/wiki/Developing-against-WMCore>`_ in our WMCore wiki documentation.
-In addition to that, we've also compiled a long list of important git commands `here <https://github.com/dmwm/WMCore/wiki/git-commands>`_. If none of those work for you, google and stackoverflow will be your best friend.
+In addition to that, we've also compiled a long list of important git `commands <https://github.com/dmwm/WMCore/wiki/git-commands>`_. If none of those work for you, google and stackoverflow will be your best friend.
 

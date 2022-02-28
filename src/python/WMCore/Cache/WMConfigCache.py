@@ -19,6 +19,8 @@ from contextlib import closing
 
 import WMCore.GroupUser.Decorators as Decorators
 from Utils.Patterns import Singleton
+from Utils.Utilities import decodeBytesToUnicode
+from Utils.PythonVersion import PY3
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -439,6 +441,8 @@ class ConfigCache(WMObject):
         with closing(urllib.request.urlopen(newConfig)) as f:
             configString = f.read(-1)
         configMD5 = hashlib.md5(configString).hexdigest()
+        if PY3:
+            configString = decodeBytesToUnicode(configString)
 
         self.document['md5_hash'] = configMD5
         self.document['pset_hash'] = psetHash

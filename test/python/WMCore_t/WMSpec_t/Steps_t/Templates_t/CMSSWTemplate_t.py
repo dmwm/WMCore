@@ -9,9 +9,10 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 
+from Utils.PythonVersion import PY3
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
-from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
+from WMCore.WMSpec.WMWorkload import newWorkload
 
 
 class CMSSWTemplateTest(unittest.TestCase):
@@ -22,6 +23,10 @@ class CMSSWTemplateTest(unittest.TestCase):
     Tests the helper methods
 
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testA(self):
         """
@@ -50,9 +55,9 @@ class CMSSWTemplateTest(unittest.TestCase):
 
         # TODO: Check the step has the appropriate attributes expected for CMSSW
         self.assertTrue(
-            hasattr(step, "application"))
+                hasattr(step, "application"))
         self.assertTrue(
-            hasattr(step.application, "setup"))
+                hasattr(step.application, "setup"))
 
     def testB(self):
         """
@@ -75,10 +80,10 @@ class CMSSWTemplateTest(unittest.TestCase):
 
         helper.cmsswSetup("CMSSW_X_Y_Z", scramArch="slc5_ia32_gcc443")
         helper.addOutputModule(
-            "outputModule1", primaryDataset="Primary",
-            processedDataset='Processed',
-            dataTier='Tier',
-            lfnBase="/store/unmerged/whatever"
+                "outputModule1", primaryDataset="Primary",
+                processedDataset='Processed',
+                dataTier='Tier',
+                lfnBase="/store/unmerged/whatever"
         )
 
     def testMulticoreSettings(self):
@@ -154,6 +159,28 @@ class CMSSWTemplateTest(unittest.TestCase):
         self.assertEqual(helper.getProcVer(), 111)
         self.assertEqual(helper.getPrepId(), "TestPrepId")
         self.assertItemsEqual(helper.listOutputModules(), ["Merged"])
+
+    def testGPUSettings(self):
+        """
+        Test GPU methods at CMSSW template level
+        """
+        workload = newWorkload("UnitTests")
+        task = workload.newTask("CMSSWTemplate")
+        stepHelper = task.makeStep("TemplateTest")
+        step = stepHelper.data
+        template = CMSSWTemplate()
+        template(step)
+
+        helper = template.helper(step)
+
+        self.assertEqual(helper.getGPURequired(), "forbidden")
+        self.assertIsNone(helper.getGPURequirements())
+        helper.setGPUSettings("optional", "test 1 2 3")
+        self.assertEqual(helper.getGPURequired(), "optional")
+        self.assertItemsEqual(helper.getGPURequirements(), "test 1 2 3")
+        helper.setGPUSettings("required", {"key1": "value1", "key2": "value2"})
+        self.assertEqual(helper.getGPURequired(), "required")
+        self.assertItemsEqual(helper.getGPURequirements(), {"key1": "value1", "key2": "value2"})
 
 
 if __name__ == '__main__':

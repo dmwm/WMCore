@@ -14,6 +14,8 @@ import time
 import unittest
 
 from Utils import FileTools
+from Utils.PythonVersion import PY3
+
 from WMCore.Configuration import ConfigSection
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
@@ -50,6 +52,10 @@ class ReportTest(unittest.TestCase):
         self.noLocationReport = os.path.join(testData, "Report.0.pkl")
 
         self.testDir = self.testInit.generateWorkDir()
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
         return
 
     def tearDown(self):

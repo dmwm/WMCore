@@ -13,7 +13,7 @@ import unittest
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore.WorkQueue.WorkQueue import localQueue
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import SITES as DUMMY_SITES
+from WMQuality.Emulators.RucioClient.MockRucioApi import SITES as DUMMY_SITES
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 
@@ -37,8 +37,8 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         self.queueParams = {}
         self.queueParams['log_reporter'] = "lq_profile_test"
         self.queueParams['rucioAccount'] = "wma_test"
-        self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
-        self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
+        self.queueParams['rucioAuthUrl'] = "http://cms-rucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cms-rucio-auth-int.cern.ch"
 
         # Create queues
         self.localQueue = localQueue(DbName=self.queueDB, InboxDbName=self.queueInboxDB,

@@ -90,6 +90,8 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("rucioRSEAttribute", 'ddm_quota')
         self.msConfig.setdefault("rucioDiskRuleWeight", 'ddm_quota')
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
+        # This Disk expression wil target all real DISK T1 and T2 RSEs
+        self.msConfig.setdefault("rucioDiskExpression", '(tier=2|tier=1)&cms_type=real&rse_type=DISK')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
         # fetch documents created in the last 6 months (default value)
@@ -686,11 +688,7 @@ class MSOutput(MSCore):
                     updatedOutputMap.append(dataItem)
                     continue
             else:
-                # NOTE: This default rseExpression should target all T1_*_Disk and T2_*
-                # sites, where the first part is a Union of those Tiers and the second
-                # part is a general constraint for those to be real entries (not `Test`
-                # or `Temp`) and we also target only Disk endpoints
-                dataItem['DiskDestination'] = '(tier=2|tier=1)&cms_type=real&rse_type=DISK'
+                dataItem['DiskDestination'] = self.msConfig["rucioDiskExpression"]
             updatedOutputMap.append(dataItem)
 
         # if there were containers not found in Rucio, create an email alert

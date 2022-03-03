@@ -1,3 +1,7 @@
+2.0.1.pre3 to 2.0.1.pre4:
+  - Make MSOutput Disk expression configurable (Alan Malta Rodrigues) #11018
+
+
 2.0.1.pre2 to 2.0.1.pre3:
   - Add mockMongoDB to MSUnmerged and MongoDB Class init options (Todor Ivanov) #11007
   - Explicitly create proxies with 2048 bits (Alan Malta Rodrigues) #11008

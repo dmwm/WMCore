@@ -91,6 +91,8 @@ config.General.logdb_name = logDBName
 config.General.central_logdb_url = "need to get from secrets file"
 config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.General.centralWMStatsURL = "Central WMStats URL"
+# ReqMgrAux disk cache duration (in hours), set to 5 minutes: 5 / 60 = 0.083
+config.General.ReqMgrAuxCacheDuration = 0.083
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL

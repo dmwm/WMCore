@@ -73,7 +73,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
             self.reqAuxDB = None
             self.maxRetries = self.config.ErrorHandler.maxRetries
         else:
-            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
+            cacheduration = getattr(self.config.General, "ReqMgrAuxCacheDuration", 5 / 60)  # 5 minutes
+            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL, httpDict={'cacheduration': cacheduration})
 
         self.exitCodesNoRetry = []
         self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)

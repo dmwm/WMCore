@@ -36,7 +36,8 @@ class DrainStatusPoller(BaseWorkerThread):
         self.agentConfig = {}
         self.previousConfig = {}
         self.validSpeedDrainConfigKeys = ['CondorPriority', 'NoJobRetries', 'EnableAllSites']
-        self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
+        cacheduration = getattr(self.config.General, "ReqMgrAuxCacheDuration", 5 / 60)  # 5 minutes
+        self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL, httpDict={'cacheduration': cacheduration})
         self.emailAlert = EmailAlert(config.EmailAlert.dictionary_())
         self.condorStates = ("Running", "Idle")
 

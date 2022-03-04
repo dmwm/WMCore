@@ -5,28 +5,24 @@ Description: Provides a wrapper class for MongoDB
 
 # futures
 from __future__ import division, print_function
-
 from builtins import str, object
 
+try:
+    import mongomock
+except ImportError:
+    # this library should only be required by unit tests
+    mongomock = None
+
 from pymongo import MongoClient, errors, IndexModel
-import mongomock
 
 
 class MongoDB(object):
     """
     A simple wrapper class for creating a connection to a MongoDB instance
     """
-    def __init__(self,
-                 database=None,
-                 server=None,
-                 port=None,
-                 replicaset=None,
-                 create=False,
-                 collections=None,
-                 testIndexes=False,
-                 logger=None,
-                 mockMongoDB=False,
-                 **kwargs):
+    def __init__(self, database=None, server=None, port=None, replicaset=None,
+                 create=False, collections=None, testIndexes=False,
+                 logger=None, mockMongoDB=False, **kwargs):
         """
         :databases:   A database Name to connect to
         :server:      The server url (see https://docs.mongodb.com/manual/reference/connection-string/)
@@ -44,6 +40,10 @@ class MongoDB(object):
         self.port = port # 8230
         self.logger = logger
         self.mockMongoDB = mockMongoDB
+        if mockMongoDB and mongomock is None:
+            msg = "You are trying to mock MongoDB, but you do not have mongomock in the python path."
+            self.logger.critical(msg)
+            raise ImportError(msg)
         try:
             if mockMongoDB:
                 self.client = mongomock.MongoClient()

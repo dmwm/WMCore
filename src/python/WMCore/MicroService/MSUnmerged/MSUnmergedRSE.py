@@ -3,7 +3,7 @@ File       : MSUnmergedRSE.py
 Description: Provides a document Template for the MSUnmerged MicroServices
 """
 
-from pymongo.errors  import NotMasterError
+from pymongo.errors  import NotPrimaryError
 # from pymongo.results import results as MongoResults
 
 
@@ -130,7 +130,7 @@ class MSUnmergedRSE(dict):
                                the database is about to be completely replaced or just
                                fields update is to happen.
         :param retryCount:     The number of retries for the write operation if failed due to
-                               `NotMasterError. Possible values:
+                               `NotPrimaryError. Possible values:
                                0   - the write operation will be tried exactly once and no retries will happen
                                > 0 - the write operation will be retried this number of times
                                < 0 - the write operation will never be tried
@@ -166,7 +166,7 @@ class MSUnmergedRSE(dict):
                     updateFields[field] = self[field]
 
         updateOps = {'$set': updateFields}
-        # NOTE: NotMasterError is a recoverable error, caused by a session to a
+        # NOTE: NotPrimaryError is a recoverable error, caused by a session to a
         #       non primary backend part of a replicaset.
         while retryCount >= 0:
             try:
@@ -175,7 +175,7 @@ class MSUnmergedRSE(dict):
                 else:
                     result = collection.update_one(self.mongoFilter, updateOps, upsert=True)
                 break
-            except NotMasterError:
+            except NotPrimaryError:
                 if retryCount:
                     # msg = "Failed write operation to MongoDB. %s retries left."
                     # self.logger.warning(msg, retryCount)
@@ -198,7 +198,7 @@ class MSUnmergedRSE(dict):
         document to MongoDB
         :param keepTimestamps: Bool flag to keep the timestamps
         :param keepCounters:   Bool flag to keep the counters
-        :param retryCount:     The number of retries for the write operation if failed due to `NotMasterError.
+        :param retryCount:     The number of retries for the write operation if failed due to `NotPrimaryError.
         :return:               True if operation succeeded.
         """
         resetDoc = self.defaultDoc()

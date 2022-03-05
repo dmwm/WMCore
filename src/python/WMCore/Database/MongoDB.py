@@ -138,7 +138,7 @@ class MongoDB(object):
             raise ex
 
         # Test for database existence
-        if db not in self.client.database_names():
+        if db not in self.client.list_database_names():
             msg = "Missing MongoDB databases: %s" % db
             self.logger.error(msg)
             raise errors.InvalidName

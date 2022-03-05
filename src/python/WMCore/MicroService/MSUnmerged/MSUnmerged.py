@@ -29,7 +29,7 @@ except ImportError:
     gfal2 = None
 
 from pymongo import IndexModel
-from pymongo.errors  import NotMasterError
+from pymongo.errors  import NotPrimaryError
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
@@ -517,7 +517,7 @@ class MSUnmerged(MSCore):
             self.logger.info(msg)
             try:
                 rse.resetRSE(self.msUnmergedColl, keepTimestamps=True, retryCount=self.msConfig['mongoDBRetryCount'])
-            except NotMasterError:
+            except NotPrimaryError:
                 msg = "Could not reset RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
                 msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
                 msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
@@ -803,7 +803,7 @@ class MSUnmerged(MSCore):
         try:
             self.logger.info("RSE: %s Writing rse data to MongoDB." % rse['name'])
             rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite, retryCount=self.msConfig['mongoDBRetryCount'])
-        except NotMasterError:
+        except NotPrimaryError:
             msg = "Could not write RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
             msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
             msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."

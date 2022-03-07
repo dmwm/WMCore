@@ -822,21 +822,38 @@ class MSUnmerged(MSCore):
         data = {}
         if kwargs.get('rse'):
             data["query"] = 'rse=%s&detail=%s' % (kwargs['rse'], detail)
-            mongoProjection = {"_id": False,
-                               "name": True,
-                               "pfnPrefix": True,
-                               "rucioConMonStatus": True,
-                               "isClean": True,
-                               "timestamps": True,
-                               "counters": True}
-            if detail:
-                mongoProjection["dirs"]  = True
+            allDocs = (kwargs['rse'].lower() == "all_docs") if isinstance(kwargs['rse'], str) else False
 
-            rseList = kwargs['rse'] if isinstance(kwargs['rse'], list) else [kwargs['rse']]
-            data["rseData"] = []
-            for rseName in rseList:
-                mongoFilter = {'name': rseName}
-                data["rseData"].append(self.msUnmergedColl.find_one(mongoFilter, projection=mongoProjection))
+            if allDocs:
+                mongoProjection = {
+                    "_id": False,
+                    "name": True,
+                    "isClean": True,
+                    "rucioConMonStatus": True,
+                    "counters": {
+                        "gfalErrors": True,
+                        "dirsToDelete": True,
+                        "dirsDeletedSuccess": True,
+                        "dirsDeletedFail": True}}
+                mongoFilter = {}
+                data["rseData"] = list(self.msUnmergedColl.find(mongoFilter, projection=mongoProjection))
+            else:
+                mongoProjection = {
+                    "_id": False,
+                    "name": True,
+                    "isClean": True,
+                    "pfnPrefix": True,
+                    "rucioConMonStatus": True,
+                    "timestamps": True,
+                    "counters": True}
+                if detail:
+                    mongoProjection["dirs"]  = True
+
+                rseList = kwargs['rse'] if isinstance(kwargs['rse'], list) else [kwargs['rse']]
+                data["rseData"] = []
+                for rseName in rseList:
+                    mongoFilter = {'name': rseName}
+                    data["rseData"].append(self.msUnmergedColl.find_one(mongoFilter, projection=mongoProjection))
         return data
 
     # @profile

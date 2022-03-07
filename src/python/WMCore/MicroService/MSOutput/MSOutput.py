@@ -21,9 +21,11 @@ from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
 from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.Tools.Common import gigaBytes
 from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.Services.DBS.DBS3Reader import getDataTiers
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
+from WMCore.MicroService.MSOutput.RelValPolicy import RelValPolicy
 from WMCore.WMException import WMException
 from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
@@ -97,19 +99,24 @@ class MSOutput(MSCore):
         # fetch documents created in the last 6 months (default value)
         self.msConfig.setdefault("mongoDocsCreatedSecs", 6 * 30 * 24 * 60 * 60)
         self.msConfig.setdefault("sendNotification", False)
+        self.msConfig.setdefault("relvalPolicy", [])
+
         self.uConfig = {}
         # service name used to route alerts via AlertManager
         self.alertServiceName = "ms-output"
         self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
 
+        # RelVal output data placement policy from the service configuration
+        self.msConfig.setdefault("dbsUrl", "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
+        allDBSDatatiers = getDataTiers(self.msConfig['dbsUrl'])
+        allDiskRSEs = self.rucio.evaluateRSEExpression("*", returnTape=False)
+        self.relvalPolicy = RelValPolicy(self.msConfig['relvalPolicy'],
+                                         allDBSDatatiers, allDiskRSEs, logger=logger)
+
         self.cric = CRIC(logger=self.logger)
         self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
-
-        self.tapeStatus = dict()
-        for endpoint, quota in viewitems(self.msConfig['tapePledges']):
-            self.tapeStatus[endpoint] = dict(quota=quota, usage=0, remaining=0)
 
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
@@ -665,22 +672,10 @@ class MSOutput(MSCore):
                 dataItem['Copies'] = 1
 
             if msOutDoc['IsRelVal']:
-                _, dsn, procString, dataTier = dataItem['Dataset'].split('/')
-                destination = set()
-                if dataTier != "RECO" and dataTier != "ALCARECO":
-                    destination.add('T2_CH_CERN')
-                if dataTier == "GEN-SIM":
-                    destination.add('T1_US_FNAL_Disk')
-                if dataTier == "GEN-SIM-DIGI-RAW":
-                    destination.add('T1_US_FNAL_Disk')
-                if dataTier == "GEN-SIM-RECO":
-                    destination.add('T1_US_FNAL_Disk')
-                if "RelValTTBar" in dsn and "TkAlMinBias" in procString and dataTier != "ALCARECO":
-                    destination.add('T2_CH_CERN')
-                if "MinimumBias" in dsn and "SiStripCalMinBias" in procString and dataTier != "ALCARECO":
-                    destination.add('T2_CH_CERN')
-
+                destination = self.relvalPolicy.getDestinationByDataset(dataItem['Dataset'])
                 if destination:
+                    # ensure each RelVal destination gets a copy of the data
+                    dataItem['Copies'] = len(destination)
                     dataItem['DiskDestination'] = '|'.join(destination)
                 else:
                     self.logger.warning("RelVal dataset: %s without any destination", dataItem['Dataset'])

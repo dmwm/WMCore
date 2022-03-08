@@ -1,3 +1,11 @@
+2.0.1.pre4 to 2.0.1.pre5:
+  - unit tests and pylint (Alan Malta Rodrigues) #11024
+  - MSOutput: read RelVal output data policy from configuration (Alan Malta Rodrigues) #11024
+  - Add rse=ALL_DOCS to the MSUnmerged info REST API. (Todor Ivanov) #11025
+  - Allow MongoDB to be instantiated without mongomock library (Alan Malta Rodrigues) #11023
+  - Swap NotMasterError with NotPrimaryError. (Todor Ivanov) #11016
+
+
 2.0.1.pre3 to 2.0.1.pre4:
   - Make MSOutput Disk expression configurable (Alan Malta Rodrigues) #11018
 

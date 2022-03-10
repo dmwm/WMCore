@@ -199,7 +199,7 @@ class MSTransferor(MSCore):
                 self.checkPUDataLocation(wflow)
                 if wflow.getSecondarySummary() and not wflow.getPURSElist():
                     # then we still have pileup to be transferred, but with incorrect locations
-                    self.alertPUMisconfig(wflow.getname())
+                    self.alertPUMisconfig(wflow.getName())
                     # FIXME: this needs to be logged somewhere and workflow be set to failed
                     counterProblematicRequests += 1
                     continue
@@ -225,7 +225,7 @@ class MSTransferor(MSCore):
                         counterSuccessRequests += 1
                     else:
                         counterFailedRequests += 1
-                        self.alertTransferCouchDBError(wflow.getname())
+                        self.alertTransferCouchDBError(wflow.getName())
                 else:
                     counterFailedRequests += 1
             # it can go slightly beyond the limit. It's evaluated for every slice

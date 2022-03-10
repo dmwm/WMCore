@@ -739,14 +739,14 @@ class MSTransferor(MSCore):
             self.logger.info(msg, wflow.getName(), dids, rseExpr, ruleAttrs)
         return success, transferId
 
-    def sendAlert(self, alertName, severity, summary, description, service, endSecs = 1 * 60 * 60):
+    def sendAlert(self, alertName, severity, summary, description, service, endSecs=1 * 60 * 60):
         """
         Send alert to Prometheus, wrap function in a try-except clause
         """
         try:
             # alert to expiry in an hour from now
             self.alertManagerApi.sendAlert(alertName, severity, summary, description,
-                                           service, endSecs)
+                                           service, endSecs=endSecs)
         except Exception as ex:
             self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))
 

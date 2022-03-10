@@ -480,8 +480,16 @@ class MSUnmerged(MSCore):
             raise MSUnmergedPlineExit(msg)
 
         isConsDone = self.rseConsStats[rseName]['status'] == 'done'
-        isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
+        if not isConsDone:
+            msg = "RSE: %s has a non-final Rucio ConMon status: %s. " % (rseName, self.rseConsStats[rseName]['status'])
+            msg += "Skipping it in the current run."
+            self.logger.warning(msg)
+            rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
+            self.updateRSETimestamps(rse, start=False, end=True)
+            self.uploadRSEToMongoDB(rse)
+            raise MSUnmergedPlineExit(msg)
 
+        isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
         if not isConsNewer:
             msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. " % rseName
             if 'isClean' in rse and rse['isClean']:
@@ -497,15 +505,6 @@ class MSUnmerged(MSCore):
                 msg += "Retrying cleanup in the current run."
                 self.logger.info(msg)
                 rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
-
-        if not isConsDone:
-            msg = "RSE: %s In non-final state in Rucio Consistency Monitor. " % rseName
-            msg += "Skipping it in the current run."
-            self.logger.warning(msg)
-            rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
-            self.updateRSETimestamps(rse, start=False, end=True)
-            self.uploadRSEToMongoDB(rse)
-            raise MSUnmergedPlineExit(msg)
 
         if isConsNewer and isConsDone:
             # NOTE: If we've got to this point then we have a brand new record for

@@ -1,3 +1,10 @@
+2.0.1.pre5 to 2.0.1.pre6:
+  - MSTransferor: fix positional and kwargs passed to sendAlert API (Alan Malta Rodrigues) #11032
+  - Reorder RSE's status and record age checks from RucioConMon. (Todor Ivanov) #11029
+  - Fix MSTransferor typo calling getName method (Alan Malta Rodrigues) #11031
+  - Enhancements to the GH issues and PRs workflows (Alan Malta Rodrigues) #11021
+
+
 2.0.1.pre4 to 2.0.1.pre5:
   - unit tests and pylint (Alan Malta Rodrigues) #11024
   - MSOutput: read RelVal output data policy from configuration (Alan Malta Rodrigues) #11024

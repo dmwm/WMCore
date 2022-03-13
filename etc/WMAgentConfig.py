@@ -140,6 +140,7 @@ config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Age
 config.WorkQueueManager.queueParams["WorkPerCycle"] = 200  # don't pull more than this number of elements per cycle
 config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for only half of the resources
 config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"  # account for data locks
+config.WorkQueueManager.queueParams["rucioAccountRelVal"] = "wmcore_transferor_relval"  # account for data locks
 
 
 config.component_("DBS3Upload")

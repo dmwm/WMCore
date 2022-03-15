@@ -23,11 +23,11 @@ import hashlib
 import logging
 import re
 import time
-import traceback
 from datetime import datetime
 from http.client import HTTPException
 
 from Utils.IteratorTools import grouper, nestedDictUpdate
+from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.Requests import JSONRequests
 
 
@@ -168,12 +168,11 @@ class CouchDBRequests(JSONRequests):
         elif status in [502, 503, 504]:
             # There are HTTP errors that CouchDB doesn't raise but can appear
             # in our environment, e.g. behind a proxy. Reraise the HTTPException
-            raise
+            raise CouchError(reason, data, result, status)
         else:
             # We have a new error status, log it
             raise CouchError(reason, data, result, status)
 
-        return
 
 
 class Database(CouchDBRequests):
@@ -701,7 +700,7 @@ class Database(CouchDBRequests):
         """
         # do the safety check other wise it will delete whole db.
         if not isinstance(ids, list):
-            raise
+            raise RuntimeError("Bulk delete requires a list of ids, wrong data type")
         if not ids:
             return None
 
@@ -973,6 +972,13 @@ class CouchServer(CouchDBRequests):
         self.ckey = ckey
         self.cert = cert
 
+    def getCouchWelcome(self):
+        """
+        Retrieve CouchDB welcome information (which includes the version number)
+        :return: a dictionary
+        """
+        return self.get('')
+
     def listDatabases(self):
         "List all the databases the server hosts"
         return self.get('/_all_dbs')
@@ -1049,7 +1055,7 @@ class CouchServer(CouchDBRequests):
             data["filter"] = filter
             if query_params:
                 data["query_params"] = query_params
-        self.post('/_replicator', data)
+        return self.post('/_replicator', data)
 
     def status(self):
         """
@@ -1162,8 +1168,10 @@ class CouchMonitor(object):
             self.couchServer = CouchServer(couchURL)
 
         self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
-        # this is set {source: {taget: update_sequence}}
-        self.previousUpdateSequence = {}
+
+        # use the CouchDB version to decide which APIs and schema is available
+        couchInfo = self.couchServer.getCouchWelcome()
+        self.couchVersion = couchInfo.get("version")
 
     def deleteReplicatorDocs(self, source=None, target=None, repDocs=None):
         if repDocs is None:
@@ -1188,81 +1196,120 @@ class CouchMonitor(object):
                     filteredDocs.append(doc)
         return filteredDocs
 
-    def getPreviousUpdateSequence(self, source, target):
-        targetDict = self.previousUpdateSequence.setdefault(source, {})
-        return targetDict.setdefault(target, 0)
-
-    def setPreviousUpdateSequence(self, source, target, updateSeq):
-        self.previousUpdateSequence[source][target] = updateSeq
-
-    def recoverReplicationErrors(self, source, target, filter=False,
-                                 query_params=False,
-                                 checkUpdateSeq=True,
-                                 continuous=True):
-
-        couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
-
-        if couchInfo['status'] == 'error':
-            logging.info("Deleting the replicator documents from %s...", source)
-            self.deleteReplicatorDocs(source, target)
-            logging.info("Setting the replication from %s ...", source)
-            self.couchServer.replicate(source, target, filter=filter,
-                                       query_params=query_params,
-                                       continuous=continuous)
-
-            couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
-        # if (couchInfo['status'] != 'down'):
-        #    restart couch server
-        return couchInfo
-
-    def checkCouchServerStatus(self, source, target, checkUpdateSeq):
+    def getActiveTasks(self):
         """
-        Check the status of a specific replication task
+        Return all the active tasks in Couch (compaction, replication, indexing, etc)
+        :return: a list with the current active tasks
+
+        For further information:
+            https://docs.couchdb.org/en/3.1.2/api/server/common.html#active-tasks
         """
+        return self.couchServer.get("/_active_tasks")
+
+    def getSchedulerJobs(self):
+        """
+        Return all replication jobs created either via _replicate or _replicator dbs.
+        It does not include replications that have either completed or failed.
+        :return: a list with the current replication jobs
+
+        For further information:
+            https://docs.couchdb.org/en/3.1.2/api/server/common.html#api-server-scheduler-jobs
+        """
+        resp = []
+        data = self.couchServer.get("/_scheduler/jobs")
+        return data.get("jobs", resp)
+
+    def getSchedulerDocs(self):
+        """
+        Return all replication documents and their states, even if they have completed or
+        failed.
+        :return: a list with the current replication docs
+
+        Replication states can be found at:
+            https://docs.couchdb.org/en/3.1.2/replication/replicator.html#replicator-states
+        For further information:
+            https://docs.couchdb.org/en/3.1.2/api/server/common.html#api-server-scheduler-docs
+        """
+        # NOTE: if there are no docs, this call can give a response like:
+        # {"error":"not_found","reason":"Database does not exist."}
+        resp = []
         try:
-            if checkUpdateSeq:
-                dbInfo = self.couchServer.get("/%s" % source)
-            else:
-                dbInfo = None
-            activeTasks = self.couchServer.get("/_active_tasks")
-            replicationFlag = False
-            passwdStrippedTarget = target.split("@")[-1]
+            data = self.couchServer.get("/_scheduler/docs")
+        except CouchNotFoundError as exc:
+            logging.warning("/_scheduler/docs API returned: %s", getattr(exc, "result", ""))
+            return resp
+        return data.get("docs", resp)
 
-            for activeStatus in activeTasks:
-                if activeStatus["type"].lower() == "replication":
-                    if passwdStrippedTarget in activeStatus.get("target", ""):
-                        replicationFlag = self.checkReplicationStatus(activeStatus, dbInfo, source,
-                                                                      passwdStrippedTarget, checkUpdateSeq)
-                        break
+    def checkCouchReplications(self, replicationsList):
+        """
+        Check whether the list of expected replications exist in CouchDB
+        and also check their status.
 
-            if replicationFlag:
-                return {'status': 'ok'}
-            msg = "Replication stopped from %s to %s.\n" % (source, passwdStrippedTarget)
+        :param replicationsList: a list of dictionary with the replication
+            document setup.
+        :return: a dictionary with the status of the replications and an
+            error message
+        """
+        activeTasks = self.getActiveTasks()
+        # filter out any task that is not a database replication
+        activeTasks = [task for task in activeTasks if task["type"].lower() == "replication"]
+
+        if len(replicationsList) != len(activeTasks):
+            msg = f"Expected to have {len(replicationsList)} replication tasks, "
+            msg += f"but only {len(activeTasks)} in CouchDB. "
+            msg += f"Current replications are: {activeTasks}"
             return {'status': 'error', 'error_message': msg}
-        except Exception as ex:
-            msg = traceback.format_exc()
-            logging.error(msg)
-            return {'status': 'down', 'error_message': str(ex)}
 
-    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, checkUpdateSeq):
-        """
-        adhoc way to check the replication
-        """
-        # monitor the last update on replications according to 5 min + checkpoint_interval
-        secsUpdateOn = 5 * 60 + activeStatus['checkpoint_interval'] / 1000
-        lastUpdate = activeStatus["updated_on"]
-        updateNum = int(activeStatus["source_seq"])
-        previousUpdateNum = self.getPreviousUpdateSequence(source, target)
+        resp = self.checkReplicationState()
+        if resp['status'] != 'ok':
+            # then there is a problem, return its status
+            return resp
 
-        self.setPreviousUpdateSequence(source, target, updateNum)
-        if checkUpdateSeq:
-            if updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
-                return True
-            logging.warning("'update_seq for replication from %s to %s is falling behind", source, target)
-            return False
-        else:
-            if int(time.time()) - lastUpdate < secsUpdateOn:
-                return True
-            logging.warning("Replication from %s to %s has not been updated for more than %d minutes",
-                            source, target, secsUpdateOn)
-            return False
+        # finally, check if replications are being updated in a timely fashion
+        for replTask in activeTasks:
+            if not self.isReplicationOK(replTask):
+                source = sanitizeURL(replTask['source'])['url']
+                target = sanitizeURL(replTask['target'])['url']
+                msg = f"Replication from {source} to {target} is stale and it's last"
+                msg += f"update time was at: {replTask.get('updated_on')}"
+                resp['status'] = 'error'
+                resp['error_message'] += msg
+        return resp
+
+    def checkReplicationState(self):
+        """
+        Check the state of the existent replication tasks.
+        NOTE that this can't be done for CouchDB 1.6, since there is
+        replication state.
+
+        :return: a dictionary with the status of the replications and an
+                 error message
+        """
+        resp = {'status': 'ok', 'error_message': ""}
+        if self.couchVersion == "1.6.1":
+            return resp
+
+        for replDoc in self.getSchedulerDocs():
+            if replDoc['state'].lower() not in ["pending", "running"]:
+                source = sanitizeURL(replDoc['source'])['url']
+                target = sanitizeURL(replDoc['target'])['url']
+                msg = f"Replication from {source} to {target} is in a bad state: {replDoc.get('state')}; "
+                resp['status'] = "error"
+                resp['error_message'] += msg
+        return resp
+
+    def isReplicationOK(self, replInfo):
+        """
+        Ensure that the replication document is up-to-date as a
+        function of the checkpoint interval.
+
+        :param replInfo: dictionary with the replication information
+        :return: True if replication is working fine, otherwise False
+        """
+        maxUpdateInterval = replInfo['checkpoint_interval'] / 1000
+        lastUpdate = replInfo["updated_on"]
+
+        if lastUpdate + maxUpdateInterval > int(time.time()):
+            # then it has been recently updated
+            return True
+        return False

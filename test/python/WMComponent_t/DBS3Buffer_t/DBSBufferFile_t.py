@@ -947,7 +947,7 @@ class DBSBufferFileTest(unittest.TestCase):
                                configContent="MOREGIBBERISH")
         testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.setValidStatus(validStatus="VALID")
-        testFileA.setProcessingVer(ver="ProcVer")
+        testFileA.setProcessingVer(ver="123")
         testFileA.setAcquisitionEra(era="AcqEra")
         testFileA.setGlobalTag(globalTag="GlobalTag")
         testFileA.setDatasetParent(datasetParent="Parent")

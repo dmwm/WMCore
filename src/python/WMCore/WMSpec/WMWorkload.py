@@ -949,6 +949,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Change the processing version for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
+
+        :param processingVersions: can be any data-type but it is set from StdBase
+        which performs the input data sanitization/type already.
         """
         stepNameMapping = self.getStepMapping()
 
@@ -956,7 +959,15 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setProcessingVersion(processingVersions, stepChainMap=stepNameMapping)
 
         self.updateLFNsAndDatasets()
-        self.data.properties.processingVersion = processingVersions
+        if isinstance(processingVersions, int):
+            procVer = processingVersions
+        elif isinstance(processingVersions, dict) or isinstance(processingVersions, list):
+            procVer = processingVersions
+        else:
+            msg = "Provided procVer=%s of type %s cannot be converted to int" \
+                    % (processingVersions, type(processingVersions))
+            raise Exception(msg)
+        self.data.properties.processingVersion = procVer
         return
 
     def setProcessingString(self, processingStrings):

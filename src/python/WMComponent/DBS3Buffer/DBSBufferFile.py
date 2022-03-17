@@ -387,8 +387,14 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         Set the era
         """
-
-        self['processingVer'] = ver
+        procVer = ver or 0
+        try:
+            procVer = int(procVer)
+        except TypeError:
+            msg = "Provided ver=%s of type %s cannot be converted to int" \
+                    % (ver, type(ver))
+            raise TypeError(msg) from None
+        self['processingVer'] = procVer
         return
 
     def setAcquisitionEra(self, era):

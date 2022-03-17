@@ -1005,7 +1005,7 @@ class JobAccountantTest(EmulatedUnitTestCase):
         datasetInfo = myThread.dbi.processData("SELECT * FROM dbsbuffer_dataset")[0].fetchall()[0]
         self.assertEqual(datasetInfo[1],
                          "/Mu/IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD-PreScaleThingy10-v9_29_pre14replaythingy_v5/AOD")
-        self.assertEqual(datasetInfo[2], "9")
+        self.assertEqual(datasetInfo[2], 9) # processing version, should be integer
         self.assertEqual(datasetInfo[3], "IansMagicMushroomSoup")
         self.assertEqual(datasetInfo[4], "Production")
         self.assertEqual(datasetInfo[5], "GT:Super")

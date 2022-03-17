@@ -231,12 +231,14 @@ class DBSBufferBlock(object):
 
         Set the block's processing version.
         """
-        # compatibility statement for old style proc ver (still needed ?)
-        if procVer.count("-") == 1:
-            self.data["processing_era"]["processing_version"] = procVer.split("-v")[1]
-        else:
-            self.data["processing_era"]["processing_version"] = procVer
-
+        pver = procVer or 0
+        try:
+            pver = int(pver)
+        except TypeError:
+            msg = "Provided procVer=%s of type %s cannot be converted to int" \
+                    % (procVer, type(procVer))
+            raise TypeError(msg) from None
+        self.data["processing_era"]["processing_version"] = pver
         self.data["processing_era"]["create_by"] = "WMAgent"
         self.data["processing_era"]["description"] = ""
         return

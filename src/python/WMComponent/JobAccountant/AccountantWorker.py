@@ -23,7 +23,6 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Job import Job
@@ -104,9 +103,8 @@ class AccountantWorker(WMConnectionBase):
         self.dataCollection = DataCollectionService(url=config.ACDC.couchurl,
                                                     database=config.ACDC.database)
 
-        jobDBurl = sanitizeURL(config.JobStateMachine.couchurl)['url']
         self.jobDBName = config.JobStateMachine.couchDBName
-        self.jobCouchdb = CouchServer(jobDBurl)
+        self.jobCouchdb = CouchServer(config.JobStateMachine.couchurl)
         self.fwjrCouchDB = None
         self.localWMStats = WMStatsWriter(config.TaskArchiver.localWMStatsURL, appName="WMStatsAgent")
 

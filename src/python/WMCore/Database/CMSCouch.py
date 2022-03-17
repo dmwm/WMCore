@@ -124,6 +124,7 @@ class CouchDBRequests(JSONRequests):
         TODO: set caching in the calling methods.
         """
         incoming_headers = incoming_headers or {}
+        incoming_headers.update(self.additionalHeaders)
         try:
             if not cache:
                 incoming_headers.update({'Cache-Control': 'no-cache'})

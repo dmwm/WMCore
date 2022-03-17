@@ -121,24 +121,23 @@ class CleanCouchPoller(BaseWorkerThread):
             self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL,
                                                           couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
 
-        jobDBurl = sanitizeURL(self.config.JobStateMachine.couchurl)['url']
         jobDBName = self.config.JobStateMachine.couchDBName
-        workDBName = getattr(self.config.TaskArchiver, 'workloadSummaryCouchDBName',
-                             'workloadsummary')
-        workDBurl = getattr(self.config.TaskArchiver, 'workloadSummaryCouchURL')
-
-        self.jobCouchdb = CouchServer(jobDBurl)
+        self.jobCouchdb = CouchServer(self.config.JobStateMachine.couchurl)
         self.jobsdatabase = self.jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
         self.fwjrdatabase = self.jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
         self.fwjrService = FWJRDBAPI(self.fwjrdatabase)
 
+        workDBName = getattr(self.config.TaskArchiver, 'workloadSummaryCouchDBName',
+                             'workloadsummary')
+        workDBurl = getattr(self.config.TaskArchiver, 'workloadSummaryCouchURL')
         self.workCouchdb = CouchServer(workDBurl)
         self.workdatabase = self.workCouchdb.connectDatabase(workDBName)
 
         statSummaryDBName = self.config.JobStateMachine.summaryStatsDBName
         self.statsumdatabase = self.jobCouchdb.connectDatabase(statSummaryDBName)
 
-        logging.debug("Using url %s/%s for job", jobDBurl, jobDBName)
+        logging.debug("Using url %s/%s for job",
+                      sanitizeURL(self.config.JobStateMachine.couchurl)['url'], jobDBName)
         logging.debug("Writing to  %s/%s for workloadSummary", sanitizeURL(workDBurl)['url'], workDBName)
 
     @timeFunction

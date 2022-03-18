@@ -142,7 +142,7 @@ class WorkQueueBackend(object):
     def getWMSpec(self, name):
         """Get the spec"""
         wmspec = WMWorkloadHelper()
-        wmspec.load(self.db['host'] + "/%s/%s/spec" % (self.db.name, name))
+        wmspec.load(self.hostWithAuth + "/%s/%s/spec" % (self.db.name, name))
         return wmspec
 
     def insertElements(self, units, parent=None):

@@ -44,11 +44,6 @@ class FindDASToUpload(DBFormatter):
         """
         datasetalgos = []
         for result in results:
-
-            # compatibility statement for old style proc ver (still needed ?)
-            if result['procver'].count("-") == 1:
-                result['procver'] = result['procver'].split("-v")[1]
-
             datasetalgos.append( { 'DatasetPath' : result['datasetpath'],
                                    'AcquisitionEra' : result['acquera'],
                                    'ProcessingVer' : result['procver'] } )

@@ -949,6 +949,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Change the processing version for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
+
+        :param processingVersions: can be any data-type but it is set from StdBase
+        which performs the input data sanitization/type already.
         """
         stepNameMapping = self.getStepMapping()
 

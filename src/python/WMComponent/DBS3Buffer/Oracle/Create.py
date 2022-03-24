@@ -27,7 +27,7 @@ class Create(DBCreator):
             """CREATE TABLE dbsbuffer_dataset (
                  id                INTEGER        NOT NULL,
                  path              VARCHAR2(500)  NOT NULL,
-                 processing_ver    VARCHAR2(255),
+                 processing_ver    INTEGER        NOT NULL,
                  acquisition_era   VARCHAR2(255),
                  valid_status      VARCHAR2(20),
                  global_tag        VARCHAR2(255),

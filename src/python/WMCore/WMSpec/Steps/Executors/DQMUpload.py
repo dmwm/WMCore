@@ -23,6 +23,7 @@ from mimetypes import guess_type
 try:
     # python2
     import urllib2
+
     HTTPError = urllib2.HTTPError
     OpenerDirector = urllib2.OpenerDirector
     Request = urllib2.Request
@@ -30,6 +31,7 @@ try:
 except:
     # python3
     import urllib.request
+
     HTTPError = urllib.error.HTTPError
     OpenerDirector = urllib.request.OpenerDirector
     Request = urllib.request.Request
@@ -46,7 +48,7 @@ from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.Storage.DeleteMgr import DeleteMgr, DeleteMgrError
 from WMCore.Storage.FileManager import DeleteMgr as NewDeleteMgr
 import WMCore.Storage.StageOutMgr as StageOutMgr
-import WMCore.WMRuntime.Bootstrap as Bootstrap
+import time
 
 class DQMUpload(Executor):
     """
@@ -310,10 +312,13 @@ class DQMUpload(Executor):
 
         return (result.headers, data)
 
-    def _uploadToEOS(self, analysisFile, stepLocation):
+    def _uploadToEOS(self, stepLocation, analysisFile):
         """
-        upload  an analysis file to EOS
-        :return: boolean with upload status
+        Upload  an analysis file to EOS
+
+        :param stepLocation: Path location for step
+        :param analysisFile: analysisFile from WMCore step report
+        :return: bool, with upload status
         """
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -323,7 +328,7 @@ class DQMUpload(Executor):
         eosStageOutParams['option'] = overrides.get('option', "--wma-disablewriterecovery")
         eosStageOutParams['phedex-node'] = overrides.get('eos-phedex-node', "T2_CH_CERN")
         eosStageOutParams['lfn-prefix'] = overrides.get('eos-lfn-prefix',
-                                                         "root://eoscms.cern.ch/%s" % self.registerEOSPrefix)
+                                                        "root://eoscms.cern.ch/%s" % self.registerEOSPrefix)
 
         # Switch between old and newstageOut manager.
         # Use old by default
@@ -340,15 +345,15 @@ class DQMUpload(Executor):
             # new style
             logging.info("DQMUpload is using new StageOut code for EOS Copy")
             eosmanager = WMCore.Storage.FileManager.StageOutMgr(
-                    retryPauseTime=self.retryDelay,
-                    numberOfRetries=self.retryCount,
-                    **eosStageOutParams)
+                retryPauseTime=self.retryDelay,
+                numberOfRetries=self.retryCount,
+                **eosStageOutParams)
 
         eosFileInfo = {'LFN': self.getAnalysisFileLFN(analysisFile),
-                       'PFN': os.path.join(stepLocation, 
+                       'PFN': os.path.join(stepLocation,
                                            os.path.basename(analysisFile.fileName)),
-                       'PNN': None,
-                       'GUID': None
+                       'PNN': None,  # Assigned in StageOutMgr
+                       'GUID': None  # Assigned in StageOutMgr
                        }
 
         msg = "Writing DQM root files to CERN EOS with retries: %s and retry pause: %s"
@@ -369,16 +374,23 @@ class DQMUpload(Executor):
     def getAnalysisFileLFN(self, analysisFile):
         """
         Construct an LFN for an analysisFile
+
+        :param analysisFile: analysisFile from WMCore step report
+        :return: str, analysis file LFN
         """
         # If lfn start with '/', make it relative to it
         lfnFile = os.path.relpath(analysisFile.lfn, start='/')
         lfn = os.path.join(self.registerLFNBase, lfnFile)
-    
+
         return lfn
 
     def _register(self, registerURL, args):
         """
         POST request to register URL
+
+        :param registerURL: str, url for registration
+        :param args: dict, POST arguments
+        :return: result object from opening  the request
         """
 
         ident = "WMAgent python/%d.%d.%d" % sys.version_info[:3]
@@ -407,7 +419,7 @@ class DQMUpload(Executor):
             result = opener.open(datareq)
 
         return result
-    
+
     def _registerAnalysisFile(self, stepName, analysisFile):
         """
         Register a file to new DQM GUi
@@ -416,13 +428,16 @@ class DQMUpload(Executor):
             [{"dataset": "/a/b/c", "run": "123456", "lumi": "0", "file": "/eos/cms/store/group/comm_dqm/DQMGUI_data/location/file.root", "fileformat": 1}]
         Set lumis to 0, as this is reproducing current per Run based root files
         - https://github.com/dmwm/WMCore/issues/10287#issuecomment-1052558061
-        DQM root files produced by Harvesting prosessing are type 1 (plain ROOT)
+        DQM root files produced by Harvesting processing are type 1 (plain ROOT)
         - https://github.com/cms-DQM/dqmgui#file-formats
+
+        :param stepName: str, Name of the step we are running through
+        :param analysisFile: WMCore.Configuration.ConfigSection, Analysis file in this step from WMCore step report
+        :return:
         """
         # Get task description
-        job = Bootstrap.loadJobDefinition()
-        jobBag = job.getBaggage()
-        datasetName = job.get('inputDataset', None)
+        jobBag = self.job.getBaggage()
+        datasetName = self.job.get('inputDataset', None)
 
         # Get runNumber, depending on the harvesting job mode (byRun vs multiRun)
         multiRun = getattr(jobBag, "multiRun", False)
@@ -431,14 +446,14 @@ class DQMUpload(Executor):
             runNumber = forceRunNumber
         else:
             try:
-                runNumber = list(job['mask']['runAndLumis'].keys())[0]
+                runNumber = list(self.job['mask']['runAndLumis'].keys())[0]
             except Exception as ex:
                 msg = "Error while retrieving run number from job definition:\n %s" % str(ex)
-                raise WMExecutionFailure(70320, "DQMUploadFailure", msg)    
+                raise WMExecutionFailure(70320, "DQMUploadFailure", msg)
 
         args = {}
         args['file'] = self.registerEOSPrefix + \
-                self.getAnalysisFileLFN(analysisFile)
+                       self.getAnalysisFileLFN(analysisFile)
         args['dataset'] = datasetName
         args['run'] = runNumber
         args['lumi'] = 0
@@ -449,10 +464,10 @@ class DQMUpload(Executor):
         msg += " => Filename: %s\n" % args['file']
         logging.info(msg)
 
-        try:
-            logException = True
-            for registerURL in self.registerURL.split(';'):
-                result = self._register(registerURL, [args])
+        for numRetry in range(self.retryCount + 1):
+            try:
+                logException = True
+                result = self._register(self.registerURL, [args])
                 msg = '  Status code: %s\n' % result.getcode()
                 if result.getcode() >= 400 or result.getcode() is None:
                     logException = False
@@ -460,13 +475,16 @@ class DQMUpload(Executor):
                 else:
                     msg = 'HTTP POST to register url finished succesfully with response:\n' + msg
                     logging.info(msg)
-        except Exception as ex:
-            msg = 'HTTP POST to register url failed! Error:\n%s' % str(ex)
-            if logException:
-                logging.exception(msg)
-            else:
-                logging.error(msg)
-            raise WMExecutionFailure(70319, "DQMUploadFailure", msg)
+                    break
+            except Exception as ex:
+                if numRetry == self.retryCount:
+                    msg = 'HTTP POST to register url failed! Error:\n%s' % str(ex)
+                    if logException:
+                        logging.exception(msg)
+                    else:
+                        logging.error(msg)
+                    raise WMExecutionFailure(70319, "DQMUploadFailure", msg)
+                time.sleep(self.retryDelay)
 
         return
 
@@ -474,6 +492,9 @@ class DQMUpload(Executor):
         """
         Delete a file uploaded to EOS.
         I.e.: If we upload a DQM root file but registration failed for some reason
+
+        :param eosFileLFN: str, LFN file
+        :return:
         """
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -485,7 +506,7 @@ class DQMUpload(Executor):
         eosStageOutParams['command'] = overrides.get('command', "xrdcp")
         eosStageOutParams['phedex-node'] = overrides.get('eos-phedex-node', "T2_CH_CERN")
         eosStageOutParams['lfn-prefix'] = overrides.get('eos-lfn-prefix',
-                                                         "root://eoscms.cern.ch/%s" % self.registerEOSPrefix)
+                                                        "root://eoscms.cern.ch/%s" % self.registerEOSPrefix)
 
         # Switch between old and new stageOut manager.
         # Use old by default
@@ -507,27 +528,32 @@ class DQMUpload(Executor):
 
         logging.info("Deleting LFN: %s", eosFileLFN)
         eosFileInfo = {'LFN': eosFileLFN,
-                           'PFN': None, # PFNs are assigned in the Delete Manager
-                           'PNN': None, # PNNs are assigned in the Delete Manager
-                           'StageOutCommand': None}
+                       'PFN': None,  # PFNs are assigned in the Delete Manager
+                       'PNN': None,  # PNNs are assigned in the Delete Manager
+                       'StageOutCommand': None}
         try:
             manager(fileToDelete=eosFileInfo)
         except Alarm:
             msg = "Indefinite hang while deleting file from EOS"
             logging.error(msg)
-            raise WMExecutionFailure(70321, "DQMUploadStageOutTimeout", msg)
+            raise WMExecutionFailure(70321, "DQMUploadStageOutTimeout", msg) from None
         except Exception as ex:
             msg = "General failure while deleting file. Error: %s" % str(ex)
             logging.error(msg)
-            raise WMExecutionFailure(70322, "DQMUploadFailure", msg)
+            raise WMExecutionFailure(70322, "DQMUploadFailure", msg) from None
 
         return
 
     def uploadToEOSAndRegister(self, stepName, stepLocation, analysisFile):
         """
         Copy DQM Root files to EOS and register files to new DQMGUI
+
+        :param stepName: str, Name of the step we are running through
+        :param stepLocation: str, Path location of the step
+        :param analysisFile: WMCore.Configuration.ConfigSection, Analysis file in this step from WMCore step report
+        :return:
         """
-        eosFileLFN = self._uploadToEOS(analysisFile, stepLocation)
+        eosFileLFN = self._uploadToEOS(stepLocation, analysisFile)
         try:
             self._registerAnalysisFile(stepName, analysisFile)
         except:

@@ -47,11 +47,11 @@ from future.utils import viewitems
 
 # system modules
 import json
+import gzip
 import logging
 import os
 import re
 import subprocess
-import sys
 import pycurl
 from io import BytesIO
 import http.client
@@ -60,6 +60,30 @@ from urllib.parse import urlencode
 from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 from Utils.PortForward import portForward, PortForward
 
+
+def decompress(body, headers):
+    """
+    Helper function to decompress given body if HTTP headers contains gzip encoding
+    :param body: bytes
+    :param headers: dict
+    :return: decode body
+    """
+    encoding = ""
+    for header, value in headers.items():
+        if header.lower() == 'content-encoding' and 'gzip' in value.lower():
+            encoding = 'gzip'
+            break
+    if encoding != 'gzip':
+        return body
+
+    try:
+        return gzip.decompress(body)
+    except Exception as exc:
+        logger = logging.getLogger()
+        msg = "While processing decompress function with headers: %s, " % headers
+        msg += "we were unable to decompress gzip content. Details: %s" % str(exc)
+        logger.exception(msg)
+        return body
 
 class ResponseHeader(object):
     """ResponseHeader parses HTTP response header"""
@@ -185,6 +209,9 @@ class RequestHandler(object):
             else:
                 logging.warning("Wrong data type for header 'Accept-Encoding': %s",
                                 type(headers["Accept-Encoding"]))
+        else:
+            # add gzip encoding by default
+            curl.setopt(pycurl.ENCODING, 'gzip')
 
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
@@ -248,11 +275,12 @@ class RequestHandler(object):
         """Debug callback implementation"""
         print("debug(%d): %s" % (debug_type, debug_msg))
 
-    def parse_body(self, data, decode=False):
+    def parse_body(self, data, headers, decode=False):
         """
         Parse body part of URL request (by default use json).
         This method can be overwritten.
         """
+        data = decompress(data, headers)
         if decode:
             try:
                 res = json.loads(data)
@@ -288,9 +316,10 @@ class RequestHandler(object):
             if verb == 'HEAD':
                 data = ''
             else:
-                data = self.parse_body(bbuf.getvalue(), decode)
+                data = self.parse_body(bbuf.getvalue(), header.header, decode)
         else:
             data = bbuf.getvalue()
+            data = decompress(data, header.header)
             msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
                   % (url, header.status, header.reason, header.header, data)
             exc = http.client.HTTPException(msg)
@@ -350,7 +379,9 @@ class RequestHandler(object):
                         break
             dummyNumq, response, dummyErr = multi.info_read()
             for dummyCobj in response:
-                data = json.loads(bbuf.getvalue())
+                headers = self.parse_header(decodeBytesToUnicode(hbuf.getvalue()))
+                data = decompress(decodeBytesToUnicode(bbuf.getvalue()), headers)
+                data = json.loads(data)
                 if isinstance(data, dict):
                     data.update(params)
                     yield data
@@ -465,12 +496,8 @@ def getdata(urls, ckey, cert, headers=None, options=None, num_conn=50, cookie=No
         while True:
             num_q, ok_list, err_list = mcurl.info_read()
             for curl in ok_list:
-                if sys.version.startswith('3.'):
-                    hdrs = curl.hbuf.getvalue().decode('utf-8')
-                    data = curl.bbuf.getvalue().decode('utf-8')
-                else:
-                    hdrs = curl.hbuf.getvalue()
-                    data = curl.bbuf.getvalue()
+                hdrs = decodeBytesToUnicode(curl.hbuf.getvalue())
+                data = decompress(decodeBytesToUnicode(curl.bbuf.getvalue()), ResponseHeader(hdrs).getHeader())
                 url = curl.url
                 curl.bbuf.flush()
                 curl.bbuf.close()

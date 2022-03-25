@@ -186,6 +186,45 @@ WMCore defines its own pylintrc `here <https://github.com/dmwm/WMCore/blob/maste
 Thus, when evaluating your changes, please run pylint by passing this pylintrc file in the command line, your code should get scored 8 or above.
 Unless there is a very good reason, we discourage the use of pylint disable statements.
 
+Project Docstrings Best Practices
+---------------------------------
+
+With the goal of uniformizing and making the project more readable, we are adopting the `Sphinx` docstring style, which uses
+reStructuredText markup. It's meant to document entire modules, classes, methods and functions. To avoid too large docstrings, we propose a subtle variation of this style such that each parameter
+can be documented in a single line (instead of defining its type in a different line).
+
+An example of a **good** single line docstring is::
+
+    def printInfo(self):
+        """Print information for this device."""
+
+And another example of a **good** multi-line docstring is::
+
+    def setDeviceName(self, devName):
+        """
+        Set the device name.
+
+        :param devName: str, the name of the device to be defined.
+        :return: bool, True if the operation succeeded, False otherwise
+        """
+
+Note that you are expected to provide docstrings following this style only if you are updating an existent one; or you have written one from scratch.
+Otherwise, you do not need to update other docstrings that are unrelated to your changes.
+
+Notes:
+
+-  keep it as simple as possible (short summary, input parameters with data type, return data and data type)
+-  use triple double-quotes, even if it's a single-line documentation
+-  there is no blank line either before or after the docstring
+-  special care and attention when documenting libraries shared across-projects and/or core modules
+
+Further information can be found at the following links:
+
+-  `PEP-257 <https://peps.python.org/pep-0257/>`_ specification, for docstring conventions.
+-  `Sphinx <https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html#the-sphinx-docstring-format>`_ for Sphinx docstrings.
+-  `reStructuredText <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_ for rst markup reference.
+
+
 Extra documentation
 -------------------
 
@@ -193,8 +232,10 @@ In case you're having issues with git and working through a branch feature, you 
 In addition to that, we've also compiled a long list of important git `commands <https://github.com/dmwm/WMCore/wiki/git-commands>`_. If none of those work for you, google and stackoverflow will be your best friend.
 
 
+===========================
 Structural and in-depth documentation
-============
+===========================
+
 
 WMCore structure
 -------------------

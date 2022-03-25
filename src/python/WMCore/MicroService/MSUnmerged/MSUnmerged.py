@@ -18,7 +18,6 @@ from time import time
 import random
 import re
 import os
-import sys
 import errno
 import stat
 try:
@@ -100,6 +99,7 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("skipRSEs", [])
         self.msConfig.setdefault("rseExpr", "*")
         self.msConfig.setdefault("enableRealMode", False)
+        self.msConfig.setdefault("enableT0WMStats", False)
         self.msConfig.setdefault("fullRSEToDB", False)
         self.msConfig.setdefault("gfalLogLevel", 'normal')
         self.msConfig.setdefault("dirFilterIncl", [])
@@ -142,6 +142,7 @@ class MSUnmerged(MSCore):
         self.rucioConMon = RucioConMon(self.msConfig['rucioConMon'], logger=self.logger)
 
         self.wmstatsSvc = WMStatsServer(self.msConfig['wmstatsUrl'], logger=self.logger)
+        self.wmstatsSvcT0 = WMStatsServer(self.msConfig['wmstatsUrlT0'], logger=self.logger)
 
         # Building all the Pipelines:
         pName = 'plineUnmerged'
@@ -163,7 +164,7 @@ class MSUnmerged(MSCore):
 
         # Initialization service common data structures:
         self.rseConsStats = {}
-        self.protectedLFNs = []
+        self.protectedLFNs = set()
 
         # The basic /store/unmerged regular expression:
         self.regStoreUnmergedLfn = re.compile("^/store/unmerged/.*$")
@@ -185,12 +186,25 @@ class MSUnmerged(MSCore):
         try:
             self.protectedLFNs = set(self.wmstatsSvc.getProtectedLFNs())
             # self.logger.debug("protectedLFNs: %s", pformat(self.protectedLFNs))
-
             if not self.protectedLFNs:
-                msg = "Could not fetch the protectedLFNs list from WMStatServer. "
+                msg = "Could not fetch the protectedLFNs list from Production WMStatServer. "
                 msg += "Skipping the current run."
                 self.logger.error(msg)
                 return summary
+
+            protectedLFNsT0 = set()
+            if self.msConfig['enableT0WMStats']:
+                msg = "WMStatsServer.getProtectedLFNs for T0 is not yet implemented."
+                raise NotImplementedError(msg)
+                # protectedLFNs = set(self.wmstatsSvcT0.getProtectedLFNs())
+                if not protectedLFNsT0:
+                    msg = "Could not fetch the protectedLFNs list from T0 WMStatServer. "
+                    msg += "Skipping the current run."
+                    self.logger.error(msg)
+                    return summary
+
+            self.protectedLFNs = self.protectedLFNs | protectedLFNsT0
+
         except Exception as ex:
             msg = "Unknown exception while trying to fetch the protectedLFNs list from WMStatServer. Error: {}".format(str(ex))
             self.logger.exception(msg)

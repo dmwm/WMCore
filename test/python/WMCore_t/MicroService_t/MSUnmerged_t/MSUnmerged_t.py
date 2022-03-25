@@ -123,6 +123,8 @@ class MSUnmergedTest(unittest.TestCase):
                          'services': ['unmerged'],
                          'verbose': True,
                          'wmstatsUrl': 'https://cmsweb-testbed.cern.ch/wmstatsserver',
+                         'wmstatsUrlT0': "https://cmsweb-testbed.cern.ch/t0_reqmon",
+                         'enableT0WMStats': False,
                          'dirFilterIncl': [],
                          'dirFilterExcl': [],
                          'emulateGfal2': True,
@@ -155,7 +157,6 @@ class MSUnmergedTest(unittest.TestCase):
     def testPlineUnmerged(self):
         # Test plineMSUnmerged:
         rse = MSUnmergedRSE('T2_US_Wisconsin')
-        pName = self.msUnmerged.plineUnmerged.name
         self.msUnmerged.rseConsStats = self.msUnmerged.rucioConMon.getRSEStats()
         self.msUnmerged.protectedLFNs = set(self.msUnmerged.wmstatsSvc.getProtectedLFNs())
         # Emulate the pipeline run while skipping the last purgeRseObj step

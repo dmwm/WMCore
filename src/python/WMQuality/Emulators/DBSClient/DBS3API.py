@@ -21,11 +21,16 @@ class DbsApi(object):
     Replacement DbsApi implementing the required
     functions for the DBS3 upload poller.
     """
-    def __init__(self, url):
+    def __init__(self, url, **kwds):
         """
         _init_
 
         Store the url where this dbs is "located"
+
+        :param url: url of the DBS server
+        :param kwds: optional DBSApi keyword arguments which are irrelevant
+        for mocking but should be presented nevertheless for compatibility with
+        actual DBSApi class
         """
         self.dbsPath = url
 

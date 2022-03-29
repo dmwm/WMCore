@@ -7,6 +7,16 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 
 The response from the remote server is cached if expires/etags are set.
+Note that the cache can have two different behaviors:
+1. when WMCORE_CACHE_DIR is defined: it defines one specific path to be used for the
+   cache files. Cache files are never automatically cleaned up and it's up to the user/
+   maintainer to do so. Note that cache directories are named after the base class.
+2. otherwise, the system will use the Operating System temp dir to store the cache files,
+   which uses `/tmp` as default for Linux systems. When using these temporary areas, the
+   cache files are automatically cleaned up when the object using it is destroyed and
+   garbage collected. Cache directories carry a random name.
+
+By default, all of the WMCore central services define the CACHE_DIR (to use /data/srv/state).
 """
 from __future__ import division, print_function
 from future import standard_library
@@ -367,6 +377,8 @@ class Requests(dict):
                 break
         else:
             idir = tempfile.mkdtemp(prefix='.wmcore_cache_')
+            # Alan Malta in 29 Mar 2022: this seems to prematurely remove the cache
+            # directory. For details, see: https://github.com/dmwm/WMCore/pull/10915
             self['deleteCacheOnExit'] = TempDirectory(idir)
             return idir
 

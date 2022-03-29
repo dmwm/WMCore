@@ -107,7 +107,10 @@ class Scram_t(unittest.TestCase):
     def testArchMap(self):
         self.assertItemsEqual(OS_TO_ARCH['rhel6'], ['slc5', 'slc6'])
         self.assertItemsEqual(OS_TO_ARCH['rhel7'], ['slc7'])
+        self.assertItemsEqual(OS_TO_ARCH['rhel8'], ['cc8', 'cs8', 'alma8'])
         self.assertItemsEqual(ARCH_TO_OS['slc6'], ['rhel6'])
+        self.assertEqual(len(ARCH_TO_OS), 6)
+        self.assertItemsEqual(ARCH_TO_OS['slc7'], ['rhel7'])
         self.assertItemsEqual(ARCH_TO_OS['slc7'], ['rhel7'])
 
     def testScramArchParsing(self):

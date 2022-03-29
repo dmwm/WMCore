@@ -34,7 +34,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("psetHash", None)
         self.setdefault("configContent", None)
         self.setdefault("datasetPath", None)
-        self.setdefault("processingVer", None)
+        self.setdefault("processingVer", 0)
         self.setdefault("acquisitionEra", None)
         self.setdefault("validStatus", None)
         self.setdefault("globalTag", None)

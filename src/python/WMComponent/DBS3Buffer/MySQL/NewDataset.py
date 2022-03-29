@@ -18,7 +18,7 @@ class NewDataset(DBFormatter):
     sql = """INSERT IGNORE INTO dbsbuffer_dataset (path, processing_ver, acquisition_era, valid_status, global_tag, parent, prep_id)
                VALUES (:path, :processing_ver, :acquisition_era, :valid_status, :global_tag, :parent, :prep_id)"""
 
-    def execute(self, datasetPath, acquisitionEra = None, processingVer = None, validStatus = None,
+    def execute(self, datasetPath, acquisitionEra = None, processingVer = 0, validStatus = None,
                 globalTag = None, parent = None, prep_id = None, conn = None, transaction = False):
         """
         _execute_

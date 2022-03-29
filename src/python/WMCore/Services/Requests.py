@@ -19,6 +19,7 @@ Note that the cache can have two different behaviors:
 By default, all of the WMCore central services define the CACHE_DIR (to use /data/srv/state).
 """
 from __future__ import division, print_function
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -60,6 +61,7 @@ except ImportError:
     # Mock ServerNotFoundError since we don't want that WMCore depend on httplib2 using pycurl
     class ServerNotFoundError(Exception):
         pass
+
 
 def check_server_url(srvurl):
     """Check given url for correctness"""
@@ -226,7 +228,7 @@ class Requests(dict):
             setattr(e, 'status', 503)
             setattr(e, 'reason', 'Service Unavailable')
             setattr(e, 'result', str(ex))
-            raise e
+            raise e from None
         except (socket.error, AttributeError):
             self['logger'].warn("Http request failed, retrying once again..")
             # AttributeError implies initial connection error - need to close
@@ -240,10 +242,10 @@ class Requests(dict):
             try:
                 response, result = conn.request(uri, method=verb, body=data, headers=headers)
             except AttributeError:
-                msg = traceback.format_exc()
+                msg = 'Error contacting: {}: {}'.format(self.getDomainName(), traceback.format_exc())
                 # socket/httplib really screwed up - nuclear option
                 conn.connections = {}
-                raise socket.error('Error contacting: %s: %s' % (self.getDomainName(), msg))
+                raise socket.error(msg) from None
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', data)
@@ -424,13 +426,9 @@ class Requests(dict):
 
     def addBasicAuth(self, username, password):
         """Add basic auth headers to request"""
-        ## TODO: base64.encodestring is deprecated
-        # https://docs.python.org/3.8/library/base64.html#base64.encodestring
-        # change to base64.encodebytes after we drop python2
         username = encodeUnicodeToBytes(username)
         password = encodeUnicodeToBytes(password)
-        encodedauth = base64.encodestring(b'%s:%s' % (
-            username, password)).strip()
+        encodedauth = base64.encodebytes(b'%s:%s' % (username, password)).strip()
         if PY3:
             encodedauth = decodeBytesToUnicode(encodedauth)
         auth_string = "Basic %s" % encodedauth

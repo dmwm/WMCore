@@ -81,7 +81,7 @@ def uploadWorker(workInput, results, dbsUrl):
 
         # Do stuff with DBS
         try:
-            logging.debug("About to call insert block with block: %s", block)
+            logging.info("About to call insert block for: %s", name)
             dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
         except Exception as ex:
@@ -686,7 +686,7 @@ class DBSUploadPoller(BaseWorkerThread):
             block.setPhysicsGroup(group=self.physicsGroup)
 
             encodedBlock = block.convertToDBSBlock()
-            logging.info("About to insert block %s", block.getName())
+            logging.info("Queueing block for insertion: %s", block.getName())
             self.workInput.put({'name': block.getName(), 'block': encodedBlock})
             self.blockCount += 1
             if self.produceCopy:

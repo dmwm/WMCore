@@ -1,3 +1,13 @@
+2.0.1 to 2.0.2.pre1:
+  - Better logging for DBS block insertion in DBS3Upload (Alan Malta Rodrigues) #11058
+  - Document the use of docstrings and best practices in the project (Alan Malta Rodrigues) #11052
+  - Define gzip encoding by default in the headers; properly decompress it (Valentin Kuznetsov) #11041
+  - Fetch protectedLFNs for T0 (Todor Ivanov) #11050
+  - Prevent excessive calls for agent config via ReqMgrAux (Erik Gough) #11033
+  - Adjust processing version to be integer (Valentin Kuznetsov) #11043
+  - [CouchDB] Do not sanitize couch url at the component layer (Alan Malta Rodrigues) #11045
+
+
 2.0.1.pre6 to 2.0.1:
 
 

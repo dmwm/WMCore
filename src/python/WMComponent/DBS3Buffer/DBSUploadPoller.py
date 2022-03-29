@@ -25,8 +25,10 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 from builtins import range
-from future.utils import viewvalues
+
 from future import standard_library
+from future.utils import viewvalues
+
 standard_library.install_aliases()
 
 import queue
@@ -321,7 +323,7 @@ class DBSUploadPoller(BaseWorkerThread):
         except Exception as ex:
             msg = "Unhandled Exception in DBSUploadPoller! Error: %s" % str(ex)
             logging.exception(msg)
-            raise DBSUploadException(msg)
+            raise DBSUploadException(msg) from None
 
     def updateDatasetParentageCache(self):
         """
@@ -346,7 +348,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.warning(errorMsg)
             else:
                 errorMsg += 'Hit a terminal exception in DBSUploadPoller.'
-                raise DBSUploadException(errorMsg)
+                raise DBSUploadException(errorMsg) from None
             myThread.logdbClient.post("DBS3Upload_parentMap", errorMsg, "warning")
             success = False
         else:
@@ -381,7 +383,7 @@ class DBSUploadPoller(BaseWorkerThread):
             msg += str(ex)
             logging.error(msg)
             logging.debug("Blocks to load: %s\n", blocksToLoad)
-            raise DBSUploadException(msg)
+            raise DBSUploadException(msg) from None
 
         for blockInfo in loadedBlocks:
             block = DBSBufferBlock(name=blockInfo['block_name'],
@@ -406,7 +408,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Blocks being loaded: %s\n", blockname)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
 
             # Add the loaded files to the block
             for f in files:
@@ -441,7 +443,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("DatasetPath being loaded: %s\n", datasetpath)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
 
             # Sort the files and blocks by location
             fileDict = sortListByKey(loadedFiles, 'locations')
@@ -630,7 +632,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.error(msg)
                 logging.debug("Blocks for DBSBuffer: %s\n", createInDBSBuffer)
                 logging.debug("Blocks for Update: %s\n", updateInDBSBuffer)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
             else:
                 myThread.transaction.commit()
 
@@ -656,7 +658,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Files to Update: %s\n", self.filesToUpdate)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
             else:
                 myThread.transaction.commit()
 
@@ -787,7 +789,7 @@ class DBSUploadPoller(BaseWorkerThread):
                     msg += str(ex)
                     logging.error(msg)
                     logging.debug("Blocks for Update: %s\n", loadedBlocks)
-                    raise DBSUploadException(msg)
+                    raise DBSUploadException(msg) from None
                 else:
                     myThread.transaction.commit()
 
@@ -851,7 +853,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.exception(msg)
                 logging.debug("Blocks for Update: %s\n", blocksUploaded)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
             else:
                 myThread.transaction.commit()
 

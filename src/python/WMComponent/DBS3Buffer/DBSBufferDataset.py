@@ -18,7 +18,7 @@ class DBSBufferDataset(WMConnectionBase, dict):
     """
 
     def __init__(self, path, id = -1,
-                 processingVer = None, acquisitionEra = None, validStatus = None,
+                 processingVer = 0, acquisitionEra = None, validStatus = None,
                  globalTag = None, parent = None, prep_id = None):
         """
         Initialize the stored attributes and

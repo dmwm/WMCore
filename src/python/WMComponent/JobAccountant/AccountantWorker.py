@@ -358,7 +358,7 @@ class AccountantWorker(WMConnectionBase):
                                                   datasetInfo["dataTier"]))
 
         dbsFile.setValidStatus(validStatus=jobReportFile.get("validStatus", None))
-        dbsFile.setProcessingVer(ver=jobReportFile.get('processingVer', None))
+        dbsFile.setProcessingVer(ver=jobReportFile.get('processingVer', 0))
         dbsFile.setAcquisitionEra(era=jobReportFile.get('acquisitionEra', None))
         dbsFile.setGlobalTag(globalTag=jobReportFile.get('globalTag', None))
         # TODO need to find where to get the prep id

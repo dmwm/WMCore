@@ -356,13 +356,6 @@ elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   sed -i "s+config.RucioInjector.metaDIDProject = 'Production'+config.RucioInjector.metaDIDProject = 'Test'+" $MANAGE_DIR/config.py
 fi
 
-if [[ "$HOSTNAME" == *fnal.gov ]]; then
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
-else
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
-fi
-echo "Done!" && echo
-
 ### Populating resource-control
 echo "*** Populating resource-control ***"
 cd $MANAGE_DIR
@@ -373,6 +366,19 @@ if [[ "$TEAMNAME" == relval* || "$TEAMNAME" == *testbed* ]]; then
 else
   echo "Adding ALL sites to resource-control..."
   ./manage execute-agent wmagent-resource-control --add-all-sites --plugin=SimpleCondorPlugin --pending-slots=50 --running-slots=50 --down
+fi
+echo "Done!" && echo
+
+echo "*** Setting up US opportunistic resources ***"
+if [[ "$HOSTNAME" == *fnal.gov ]]; then
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
+  cd $BASE_DIR
+  wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/addUSOpportunistic.sh -O addUSOpportunistic.sh
+  chmod +x addUSOpportunistic.sh
+  $BASE_DIR/addUSOpportunistic.sh
+  cd -
+else
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
 fi
 echo "Done!" && echo
 

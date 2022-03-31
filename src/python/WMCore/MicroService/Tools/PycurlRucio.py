@@ -164,6 +164,8 @@ def listReplicationRules(containers, rucioAccount, grouping,
     :return: a flat dictionary key'ed by the container name, with a list of RSE
       expressions that still need to be resolved
     NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    NOTE-2: Available rule states can be found at:
+    https://github.com/rucio/rucio/blob/16f39dffa1608caa0a1af8bbc0fcff2965dccc50/lib/rucio/db/sqla/constants.py#L180
     """
     locationByContainer = {}
     if not containers:
@@ -189,8 +191,9 @@ def listReplicationRules(containers, rucioAccount, grouping,
         try:
             locationByContainer.setdefault(container, [])
             for item in parseNewLineJson(row['data']):
-                if item['state'] in ["U", "SUSPENDED"]:
-                    logging.warning("Container %s has a SUSPENDED rule. Skipping rule: %s", container, item)
+                if item['state'] in ["U", "SUSPENDED", "R", "REPLICATING", "I", "INJECT"]:
+                    msg = "Container %s has a rule ID %s in state %s. Will try to create a new rule."
+                    logging.warning(msg, container, item['id'], item['state'])
                     continue
                 elif item['state'] in ["S", "STUCK"]:
                     if item['error'] == 'NO_SOURCES:NO_SOURCES':
@@ -316,10 +319,6 @@ def getBlocksAndSizeRucio(containers, rucioUrl, rucioToken, scope="cms"):
     headers = {"X-Rucio-Auth-Token": rucioToken}
     urls = []
     for cont in containers:
-        ### FIXME: the long attribute value type has recently changed integer to boolean
-        ### see PR: https://github.com/rucio/rucio/pull/3949 , which went in in 1.23.5 series
-        ### we need to make sure CMS production Rucio will be running that version once MicroServices
-        ### get deployed to CMSWEB
         urls.append('{}/dids/{}/dids/search?type=dataset&long=True&name={}'.format(rucioUrl, scope, quote(cont + "#*")))
     logging.info("Executing %d requests against Rucio DIDs search API for containers", len(urls))
     data = multi_getdata(urls, ckey(), cert(), headers=headers)

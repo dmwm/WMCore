@@ -154,6 +154,9 @@ config.DBS3Upload.pollInterval = 100
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file
+# set DbsApi requests to use gzip enconding, thus sending compressed data
+# please change to True when new DBSWriter Go server will be in place
+config.DBS3Upload.gzipEncoding = False
 
 config.section_("DBSInterface")
 config.DBSInterface.DBSUrl = globalDBSUrl

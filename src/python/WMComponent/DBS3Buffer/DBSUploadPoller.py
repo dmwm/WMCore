@@ -52,17 +52,22 @@ from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
-def uploadWorker(workInput, results, dbsUrl):
+def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
     """
     _uploadWorker_
 
     Put JSONized blocks in the workInput
     Get confirmation in the output
+
+    :param workInput: work input data
+    :param results: output results dictionary
+    :param dbsUrl: url of DBS server to use
+    :param gzipEncoding: specify if we should use gzipEncoding
     """
 
     # Init DBS Stuff
     logging.debug("Creating dbsAPI with address %s", dbsUrl)
-    dbsApi = DbsApi(url=dbsUrl)
+    dbsApi = DbsApi(url=dbsUrl, useGzip=gzipEncoding)
 
     while True:
 
@@ -193,6 +198,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.datasetType = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
         self.primaryDatasetType = getattr(self.config.DBS3Upload, "primaryDatasetType", "mc")
         self.blockCount = 0
+        self.gzipEncoding = getattr(self.config.DBS3Upload, 'gzipEncoding', False)
         self.dbsApi = DbsApi(url=self.dbsUrl)
 
         # List of blocks currently in processing
@@ -235,7 +241,8 @@ class DBSUploadPoller(BaseWorkerThread):
             p = multiprocessing.Process(target=uploadWorker,
                                         args=(self.workInput,
                                               self.workResult,
-                                              self.dbsUrl))
+                                              self.dbsUrl,
+                                              self.gzipEncoding))
             p.start()
             self.pool.append(p)
 

@@ -1,3 +1,12 @@
+2.0.2.pre1 to 2.0.2.pre2:
+  - Add el8 flavor to the list of rhel8 container jobs (Alan Malta Rodrigues) #11062
+  - No longer delete cache directory on exit (Alan Malta Rodrigues) #10915
+  - MSTransferor: do not bypass Pileup rules in INJECT/REPLICATIN state (Alan Malta Rodrigues) #11061
+  - Add support to EL8 jobs (Alan Malta Rodrigues) #11060
+  - FIx default value for processing version (Valentin Kuznetsov) #11059
+  - Download script and insert US opportunistic resources during deployment (Alan Malta Rodrigues) #11047
+
+
 2.0.1 to 2.0.2.pre1:
   - Better logging for DBS block insertion in DBS3Upload (Alan Malta Rodrigues) #11058
   - Document the use of docstrings and best practices in the project (Alan Malta Rodrigues) #11052

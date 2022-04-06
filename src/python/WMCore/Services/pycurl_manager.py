@@ -46,6 +46,7 @@ from future.utils import viewitems
 
 
 # system modules
+import copy
 import json
 import gzip
 import logging
@@ -81,7 +82,8 @@ def decompress(body, headers):
     except Exception as exc:
         logger = logging.getLogger()
         msg = "While processing decompress function with headers: %s, " % headers
-        msg += "we were unable to decompress gzip content. Details: %s" % str(exc)
+        msg += "we were unable to decompress gzip content. Details: %s. " % str(exc)
+        msg += "Considering response body as uncompressed."
         logger.exception(msg)
         return body
 
@@ -202,16 +204,20 @@ class RequestHandler(object):
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        # also accepts encoding/compression algorithms
-        if headers and headers.get("Accept-Encoding"):
-            if isinstance(headers["Accept-Encoding"], basestring):
-                curl.setopt(pycurl.ENCODING, headers["Accept-Encoding"])
+        # If ACCEPT_ENCODING is set to the encoding string, then libcurl
+        # will automatically decode the response object according to the
+        # Content-Enconding received
+        # More info: https://curl.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html
+        thisHeaders = copy.deepcopy(headers)
+        if thisHeaders and thisHeaders.get("Accept-Encoding"):
+            if isinstance(thisHeaders["Accept-Encoding"], basestring):
+                curl.setopt(pycurl.ACCEPT_ENCODING, thisHeaders.pop("Accept-Encoding"))
             else:
                 logging.warning("Wrong data type for header 'Accept-Encoding': %s",
-                                type(headers["Accept-Encoding"]))
+                                type(thisHeaders["Accept-Encoding"]))
         else:
             # add gzip encoding by default
-            curl.setopt(pycurl.ENCODING, 'gzip')
+            curl.setopt(pycurl.ACCEPT_ENCODING, 'gzip')
 
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
@@ -242,15 +248,15 @@ class RequestHandler(object):
 
         if verb in ('POST', 'PUT'):
             # only these methods (and PATCH) require this header
-            headers["Content-Length"] = str(len(encoded_data))
+            thisHeaders["Content-Length"] = str(len(encoded_data))
 
         # we must pass url as a string data-type, otherwise pycurl will fail with error
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
         curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
-        if headers:
+        if thisHeaders:
             curl.setopt(pycurl.HTTPHEADER, \
-                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(headers)])
+                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -275,12 +281,11 @@ class RequestHandler(object):
         """Debug callback implementation"""
         print("debug(%d): %s" % (debug_type, debug_msg))
 
-    def parse_body(self, data, headers, decode=False):
+    def parse_body(self, data, decode=False):
         """
         Parse body part of URL request (by default use json).
         This method can be overwritten.
         """
-        data = decompress(data, headers)
         if decode:
             try:
                 res = json.loads(data)
@@ -316,7 +321,7 @@ class RequestHandler(object):
             if verb == 'HEAD':
                 data = ''
             else:
-                data = self.parse_body(bbuf.getvalue(), header.header, decode)
+                data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()
             data = decompress(data, header.header)

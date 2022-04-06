@@ -1,3 +1,8 @@
+2.0.2.pre2 to 2.0.2.pre3:
+  - Use Content-Encoding to automatically decode body in RequestHandler (Alan Malta Rodrigues) #11069
+  - Add usage of gzip encoding (Valentin Kuznetsov) #11056
+
+
 2.0.2.pre1 to 2.0.2.pre2:
   - Add el8 flavor to the list of rhel8 container jobs (Alan Malta Rodrigues) #11062
   - No longer delete cache directory on exit (Alan Malta Rodrigues) #10915

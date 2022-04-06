@@ -383,9 +383,8 @@ class RequestHandler(object):
                     if ret != pycurl.E_CALL_MULTI_PERFORM:
                         break
             dummyNumq, response, dummyErr = multi.info_read()
-            for dummyCobj in response:
-                headers = self.parse_header(decodeBytesToUnicode(hbuf.getvalue()))
-                data = decompress(decodeBytesToUnicode(bbuf.getvalue()), headers)
+            for _respItem in response:
+                data = decodeBytesToUnicode(bbuf.getvalue())
                 data = json.loads(data)
                 if isinstance(data, dict):
                     data.update(params)

@@ -1,3 +1,7 @@
+2.0.2.pre3 to 2.0.2.pre4:
+  - Missed one set_opts use for PyCurl multirequest (Alan Malta Rodrigues) #11070
+
+
 2.0.2.pre2 to 2.0.2.pre3:
   - Use Content-Encoding to automatically decode body in RequestHandler (Alan Malta Rodrigues) #11069
   - Add usage of gzip encoding (Valentin Kuznetsov) #11056

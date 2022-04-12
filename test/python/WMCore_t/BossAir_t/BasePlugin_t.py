@@ -33,8 +33,14 @@ class BasePluginTest(BossAirTest):
         self.assertEqual(bp.scramArchtoRequiredOS('slc5_blah_blah'), 'rhel6')
         self.assertEqual(bp.scramArchtoRequiredOS('slc6_blah_blah'), 'rhel6')
         self.assertEqual(bp.scramArchtoRequiredOS('slc7_blah_blah'), 'rhel7')
+        self.assertEqual(bp.scramArchtoRequiredOS('cc8_blah_blah'), 'rhel8')
+        self.assertEqual(bp.scramArchtoRequiredOS('cs8_blah_blah'), 'rhel8')
+        self.assertEqual(bp.scramArchtoRequiredOS('alma8_blah_blah'), 'rhel8')
+        self.assertEqual(bp.scramArchtoRequiredOS('el88_blah_blah'), 'rhel8')
 
         self.assertEqual(bp.scramArchtoRequiredOS(None), 'any')
+        self.assertEqual(bp.scramArchtoRequiredOS(""), 'any')
+        self.assertEqual(bp.scramArchtoRequiredOS([]), 'any')
 
         self.assertEqual(bp.scramArchtoRequiredOS(['slc6_blah_blah', 'slc7_blah_blah']), 'rhel6,rhel7')
 

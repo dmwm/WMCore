@@ -138,7 +138,7 @@ class BasePlugin(object):
             string to be matched for OS requirements for job
         """
         requiredOSes = set()
-        if scramArch is None:
+        if not scramArch:
             requiredOSes.add('any')
         elif isinstance(scramArch, (str, bytes)):
             for arch, validOSes in viewitems(ARCH_TO_OS):

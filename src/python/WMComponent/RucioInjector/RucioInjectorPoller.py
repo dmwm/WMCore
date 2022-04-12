@@ -465,7 +465,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                               grouping="ALL",
                               comment=ruleComment,
                               meta=self.metaData)
-            if not rseName.endswith("_Tape"):
+            if not rseName.endswith(("_Tape", "_Tape_Test")):
                 # add extra parameters to the Disk rule as defined in the component configuration
                 ruleKwargs.update(self.containerDiskRuleParams)
 
@@ -529,7 +529,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         """
         if not self.isT0agent and not rseName.endswith("_Tape"):
             return "Production Output"
-        elif self.isT0agent and rseName.endswith("_Tape"):
+        elif self.isT0agent and rseName.endswith(("_Tape", "_Tape_Test")):
             return "T0 Tape"
         elif self.isT0agent:
             return "T0 Export"

@@ -36,14 +36,17 @@ class BasePluginTest(BossAirTest):
         self.assertEqual(bp.scramArchtoRequiredOS('cc8_blah_blah'), 'rhel8')
         self.assertEqual(bp.scramArchtoRequiredOS('cs8_blah_blah'), 'rhel8')
         self.assertEqual(bp.scramArchtoRequiredOS('alma8_blah_blah'), 'rhel8')
-        self.assertEqual(bp.scramArchtoRequiredOS('el88_blah_blah'), 'rhel8')
+        self.assertEqual(bp.scramArchtoRequiredOS('el8_blah_blah'), 'rhel8')
 
         self.assertEqual(bp.scramArchtoRequiredOS(None), 'any')
         self.assertEqual(bp.scramArchtoRequiredOS(""), 'any')
         self.assertEqual(bp.scramArchtoRequiredOS([]), 'any')
 
         self.assertEqual(bp.scramArchtoRequiredOS(['slc6_blah_blah', 'slc7_blah_blah']), 'rhel6,rhel7')
+        self.assertEqual(bp.scramArchtoRequiredOS(['slc6_blah_blah', 'alma8_blah_blah']), 'rhel6,rhel8')
 
+        # unexpected case, a ScramArch being requested without the map implemented
+        self.assertEqual(bp.scramArchtoRequiredOS('slc1_blah_blah'), '')
         return
 
     def testScramArchtoRequiredArch(self):

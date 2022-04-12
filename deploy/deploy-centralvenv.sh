@@ -342,11 +342,16 @@ depSetupVenv(){
     reqFile=${wmSrcPath}/"requirements.txt"
     [[ -d $wmSrcPath ]] || { echo "Could not find WMCore source at: $wmSrcPath"; return 100 ;}
     [[ -f $reqFile ]] || { echo "Could not find requirements.txt file at: $reqFile"; return 100 ;}
-    for pkg in `grep -v ^# $reqFile`
+
+    # first try to install the whole requirement list as it is from the global/prod pypi index
+    pip install -r $reqFile && { echo "Dependencies successfully installed"; return 0 ;}
+
+    # only then try to parse the list a package at a time and install from the pypi index used for the current run
+    for pkg in `grep -v ^# $reqFile|awk '{print $1}'`
     do
         reqList="$reqList $pkg"
     done
-    _pkgInstall $reqList
+    _pkgInstall $reqList || { echo "We did the best we could to deploy all needed packages but there are still unresolved dependencies. Consider fixing them manually! "; return 100 ;}
 
 }
 

@@ -6,7 +6,7 @@ Base class for BossAir plugins
 """
 
 from builtins import object, str, bytes
-from future.utils import viewitems, viewvalues
+from future.utils import viewvalues
 
 from Utils.Utilities import decodeBytesToUnicode
 from WMCore.WMException import WMException
@@ -130,27 +130,25 @@ class BasePlugin(object):
     @staticmethod
     def scramArchtoRequiredOS(scramArch=None):
         """
+        Matches a ScramArch - or a list of it - against a map of Scram
+        to Operating System
 
-        Args:
-            scramArch: string or list of scramArches that are acceptable for the job
-
-        Returns:
-            string to be matched for OS requirements for job
+        :param scramArch: string or list of scramArches defined for a given job
+        :return: a string with the required OS to use
         """
-        requiredOSes = set()
+        defaultValue = 'any'
         if not scramArch:
-            requiredOSes.add('any')
-        elif isinstance(scramArch, (str, bytes)):
-            for arch, validOSes in viewitems(ARCH_TO_OS):
-                if arch in scramArch:
-                    requiredOSes.update(validOSes)
-        elif isinstance(scramArch, list):
-            for validArch in scramArch:
-                for arch, validOSes in viewitems(ARCH_TO_OS):
-                    if arch in validArch:
-                        requiredOSes.update(validOSes)
-        else:
-            requiredOSes.add('any')
+            return defaultValue
+
+        requiredOSes = set()
+        if isinstance(scramArch, (str, bytes)):
+            scramArch = [scramArch]
+        elif not isinstance(scramArch, (list, tuple)):
+            return defaultValue
+
+        for validArch in scramArch:
+            scramOS = validArch.split("_")[0]
+            requiredOSes.update(ARCH_TO_OS.get(scramOS, []))
 
         return ','.join(sorted(requiredOSes))
 

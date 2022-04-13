@@ -378,13 +378,28 @@ request_retries = 3
 EOF
 }
 
+_setVenvHooks(){
+    # Setting all virtual environment hooks that we need && executing them in the current run.
+    # param $1: A string representing the hook we want to add.
+    # TODO: Properly redefine the `deactivate` function, so we can get rid of
+    #       whatever we have defined at activate time when deactivating the venv
+    local hook=$1
+    shift
+    # adding the hook to the activate script:
+    echo $hook >> ${VIRTUAL_ENV}/bin/activate
+
+    # executing the hook for the current run:
+    $hook
+
+}
+
 setDepPaths(){
     # Setup WMcore deployment paths:
     echo
     echo "======================================================="
     echo "Setup WMCore paths inside the virtual env:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && exit 102
+    read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
     [[ -d $wmDepPath  ]] || mkdir -p $wmDepPath
     [[ -d $wmCfgPath  ]] || mkdir -p $wmCfgPath
@@ -393,7 +408,11 @@ setDepPaths(){
     # Find current pythonlib
     # TODO: first double check if we are actually inside the virtual environment
     pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
-    echo ${wmSrcPath}/src/python/ > ${pythonLib}/WMCore.pth
+    # echo ${wmSrcPath}/src/python/ > ${pythonLib}/WMCore.pth # this does not work
+    $runFromSource && {
+        _setVenvHooks "export PYTHONPATH=${wmSrcPath}/src/python/:${pythonLib}"
+        _setVenvHooks "export PATH=${wmSrcPath}/bin/:$PATH"
+    }
 }
 
 setupInitScripts(){

@@ -11,30 +11,6 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 
 
-# FIXME: remove this function once MS Transferor is solid and in production
-def moveTransferorStatus(reqmgrSvc, logger):
-    """
-    Function to temporarily make the status transition supposed
-    to happen in the MS Transferor module.
-    Once that's fully functional and in production, we can completely
-    remove this function.
-    """
-    logger.info("Advancing MicroServices statuses")
-    thisTransition = {"assigned": "staging",
-                      "staging": "staged"}
-    # Let's try to keep these requests in this status for a bit longer
-    # and give MS Transferor a chance to find them and run its logic.
-    # That's why starting with the inverse order
-    for status in ["staging", "assigned"]:
-        requests = reqmgrSvc.getRequestByStatus([status], detail=False)
-        newStatus = thisTransition[status]
-        for wf in requests:
-            reqmgrSvc.updateRequestStatus(wf, newStatus)
-            logger.info("%s in %s moved to %s", wf, status, newStatus)
-        logger.info("%d requests moved from: %s to: %s", len(requests), status, newStatus)
-    return
-
-
 def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
 
     for status, nextStatus in viewitems(AUTO_TRANSITION):
@@ -55,11 +31,6 @@ def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
                 count += 1
                 reqmgrSvc.updateRequestStatus(wf, stateFromGQ)
                 logger.info("%s in %s moved to %s", wf, status, stateFromGQ)
-                continue
-            # FIXME: remove this elif once the current active workflows are out
-            # of the system. January 2022 should be good (HG2201)
-            elif stateFromGQ == "running-open" and status == "running-closed":
-                logger.warning("%s in %s, but it should actually be in %s", wf, status, stateFromGQ)
                 continue
 
             try:
@@ -124,8 +95,6 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
 
         self.logger.info("Advancing statuses")
-        if getattr(config, "enableMSStatusTransition", False):
-            moveTransferorStatus(reqmgrSvc, self.logger)
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)
         moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, self.logger)
 

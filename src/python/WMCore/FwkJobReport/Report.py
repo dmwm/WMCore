@@ -25,10 +25,7 @@ from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 
 class FwkJobReportException(WMException):

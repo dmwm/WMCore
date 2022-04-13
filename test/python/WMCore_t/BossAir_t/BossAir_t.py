@@ -10,11 +10,7 @@ import os.path
 import subprocess
 import threading
 import unittest
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from nose.plugins.attrib import attr
 

@@ -12,10 +12,7 @@ Sample configuration for generating workflow.
 
 
 import os
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from WMCore.Agent.Configuration import Configuration
 config = Configuration()

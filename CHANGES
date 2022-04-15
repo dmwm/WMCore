@@ -1,3 +1,8 @@
+2.0.2.patch1 to 2.0.2.patch2:
+  - Update wmagent deploy script to add opportunistic resources one by one (Alan Malta Rodrigues) #11100
+  - Support adding diskless resources into the database (Alan Malta Rodrigues) #11100
+
+
 2.0.2 to 2.0.2.patch1:
   - Enhance logic to map ScramArch to OS (Alan Malta Rodrigues) #11090
   - When ScramArch is empty str/list/None, return any as required_os (Alan Malta Rodrigues) #11090

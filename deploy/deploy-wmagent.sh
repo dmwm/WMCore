@@ -31,6 +31,8 @@
 IAM=`whoami`
 HOSTNAME=`hostname -f`
 MY_IP=`host $HOSTNAME | awk '{print $4}'`
+HPC_PEND_JOBS=2000
+HPC_RUNN_JOBS=3000
 
 BASE_DIR=/data/srv
 DEPLOY_DIR=$BASE_DIR/wmagent
@@ -372,13 +374,15 @@ echo "Done!" && echo
 echo "*** Setting up US opportunistic resources ***"
 if [[ "$HOSTNAME" == *fnal.gov ]]; then
   sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
-  cd $BASE_DIR
-  wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/addUSOpportunistic.sh -O addUSOpportunistic.sh
-  chmod +x addUSOpportunistic.sh
-  $BASE_DIR/addUSOpportunistic.sh
-  cd -
+  for resourceName in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil,T3_ES_PIC_BSC};
+  do
+    ./manage execute-agent wmagent-resource-control --plugin=SimpleCondorPlugin --opportunistic \
+      --pending-slots=$HPC_PEND_JOBS --running-slots=$HPC_RUNN_JOBS --add-one-site $resourceName
+  done
 else
   sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
+  ./manage execute-agent wmagent-resource-control --plugin=SimpleCondorPlugin --opportunistic \
+    --pending-slots=$HPC_PEND_JOBS --running-slots=$HPC_RUNN_JOBS --add-one-site T3_ES_PIC_BSC
 fi
 echo "Done!" && echo
 

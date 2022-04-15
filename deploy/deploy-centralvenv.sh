@@ -81,7 +81,6 @@ FULL_SCRIPT_PATH="$(_realPath "${0}")"
 
 componentList="wmcore"                                                    # default is the WMCore meta package
 venvPath="./WMCore.venv3"                                                 # WMCore virtual environment target path
-wmSrcRelPath="WMCore"                                                     # WMCore source code path relative to $venvPath
 wmSrcRepo="https://github.com/dmwm/WMCore.git"                            # WMCore source Repo
 wmSrcBranch="master"                                                      # WMCore source branch
 wmCfgRepo="https://:@gitlab.cern.ch:8443/cmsweb-k8s/services_config.git"  # WMCore config Repo
@@ -158,12 +157,15 @@ done
 
 # setting some more paths
 venvPath=$(_realPath $venvPath)
-wmSrcPath=${venvPath}/${wmSrcRelPath}  # WMCore source code target path
-wmDepPath=${venvPath}/sw               # WMCore deployment target path
-wmCfgPath=${venvPath}/config           # WMCore cofig target path
-wmAuthPath=${venvPath}/auth            # WMCore auth target path
-wmTmpPath=${venvPath}/tmp              # WMCore tmp path
-
+wmTopPath=${venvPath}/srv              # WMCore TopLevel Path
+wmSrcPath=${wmTopPath}/WMCore           # WMCore source code target path
+wmDepPath=${wmTopPath}/sw               # WMCore deployment target path
+wmCfgPath=${wmTopPath}/config           # WMCore cofig target path
+wmAuthPath=${wmTopPath}/auth            # WMCore auth target path
+wmTmpPath=${wmTopPath}/tmp              # WMCore tmp path
+wmEnabledPath=${wmTopPath}/enabled      # WMCore enabled services path
+wmStatePath=${wmTopPath}/state          # WMCore services state path
+wmLogsPath=${wmTopPath}/logs            # WMCore services logs path
 # setting the default pypi options
 pipOpt=""
 [[ $pipIndex == "test" ]] && {
@@ -401,9 +403,13 @@ setDepPaths(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
-    [[ -d $wmDepPath  ]] || mkdir -p $wmDepPath
-    [[ -d $wmCfgPath  ]] || mkdir -p $wmCfgPath
-    [[ -d $wmAuthPath ]] || mkdir -p $wmAuthPath
+    [[ -d $wmDepPath     ]] || mkdir -p $wmDepPath
+    [[ -d $wmCfgPath     ]] || mkdir -p $wmCfgPath
+    [[ -d $wmAuthPath    ]] || mkdir -p $wmAuthPath
+    [[ -d $wmTmpPath     ]] || mkdir -p $wmTmpPath
+    [[ -d $wmEnabledPath ]] || mkdir -p $wmEnabledPath
+    [[ -d $wmStatePath   ]] || mkdir -p $wmStatePath
+    [[ -d $wmLogsPath    ]] || mkdir -p $wmLogsPath
 
     # Find current pythonlib
     # TODO: first double check if we are actually inside the virtual environment

@@ -166,11 +166,15 @@ wmTmpPath=${wmTopPath}/tmp              # WMCore tmp path
 wmEnabledPath=${wmTopPath}/enabled      # WMCore enabled services path
 wmStatePath=${wmTopPath}/state          # WMCore services state path
 wmLogsPath=${wmTopPath}/logs            # WMCore services logs path
+
 # setting the default pypi options
 pipOpt=""
 [[ $pipIndex == "test" ]] && {
     pipIndexUrl="https://test.pypi.org/simple/"
     pipOpt="$pipOpt --index-url $pipIndexUrl" ;}
+
+# declaring the initial WMCoreVenvVars as an associative array in the global scope
+declare -A WMCoreVenvVars
 
 handleReturn(){
 
@@ -380,19 +384,15 @@ request_retries = 3
 EOF
 }
 
-_setVenvHooks(){
-    # Setting all virtual environment hooks that we need && executing them in the current run.
-    # param $1: A string representing the hook we want to add.
-    # TODO: Properly redefine the `deactivate` function, so we can get rid of
-    #       whatever we have defined at activate time when deactivating the venv
-    local hook=$1
-    shift
-    # adding the hook to the activate script:
-    echo $hook >> ${VIRTUAL_ENV}/bin/activate
-
-    # executing the hook for the current run:
-    $hook
-
+_addWMCoreVenvVar(){
+    # Adding a WMCore virtual environment variable to the WMCoreVenvVars array
+    # and to the current virtual environment itself
+    # :param $1: The variable name
+    # :param $2: The actual export value to be used
+    local varName=$1
+    local exportVal=$2
+    WMCoreVenvVars[$varName]=$exportVal
+    eval "export $varName=$exportVal"
 }
 
 setDepPaths(){
@@ -416,13 +416,13 @@ setDepPaths(){
     pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
     # echo ${wmSrcPath}/src/python/ > ${pythonLib}/WMCore.pth # this does not work
     $runFromSource && {
-        _setVenvHooks "export PYTHONPATH=${wmSrcPath}/src/python/:${pythonLib}"
-        _setVenvHooks "export PATH=${wmSrcPath}/bin/:$PATH"
+        _addWMCoreVenvVar "PYTHONPATH" "${wmSrcPath}/src/python/:${pythonLib}"
+        _addWMCoreVenvVar "PATH" "${wmSrcPath}/bin/:$PATH"
     }
 }
 
 setupInitScripts(){
-    # Setup WMcore deployment paths:
+    # Setup WMcore init scripts:
     echo
     echo "======================================================="
     echo "Setup WMCore init scripts inside the virtual env:"
@@ -443,20 +443,86 @@ setupIpython(){
     pip install $pipOpt ipython
 }
 
+setVenvHooks(){
+    # Setting up the WMCore virtual environment hooks using the WMCoreVenvVars
+    # from the global scope. We also redefine the deactivate function for the
+    # virtual environment.
+
+    # minimal setup for the Rucio package inside the virtual environment:
+    echo
+    echo "======================================================="
+    echo "Setup the WMCore hooks at the virtual environment activate script"
+    echo -n "Continue? [y]: "
+    read x && [[ $x =~ (n|N) ]] && return 101
+    echo "..."
+
+    echo "############# WMCore env vars ################" >> ${VIRTUAL_ENV}/bin/activate
+    echo "declare -A WMCoreVenvVars" >> ${VIRTUAL_ENV}/bin/activate
+    for var in ${!WMCoreVenvVars[@]}
+    do
+        echo "WMCoreVenvVars[$var]=${WMCoreVenvVars[$var]}" >> ${VIRTUAL_ENV}/bin/activate
+        echo "WMCoreVenvVars[$var]=${WMCoreVenvVars[$var]}"
+    done
+    cat <<EOF>>${VIRTUAL_ENV}/bin/activate
+
+############# WMCore hooks ################
+
+_old_deactivate=\$(declare -f deactivate)
+_old_deactivate=\${_old_deactivate#*()}
+eval "_old_deactivate() \$_old_deactivate"
+
+_WMCoreVenvRrestore(){
+    echo "restore all WMCore related environment variables:"
+    local WMCorePrefix=_OLD_WMCOREVIRTUAL
+    for var in \$@
+    do
+        local oldVar=\${WMCorePrefix}_\${var}
+        unset \$var
+        [[ -n \${!oldVar} ]] && export \$var=\${!oldVar}
+        unset \$oldVar
+    done
+}
+
+_WMCoreVenvSet(){
+    echo "Setting up WMCore related environment variables:"
+    local WMCorePrefix=_OLD_WMCOREVIRTUAL
+    for var in \$@
+    do
+        local oldVar=\${WMCorePrefix}_\${var}
+        [[ -n \${!var} ]] && export \$oldVar=\${!var}
+        export \$var=\${WMCoreVenvVars[\$var]}
+    done
+}
+
+deactivate (){
+    _WMCoreVenvRrestore \${!WMCoreVenvVars[@]}
+    _old_deactivate
+}
+
+_WMCoreVenvSet \${!WMCoreVenvVars[@]}
+
+EOF
+}
+
+
 main(){
-    startSetupVenv || handleReturn $?
-    createVenv || handleReturn $?
-    $runFromSource && cloneWMCore
-    activateVenv || handleReturn $?
-    pkgInstall || handleReturn $?
-    depSetupVenv || handleReturn $?
-    cloneConfig || handleReturn $?
-    rucioSetupVenv || handleReturn $?
-    setDepPaths || handleReturn $?
+    startSetupVenv   || handleReturn $?
+    createVenv       || handleReturn $?
+    if $runFromSource; then
+        cloneWMCore  || handleReturn $?
+    fi
+    activateVenv     || handleReturn $?
+    pkgInstall       || handleReturn $?
+    depSetupVenv     || handleReturn $?
+    cloneConfig      || handleReturn $?
+    rucioSetupVenv   || handleReturn $?
+    setDepPaths      || handleReturn $?
     setupInitScripts || handleReturn $?
-    setupIpython || handleReturn $?
+    setupIpython     || handleReturn $?
+    setVenvHooks     || handleReturn $?
 }
 
 startPath=$(pwd)
 main
 cd $startPath
+

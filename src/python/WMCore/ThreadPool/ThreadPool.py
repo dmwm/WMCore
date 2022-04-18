@@ -19,10 +19,7 @@ import random
 import threading
 import time
 from Utils.Utilities import encodeUnicodeToBytes
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from WMCore.ThreadPool.WorkQueue import ThreadPool as Queue
 from WMCore.WMFactory import WMFactory

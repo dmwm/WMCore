@@ -17,10 +17,7 @@ import threading
 import json
 import time
 from collections import defaultdict, Counter
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory

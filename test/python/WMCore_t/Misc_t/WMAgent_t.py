@@ -12,10 +12,7 @@ import unittest
 import threading
 
 from subprocess import Popen, PIPE
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 # Imports for testing
 from WMQuality.TestInit import TestInit

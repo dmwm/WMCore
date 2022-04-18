@@ -24,10 +24,7 @@ import base64
 import logging
 import threading
 import os
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory

@@ -11,12 +11,7 @@ import logging
 import os
 import os.path
 import threading
-
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from Utils.Timers import timeFunction
 from Utils.PythonVersion import HIGHEST_PICKLE_PROTOCOL

@@ -14,10 +14,7 @@ from datetime import datetime
 from datetime import timedelta
 from random import randint
 import multiprocessing
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 def processWorker(myinput, tmp):
     try:

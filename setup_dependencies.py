@@ -59,7 +59,8 @@ dependencies = {
                     'src/html+',
                     'src/javascript+',
                     'src/templates+',
-                    'etc+'
+                    'etc+',
+                    'bin+'
                     ],
     },
     'wmagent-devtools': {

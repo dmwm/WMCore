@@ -215,8 +215,9 @@ handleReturn(){
             exit 102
             ;;
         *)
-            echo "Interrupt execution due to execution failure."
-            exit $?
+            echo "Interrupt execution due to execution failure: "
+            echo "ERRORNO: $1 - "
+            exit $1
             ;;
     esac
 }
@@ -319,9 +320,9 @@ _pkgInstall(){
         echo "There were some package dependencies that couldn't be satisfied."
         echo "List of packages failed to install: $depFail"
         echo -n "Should we try to reinstall them while releasing version constraint? [y]: "
-        read x && [[ $x =~ (n|N) ]] && exit 1
-        echo "Retrying to satisfy dependency releasing version constraint:"
+        read x && [[ $x =~ (n|N) ]] && return 101
         echo "..."
+        echo "Retrying to satisfy dependency releasing version constraint:"
         for pkg in $pkgFail
         do
             pkg=${pkg%%=*}
@@ -404,13 +405,13 @@ setupDeplTree(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
-    [[ -d $wmDepPath     ]] || mkdir -p $wmDepPath
-    [[ -d $wmCfgPath     ]] || mkdir -p $wmCfgPath
-    [[ -d $wmAuthPath    ]] || mkdir -p $wmAuthPath
-    [[ -d $wmTmpPath     ]] || mkdir -p $wmTmpPath
-    [[ -d $wmEnabledPath ]] || mkdir -p $wmEnabledPath
-    [[ -d $wmStatePath   ]] || mkdir -p $wmStatePath
-    [[ -d $wmLogsPath    ]] || mkdir -p $wmLogsPath
+    [[ -d $wmDepPath     ]] || mkdir -p $wmDepPath      || return $?
+    [[ -d $wmCfgPath     ]] || mkdir -p $wmCfgPath      || return $?
+    [[ -d $wmAuthPath    ]] || mkdir -p $wmAuthPath     || return $?
+    [[ -d $wmTmpPath     ]] || mkdir -p $wmTmpPath      || return $?
+    [[ -d $wmEnabledPath ]] || mkdir -p $wmEnabledPath  || return $?
+    [[ -d $wmStatePath   ]] || mkdir -p $wmStatePath    || return $?
+    [[ -d $wmLogsPath    ]] || mkdir -p $wmLogsPath     || return $?
 
     _addWMCoreVenvVar X509_USER_CERT ${wmAuthPath}/dmwm-service-cert.pem
     _addWMCoreVenvVar X509_USER_KEY ${wmAuthPath}/dmwm-service-key.pem
@@ -424,10 +425,10 @@ setupDeplTree(){
     # Find current pythonlib
     # TODO: first double check if we are actually inside the virtual environment
     local pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
-    $runFromSource && {
+    if $runFromSource; then
         _addWMCoreVenvVar "PYTHONPATH" "${wmSrcPath}/src/python/:${pythonLib}"
         _addWMCoreVenvVar "PATH" "${wmSrcPath}/bin/:$PATH"
-    }
+    fi
 }
 
 setupInitScripts(){

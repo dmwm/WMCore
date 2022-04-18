@@ -3,6 +3,18 @@ from builtins import str
 import os
 
 
+def ckey():
+    "Return user CA key either from proxy or userkey.pem"
+    pair = getKeyCertFromEnv()
+    return pair[0]
+
+
+def cert():
+    "Return user CA cert either from proxy or usercert.pem"
+    pair = getKeyCertFromEnv()
+    return pair[1]
+
+
 def getKeyCertFromEnv():
     """
     gets key and certificate from environment variables
@@ -16,29 +28,28 @@ def getKeyCertFromEnv():
                 ('X509_USER_KEY', 'X509_USER_CERT')]  # Third preference to User Cert/Proxy combinition
 
     for keyEnv, certEnv in envPairs:
-        key = os.environ.get(keyEnv)
-        cert = os.environ.get(certEnv)
-        if key and cert and os.path.exists(key) and os.path.exists(cert):
+        localKey = os.environ.get(keyEnv)
+        localCert = os.environ.get(certEnv)
+        if localKey and localCert and os.path.exists(localKey) and os.path.exists(localCert):
             # if it is found in env return key, cert
-            return key, cert
+            return localKey, localCert
 
     # TODO: only in linux, unix case, add other os case
     # look for proxy at default location /tmp/x509up_u$uid
-    key = cert = '/tmp/x509up_u' + str(os.getuid())
-    if os.path.exists(key):
-        return key, cert
+    localKey = localCert = '/tmp/x509up_u' + str(os.getuid())
+    if os.path.exists(localKey):
+        return localKey, localCert
 
     # Finary look for globaus location
     if (os.environ.get('HOME') and
         os.path.exists(os.environ['HOME'] + '/.globus/usercert.pem')  and
         os.path.exists(os.environ['HOME'] + '/.globus/userkey.pem')):
 
-        key = os.environ['HOME'] + '/.globus/userkey.pem'
-        cert = os.environ['HOME'] + '/.globus/usercert.pem'
-        return key, cert
-    else:
-        # couldn't find the key, cert files
-        return None, None
+        localKey = os.environ['HOME'] + '/.globus/userkey.pem'
+        localCert = os.environ['HOME'] + '/.globus/usercert.pem'
+        return localKey, localCert
+    # couldn't find the key, cert files
+    return None, None
 
 
 def getCAPathFromEnv():

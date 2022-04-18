@@ -176,39 +176,49 @@ pipOpt=""
 # declaring the initial WMCoreVenvVars as an associative array in the global scope
 declare -A WMCoreVenvVars
 
+_addWMCoreVenvVar(){
+    # Adding a WMCore virtual environment variable to the WMCoreVenvVars array
+    # and to the current virtual environment itself
+    # :param $1: The variable name
+    # :param $2: The actual export value to be used
+    local varName=$1
+    local exportVal=$2
+    WMCoreVenvVars[$varName]=$exportVal
+    eval "export $varName=$exportVal"
+}
+
 handleReturn(){
+    # Handling script interruption based on last exit code
+    # Return codes:
+    # 0     - Success - CONTINUE
+    # 100   - Success - skip step, consider it recoverable
+    # 101   - Success - skip step based on user choice
+    # 102   - Failure - interrupt execution based on user choice
+    # 1-255 - Failure - interrupt all posix return codes
 
-# Handling script interruption based on last exit code
-# Return codes:
-# 0     - Success - CONTINUE
-# 100   - Success - skip step, consider it recoverable
-# 101   - Success - skip step based on user choice
-# 102   - Failure - interrupt execution based on user choice
-# 1-255 - Failure - interrupt all posix return codes
+    # TODO: to test return codes compatibility to avoid system error codes overlaps
 
-# TODO: to test return codes compatibility to avoid system error codes overlaps
-
-case $1 in
-    0)
-        return 0
-        ;;
-    100)
-        echo "Skipping step due to execution errors. Continue script execution."
-        return 0
-        ;;
-    101)
-        echo "Skipping step due to user choice. Continue script execution."
-        return 0
-        ;;
-    102)
-        echo "Interrupt execution due to user choice."
-        exit 102
-        ;;
-    *)
-        echo "Interrupt execution due to execution failure."
-        exit $?
-        ;;
-esac
+    case $1 in
+        0)
+            return 0
+            ;;
+        100)
+            echo "Skipping step due to execution errors. Continue script execution."
+            return 0
+            ;;
+        101)
+            echo "Skipping step due to user choice. Continue script execution."
+            return 0
+            ;;
+        102)
+            echo "Interrupt execution due to user choice."
+            exit 102
+            ;;
+        *)
+            echo "Interrupt execution due to execution failure."
+            exit $?
+            ;;
+    esac
 }
 
 startSetupVenv(){
@@ -242,8 +252,8 @@ createVenv(){
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
 
-    [[ -d $venvPath ]] || mkdir $venvPath
-    $pythonCmd -m venv --clear $venvPath
+    [[ -d $venvPath ]] || mkdir -p $venvPath || return $?
+    $pythonCmd -m venv --clear $venvPath || return $?
 }
 
 cloneWMCore(){
@@ -255,11 +265,10 @@ cloneWMCore(){
     read x && [[ $x =~ (n|N) ]] && return 101
     echo "..."
 
-    [[ -d $wmSrcPath ]] ||  mkdir -p $wmSrcPath
+    [[ -d $wmSrcPath ]] ||  mkdir -p $wmSrcPath || return $?
     cd $wmSrcPath
     git clone $wmSrcRepo $wmSrcPath && git checkout $wmSrcBranch && [[ -n $wmTag ]] && git reset --hard $wmTag
     cd -
-    # echo we are here
 }
 
 cloneConfig(){
@@ -270,7 +279,7 @@ cloneConfig(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 101
     echo "..."
-    [[ -d $wmCfgPath ]] ||  mkdir -p $wmCfgPath
+    [[ -d $wmCfgPath ]] ||  mkdir -p $wmCfgPath || return $?
     cd $wmCfgPath
     git clone $wmCfgRepo $wmCfgPath && [[ -n $wmCfgBranch ]] && git checkout $wmCfgBranch
     cd -
@@ -335,7 +344,7 @@ pkgInstall(){
     _pkgInstall $componentList
 }
 
-depSetupVenv(){
+setupDependencies(){
     # install all python dependencies inside the virtual environment:
     echo
     echo "======================================================="
@@ -361,7 +370,7 @@ depSetupVenv(){
 
 }
 
-rucioSetupVenv(){
+setupRucio(){
     # minimal setup for the Rucio package inside the virtual environment:
     echo
     echo "======================================================="
@@ -369,6 +378,9 @@ rucioSetupVenv(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 101
     echo "..."
+
+    _pkgInstall rucio-clients
+    _addWMCoreVenvVar "RUCIO_HOME" "$venvPath/"
 
     cat << EOF > $venvPath/etc/rucio.cfg
 [common]
@@ -384,18 +396,7 @@ request_retries = 3
 EOF
 }
 
-_addWMCoreVenvVar(){
-    # Adding a WMCore virtual environment variable to the WMCoreVenvVars array
-    # and to the current virtual environment itself
-    # :param $1: The variable name
-    # :param $2: The actual export value to be used
-    local varName=$1
-    local exportVal=$2
-    WMCoreVenvVars[$varName]=$exportVal
-    eval "export $varName=$exportVal"
-}
-
-setDepPaths(){
+setupDeplTree(){
     # Setup WMcore deployment paths:
     echo
     echo "======================================================="
@@ -411,10 +412,18 @@ setDepPaths(){
     [[ -d $wmStatePath   ]] || mkdir -p $wmStatePath
     [[ -d $wmLogsPath    ]] || mkdir -p $wmLogsPath
 
+    _addWMCoreVenvVar X509_USER_CERT ${wmAuthPath}/dmwm-service-cert.pem
+    _addWMCoreVenvVar X509_USER_KEY ${wmAuthPath}/dmwm-service-key.pem
+    _addWMCoreVenvVar WMCORE_SERVICE_CONFIG ${wmCfgPath}
+    _addWMCoreVenvVar WMCORE_SERVICE_ENABLED ${wmEnabledPath}
+    _addWMCoreVenvVar WMCORE_SERVICE_AUTH ${wmAuthPath}
+    _addWMCoreVenvVar WMCORE_SERVICE_STATE ${wmStatePath}
+    _addWMCoreVenvVar WMCORE_SERVICE_LOGS ${wmLogsPath}
+    _addWMCoreVenvVar WMCORE_SERVICE_TMP ${wmTmpPath}
+
     # Find current pythonlib
     # TODO: first double check if we are actually inside the virtual environment
-    pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
-    # echo ${wmSrcPath}/src/python/ > ${pythonLib}/WMCore.pth # this does not work
+    local pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
     $runFromSource && {
         _addWMCoreVenvVar "PYTHONPATH" "${wmSrcPath}/src/python/:${pythonLib}"
         _addWMCoreVenvVar "PATH" "${wmSrcPath}/bin/:$PATH"
@@ -443,12 +452,10 @@ setupIpython(){
     pip install $pipOpt ipython
 }
 
-setVenvHooks(){
+setupVenvHooks(){
     # Setting up the WMCore virtual environment hooks using the WMCoreVenvVars
     # from the global scope. We also redefine the deactivate function for the
     # virtual environment.
-
-    # minimal setup for the Rucio package inside the virtual environment:
     echo
     echo "======================================================="
     echo "Setup the WMCore hooks at the virtual environment activate script"
@@ -472,7 +479,7 @@ _old_deactivate=\${_old_deactivate#*()}
 eval "_old_deactivate() \$_old_deactivate"
 
 _WMCoreVenvRrestore(){
-    echo "restore all WMCore related environment variables:"
+    echo "Restoring all WMCore related environment variables:"
     local WMCorePrefix=_OLD_WMCOREVIRTUAL
     for var in \$@
     do
@@ -512,14 +519,14 @@ main(){
         cloneWMCore  || handleReturn $?
     fi
     activateVenv     || handleReturn $?
-    pkgInstall       || handleReturn $?
-    depSetupVenv     || handleReturn $?
+    setupDeplTree    || handleReturn $?
     cloneConfig      || handleReturn $?
-    rucioSetupVenv   || handleReturn $?
-    setDepPaths      || handleReturn $?
+    pkgInstall       || handleReturn $?
+    setupDependencies|| handleReturn $?
+    setupRucio       || handleReturn $?
     setupInitScripts || handleReturn $?
     setupIpython     || handleReturn $?
-    setVenvHooks     || handleReturn $?
+    setupVenvHooks   || handleReturn $?
 }
 
 startPath=$(pwd)

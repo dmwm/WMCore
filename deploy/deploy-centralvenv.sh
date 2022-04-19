@@ -168,10 +168,17 @@ wmStatePath=${wmTopPath}/state          # WMCore services state path
 wmLogsPath=${wmTopPath}/logs            # WMCore services logs path
 
 # setting the default pypi options
+pipIndexTestUrl="https://test.pypi.org/simple/"
+pipIndexProdUrl="https://pypi.org/simple"
+
 pipOpt=""
 [[ $pipIndex == "test" ]] && {
-    pipIndexUrl="https://test.pypi.org/simple/"
-    pipOpt="$pipOpt --index-url $pipIndexUrl" ;}
+    # pipOpt="$pipOpt --index-url $pipIndexTestUrl --extra-index $pipIndexProdUrl --prefix=$wmTopPath" ;}
+    pipOpt="$pipOpt --index-url $pipIndexTestUrl --extra-index $pipIndexProdUrl" ;}
+
+[[ $pipIndex == "prod" ]] && {
+    # pipOpt="$pipOpt --index-url $pipIndexProdUrl --prefix=$wmTopPath" ;}
+    pipOpt="$pipOpt --index-url $pipIndexProdUrl" ;}
 
 # declaring the initial WMCoreVenvVars as an associative array in the global scope
 declare -A WMCoreVenvVars
@@ -216,7 +223,7 @@ handleReturn(){
             ;;
         *)
             echo "Interrupt execution due to execution failure: "
-            echo "ERRORNO: $1 - "
+            echo "ERRORNO: $1"
             exit $1
             ;;
     esac
@@ -405,6 +412,20 @@ setupDeplTree(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
+    # TODO: To set the `current' symlink pointing to the actual wmcore version
+    #       deployed. We are no longer having the cmsweb deployment tag HG20***
+    #       Currently we have three possible cases:
+    #       * The pypi package version deployed - we must pay attention if we
+    #         have version misalignment of different components/services installed
+    #       * The WMCore tag deployed if we are running from source and having
+    #         a tag specified for this deployment.
+    #       * The WMCore branch deployed if we are running from source and having
+    #         a branch specified for this deployment.
+
+    # Find current pythonlib
+    # TODO: first double check if we are actually inside the virtual environment
+    local pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
+
     [[ -d $wmDepPath     ]] || mkdir -p $wmDepPath      || return $?
     [[ -d $wmCfgPath     ]] || mkdir -p $wmCfgPath      || return $?
     [[ -d $wmAuthPath    ]] || mkdir -p $wmAuthPath     || return $?
@@ -421,13 +442,12 @@ setupDeplTree(){
     _addWMCoreVenvVar WMCORE_SERVICE_STATE ${wmStatePath}
     _addWMCoreVenvVar WMCORE_SERVICE_LOGS ${wmLogsPath}
     _addWMCoreVenvVar WMCORE_SERVICE_TMP ${wmTmpPath}
+    # _addWMCoreVenvVar PYTHONPATH ${wmTopPath}/${pythonLib#$venvPath}:${pythonLib}
+    # _addWMCoreVenvVar PATH ${wmTopPath}/bin/:$PATH
 
-    # Find current pythonlib
-    # TODO: first double check if we are actually inside the virtual environment
-    local pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
     if $runFromSource; then
-        _addWMCoreVenvVar "PYTHONPATH" "${wmSrcPath}/src/python/:${pythonLib}"
-        _addWMCoreVenvVar "PATH" "${wmSrcPath}/bin/:$PATH"
+        _addWMCoreVenvVar PYTHONPATH ${wmSrcPath}/src/python/:${pythonLib}
+        _addWMCoreVenvVar PATH ${wmSrcPath}/bin/:$PATH
     fi
 }
 

@@ -21,7 +21,7 @@ from urllib.parse import quote, unquote
 
 # WMCore modules
 from Utils.IteratorTools import grouper
-from Utils.CertTools import getKeyCertFromEnv
+from Utils.CertTools import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
@@ -501,18 +501,6 @@ def teraBytes(size):
 def gigaBytes(size):
     "Return size in GB (Gigabytes), rounded to 2 digits"
     return round(size / (1000 ** 3), 2)
-
-
-def ckey():
-    "Return user CA key either from proxy or userkey.pem"
-    pair = getKeyCertFromEnv()
-    return pair[0]
-
-
-def cert():
-    "Return user CA cert either from proxy or usercert.pem"
-    pair = getKeyCertFromEnv()
-    return pair[1]
 
 
 def elapsedTime(time0, msg='Elapsed time', ndigits=1):

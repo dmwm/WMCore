@@ -28,15 +28,15 @@ from pprint import pformat
 from WMCore.MicroService.DataStructs.DefaultStructs import RULECLEANER_REPORT
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
 from WMCore.MicroService.MSCore import MSCore
-from WMCore.MicroService.Tools.Common import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 from WMCore.ReqMgr.DataStructs import RequestStatus
-from Utils.Pipeline import Pipeline, Functor
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.MicroService.Tools.Common import findParent
+from Utils.Pipeline import Pipeline, Functor
+from Utils.CertTools import ckey, cert
 
 
 class MSRuleCleanerResolveParentError(WMException):
@@ -85,6 +85,9 @@ class MSRuleCleaner(MSCore):
         self.msConfig.setdefault("rucioWmaAccount", "wma_test")
         self.msConfig.setdefault("rucioMStrAccount", "wmcore_transferor")
         self.msConfig.setdefault('enableRealMode', False)
+
+        self.currThread = None
+        self.currThreadIdent = None
 
         self.mode = "RealMode" if self.msConfig['enableRealMode'] else "DryRunMode"
         self.curlMgr = RequestHandler()
@@ -560,7 +563,7 @@ class MSRuleCleaner(MSCore):
         except Exception as ex:
             msg = "General Exception while trying status transition to: %s " % wflow['TargetStatus']
             msg += "for workflow: %s : %s" % (wflow['RequestName'], str(ex))
-            raise MSRuleCleanerArchivalError(msg)
+            raise MSRuleCleanerArchivalError(msg) from None
         return wflow
 
     def getMSOutputTransferInfo(self, wflow):

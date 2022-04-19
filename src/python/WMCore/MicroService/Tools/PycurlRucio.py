@@ -20,25 +20,13 @@ import re
 
 from urllib.parse import quote, unquote
 
-from Utils.CertTools import getKeyCertFromEnv
+from Utils.CertTools import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
 ### Amount of days that we wait for stuck rules to be sorted
 ### After that, the rule is not considered and a new rule is created
 STUCK_LIMIT = 7  # 7 days
-
-
-def ckey():
-    "Return user CA key either from proxy or userkey.pem"
-    pair = getKeyCertFromEnv()
-    return pair[0]
-
-
-def cert():
-    "Return user CA cert either from proxy or usercert.pem"
-    pair = getKeyCertFromEnv()
-    return pair[1]
 
 
 def parseNewLineJson(stream):

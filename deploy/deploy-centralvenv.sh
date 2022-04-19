@@ -155,18 +155,6 @@ done
 # check for mandatory parameters:
 [[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
 
-# setting some more paths
-venvPath=$(_realPath $venvPath)
-wmTopPath=${venvPath}/srv              # WMCore TopLevel Path
-wmSrcPath=${wmTopPath}/WMCore           # WMCore source code target path
-wmDepPath=${wmTopPath}/sw               # WMCore deployment target path
-wmCfgPath=${wmTopPath}/config           # WMCore cofig target path
-wmAuthPath=${wmTopPath}/auth            # WMCore auth target path
-wmTmpPath=${wmTopPath}/tmp              # WMCore tmp path
-wmEnabledPath=${wmTopPath}/enabled      # WMCore enabled services path
-wmStatePath=${wmTopPath}/state          # WMCore services state path
-wmLogsPath=${wmTopPath}/logs            # WMCore services logs path
-
 # setting the default pypi options
 pipIndexTestUrl="https://test.pypi.org/simple/"
 pipIndexProdUrl="https://pypi.org/simple"
@@ -235,16 +223,12 @@ startSetupVenv(){
     echo "-------------------------------------------------------"
     echo "componentList: $componentList"
     echo "venvPath: $venvPath"
-    echo "wmSrcPath: $wmSrcPath"
-    echo "wmDepPath: $wmDepPath"
-    echo "wmCfgPath: $wmCfgPath"
     echo "wmCfgBranch: $wmCfgBranch"
-    echo "wmAuthPath: $wmAuthPath"
     echo "wmTag: $wmTag"
     echo "serPatch: $serPatch"
     echo "pypi Index: $pipIndex"
     echo "runFromSource: $runFromSource"
-    echo "vmName: $vmName"
+    echo "central services host: $vmName"
     echo "======================================================="
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
@@ -296,8 +280,10 @@ cloneConfig(){
 _pipUpgradeVenv(){
     # upgrade pip for the current virtual env
     cd $venvPath
-    pip install $pipOpt wheel
-    pip install $pipOpt --upgrade pip
+    # pip install $pipOpt wheel
+    # pip install $pipOpt --upgrade pip
+    pip install wheel
+    pip install --upgrade pip
 }
 
 activateVenv(){
@@ -388,9 +374,10 @@ setupRucio(){
     echo "..."
 
     _pkgInstall rucio-clients
-    _addWMCoreVenvVar "RUCIO_HOME" "$venvPath/"
+    # _addWMCoreVenvVar "RUCIO_HOME" "$venvPath/"
+    _addWMCoreVenvVar RUCIO_HOME $wmDepPath
 
-    cat << EOF > $venvPath/etc/rucio.cfg
+    cat << EOF > $RUCIO_HOME/etc/rucio.cfg
 [common]
 [client]
 rucio_host = http://cmsrucio-int.cern.ch
@@ -426,13 +413,40 @@ setupDeplTree(){
     # TODO: first double check if we are actually inside the virtual environment
     local pythonLib=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
 
-    [[ -d $wmDepPath     ]] || mkdir -p $wmDepPath      || return $?
-    [[ -d $wmCfgPath     ]] || mkdir -p $wmCfgPath      || return $?
+    # setting the basic paths from the deployment tree
+    venvPath=$(_realPath $venvPath)
+    wmTopPath=${venvPath}/srv               # WMCore TopLevel Path
+    wmSrcPath=${wmTopPath}/WMCore           # WMCore source code target path
+    wmAuthPath=${wmTopPath}/auth            # WMCore auth target path
+    wmEnabledPath=${wmTopPath}/enabled      # WMCore enabled services path
+    wmStatePath=${wmTopPath}/state          # WMCore services state path
+    wmLogsPath=${wmTopPath}/logs            # WMCore services logs path
     [[ -d $wmAuthPath    ]] || mkdir -p $wmAuthPath     || return $?
-    [[ -d $wmTmpPath     ]] || mkdir -p $wmTmpPath      || return $?
     [[ -d $wmEnabledPath ]] || mkdir -p $wmEnabledPath  || return $?
     [[ -d $wmStatePath   ]] || mkdir -p $wmStatePath    || return $?
     [[ -d $wmLogsPath    ]] || mkdir -p $wmLogsPath     || return $?
+
+    # finding the version we are  about to deploy
+    wmDepPath=""                            # WMCore deployment target path
+    [[ -z $wmDepPath ]] && [[ -n $wmTag ]] && wmDepPath=$wmTag
+    [[ -z $wmDepPath ]] && [[ -n $wmSrcBranch ]] && wmDepPath=$wmSrcBranch
+    [[ -z $wmDepPath ]] && ln -s $wmDepPath wmDepPath="latest"
+
+    wmDepPath=${wmTopPath}/$wmDepPath
+    [[ -d $wmDepPath ]] || mkdir -p $wmDepPath || return $?
+
+    # adding wmDepPath as a --prefix option to pip command
+    pipOpt="$pipOpt --prefix=$wmDepPath"
+
+    # creating the current symlink
+    ln -s $wmDepPath ${wmTopPath}/current
+
+    # setting the config and tmp paths to be inside `current'
+    wmCfgPath=${wmDepPath}/config           # WMCore cofig target path
+    wmTmpPath=${wmDepPath}/tmp              # WMCore tmp path
+
+    [[ -d $wmCfgPath ]] || mkdir -p $wmCfgPath || return $?
+    [[ -d $wmTmpPath ]] || mkdir -p $wmTmpPath || return $?
 
     _addWMCoreVenvVar X509_USER_CERT ${wmAuthPath}/dmwm-service-cert.pem
     _addWMCoreVenvVar X509_USER_KEY ${wmAuthPath}/dmwm-service-key.pem
@@ -442,11 +456,17 @@ setupDeplTree(){
     _addWMCoreVenvVar WMCORE_SERVICE_STATE ${wmStatePath}
     _addWMCoreVenvVar WMCORE_SERVICE_LOGS ${wmLogsPath}
     _addWMCoreVenvVar WMCORE_SERVICE_TMP ${wmTmpPath}
-    # _addWMCoreVenvVar PYTHONPATH ${wmTopPath}/${pythonLib#$venvPath}:${pythonLib}
-    # _addWMCoreVenvVar PATH ${wmTopPath}/bin/:$PATH
 
+    # add deployment path as the first path in PYTHONPATH (we cut the $venvPath
+    # part from $pythonLib and substitute it with the $wmDepPath)
+    newPythonPath=${wmDepPath}/${pythonLib#$venvPath}
+
+    _addWMCoreVenvVar PYTHONPATH ${newPythonPath}:${pythonLib}
+    _addWMCoreVenvVar PATH ${wmDepPath}/bin/:$PATH
+
+    # add wmcSrcPath infornt of everything if we are  running from source
     if $runFromSource; then
-        _addWMCoreVenvVar PYTHONPATH ${wmSrcPath}/src/python/:${pythonLib}
+        _addWMCoreVenvVar PYTHONPATH ${wmSrcPath}/src/python/:$PYTHONPATH
         _addWMCoreVenvVar PATH ${wmSrcPath}/bin/:$PATH
     fi
 }
@@ -536,11 +556,11 @@ EOF
 main(){
     startSetupVenv   || handleReturn $?
     createVenv       || handleReturn $?
+    activateVenv     || handleReturn $?
+    setupDeplTree    || handleReturn $?
     if $runFromSource; then
         cloneWMCore  || handleReturn $?
     fi
-    activateVenv     || handleReturn $?
-    setupDeplTree    || handleReturn $?
     cloneConfig      || handleReturn $?
     pkgInstall       || handleReturn $?
     setupDependencies|| handleReturn $?

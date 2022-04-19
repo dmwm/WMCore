@@ -26,9 +26,11 @@ help(){
       -i <pypi-index>                The pypi index to use (i.e. prod or test) [Default: prod - pointing to https://pypi.org/simple/]
       -h <help>                      Provides help to the current script
 
-    Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3
-    Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -p "10003 9998"
-    Example: yes | ./deploy-centralvenv.sh -p "10003" -s reqmgr2ms -c cmsweb-test1.cern.ch
+    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -v /data/tmp/WMCore.venv3/ -l wmcore==2.0.3rc1
+    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -r -i test -v /data/tmp/WMCore.venv3/ -l wmcore==2.0.3rc1
+    # Example: yes | ./deploy-centralvenv.sh -r -p "10003" -c cmsweb-test1.cern.ch
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -r -t 2.0.0.pre3
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -r -p "10003 9998"
 EOF
 # DONE: Add option for fetching pypi packages from testbed index:
 #       pip install --index-url https://test.pypi.org/simple/ wmcore
@@ -316,6 +318,12 @@ _pkgInstall(){
         read x && [[ $x =~ (n|N) ]] && return 101
         echo "..."
         echo "Retrying to satisfy dependency releasing version constraint:"
+        # NOTE: by releasing the package constrains here and installing from `test'
+        #       pypi index but also using the `prod' index for resolving dependency issues)
+        #       we may actually downgrade a broken new package uploaded at `test'
+        #       with an older but working version from `prod'. We may consider
+        #       skipping the step in the default flaw and keep it only for manual
+        #       setup and debugging purposes
         for pkg in $pkgFail
         do
             pkg=${pkg%%=*}
@@ -335,7 +343,21 @@ pkgInstall(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
-    _pkgInstall $componentList
+    _pkgInstall $componentList || return $?
+
+    # if we have deployed from pip then the $wmDepPath ends with `latest'
+    # so we need to change it with the actual package version deployed
+    if [[ ${wmDepPath##*/} == "latest" ]]; then
+        local pkgVersion=$(python -c "from WMCore import __version__ as WMCoreVersion; print(WMCoreVersion)")
+        local newDepPath=${wmDepPath%latest}$pkgVersion
+        echo "pkgVersion: $pkgVersion"
+        echo "wmDepPath: $wmDepPath"
+        echo "newDepPath: $newDepPath"
+        [[ -z $pkgVersion ]] && { echo "Could not determine the WMCore package version. Leaving it as latest"; return ;}
+        mv $wmDepPath $newDepPath || return
+        rm $wmCurrPath || return
+        ln -s $newDepPath $wmCurrPath || return
+    fi
 }
 
 setupDependencies(){
@@ -375,7 +397,7 @@ setupRucio(){
 
     _pkgInstall rucio-clients
     # _addWMCoreVenvVar "RUCIO_HOME" "$venvPath/"
-    _addWMCoreVenvVar RUCIO_HOME $wmDepPath
+    _addWMCoreVenvVar RUCIO_HOME $wmCurrPath
 
     cat << EOF > $RUCIO_HOME/etc/rucio.cfg
 [common]
@@ -399,7 +421,7 @@ setupDeplTree(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
-    # TODO: To set the `current' symlink pointing to the actual wmcore version
+    # DONE: To set the `current' symlink pointing to the actual wmcore version
     #       deployed. We are no longer having the cmsweb deployment tag HG20***
     #       Currently we have three possible cases:
     #       * The pypi package version deployed - we must pay attention if we
@@ -428,22 +450,34 @@ setupDeplTree(){
 
     # finding the version we are  about to deploy
     wmDepPath=""                            # WMCore deployment target path
-    [[ -z $wmDepPath ]] && [[ -n $wmTag ]] && wmDepPath=$wmTag
-    [[ -z $wmDepPath ]] && [[ -n $wmSrcBranch ]] && wmDepPath=$wmSrcBranch
-    [[ -z $wmDepPath ]] && ln -s $wmDepPath wmDepPath="latest"
+    if $runFromSource; then
+        [[ -z $wmDepPath ]] && [[ -n $wmTag ]] && wmDepPath=$wmTag
+        [[ -z $wmDepPath ]] && [[ -n $wmSrcBranch ]] && wmDepPath=$wmSrcBranch
+    else
+        [[ -z $wmDepPath ]] && wmDepPath="latest"
+    fi
 
     wmDepPath=${wmTopPath}/$wmDepPath
     [[ -d $wmDepPath ]] || mkdir -p $wmDepPath || return $?
 
-    # adding wmDepPath as a --prefix option to pip command
-    pipOpt="$pipOpt --prefix=$wmDepPath"
-
     # creating the current symlink
-    ln -s $wmDepPath ${wmTopPath}/current
+    wmCurrPath=${wmTopPath}/current
+    ln -s $wmDepPath $wmCurrPath
+
+    # adding $wmCurrPath as a --prefix option to pip command
+    pipOpt="$pipOpt --prefix=$wmCurrPath"
+
+    # add deployment path as the first path in PYTHONPATH (we cut the $venvPath part
+    # from $pythonLib and substitute it with the $wmCurrPath which uses the `current' symlink )
+    newPythonLib=${pythonLib#$venvPath}
+    newPythonLib=${wmCurrPath}/${newPythonLib#/}
+
+    _addWMCoreVenvVar PYTHONPATH ${newPythonLib}:${pythonLib}
+    _addWMCoreVenvVar PATH ${wmCurrPath}/bin/:$PATH
 
     # setting the config and tmp paths to be inside `current'
-    wmCfgPath=${wmDepPath}/config           # WMCore cofig target path
-    wmTmpPath=${wmDepPath}/tmp              # WMCore tmp path
+    wmCfgPath=${wmCurrPath}/config           # WMCore cofig target path
+    wmTmpPath=${wmCurrPath}/tmp              # WMCore tmp path
 
     [[ -d $wmCfgPath ]] || mkdir -p $wmCfgPath || return $?
     [[ -d $wmTmpPath ]] || mkdir -p $wmTmpPath || return $?
@@ -457,14 +491,7 @@ setupDeplTree(){
     _addWMCoreVenvVar WMCORE_SERVICE_LOGS ${wmLogsPath}
     _addWMCoreVenvVar WMCORE_SERVICE_TMP ${wmTmpPath}
 
-    # add deployment path as the first path in PYTHONPATH (we cut the $venvPath
-    # part from $pythonLib and substitute it with the $wmDepPath)
-    newPythonPath=${wmDepPath}/${pythonLib#$venvPath}
-
-    _addWMCoreVenvVar PYTHONPATH ${newPythonPath}:${pythonLib}
-    _addWMCoreVenvVar PATH ${wmDepPath}/bin/:$PATH
-
-    # add wmcSrcPath infornt of everything if we are  running from source
+    # add $wmSrcPath in front of everything if we are running from source
     if $runFromSource; then
         _addWMCoreVenvVar PYTHONPATH ${wmSrcPath}/src/python/:$PYTHONPATH
         _addWMCoreVenvVar PATH ${wmSrcPath}/bin/:$PATH
@@ -487,7 +514,7 @@ setupIpython(){
     echo
     echo "======================================================="
     echo "If the current environment is about to be used for deployment Ipython would be a good recomemndation, but is not mandatory."
-    echo -n "Skip Ipythin instalation? [y]: "
+    echo -n "Skip Ipython installation? [y]: "
     read x && [[ $x =~ (n|N) ]] || { echo; echo "Skipping Ipython installation!"; return 101 ;}
     echo "Installing ipython..."
     pip install $pipOpt ipython

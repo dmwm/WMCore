@@ -155,7 +155,7 @@ $verboseMode && set -x
 pipIndexTestUrl="https://test.pypi.org/simple/"
 pipIndexProdUrl="https://pypi.org/simple"
 
-pipOpt=""
+pipOpt="--no-cache-dir"
 [[ $pipIndex == "test" ]] && {
     pipOpt="$pipOpt --index-url $pipIndexTestUrl --extra-index $pipIndexProdUrl" ;}
 

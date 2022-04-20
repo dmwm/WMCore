@@ -3,37 +3,39 @@
 help(){
     echo -e $1
     cat <<EOF
-    Usage: deploy-centralvenv.sh -c <central_services_url> [-r]
-                                [-s <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
+    Usage: deploy-centralvenv.sh -c <central_services_url> [-s] [-n] [-v]
+                                [-r <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
                                 [-g <wmcore_config_repository>] [-d <wmcore_config_branch>]
                                 [-v wmcore_path] [-p <patches>]
                                 [-l <component_list>] [-i <pypi_index>]
                                 [-h <help>]
 
       -c  <central_services>         Url to central services (e.g. cmsweb-test1.cern.ch)
-      -r  <run_from_source>          Bool flag to setup run from source [Default: false]
-      -s  <wmcore_source_repository> WMCore source repository [Default: git://github.com/dmwm/wmcore.git"]
+      -s  <run_from_source>          Bool flag to setup run from source [Default: false]
+      -n  <no_venv_cleanup>          Bool flag to skip virtual environment space cleanup before deployment [Default: false]
+      -v  <verbose_mode>             Bool flag to set verbose mode [Default: false]
+      -r  <wmcore_source_repository> WMCore source repository [Default: git://github.com/dmwm/wmcore.git"]
       -b  <wmcore_source_branch>     WMCore source branch [Default: master]
       -t  <wmcore_tag>               WMCore tag to be used for this deployment [Default: None]
       -g  <wmcore_config_repository> WMCore configuration repository [Default: https://gitlab.cern.ch/cmsweb-k8s/services_config"]
-      -d  <wmcore_config_branch>     WMCore configuration branch [Default: test]
-      -v  <wmcore_path>              WMCore virtual environment target path to be used for this deployment [Default: ./WMCore.venv3]
+      -j  <wmcore_config_branch>     WMCore configuration branch [Default: test]
+      -d  <wmcore_path>              WMCore virtual environment target path to be used for this deployment [Default: ./WMCore.venv3]
       -p  <patches>                  List of PR numbers [Default: None]
                                      (in double quotes and space separated e.g. "5906 5934 5922")
       -l  <component_list>           List of components to be deployed [Default: "wmcore" - WMCore metapackage]
                                      (in double quotes and space separated e.g. "rqmgr2 reqmgr2ms")
-                                     (pip based package version syntax is also acceptable e.g. "wmcore>=2.0.0")
+                                     (pip based package version syntax is also acceptable e.g. "wmcore==2.0.0")
       -i <pypi-index>                The pypi index to use (i.e. prod or test) [Default: prod - pointing to https://pypi.org/simple/]
       -h <help>                      Provides help to the current script
 
-    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -v /data/tmp/WMCore.venv3/ -l wmcore==2.0.3rc1
-    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -r -i test -v /data/tmp/WMCore.venv3/ -l wmcore==2.0.3rc1
-    # Example: yes | ./deploy-centralvenv.sh -r -p "10003" -c cmsweb-test1.cern.ch
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -r -t 2.0.0.pre3
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -r -p "10003 9998"
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -n -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/
+
+    # To chose the default flow and rely only on the pameters set to configure the deployment steps. This will avoid human intervention during deployment:
+    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/
+    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/
 EOF
-# DONE: Add option for fetching pypi packages from testbed index:
-#       pip install --index-url https://test.pypi.org/simple/ wmcore
 }
 
 usage(){
@@ -93,7 +95,8 @@ runFromSource=false                                                       # a bo
 vmName=""                                                                 # hostname for central services
 vmName=${vmName%%.*}
 pipIndex="prod"                                                           # pypi Index to use
-
+verboseMode=false
+noVenvCleanup=false
 
 # TODO: find python vars from env
 pythonCmd=/usr/bin/python3
@@ -101,58 +104,49 @@ pythonVersion=3.6
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
-while getopts ":v:t:c:s:b:g:d:p:l:i:rh" opt; do
+while getopts ":t:c:r:b:g:j:d:p:l:i:snvh" opt; do
     case ${opt} in
-        v)
+        d)
             venvPath=$OPTARG
-            venvPath=$(_realPath $venvPath)
-            ;;
+            venvPath=$(_realPath $venvPath) ;;
         t)
-            wmTag=$OPTARG
-            ;;
+            wmTag=$OPTARG ;;
         c)
             vmName=$OPTARG
-            vmName=${vmName%%.*}
-            ;;
+            vmName=${vmName%%.*} ;;
         r)
-            runFromSource=true
-            ;;
-        s)
-            wmSrcRepo=$OPTARG
-            ;;
+            wmSrcRepo=$OPTARG ;;
         b)
-            wmSrcBranch=$OPTARG
-            ;;
+            wmSrcBranch=$OPTARG ;;
         g)
-            wmCfgRepo=$OPTARG
-            ;;
-        d)
-            wmCfgBranch=$OPTARG
-            ;;
+            wmCfgRepo=$OPTARG ;;
+        j)
+            wmCfgBranch=$OPTARG ;;
         p)
-            serPatch=$OPTARG
-            ;;
+            serPatch=$OPTARG ;;
         l)
-            componentList=$OPTARG
-            ;;
+            componentList=$OPTARG ;;
         i)
-            pipIndex=$OPTARG
-            ;;
+            pipIndex=$OPTARG ;;
+        s)
+            runFromSource=true ;;
+        n)
+            noVenvCleanup=true ;;
+        v)
+            verboseMode=true ;;
         h)
             help
-            exit 0
-            ;;
+            exit 0 ;;
         \? )
             msg="Invalid Option: -$OPTARG"
-            usage "$msg"
-            ;;
+            usage "$msg" ;;
         : )
             msg="Invalid Option: -$OPTARG requires an argument"
-            usage "$msg"
-            ;;
+            usage "$msg" ;;
     esac
 done
 
+$verboseMode && set -x
 
 # check for mandatory parameters:
 [[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
@@ -163,11 +157,9 @@ pipIndexProdUrl="https://pypi.org/simple"
 
 pipOpt=""
 [[ $pipIndex == "test" ]] && {
-    # pipOpt="$pipOpt --index-url $pipIndexTestUrl --extra-index $pipIndexProdUrl --prefix=$wmTopPath" ;}
     pipOpt="$pipOpt --index-url $pipIndexTestUrl --extra-index $pipIndexProdUrl" ;}
 
 [[ $pipIndex == "prod" ]] && {
-    # pipOpt="$pipOpt --index-url $pipIndexProdUrl --prefix=$wmTopPath" ;}
     pipOpt="$pipOpt --index-url $pipIndexProdUrl" ;}
 
 # declaring the initial WMCoreVenvVars as an associative array in the global scope
@@ -212,7 +204,7 @@ handleReturn(){
             exit 102
             ;;
         *)
-            echo "Interrupt execution due to execution failure: "
+            echo "Interrupt execution due to step failure: "
             echo "ERRORNO: $1"
             exit $1
             ;;
@@ -230,6 +222,8 @@ startSetupVenv(){
     echo "serPatch: $serPatch"
     echo "pypi Index: $pipIndex"
     echo "runFromSource: $runFromSource"
+    echo "noVenvCleanup: $noVenvCleanup"
+    echo "verboseMode: $verboseMode"
     echo "central services host: $vmName"
     echo "======================================================="
     echo -n "Continue? [y]: "
@@ -247,7 +241,11 @@ createVenv(){
     echo "..."
 
     [[ -d $venvPath ]] || mkdir -p $venvPath || return $?
-    $pythonCmd -m venv --clear $venvPath || return $?
+    if $noVenvCleanup ; then
+        $pythonCmd -m venv $venvPath || return $?
+    else
+        $pythonCmd -m venv --clear $venvPath || return $?
+    fi
 }
 
 cloneWMCore(){
@@ -275,7 +273,8 @@ cloneConfig(){
     echo "..."
     [[ -d $wmCfgPath ]] ||  mkdir -p $wmCfgPath || return $?
     cd $wmCfgPath
-    git clone $wmCfgRepo $wmCfgPath && [[ -n $wmCfgBranch ]] && git checkout $wmCfgBranch
+    git clone $wmCfgRepo $wmCfgPath
+    git checkout $wmCfgBranch && git pull origin $wmCfgBranch || return $?
     cd -
 }
 
@@ -353,10 +352,15 @@ pkgInstall(){
         echo "pkgVersion: $pkgVersion"
         echo "wmDepPath: $wmDepPath"
         echo "newDepPath: $newDepPath"
-        [[ -z $pkgVersion ]] && { echo "Could not determine the WMCore package version. Leaving it as latest"; return ;}
-        mv $wmDepPath $newDepPath || return
-        rm $wmCurrPath || return
-        ln -s $newDepPath $wmCurrPath || return
+        [[ -z $pkgVersion ]] && { echo "Could not determine the WMCore package version. Leaving it as latest"; return 0;}
+
+        # NOTE: The following steps are  dangerous, because they include some `rm -rf' commands
+        #       we need to take precautions we are not touching anything beyond the scope of the virtual environment!
+        [[ $newDepPath =~ ^$venvPath ]] || { echo "Halt because crossing virtual environment boundaries." ; return 1 ;}
+        [[ -d $newDepPath ]] && {  echo  "Removing leftovers from old deployments.";  rm -rvf $newDepPath ; }
+        mv -v $wmDepPath $newDepPath || return $?
+        [[ -h $wmCurrPath ]] && rm $wmCurrPath || return $?
+        ln -s $newDepPath $wmCurrPath || return $?
     fi
 }
 
@@ -462,6 +466,7 @@ setupDeplTree(){
 
     # creating the current symlink
     wmCurrPath=${wmTopPath}/current
+    [[ -h $wmCurrPath ]] && rm $wmCurrPath
     ln -s $wmDepPath $wmCurrPath
 
     # adding $wmCurrPath as a --prefix option to pip command
@@ -515,7 +520,7 @@ setupIpython(){
     echo "======================================================="
     echo "If the current environment is about to be used for deployment Ipython would be a good recomemndation, but is not mandatory."
     echo -n "Skip Ipython installation? [y]: "
-    read x && [[ $x =~ (n|N) ]] || { echo; echo "Skipping Ipython installation!"; return 101 ;}
+    read x && [[ $x =~ (n|N) ]] || return 101
     echo "Installing ipython..."
     pip install $pipOpt ipython
 }
@@ -538,7 +543,23 @@ setupVenvHooks(){
         echo "WMCoreVenvVars[$var]=${WMCoreVenvVars[$var]}" >> ${VIRTUAL_ENV}/bin/activate
         echo "WMCoreVenvVars[$var]=${WMCoreVenvVars[$var]}"
     done
-    cat <<EOF>>${VIRTUAL_ENV}/bin/activate
+
+    # NOTE: If we have the WMCore hooks setup at the current virtual environment
+    #       from previous deployments, we only need to be sure we execute _WMCoreVenvSet
+    #       the last, so we fetch the newly added environment values. This is
+    #       an extra precaution, because `${VIRTUAL_ENV}/bin/activate' should be
+    #       recreated from scratch for a fresh virtual environment anyway, but we
+    #       need to take measures in case this behaviour changes in the future.
+
+    if grep "#* WMCore hooks #*" ${VIRTUAL_ENV}/bin/activate
+    then
+        sed -i 's/_WMCoreVenvSet.*WMCoreVenvVars\[\@\].*//g' ${VIRTUAL_ENV}/bin/activate
+        cat <<EOF>>${VIRTUAL_ENV}/bin/activate
+_WMCoreVenvSet \${!WMCoreVenvVars[@]}
+
+EOF
+    else
+        cat <<EOF>>${VIRTUAL_ENV}/bin/activate
 
 ############# WMCore hooks ################
 
@@ -577,6 +598,7 @@ deactivate (){
 _WMCoreVenvSet \${!WMCoreVenvVars[@]}
 
 EOF
+    fi
 }
 
 

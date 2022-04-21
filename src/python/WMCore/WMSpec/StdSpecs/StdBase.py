@@ -14,6 +14,7 @@ import json
 from Utils.PythonVersion import PY3
 from Utils.Utilities import decodeBytesToUnicodeConditional
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
+from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Lexicon import (couchurl, procstring, activity, procversion, primdataset,
                             gpuParameters, lfnBase, identifier, acqname, cmsname,
@@ -160,7 +161,7 @@ class StdBase(object):
         command += "cd %s\n" % scramBaseDirs[0]
         command += "eval `scramv1 runtime -sh`\n"
 
-        if PY3:
+        if isCMSSWSupported(cmsswVersion, "CMSSW_10_3_0"):
             command += """python3 -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
         else:
             command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""

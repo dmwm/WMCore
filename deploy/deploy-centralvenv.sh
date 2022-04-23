@@ -152,8 +152,9 @@ $verboseMode && set -x
 [[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
 
 # expand the enabled services list
-if [[ $componentList == "wmcore" ]]; then
-    _enabledListTmp="reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
+# TODO: Find a proper way to include the `acdcserver' in the list bellow (its config is missing from service_configs).
+if [[ ${componentList} =~ ^wmcore.* ]]; then
+    _enabledListTmp="reqmgr2 reqmgr2ms workqueue reqmon t0_reqmon"
 else
     _enabledListTmp=$componentList
 fi
@@ -169,23 +170,31 @@ fi
 enabledList=""
 for service in $_enabledListTmp
 do
+    # First cut all pypi packaging version suffixes
+    service=${service%%=*}
+    service=${service%%~*}
+    service=${service%%!*}
+    service=${service%%>*}
+    service=${service%%<*}
+
+    # Then expand the final enabled list
     if [[ $service == "reqmgr2ms" ]]; then
-        enabledList = "$enabledList reqmgr2ms-transferor"
-        enabledList = "$enabledList reqmgr2ms-monitor"
-        enabledList = "$enabledList reqmgr2ms-output"
-        enabledList = "$enabledList reqmgr2ms-ruleCleaner"
-        enabledList = "$enabledList reqmgr2ms-unmerged"
+        enabledList="$enabledList reqmgr2ms-transferor"
+        enabledList="$enabledList reqmgr2ms-monitor"
+        enabledList="$enabledList reqmgr2ms-output"
+        enabledList="$enabledList reqmgr2ms-rulecleaner"
+        enabledList="$enabledList reqmgr2ms-unmerged"
     elif [[ $service == "reqmgr2" ]]; then
-        enabledList = "$enabledList reqmgr2"
-        enabledList = "$enabledList reqmgr2-tasks"
+        enabledList="$enabledList reqmgr2"
+        enabledList="$enabledList reqmgr2-tasks"
     elif [[ $service == "reqmon" ]]; then
-        enabledList = "$enabledList reqmon"
-        enabledList = "$enabledList reqmon-tasks"
+        enabledList="$enabledList reqmon"
+        enabledList="$enabledList reqmon-tasks"
     elif [[ $service == "t0_reqmon" ]] ; then
-        enabledList = "$enabledList t0_reqmon"
-        enabledList = "$enabledList t0_reqmon-tasks"
+        enabledList="$enabledList t0_reqmon"
+        enabledList="$enabledList t0_reqmon-tasks"
     else
-        enabledList = "$enabledList $service"
+        enabledList="$enabledList $service"
     fi
 done
 
@@ -254,6 +263,7 @@ startSetupVenv(){
     echo "Deployment parameters:"
     echo "-------------------------------------------------------"
     echo "componentList: $componentList"
+    echo "enabledList: $enabledList"
     echo "venvPath: $venvPath"
     echo "wmCfgBranch: $wmCfgBranch"
     echo "wmTag: $wmTag"
@@ -267,6 +277,7 @@ startSetupVenv(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
+    sleep 5
 }
 
 createVenv(){
@@ -313,6 +324,7 @@ setupConfig(){
     # Add enabled links
     for service in $enabledList
     do
+        echo "Touching: ${wmEnabledPath}/${service}"
         touch ${wmEnabledPath}/${service} || return $?
     done
 

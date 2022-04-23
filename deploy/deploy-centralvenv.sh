@@ -151,6 +151,44 @@ $verboseMode && set -x
 # check for mandatory parameters:
 [[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
 
+# expand the enabled services list
+if [[ $componentList == "wmcore" ]]; then
+    _enabledListTmp="reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
+else
+    _enabledListTmp=$componentList
+fi
+
+# NOTE: The following extra expansion won't be needed once we have the set of
+#       python packages we build to be identical with the set of services we run
+#       Meaning we need to split them as:
+#       reqmgr2ms -> [reqmgr2ms-transferor, reqmgr2ms-monitor, reqmgr2ms-output,
+#                     reqmgr2ms-ruleCleaner, reqmgr2ms-unmerged]
+#       reqmgr2   -> [reqmgr, reqmgr2-tasks]
+#       reqmon    -> [reqmon, reqmon-tasks]
+#       t0_reqmon -> [t0_reqmon, t0_reqmon-tasks]
+enabledList=""
+for service in $_enabledListTmp
+do
+    if [[ $service == "reqmgr2ms" ]]; then
+        enabledList = "$enabledList reqmgr2ms-transferor"
+        enabledList = "$enabledList reqmgr2ms-monitor"
+        enabledList = "$enabledList reqmgr2ms-output"
+        enabledList = "$enabledList reqmgr2ms-ruleCleaner"
+        enabledList = "$enabledList reqmgr2ms-unmerged"
+    elif [[ $service == "reqmgr2" ]]; then
+        enabledList = "$enabledList reqmgr2"
+        enabledList = "$enabledList reqmgr2-tasks"
+    elif [[ $service == "reqmon" ]]; then
+        enabledList = "$enabledList reqmon"
+        enabledList = "$enabledList reqmon-tasks"
+    elif [[ $service == "t0_reqmon" ]] ; then
+        enabledList = "$enabledList t0_reqmon"
+        enabledList = "$enabledList t0_reqmon-tasks"
+    else
+        enabledList = "$enabledList $service"
+    fi
+done
+
 # setting the default pypi options
 pipIndexTestUrl="https://test.pypi.org/simple/"
 pipIndexProdUrl="https://pypi.org/simple"
@@ -263,7 +301,7 @@ cloneWMCore(){
     cd -
 }
 
-cloneConfig(){
+setupConfig(){
     # clone deployment scripts
     echo
     echo "======================================================="
@@ -271,6 +309,13 @@ cloneConfig(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 101
     echo "..."
+
+    # Add enabled links
+    for service in $enabledList
+    do
+        touch ${wmEnabledPath}/${service} || return $?
+    done
+
     [[ -d $wmCfgPath ]] ||  mkdir -p $wmCfgPath || return $?
     cd $wmCfgPath
     git clone $wmCfgRepo $wmCfgPath
@@ -512,6 +557,10 @@ setupInitScripts(){
     read x && [[ $x =~ (n|N) ]] && return 101
     echo "..."
     # TODO: To create the init.sh scripts
+    for service in $enabledList
+    do
+        [[ -d ${wmCfgPath}/${service} ]] && touch ${wmCfgPath}/${service}/manage || { err=$?; echo "could not setup startup scripts for $service";  return $err  ;}
+    done
 }
 
 setupIpython(){
@@ -610,10 +659,10 @@ main(){
     if $runFromSource; then
         cloneWMCore  || handleReturn $?
     fi
-    cloneConfig      || handleReturn $?
     pkgInstall       || handleReturn $?
     setupDependencies|| handleReturn $?
     setupRucio       || handleReturn $?
+    setupConfig      || handleReturn $?
     setupInitScripts || handleReturn $?
     setupIpython     || handleReturn $?
     setupVenvHooks   || handleReturn $?

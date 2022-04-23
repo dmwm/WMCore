@@ -321,17 +321,24 @@ setupConfig(){
     read x && [[ $x =~ (n|N) ]] && return 101
     echo "..."
 
-    # Add enabled links
-    for service in $enabledList
-    do
-        echo "Touching: ${wmEnabledPath}/${service}"
-        touch ${wmEnabledPath}/${service} || return $?
-    done
-
     [[ -d $wmCfgPath ]] ||  mkdir -p $wmCfgPath || return $?
     cd $wmCfgPath
     git clone $wmCfgRepo $wmCfgPath
-    git checkout $wmCfgBranch && git pull origin $wmCfgBranch || return $?
+    # git checkout $wmCfgBranch && git pull origin $wmCfgBranch || return $?
+
+    # First checkout to a fresh empty branch so we never mix with the origin branches:
+    git checkout -b currentConfig
+
+    for service in $enabledList
+    do
+        # Add enabled links:
+        echo "Touching: ${wmEnabledPath}/${service}"
+        touch ${wmEnabledPath}/${service} || { err=$? ; echo "Could not create enabled link for: $service"; return $err ;}
+
+        # Checkout needed service configs from the specified configuration branch:
+        echo "Cloning configuration for: $service"
+        git checkout origin/$wmCfgBranch -- $service || { err=$? ; echo "Could not checkout configuration for: $service from: origin/$wmCfgBranch"; return $err ;}
+    done
     cd -
 }
 

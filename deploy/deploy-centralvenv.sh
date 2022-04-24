@@ -489,7 +489,7 @@ setupDeplTree(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
-    # DONE: To set the `current' symlink pointing to the actual wmcore version
+    # NOTE: Setting the `current' symlink pointing to the actual wmcore version
     #       deployed. We are no longer having the cmsweb deployment tag HG20***
     #       Currently we have three possible cases:
     #       * The pypi package version deployed - we must pay attention if we
@@ -516,7 +516,7 @@ setupDeplTree(){
     [[ -d $wmStatePath   ]] || mkdir -p $wmStatePath    || return $?
     [[ -d $wmLogsPath    ]] || mkdir -p $wmLogsPath     || return $?
 
-    # finding the version we are  about to deploy
+    # Finding the version we are  about to deploy
     wmDepPath=""                            # WMCore deployment target path
     if $runFromSource; then
         [[ -z $wmDepPath ]] && [[ -n $wmTag ]] && wmDepPath=$wmTag
@@ -551,6 +551,17 @@ setupDeplTree(){
     [[ -d $wmCfgPath ]] || mkdir -p $wmCfgPath || return $?
     [[ -d $wmTmpPath ]] || mkdir -p $wmTmpPath || return $?
 
+    # Creating auth, logs and state paths per enabled service:
+    # NOTE: We do need to hold at least the ${service}Secrets.py file inside $wmCurrPath,
+    #       because those are deployment flavor dependent (e.g. prod, preprod, test)
+    [[ -d ${wmCurrPath}/auth/ ]] || mkdir -p ${wmCurrPath}/auth || return $?
+    for service in $enabledList
+    do
+        [[ -d ${wmCurrPath}/auth/${service} ]] || { err=$?; echo "could not create auth path for: $service";  return $err  ;}
+        [[ -d ${wmStatePath}/${service} ]] || { err=$?; echo "could not create state path for: $service";  return $err  ;}
+        [[ -d ${wmLogsPathePath}/${service} ]] || { err=$?; echo "could not create logs path for: $service";  return $err  ;}
+    done
+
     _addWMCoreVenvVar X509_USER_CERT ${wmAuthPath}/dmwm-service-cert.pem
     _addWMCoreVenvVar X509_USER_KEY ${wmAuthPath}/dmwm-service-key.pem
     _addWMCoreVenvVar WMCORE_SERVICE_CONFIG ${wmCfgPath}
@@ -559,6 +570,7 @@ setupDeplTree(){
     _addWMCoreVenvVar WMCORE_SERVICE_STATE ${wmStatePath}
     _addWMCoreVenvVar WMCORE_SERVICE_LOGS ${wmLogsPath}
     _addWMCoreVenvVar WMCORE_SERVICE_TMP ${wmTmpPath}
+    _addWMCoreVenvVar WMCORE_SERVICE_ROOT ${wmTopPath}
 
     # add $wmSrcPath in front of everything if we are running from source
     if $runFromSource; then
@@ -575,10 +587,116 @@ setupInitScripts(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 101
     echo "..."
-    # TODO: To create the init.sh scripts
+
+    # DONE: To create the init.sh scripts
+    local wmVersion=$(python -c "from WMCore import __version__ as WMCoreVersion; print(WMCoreVersion)")
     for service in $enabledList
     do
-        [[ -d ${wmCfgPath}/${service} ]] && touch ${wmCfgPath}/${service}/manage || { err=$?; echo "could not setup startup scripts for $service";  return $err  ;}
+        local manageScr=${wmCfgPath}/${service}/manage
+        [[ -d ${wmCfgPath}/${service} ]] && touch $manageScr && chmod 755 $manageScr || { err=$?; echo "could not setup startup scripts for $service";  return $err  ;}
+        cat<<EOF>>$manageSc
+#!/bin/sh
+
+help(){
+echo -e $1
+cat <<EOH
+Usage: manage ACTION [SECURITY-STRING]
+
+Available actions:
+  help              show this help
+  version           get current version of the service
+  status            show current service's status
+  sysboot           start server from crond if not running
+  restart           (re)start the service
+  start             (re)start the service
+  stop              stop the service
+EOH
+}
+
+usage(){
+echo -e $1
+help
+exit 1
+}
+
+ME=$service
+WMVERSION=$wmVersion
+
+ROOT=\${WMCORE_SERVICE_ROOT}
+CFGDIR=\${WMCORE_SERVICE_CONFIG}/\$ME
+LOGDIR=\${WMCORE_SERVICE_LOGS}/\$ME
+STATEDIR=\${WMCORE_SERVICE_STATE}/\$ME
+
+# NOTE: we need a better naming conventin for config-* files
+CFGFILE=\$CFGDIR/config-*.py
+
+LOG=$service
+AUTHDIR=\$ROOT/current/auth/$ME
+COLOR_OK="\\033[0;32m"
+COLOR_WARN="\\033[0;31m"
+COLOR_NORMAL="\\033[0;39m"
+
+# export PYTHONPATH=\$ROOT/auth/\$ME:\$PYTHONPATH
+# export REQMGR_CACHE_DIR=\$STATEDIR
+# export WMCORE_CACHE_DIR=\$STATEDIR
+
+# Start service conditionally on crond restart.
+sysboot()
+{
+  if [ -f \$CFGFILE ]; then
+    jemalloc.sh wmc-httpd -v -d \$STATEDIR -l "|rotatelogs \$LOGDIR/\$LOG-%Y%m%d-`hostname -s`.log 86400" \$CFGFILE
+  fi
+}
+
+# Start the service.
+start()
+{
+  echo "starting \$ME"
+  if [ -f \$CFGFILE ]; then
+    jemalloc.sh wmc-httpd -r -d \$STATEDIR -l "|rotatelogs \$LOGDIR/\$LOG-%Y%m%d-`hostname -s`.log 86400" \$CFGFILE
+  fi
+}
+
+
+# Stop the service.
+stop()
+{
+  echo "stopping \$ME"
+  if [ -f \$CFGFILE ]; then
+    wmc-httpd -k -d \$STATEDIR \$CFGFILE
+  fi
+}
+
+# Check if the server is running.
+status()
+{
+  if [ -f \$CFGFILE ]; then
+    wmc-httpd -s -d \$STATEDIR \$CFGFILE
+  fi
+}
+
+# Verify the security string.
+check()
+{
+  CHECK=\$(echo "\$1" | md5sum | awk '{print \$1}')
+  if [ \$CHECK != 94e261a5a70785552d34a65068819993 ]; then
+    echo "\$0: cannot complete operation, please check documentation." 1>&2
+    exit 2;
+  fi
+}
+
+# Main routine, perform action requested on command line.
+case \${1:-status} in
+  sysboot ) sysboot ;;
+  start | restart ) check "\$2"; stop; start ;;
+  status )   status ;;
+  stop ) check "\$2";  stop ;;
+  help ) help ;;
+  version ) echo "\$WMVERSION" ;;
+  * )  echo "\$0: unknown action '\$1', please try '\$0 help' or documentation." 1>&2; exit 1 ;;
+esac
+
+EOF
     done
 }
 

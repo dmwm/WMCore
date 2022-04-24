@@ -557,9 +557,9 @@ setupDeplTree(){
     [[ -d ${wmCurrPath}/auth/ ]] || mkdir -p ${wmCurrPath}/auth || return $?
     for service in $enabledList
     do
-        [[ -d ${wmCurrPath}/auth/${service} ]] || { err=$?; echo "could not create auth path for: $service";  return $err  ;}
-        [[ -d ${wmStatePath}/${service} ]] || { err=$?; echo "could not create state path for: $service";  return $err  ;}
-        [[ -d ${wmLogsPathePath}/${service} ]] || { err=$?; echo "could not create logs path for: $service";  return $err  ;}
+        [[ -d ${wmCurrPath}/auth/${service} ]] || mkdir -p ${wmCurrPath}/auth/${service} || { err=$?; echo "could not create auth path for: $service";  return $err  ;}
+        [[ -d ${wmStatePath}/${service} ]] || mkdir -p ${wmStatePath}/${service} || { err=$?; echo "could not create state path for: $service";  return $err  ;}
+        [[ -d ${wmLogsPath}/${service} ]] || mkdir -p ${wmLogsPath}/${service} || { err=$?; echo "could not create logs path for: $service";  return $err  ;}
     done
 
     _addWMCoreVenvVar X509_USER_CERT ${wmAuthPath}/dmwm-service-cert.pem
@@ -592,9 +592,9 @@ setupInitScripts(){
     local wmVersion=$(python -c "from WMCore import __version__ as WMCoreVersion; print(WMCoreVersion)")
     for service in $enabledList
     do
-        local manageScr=${wmCfgPath}/${service}/manage
-        [[ -d ${wmCfgPath}/${service} ]] && touch $manageScr && chmod 755 $manageScr || { err=$?; echo "could not setup startup scripts for $service";  return $err  ;}
-        cat<<EOF>>$manageSc
+        local manageScript=${wmCfgPath}/${service}/manage
+        [[ -d ${wmCfgPath}/${service} ]] && touch $manageScript && chmod 755 $manageScript || { err=$?; echo "could not setup startup scripts for $service";  return $err  ;}
+        cat<<EOF>>$manageScript
 #!/bin/sh
 
 help(){

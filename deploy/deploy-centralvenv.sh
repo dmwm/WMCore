@@ -29,9 +29,9 @@ help(){
       -i <pypi-index>                The pypi index to use (i.e. prod or test) [Default: prod - pointing to https://pypi.org/simple/]
       -h <help>                      Provides help to the current script
 
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -n -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -n -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
+    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
     # To chose the default flow and rely only on the pameters set to configure the deployment steps. This will avoid human intervention during deployment:
     # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/
@@ -285,6 +285,7 @@ startSetupVenv(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
+    echo "You still have 5 sec. to cancel before we proceed."
     sleep 5
 }
 
@@ -597,6 +598,7 @@ setupInitScripts(){
     echo "..."
 
     # DONE: To create the init.sh scripts
+    # First creating all the service level `manage' scripts:
     local wmVersion=$(python -c "from WMCore import __version__ as WMCoreVersion; print(WMCoreVersion)")
     for service in $enabledList
     do
@@ -706,6 +708,62 @@ esac
 
 EOF
     done
+
+    # Second creating the top level `wmcmanage' script:
+    cat <<EOF>${VIRTUAL_ENV}/bin/wmcmanage
+#!/bin/bash
+
+### The high level manage script for all WMCore enabled services.
+### It applies the chosen action on either the full set of enabled services for the
+### current virtual environment or to a single services pointed at the commandline
+
+help(){
+echo -e \$1
+cat <<EOH
+Usage: wmcmanage -h
+Usage: wmcmanage status[:what]
+Usage: wmcmanage start[:what] <security_string>
+Usage: wmcmanage stop[:what] <security_string>
+Usage: wmcmanage restart[:what] <security_string>
+Usage: wmcmanage version[:what]
+EOH
+}
+
+usage(){
+echo -e \$1
+help
+exit 1
+}
+
+[[ \$# -eq 0 ]] || usage
+[[ X"\$STAGE" == X ]] && usage
+
+STAGE="\$1"
+SEC_STRING=\$2
+
+case \$STAGE in
+    status:* | start:* | stop:* | restart:* | version:* )
+        WHAT=\${STAGE#*:} STAGE=\${STAGE%:*} ;;
+    status | start | stop | restart | version )
+        WHAT="*" ;;
+esac
+
+case \$STAGE in
+    status | start | stop | restart | version )
+        set -e
+        for service in \${WMCORE_SERVICE_ENABLED}/\$WHAT; do
+            [[ -f "\$service" ]] || continue
+            service=\${service##*/}
+            \${WMCORE_SERVICE_ROOT}/current/config/\$service/manage \$STAGE \$SEC_STRING
+        done
+        ;;
+    * )
+        echo "\$STAGE: bad stage, try -h for help" 1>&2
+        exit 1
+        ;;
+esac
+exit 0
+EOF
 }
 
 setupIpython(){

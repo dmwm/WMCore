@@ -561,12 +561,15 @@ setupDeplTree(){
     [[ -d $wmTmpPath ]] || mkdir -p $wmTmpPath || return $?
 
     # Creating auth, logs and state paths per enabled service:
-    # NOTE: We do need to hold at least the ${service}Secrets.py file inside $wmCurrPath,
+    # NOTE: We do need to hold at least the ${service}Secrets.py files inside $wmCurrPath,
+    #       and export them in the PYTHONPATH so that the secrets file can be reachable
     #       because those are deployment flavor dependent (e.g. prod, preprod, test)
     [[ -d ${wmCurrPath}/auth/ ]] || mkdir -p ${wmCurrPath}/auth || return $?
     for service in $enabledList
     do
         [[ -d ${wmCurrPath}/auth/${service} ]] || mkdir -p ${wmCurrPath}/auth/${service} || { err=$?; echo "could not create auth path for: $service";  return $err  ;}
+        _addWMCoreVenvVar PYTHONPATH ${wmCurrPath}/auth/${service}:$PYTHONPATH
+
         [[ -d ${wmStatePath}/${service} ]] || mkdir -p ${wmStatePath}/${service} || { err=$?; echo "could not create state path for: $service";  return $err  ;}
         [[ -d ${wmLogsPath}/${service} ]] || mkdir -p ${wmLogsPath}/${service} || { err=$?; echo "could not create logs path for: $service";  return $err  ;}
     done
@@ -709,8 +712,11 @@ esac
 EOF
     done
 
-    # Second creating the top level `wmcmanage' script:
-    cat <<EOF>${VIRTUAL_ENV}/bin/wmcmanage
+    # Creating the top level `wmcmanage' script:
+    # NOTE: We need to put it directly into the virtual environment bin/
+    local wmcManageScript=${VIRTUAL_ENV}/bin/wmcmanage
+    touch $wmcManageScript && chmod 755 $wmcManageScript || { err=$?; echo "could not setup the top level wmcmanage script.";  return $err  ;}
+    cat <<EOF>$wmcManageScript
 #!/bin/bash
 
 ### The high level manage script for all WMCore enabled services.
@@ -735,11 +741,10 @@ help
 exit 1
 }
 
-[[ \$# -eq 0 ]] || usage
-[[ X"\$STAGE" == X ]] && usage
-
+[[ \$# -eq 0 ]] && usage
 STAGE="\$1"
 SEC_STRING=\$2
+[[ X"\$STAGE" == X ]] && usage
 
 case \$STAGE in
     status:* | start:* | stop:* | restart:* | version:* )

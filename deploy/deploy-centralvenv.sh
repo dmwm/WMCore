@@ -6,7 +6,7 @@ help(){
     Usage: deploy-centralvenv.sh -c <central_services_url> [-s] [-n] [-v]
                                 [-r <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
                                 [-g <wmcore_config_repository>] [-d <wmcore_config_branch>]
-                                [-v wmcore_path] [-p <patches>]
+                                [-d wmcore_path] [-p <patches>] [-m <security string>]
                                 [-l <component_list>] [-i <pypi_index>]
                                 [-h <help>]
 
@@ -22,6 +22,7 @@ help(){
       -d  <wmcore_path>              WMCore virtual environment target path to be used for this deployment [Default: ./WMCore.venv3]
       -p  <patches>                  List of PR numbers [Default: None]
                                      (in double quotes and space separated e.g. "5906 5934 5922")
+      -m  <security string>          The security string to be used during deployment. Will be needed at startup [Default: ""]
       -l  <component_list>           List of components to be deployed [Default: "wmcore" - WMCore metapackage]
                                      (in double quotes and space separated e.g. "rqmgr2 reqmgr2ms")
                                      (pip based package version syntax is also acceptable e.g. "wmcore==2.0.0")
@@ -97,6 +98,7 @@ vmName=${vmName%%.*}
 pipIndex="prod"                                                           # pypi Index to use
 verboseMode=false
 noVenvCleanup=false
+secString=""
 
 # TODO: find python vars from env
 pythonCmd=/usr/bin/python3
@@ -104,7 +106,7 @@ pythonVersion=3.6
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
-while getopts ":t:c:r:b:g:j:d:p:l:i:snvh" opt; do
+while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvh" opt; do
     case ${opt} in
         d)
             venvPath=$OPTARG
@@ -124,6 +126,8 @@ while getopts ":t:c:r:b:g:j:d:p:l:i:snvh" opt; do
             wmCfgBranch=$OPTARG ;;
         p)
             serPatch=$OPTARG ;;
+        m)
+            secString=$OPTARG ;;
         l)
             componentList=$OPTARG ;;
         i)
@@ -150,6 +154,9 @@ $verboseMode && set -x
 
 # check for mandatory parameters:
 [[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
+
+# Calculate the security string md5 sum;
+secString=$(echo $secString | md5sum | awk '{print $1}')
 
 # expand the enabled services list
 # TODO: Find a proper way to include the `acdcserver' in the list bellow (its config is missing from service_configs).
@@ -273,6 +280,7 @@ startSetupVenv(){
     echo "noVenvCleanup: $noVenvCleanup"
     echo "verboseMode: $verboseMode"
     echo "central services host: $vmName"
+    echo "secSring: $secString"
     echo "======================================================="
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
@@ -679,7 +687,7 @@ status()
 check()
 {
   CHECK=\$(echo "\$1" | md5sum | awk '{print \$1}')
-  if [ \$CHECK != 94e261a5a70785552d34a65068819993 ]; then
+  if [ \$CHECK != $secString ]; then
     echo "\$0: cannot complete operation, please check documentation." 1>&2
     exit 2;
   fi

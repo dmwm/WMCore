@@ -46,8 +46,7 @@
         "Memory": 10000,
         "Multicore": 1, 
         "PrepID": "TEST-CMSSW_12_0_0__fullsim_PU_2021_14TeV-ZMM_14-00004",
-        "PrimaryDataset": "UPDATEME", 
-        "ProcessingString": "DEFAULT_ProcStr", 
+        "ProcessingString": "DEFAULT_ProcStr",
         "ProcessingVersion": 1, 
         "RequestPriority": 600000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
@@ -67,7 +66,7 @@
             "KeepOutput": true,
             "MCPileup": "/RelValMinBias_14TeV/CMSSW_12_0_0_pre6-120X_mcRun3_2021_realistic_v4-v1/GEN-SIM",
             "Multicore": 8,
-            "ProcessingString": "Step1_WMCore_TEST", 
+            "ProcessingString": "Step1_WMCore_TEST",
             "ScramArch": [
                 "slc7_amd64_gcc900"
             ], 

@@ -1,3 +1,14 @@
+2.0.3.pre1 to 2.0.3.pre2:
+  - move ckey/cert functions to Utils.CertTools (Valentin Kuznetsov) #11101
+  - Add bin and dependencies to wmcore PyPI package (Erik Gough) #11103
+  - Remove cPickle support (Erik Gough) #11096
+  - Update wmagent deploy script to add opportunistic resources one by one (Alan Malta Rodrigues) #11097
+  - Support adding diskless resources into the database (Alan Malta Rodrigues) #11097
+  - Remove no longer needed code in the StatusChangeTasks ReqMgr2 thread (Alan Malta Rodrigues) #11095
+  - Bump WMAgent deployment example to the latest stable version (Alan Malta Rodrigues) #11091
+  - Remove PFNs from a final document we send to WMArchive (Valentin Kuznetsov) #10998
+
+
 2.0.2 to 2.0.3.pre1:
   - Enhance logic to map ScramArch to OS (Alan Malta Rodrigues) #11088
   - When ScramArch is empty str/list/None, return any as required_os (Alan Malta Rodrigues) #11083

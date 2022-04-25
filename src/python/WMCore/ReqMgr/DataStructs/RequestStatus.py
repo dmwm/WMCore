@@ -146,18 +146,17 @@ ALLOWED_ACTIONS_FOR_STATUS = {
     "rejected-archived": [],
 }
 
-# transition automatically controlled by ReqMgr2
-# aborted to completed instead of aborted-completed
-# since workqueue mapping doesn't have aborted-completed status.
-# but it need to be converted to aborted-completed whenever update db
-### NOTE: the order of the list matters and it's used for status transition
+# Workflow state transition automatically controlled by ReqMgr2
+### NOTE: order of this list matters and it's used for status transition
 AUTO_TRANSITION = {"staged": ["acquired", "running-open", "running-closed", "completed"],
                    "acquired": ["running-open", "running-closed", "completed"],
                    "running-open": ["running-closed", "completed"],
-                   "aborted": ["completed"],
-                   "running-closed": ["completed"],
-                   "force-complete": ["completed"]}
+                   "running-closed": ["completed"]}
 
+# Workflow state transition automatically controlled by ReqMgr2
+# Specific to workflows either aborted or force-completed
+CANCEL_AUTO_TRANSITION = {"aborted": "aborted-completed",
+                          "force-complete": "completed"}
 
 # list of destination states which doesn't allow any additional argument update
 STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in viewitems(ALLOWED_ACTIONS_FOR_STATUS) if len(val) == 0]

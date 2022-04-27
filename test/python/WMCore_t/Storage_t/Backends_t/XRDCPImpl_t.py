@@ -1,9 +1,9 @@
 from __future__ import (print_function, division)
 
 import unittest
+import os
 
 from mock import mock
-
 from WMCore.Storage.Backends.XRDCPImpl import XRDCPImpl
 
 
@@ -87,6 +87,9 @@ class XRDCPImplTest(unittest.TestCase):
             copyCommand += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
             if copyCommandOptions:
                 targetPFN += "?svcClass=t0cms"
+        initFile = "/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/current/el7-x86_64/setup.sh"
+        if not self.XRDCPImpl._checkXRDUtilsExist() and os.path.isfile(initFile):
+            copyCommand += "source {}\n".format(initFile)
         copyCommand += "xrdcp --force --nopbar "
         if unknow:
             copyCommand += "%s " % unknow

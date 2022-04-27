@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+"""
+When to use this script: when a workflow is in status "aborted" but
+it still has active GQEs.
+
+Use this script to mimic exactly the same action as the one taken
+by ReqMgr2 when aborting a workflow (without a state transition).
+
+This script will mark the global workqueue elements - for a given
+workflow - as CancelRequested, such that the agents can proceed
+and acknowledge it, moving elements to status Canceled.
+"""
+from __future__ import print_function
+
+import os
+import sys
+
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+
+
+def main():
+    args = sys.argv[1:]
+    if not len(args) == 1:
+        print("usage: kill-workflow-in-global workflowname")
+        sys.exit(0)
+    wflowName = args[0]
+
+    # get configuration file path
+    if "WMAGENT_CONFIG" not in os.environ:
+        os.environ['WMAGENT_CONFIG'] = '/data/srv/wmagent/current/config/wmagent/config.py'
+
+    # load config
+    wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])
+
+    gqService = WorkQueue(wmConfig.WorkloadSummary.couchurl,
+                          wmConfig.WorkQueueManager.dbname)
+
+    gqService.cancelWorkflow(wflowName)
+    print("Cancel requested for workflow: {}".format(wflowName))
+
+
+if __name__ == "__main__":
+    main()

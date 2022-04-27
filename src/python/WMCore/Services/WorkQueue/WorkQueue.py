@@ -14,7 +14,7 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
     :param: elementsStatusSet - dictionary of {request_name: set of all WQE status of this request, ...}
     :returns: request status
 
-    Here is the mapping between request status and it GQE status
+    Here is the mapping between request status and the GQE status
     1. acquired:  all the GQEs are either Available or Negotiating.
         Work is still in GQ, but not LQ.
     2. running-open: at least one of the GQEs are in Acquired status.
@@ -24,9 +24,9 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
         All work is finished in WMBS (excluding cleanup and logcollect)
     5. failed: all the GQEs are in Failed status. If the workflow has multiple GQEs
         and only a few are in Failed status, then just follow the usual request status.
-
-    NOTE: CancelRequested status is a transient status and it should not trigger
-    any request status transition (thus, None gets returned).
+    6. canceled: used to distinguish requests that have been correctly canceled,
+        coming from workflows either aborted or force-complete. This state does not
+        trigger a workflow status transition.
     """
     if not elementsStatusSet:
         return None
@@ -37,11 +37,15 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
     running = set(["Running"])
     runningOpen = set(["Available", "Negotiating", "Acquired"])
     runningClosed = set(["Running", "Done", "Canceled"])
+    canceled = set(["CancelRequested", "Done", "Canceled", "Failed"])
     completed = set(["Done", "Canceled", "Failed"])
     failed = set(["Failed"])
 
-    if forceCompleted <= elementsStatusSet:  # at least 1 WQE in CancelRequested
-        return None
+    # Just a reminder:
+    # <= every element in the left set is also in the right set
+    # & return elements common between the left and right set
+    if elementsStatusSet == forceCompleted:  # all WQEs in CancelRequested
+        return "canceled"
     elif elementsStatusSet == acquired:  # all WQEs in Acquired
         return "running-open"
     elif elementsStatusSet == running:  # all WQEs in Running
@@ -52,6 +56,8 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
         return "acquired"
     elif elementsStatusSet <= completed:  # all WQEs in a final state
         return "completed"
+    elif elementsStatusSet <= canceled:  # some WQEs still waiting to be cancelled
+        return "canceled"
     elif elementsStatusSet & runningOpen:  # at least 1 WQE still in GQ
         return "running-open"
     elif elementsStatusSet & runningClosed:  # all WQEs already in LQ and WMBS
@@ -213,7 +219,7 @@ class WorkQueue(object):
 
     def cancelWorkflow(self, wf):
         """Cancel a workflow"""
-        nonCancelableElements = ['Done', 'Canceled', 'Failed']
+        nonCancelableElements = ['Done', 'CancelRequested', 'Canceled', 'Failed']
         data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
                                 {'startkey': [wf], 'endkey': [wf, {}],
                                  'reduce': False})

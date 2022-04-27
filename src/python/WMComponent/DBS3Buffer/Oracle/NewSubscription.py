@@ -30,6 +30,5 @@ class NewSubscription(MySQLNewSubscription):
                  AND custodial = :custodial
                  AND auto_approve = :auto_approve
                  AND move = :move
-                 AND priority = :priority
-                 AND dataset_lifetime = :dataset_lifetime )
+                 AND priority = :priority )
              """

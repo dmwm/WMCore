@@ -614,11 +614,11 @@ setupInitScripts(){
     do
         local manageScript=${wmCfgPath}/${service}/manage
         [[ -d ${wmCfgPath}/${service} ]] && touch $manageScript && chmod 755 $manageScript || { err=$?; echo "could not setup startup scripts for $service";  return $err  ;}
-        cat<<EOF>>$manageScript
-#!/bin/sh
+        cat<<EOF>$manageScript
+#!/bin/bash
 
 help(){
-echo -e $1
+echo -e \$1
 cat <<EOH
 Usage: manage ACTION [SECURITY-STRING]
 
@@ -634,7 +634,7 @@ EOH
 }
 
 usage(){
-echo -e $1
+echo -e \$1
 help
 exit 1
 }
@@ -648,10 +648,17 @@ LOGDIR=\${WMCORE_SERVICE_LOGS}/\$ME
 STATEDIR=\${WMCORE_SERVICE_STATE}/\$ME
 
 # NOTE: we need a better naming conventin for config-* files
-CFGFILE=\$CFGDIR/config-*.py
+# first expand all config files found into a simple indexed array:
+CFGFILE=(\$CFGDIR/config*.py)
+
+# check if we have array length grater than 1 - we have more than a single config in the same directory:
+[[ \${#CFGFILE[*]} -gt 1 ]] && { echo "Found more than a single configuration file for the current service: \${CFGFILE[*]}" ; exit 1 ;}
+
+# check if the file is actually readable:
+[[ -r \$CFGFILE ]] || { echo "Could not find the service configuration file for: \$ME at: \$CFGFILE "; exit 1 ;}
 
 LOG=$service
-AUTHDIR=\$ROOT/current/auth/$ME
+AUTHDIR=\$ROOT/current/auth/\$ME
 COLOR_OK="\\033[0;32m"
 COLOR_WARN="\\033[0;31m"
 COLOR_NORMAL="\\033[0;39m"
@@ -762,7 +769,6 @@ esac
 
 case \$STAGE in
     status | start | stop | restart | version )
-        set -e
         for service in \${WMCORE_SERVICE_ENABLED}/\$WHAT; do
             [[ -f "\$service" ]] || continue
             service=\${service##*/}
@@ -874,8 +880,8 @@ main(){
     if $runFromSource; then
         cloneWMCore  || handleReturn $?
     fi
-    pkgInstall       || handleReturn $?
-    setupDependencies|| handleReturn $?
+    # pkgInstall       || handleReturn $?
+    # setupDependencies|| handleReturn $?
     setupRucio       || handleReturn $?
     setupConfig      || handleReturn $?
     setupInitScripts || handleReturn $?

@@ -1,3 +1,8 @@
+2.0.2.patch2 to 2.0.2.patch3:
+  - Check CMSSW version before getting sim-datatier map (germanfgv) #11118
+  - Fix redundant WHERE NOT EXISTS clause parameters for protecting from Unique constraints in ORACLE for DBS3Buffer/NewSubscriptions (Todor Ivanov) #11111
+
+
 2.0.2.patch1 to 2.0.2.patch2:
   - Update wmagent deploy script to add opportunistic resources one by one (Alan Malta Rodrigues) #11100
   - Support adding diskless resources into the database (Alan Malta Rodrigues) #11100

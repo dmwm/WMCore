@@ -100,9 +100,16 @@ verboseMode=false
 noVenvCleanup=false
 secString=""
 
-# TODO: find python vars from env
-pythonCmd=/usr/bin/python3
-pythonVersion=3.6
+# NOTE: We are about to stick to Python3 solely from now on. So if the default
+#       python executable for the system we are working on (outside the virtual
+#       environment) is linked to Python2, then we should try creating the environment
+#       with `python3' instead of `python`. If this link is not present, we simply
+#       fail during virtual environment creation. Once we are inside the virtual
+#       environment the default link should always point to e Python3 executable
+#       so the `pythonCmd' variable shouldn't be needed any more.
+
+pythonCmd=python
+[[ $(python -V 2>&1) =~ Python\ *2.* ]] && pythonCmd=python3
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1

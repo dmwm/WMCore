@@ -126,10 +126,6 @@ class CMSSW(Executor):
         cmsswCommand = self.step.application.command.executable
         cmsswConfig = self.step.application.command.configuration
         cmsswArguments = self.step.application.command.arguments
-        userTarball = ','.join(self.step.user.inputSandboxes)
-        userFiles = ','.join(self.step.user.userFiles)
-        logging.info('User files are %s', userFiles)
-        logging.info('User sandboxes are %s', userTarball)
 
         scramArch = getSingleScramArch(scramArch)
 
@@ -256,8 +252,6 @@ class CMSSW(Executor):
                 jobReportXML,
                 cmsswCommand,
                 cmsswConfig,
-                userTarball,
-                userFiles,
                 cmsswArguments]
         logging.info("Executing CMSSW. args: %s", args)
 
@@ -394,7 +388,7 @@ REQUIRED_ARGUMENT_COUNT=5
 if [ $# -lt $REQUIRED_ARGUMENT_COUNT ]
 then
     echo "Usage: `basename $0` <SCRAM_SETUP>  <SCRAM_ARCH> <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION>\
-                 <JOB_REPORT> <EXECUTABLE> <CONFIG> <USER_TARBALLS> <USER_FILES> [Arguments for cmsRun]"
+                 <JOB_REPORT> <EXECUTABLE> <CONFIG> [Arguments for cmsRun]"
     exit 70
 fi
 
@@ -408,12 +402,8 @@ CMSSW_VERSION=$5
 JOB_REPORT=$6
 EXECUTABLE=$7
 CONFIGURATION=$8
-USER_TARBALL=$9
 shift;shift;shift;shift;shift;
-shift;shift;shift;shift;
-# Can only do nine parameters at a time
-USER_FILES=$1
-shift;
+shift;shift;shift;
 echo "Setting up Frontier log level"
 export FRONTIER_LOG_LEVEL=warning
 
@@ -438,20 +428,6 @@ if [ $EXIT_STATUS -ne 0 ]; then echo "***\nCouldn't chdir: $EXIT_STATUS\n"; exit
 eval `$SCRAM_COMMAND runtime -sh`
 EXIT_STATUS=$?
 if [ $EXIT_STATUS -ne 0 ]; then echo "***\nCouldn't get scram runtime: $EXIT_STATUS\n*"; exit 73; fi
-if [ -n "$USER_TARBALL" ] ; then
-    python2 -m WMCore.WMRuntime.Scripts.UnpackUserTarball $USER_TARBALL $USER_FILES
-    EXIT_STATUS=$?
-    if [ $EXIT_STATUS -ne 0 ]; then
-       echo "***\nCouldn't untar sandbox with python2: $EXIT_STATUS\n";
-       echo "***\nWill try with python2.6 as it might be an old CMSSW release!"
-       python2.6 -m WMCore.WMRuntime.Scripts.UnpackUserTarball $USER_TARBALL $USER_FILES
-       EXIT_STATUS=$?
-       if [ $EXIT_STATUS -ne 0 ]; then
-          echo "***\nCouldn't untar sandbox with python2.6: $EXIT_STATUS\n";
-          exit 74;
-       fi
-    fi
-fi
 echo "Completed SCRAM project"
 cd ..
 echo "Executing CMSSW"

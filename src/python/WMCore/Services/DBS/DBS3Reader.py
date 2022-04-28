@@ -37,8 +37,7 @@ def remapDBS3Keys(data, stringify=False, **others):
                'num_block': 'NumberOfBlocks', 'num_lumi': 'NumberOfLumis',
                'event_count': 'NumberOfEvents', 'run_num': 'RunNumber',
                'file_size': 'FileSize', 'block_size': 'BlockSize',
-               'file_count': 'NumberOfFiles', 'open_for_writing': 'OpenForWriting',
-               'logical_file_name': 'LogicalFileName',
+               'file_count': 'NumberOfFiles', 'logical_file_name': 'LogicalFileName',
                'adler32': 'Adler32', 'check_sum': 'Checksum', 'md5': 'Md5',
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
@@ -395,7 +394,7 @@ class DBS3Reader(object):
         result['block'] = block if block else ''
         return result
 
-    def listFileBlocks(self, dataset, onlyClosedBlocks=False, blockName=None):
+    def listFileBlocks(self, dataset, blockName=None):
         """
         _listFileBlocks_
 
@@ -406,7 +405,6 @@ class DBS3Reader(object):
         args = {'dataset': dataset, 'detail': False}
         if blockName:
             args['block_name'] = blockName
-        if onlyClosedBlocks:
             args['detail'] = True
         try:
             blocks = self.dbs.listBlocks(**args)
@@ -415,30 +413,7 @@ class DBS3Reader(object):
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
 
-        if onlyClosedBlocks:
-            result = [x['block_name'] for x in blocks if str(x['open_for_writing']) != "1"]
-
-        else:
-            result = [x['block_name'] for x in blocks]
-
-        return result
-
-    def listOpenFileBlocks(self, dataset):
-        """
-        _listOpenFileBlocks_
-
-        Retrieve a list of open fileblock names for a dataset
-
-        """
-        self.checkDatasetPath(dataset)
-        try:
-            blocks = self.dbs.listBlocks(dataset=dataset, detail=True)
-        except dbsClientException as ex:
-            msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
-            msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
-
-        result = [x['block_name'] for x in blocks if str(x['open_for_writing']) == "1"]
+        result = [x['block_name'] for x in blocks]
 
         return result
 
@@ -634,12 +609,10 @@ class DBS3Reader(object):
 
         :return: a dictionary in the format of:
             {"PhEDExNodeNames" : [],
-             "Files" : { LFN : Events },
-             "IsOpen" : True|False}
+             "Files" : { LFN : Events }}
         """
         result = {"PhEDExNodeNames": [],  # FIXME: we better get rid of this line!
-                  "Files": self.listFilesInBlock(fileBlockName),
-                  "IsOpen": self.blockIsOpen(fileBlockName)}
+                  "Files": self.listFilesInBlock(fileBlockName)}
         return result
 
     def getFileBlockWithParents(self, fileBlockName):
@@ -650,8 +623,7 @@ class DBS3Reader(object):
 
         :return: a dictionary in the format of:
             {"PhEDExNodeNames" : [],
-             "Files" : { LFN : Events },
-             "IsOpen" : True|False}
+             "Files" : { LFN : Events }}
         """
         fileBlockName = decodeBytesToUnicode(fileBlockName)
 
@@ -660,8 +632,7 @@ class DBS3Reader(object):
             raise DBSReaderError(msg % fileBlockName)
 
         result = {"PhEDExNodeNames": [],  # FIXME: we better get rid of this line!
-                  "Files": self.listFilesInBlockWithParents(fileBlockName),
-                  "IsOpen": self.blockIsOpen(fileBlockName)}
+                  "Files": self.listFilesInBlockWithParents(fileBlockName)}
         return result
 
     def listBlockParents(self, blockName):
@@ -674,24 +645,6 @@ class DBS3Reader(object):
         blocks = self.dbs.listBlockParents(block_name=blockName)
         result = [block['parent_block_name'] for block in blocks]
         return result
-
-    def blockIsOpen(self, blockName):
-        """
-        _blockIsOpen_
-
-        Return True if named block is open, false if not, or if block
-        doenst exist
-
-        """
-        self.checkBlockName(blockName)
-        blockInstance = self.dbs.listBlocks(block_name=blockName, detail=True)
-        if len(blockInstance) == 0:
-            return False
-        blockInstance = blockInstance[0]
-        isOpen = blockInstance.get('open_for_writing', 1)
-        if isOpen == 0:
-            return False
-        return True
 
     def blockToDatasetPath(self, blockName):
         """

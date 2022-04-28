@@ -387,14 +387,14 @@ class WorkQueue(WorkQueueBase):
         dbs = self._getDbs(match['Dbs'])
         datasetName = list(match['Inputs'])[0]
 
-        blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
+        blocks = dbs.listFileBlocks(datasetName)
         for blockName in blocks:
             blockSummary = dbs.getFileBlock(blockName)
             blockSummary['PhEDExNodeNames'] = self.rucio.getDataLockedAndAvailable(name=blockName,
                                                                                    account=self.params['rucioAccount'])
             tmpDsetDict[blockName] = blockSummary
 
-        dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
+        dbsDatasetDict = {'Files': [], 'PhEDExNodeNames': []}
         dbsDatasetDict['Files'] = [f for block in listvalues(tmpDsetDict) for f in block['Files']]
         dbsDatasetDict['PhEDExNodeNames'].extend(
                 [f for block in listvalues(tmpDsetDict) for f in block['PhEDExNodeNames']])
@@ -463,33 +463,6 @@ class WorkQueue(WorkQueueBase):
         self.logger.info("LQE %s set to 'Running' for request %s", match.id, match['RequestName'])
 
         return sub
-
-    def addNewFilesToOpenSubscriptions(self, *elements):
-        """Inject new files to wmbs for running elements that have new files.
-            Assumes elements are from the same workflow"""
-        if not self.params['LocalQueueFlag']:
-            return
-
-        from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-        wmspec = None
-        for ele in elements:
-            if not ele.isRunning() or not ele['SubscriptionId'] or not ele:
-                continue
-            if not ele['Inputs'] or not ele['OpenForNewData'] or ele['StartPolicy'] == 'Dataset':
-                continue
-            if not wmspec:
-                wmspec = self.backend.getWMSpec(ele['RequestName'])
-            blockName, dbsBlock = self._getDBSBlock(ele, wmspec)
-            if ele['NumOfFilesAdded'] != len(dbsBlock['Files']):
-                self.logger.info("Adding new files to open block %s (%s)", blockName, ele.id)
-                wmbsHelper = WMBSHelper(wmspec, ele['TaskName'], blockName, ele['Mask'], self.params['CacheDir'])
-                ele['NumOfFilesAdded'] += wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)[1]
-                self.backend.updateElements(ele.id, NumOfFilesAdded=ele['NumOfFilesAdded'])
-            if dbsBlock['IsOpen'] != ele['OpenForNewData']:
-                self.logger.info("Closing open block %s (%s)", blockName, ele.id)
-                self.backend.updateInboxElements(ele['ParentQueueId'], OpenForNewData=dbsBlock['IsOpen'])
-                self.backend.updateElements(ele.id, OpenForNewData=dbsBlock['IsOpen'])
-                ele['OpenForNewData'] = dbsBlock['IsOpen']
 
     def _assignToChildQueue(self, queue, *elements):
         """Assign work from parent to queue"""
@@ -1017,8 +990,6 @@ class WorkQueue(WorkQueueBase):
                         else:
                             parentQueueDeleted = False
                         continue
-
-                    self.addNewFilesToOpenSubscriptions(*elements)
 
                     updated_elements = [x for x in result['Elements'] if x.modified]
                     for x in updated_elements:

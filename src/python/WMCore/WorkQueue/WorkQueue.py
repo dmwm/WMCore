@@ -607,6 +607,7 @@ class WorkQueue(WorkQueueBase):
             else:
                 self.logger.debug('Not deleting "%s" as it is %s', request.id, request['Status'])
 
+    # NOTE: this function is not executed by local workqueue
     def queueWork(self, wmspecUrl, request=None, team=None):
         """
         Take and queue work from a WMSpec.
@@ -640,23 +641,62 @@ class WorkQueue(WorkQueueBase):
         work = self.processInboundWork(inbound, throw=True)
         return len(work)
 
-    def addWork(self, requestName, rucioObj=None):
+    def addWork(self, inboundElem, rucioObj=None):
         """
         Check and add new elements to an existing running request,
         if supported by the start policy.
-        """
-        self.logger.info('addWork() checking "%s"', requestName)
-        try:
-            inbound = self.backend.getInboxElements(elementIDs=[requestName], loadSpec=True)
-        except CouchNotFoundError:
-            # This shouldn't happen, the request is in running-open therefore it must exist in the inbox
-            self.logger.error('Can not find request %s for work addition', requestName)
-            return 0
 
-        work = []
-        if inbound:
-            work = self.processInboundWork(inbound, throw=True, continuous=True, rucioObj=rucioObj)
-        return len(work)
+        :param inboundElem: dict representation for a WorkQueueElement object,
+            including the WMSpec file.
+        :param rucioObj: object to the Rucio class
+        :return: amount of new work units added to the request
+        """
+        result = []
+        self.logger.info('Trying to add more work for: %s', inboundElem['RequestName'])
+
+        try:
+            # Check we haven't already split the work, unless it's continuous processing
+            work, rejectedWork, badWork = self._splitWork(inboundElem['WMSpec'], data=inboundElem['Inputs'],
+                                                          mask=inboundElem['Mask'], inbound=inboundElem,
+                                                          continuous=True, rucioObj=rucioObj)
+
+            # if there is new work, then insert it into the database
+            newWork = self.backend.insertElements(work, parent=inboundElem)
+
+            # store the inputs in the global queue inbox workflow element
+            processedInputs = []
+            for unit in newWork:
+                processedInputs.extend(list(unit['Inputs']))
+
+            # update the list of processed and rejected inputs with what is already
+            # defined in the workqueue inbox
+            processedInputs.extend(inboundElem['ProcessedInputs'])
+            rejectedWork.extend(inboundElem['RejectedInputs'])
+            if newWork:
+                # then also update the timestamp for when new data was found
+                self.backend.updateInboxElements(inboundElem.id,
+                                                 ProcessedInputs=processedInputs,
+                                                 RejectedInputs=rejectedWork,
+                                                 TimestampFoundNewData=int(time.time()))
+            # if global queue, then update workflow stats to request mgr couch doc
+            # remove the "UnittestFlag" - need to create the reqmgrSvc emulator
+            if not self.params.get("UnittestFlag", False):
+                # get statistics for the new work
+                totalStats = self._getTotalStats(newWork)
+                # FIXME TODO: stats need to be updated, not written only once!
+                self.reqmgrSvc.updateRequestStats(inboundElem['WMSpec'].name(), totalStats)
+
+            if badWork:
+                msg = "Request with the following unprocessable input data: %s" % badWork
+                self.logdb.post(inboundElem['RequestName'], msg, 'warning')
+        except Exception as exc:
+            self.logger.error('Generic exception adding work to WQE inbox: %s. Error: %s',
+                              inboundElem, str(exc))
+        else:
+            result.extend(newWork)
+
+        self.logger.info('Added %d new elements for request: %s', len(result), inboundElem['RequestName'])
+        return len(result)
 
     def status(self, status=None, elementIDs=None,
                dictKey=None, wmbsInfo=None, loadSpec=False,
@@ -818,95 +858,57 @@ class WorkQueue(WorkQueueBase):
 
         return len(work)
 
-    def closeWork(self, workflows, rucioObj=None):
+    def closeWork(self):
         """
-        Global queue service that looks for the inbox elements that are still running open
-        and checks whether they should be closed already. If a list of workflows
-        is specified then those workflows are closed regardless of their current status.
+        Global queue service that looks for the inbox elements that are still active
+        and checks whether they should be closed for new data or not.
         An element is closed automatically when one of the following conditions holds true:
         - The StartPolicy doesn't define a OpenRunningTimeout or this delay is set to 0
-        - A period longer than OpenRunningTimeout has passed since the last child element was created or an open block was found
-          and the StartPolicy newDataAvailable function returns False.
-        It also checks if new data is available and updates the inbox element
-        """
-        # give preference to rucio object created by the CherryPy threads
-        if not rucioObj:
-            rucioObj = self.rucio
+        - A period longer than OpenRunningTimeout has passed since the last child element
+           was created or an open block was found and the StartPolicy newDataAvailable
+           function returns False.
 
+        :return: list of workqueue_inbox elements that have been closed
+        """
+        if self.params['LocalQueueFlag']:
+            return  # GlobalQueue-only service
         if not self.backend.isAvailable():
             self.logger.warning('Backend busy or down: Can not close work at this time')
             return
 
-        if self.params['LocalQueueFlag']:
-            return  # GlobalQueue-only service
+        workflowsToCheck = self.backend.getInboxElements(OpenForNewData=True)
+        self.logger.info("Retrieved a list of %d open workflows", len(workflowsToCheck))
+        workflowsToClose = []
+        currentTime = time.time()
+        for element in workflowsToCheck:
+            # fetch attributes from the inbox workqueue element
+            openRunningTimeout = element.get('OpenRunningTimeout', 0)
+            foundNewDataTime = element.get('TimestampFoundNewData', 0)
+            if not openRunningTimeout:
+                self.logger.info("Workflow %s has no OpenRunningTimeout. Queuing to be closed.",
+                                 element['RequestName'])
+                workflowsToClose.append(element.id)
+            elif (currentTime - foundNewDataTime) > openRunningTimeout:
+                # then it's been too long since the last element has been found
+                self.logger.info("Workflow %s has expired OpenRunningTimeout. Queuing to be closed.",
+                                 element['RequestName'])
+                workflowsToClose.append(element.id)
 
-        if workflows and not isinstance(workflows, list):
-            workflowsToClose = [workflows]
-        elif workflows:
-            workflowsToClose = workflows
-        else:
-            workflowsToCheck = self.backend.getInboxElements(OpenForNewData=True)
-            workflowsToClose = []
-            currentTime = time.time()
-            for element in workflowsToCheck:
-                # Easy check, close elements with no defined OpenRunningTimeout
-                policy = element.get('StartPolicy', {})
-                openRunningTimeout = policy.get('OpenRunningTimeout', 0)
-                if not openRunningTimeout:
-                    # Closing, no valid OpenRunningTimeout available
-                    workflowsToClose.append(element.id)
-                    continue
-
-                # Check if new data is currently available
-                skipElement = False
-                spec = self.backend.getWMSpec(element.id)
-                for topLevelTask in spec.taskIterator():
-                    policyName = spec.startPolicy()
-                    if not policyName:
-                        raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
-
-                    policyInstance = startPolicy(policyName, self.params['SplittingMapping'],
-                                                 rucioObj=rucioObj, logger=self.logger)
-                    if not policyInstance.supportsWorkAddition():
-                        continue
-                    if policyInstance.newDataAvailable(topLevelTask, element):
-                        skipElement = True
-                        self.backend.updateInboxElements(element.id, TimestampFoundNewData=currentTime)
-                        msg = "There are blocks still open for writing in DBS."
-                        self.logdb.post(element['RequestName'], msg, "warning")
-                        break
-                if skipElement:
-                    continue
-
-                # Check if the delay has passed
-                newDataFoundTime = element.get('TimestampFoundNewData', 0)
-                childrenElements = self.backend.getElementsForParent(element)
-                if childrenElements:
-                    lastUpdate = float(max(childrenElements, key=lambda x: x.timestamp).timestamp)
-                    if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
-                        workflowsToClose.append(element.id)
-                    # if it is successful remove previous error
-                    self.logdb.delete(element.id, "error", this_thread=True)
-                else:
-                    msg = "ChildElement is empty for element id %s: investigate" % element.id
-                    self.logdb.post(element.id, msg, "error")
-                    # self.logdb.upload2central(element.id)
-                    self.logger.error(msg)
-
-        msg = 'No workflows to close.\n'
         if workflowsToClose:
             try:
+                self.logger.info('Closing workflows in workqueue_inbox for: %s', workflowsToClose)
                 self.backend.updateInboxElements(*workflowsToClose, OpenForNewData=False)
-                msg = 'Closed workflows : %s.\n' % ', '.join(workflows)
+                msg = 'Closed inbox elements for: %s.\n' % ', '.join(workflowsToClose)
             except CouchInternalServerError as ex:
-                msg = 'Failed to close workflows. Error was CouchInternalServerError.'
+                msg = 'Failed to close workflows with a CouchInternalServerError exception. '
+                msg += 'Details: {}'.format(str(ex))
                 self.logger.error(msg)
-                self.logger.error('Error message: %s', str(ex))
-                raise
             except Exception as ex:
-                msg = 'Failed to close workflows. Generic exception caught.'
-                self.logger.error(msg)
-                self.logger.error('Error message: %s', str(ex))
+                msg = 'Failed to close workflows with a generic exception. '
+                msg += 'Details: {}'.format(str(ex))
+                self.logger.exception(msg)
+        else:
+            msg = 'No workflows to close.\n'
 
         self.backend.recordTaskActivity('workclosing', msg)
 
@@ -1057,15 +1059,16 @@ class WorkQueue(WorkQueueBase):
                 continue
             if continuous:
                 policy.modifyPolicyForWorkAddition(inbound)
-            self.logger.info('Splitting %s with policy %s params = %s', topLevelTask.getPathName(),
-                             policyName, self.params['SplittingMapping'])
+            self.logger.info('Splitting %s with policy name %s and policy params %s',
+                             topLevelTask.getPathName(), policyName,
+                             self.params['SplittingMapping'].get(policyName))
             units, rejectedWork, badWork = policy(spec, topLevelTask, data, mask, continuous=continuous)
             self.logger.info('Work splitting completed with %d units, %d rejectedWork and %d badWork',
                              len(units), len(rejectedWork), len(badWork))
             for unit in units:
-                msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
-                                                                                  unit['Task'].getPathName(),
-                                                                                  unit['Jobs'], policyName)
+                msg = 'Queuing element {} for {} with policy {}, '.format(unit.id, unit['Task'].getPathName(),
+                                                                          unit['StartPolicy'])
+                msg += 'with {} job(s) and {} lumis'.format(unit['Jobs'], unit['NumberOfLumis'])
                 if unit['Inputs']:
                     msg += ' on %s' % list(unit['Inputs'])[0]
                 if unit['Mask']:
@@ -1096,6 +1099,10 @@ class WorkQueue(WorkQueueBase):
         """Retrieve work from inbox, split and store
         If request passed then only process that request
         """
+        inbound_work = inbound_work or []
+        msg = "Executing processInboundWork with {} inbound_work, ".format(len(inbound_work))
+        msg += "throw: {} and continuous: {}".format(throw, continuous)
+        self.logger.info(msg)
         if self.params['LocalQueueFlag']:
             self.logger.info("fixing conflict...")
             self.backend.fixConflicts()  # db should be consistent

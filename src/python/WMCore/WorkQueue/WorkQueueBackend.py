@@ -187,7 +187,7 @@ class WorkQueueBackend(object):
                        'RequestName': spec.name(),
                        'StartPolicy': spec.startPolicyParameters(),
                        'EndPolicy': spec.endPolicyParameters(),
-                       'OpenForNewData': False
+                       'OpenForNewData': True
                        })
         unit = CouchWorkQueueElement(self.inbox, elementParams=kwargs)
         unit.id = spec.name()

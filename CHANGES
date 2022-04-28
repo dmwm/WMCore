@@ -1,3 +1,12 @@
+2.0.3.pre2 to 2.0.3.pre3:
+  - change fallback for missing system xrootd-client (Dirk Hufnagel) #11117
+  - Update ReqMgr2 CP thread to properly deal with aborted/force-complete workflows (Alan Malta Rodrigues) #11113
+  - Create script to cancel GQEs (Alan Malta Rodrigues) #11113
+  - Remove support for Unpacking user tarballs. No longer used by CRAB. (khurtado) #11114
+  - Minor test json template updates (Alan Malta Rodrigues) #10864
+  - Check CMSSW version before getting sim-datatier map (germanfgv) #11110
+
+
 2.0.3.pre1 to 2.0.3.pre2:
   - move ckey/cert functions to Utils.CertTools (Valentin Kuznetsov) #11101
   - Add bin and dependencies to wmcore PyPI package (Erik Gough) #11103

@@ -94,6 +94,7 @@ class CleanCouchPoller(BaseWorkerThread):
         self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
         self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", None)
         self.DataKeepDays = getattr(config.TaskArchiver, "DataKeepDays", 0.125)  # 3 hours
+        self.cleanCouchDelayHours = getattr(config.TaskArchiver, "cleanCouchDelayHours", 24)
 
     def setup(self, parameters=None):
         """
@@ -192,10 +193,14 @@ class CleanCouchPoller(BaseWorkerThread):
         for workflowName in workflows:
             if not self.isUploadedToWMArchive(workflowName):
                 continue
+            if not self.useReqMgrForCompletionCheck:
+                # NOTE: For T0 just update the request status in central CouchDB - t0_request
+                #       and let cleanAlreadyArchivedWorkflows do the actual couchdb cleaning
+                #       after config.TaskArchiver.cleanCouchDelayHours for the current workflow
+                self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
+                updated += 1
+                continue
             if self.cleanAllLocalCouchDB(workflowName):
-                if not self.useReqMgrForCompletionCheck:
-                    #  only update tier0 case, for Prodcuction/Processing reqmgr will update status
-                    self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
                 updated += 1
         return updated
 
@@ -362,12 +367,22 @@ class CleanCouchPoller(BaseWorkerThread):
             requestNames = [x['key'] for x in results]
             logging.info("There are %s workflows to check for archived status", len(requestNames))
 
-            workflowDict = self.centralRequestDBReader.getStatusAndTypeByRequest(requestNames)
-
-            for request, value in viewitems(workflowDict):
-                if value[0].endswith("-archived"):
+            if not self.useReqMgrForCompletionCheck:
+                # NOTE: For T0 we build the list of workflows only for *-archived
+                #       statuses since config.TaskArchiver.cleanCouchDelayHours
+                workflowList = []
+                startTime = int(time.time()) - int(self.cleanCouchDelayHours * 60)
+                for status in ['normal-archived', 'rejected-archived', 'aborted-archived']:
+                    workflowList.append(self.centralRequestDBReader.getRequestByStatusAndStartTime(status, startTime=startTime, detail=False))
+                for request in workflowList:
                     self.cleanAllLocalCouchDB(request)
-                    numDeletedRequests += 1
+            else:
+                # NOTE: For the rest follow the normal logic:
+                workflowDict = self.centralRequestDBReader.getStatusAndTypeByRequest(requestNames)
+                for request, value in viewitems(workflowDict):
+                    if value[0].endswith("-archived"):
+                        self.cleanAllLocalCouchDB(request)
+                        numDeletedRequests += 1
 
         except Exception as ex:
             errorMsg = "Error on loading workflow list from wmagent_summary db"

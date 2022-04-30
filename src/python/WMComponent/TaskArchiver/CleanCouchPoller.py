@@ -197,10 +197,15 @@ class CleanCouchPoller(BaseWorkerThread):
                 # NOTE: For T0 just update the request status in central CouchDB - t0_request
                 #       and let cleanAlreadyArchivedWorkflows do the actual couchdb cleaning
                 #       after config.TaskArchiver.cleanCouchDelayHours for the current workflow
+                msg = "Setting T0 workflow: %s to status: %s at central CouchDB."
+                msg += "Local CouchDB data will be cleaned after %s hours."
+                self.logger.debug(msg, workflowName, archiveState, self.config.TaskArchiver.cleanCouchDelayHours)
                 self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
                 updated += 1
                 continue
             if self.cleanAllLocalCouchDB(workflowName):
+                msg = "Local CouchDB data has been properly cleaned for: %s and status: %s."
+                self.logger.debug(msg, workflowName, archiveState)
                 updated += 1
         return updated
 

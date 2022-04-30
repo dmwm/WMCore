@@ -376,6 +376,7 @@ class CleanCouchPoller(BaseWorkerThread):
                     workflowList.append(self.centralRequestDBReader.getRequestByStatusAndStartTime(status, startTime=startTime, detail=False))
                 for request in workflowList:
                     self.cleanAllLocalCouchDB(request)
+                    numDeletedRequests += 1
             else:
                 # NOTE: For the rest follow the normal logic:
                 workflowDict = self.centralRequestDBReader.getStatusAndTypeByRequest(requestNames)

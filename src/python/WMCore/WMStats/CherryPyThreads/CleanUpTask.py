@@ -1,8 +1,10 @@
 from __future__ import (division, print_function)
 
 import traceback
+import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.ReqMgr.DataStructs.RequestStatus import ARCHIVED_STATUS
 
 class CleanUpTask(CherryPyPeriodicTask):
     """
@@ -15,6 +17,7 @@ class CleanUpTask(CherryPyPeriodicTask):
         super(CleanUpTask, self).__init__(config)
         self.wmstatsDB = WMStatsWriter(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                               reqdbCouchApp=config.reqdb_couch_app)
+        self.cleanCouchDelayHours = getattr(config, "cleanCouchDelayHours", 0)
 
     def setConcurrentTasks(self, config):
         """
@@ -27,7 +30,15 @@ class CleanUpTask(CherryPyPeriodicTask):
         loop through the workflows in couchdb, if archived delete all the data in couchdb
         """
         self.logger.info("getting archived data")
-        requestNames = self.wmstatsDB.getArchivedRequests()
+        if self.cleanCouchDelayHours > 0:
+            requestNames = []
+            satartTime = int(time.time()) - int(self.cleanCouchDelayHours * 60 * 60)
+            for status in ARCHIVED_STATUS:
+                msg = "Getting requests in status: %s, since: %s"
+                self.logger.info(msg, status, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(startTime)))
+                requestNames.append(self.wmstatsDB.getRequestByStatusAndStartTime(status, startTime=startTime, detail=False))
+        else:
+            requestNames = self.wmstatsDB.getArchivedRequests()
         self.logger.info("archived list %s", requestNames)
 
         for req in requestNames:

@@ -332,6 +332,24 @@ class WMStatsReader(object):
 
         return results
 
+    def getRequestByStatusAndStartTime(self, status, detail=False, startTime=0):
+        """
+        This is just a wrapper method to call getRequestByStatusAndStartTime from
+        request DB. It queries for requests that are in a specific status since startTime.
+        For this one to work we need reqDBURL to be set and reqDB object created.
+        :param detail: Bool flag to state if request details need to be included in the result
+        :param startTime: unix start timestamp
+        :return: A list of workflow names if details=False or a dictionary with workflow details otherwise.
+        """
+        if not self.reqDB:
+            msg = "We cannot fetch requests list for status: %s and startTime: %s."
+            msg += "Service has not been set properly, reqDBURL is missing."
+            self.logger.error(msg, status, startTime)
+            # NOTE: We may consider raising an error from here.
+            return []
+        result = self.reqDB.getRequestByStatusAndStartTime(status, detail=detail, startTime=startTime)
+        return result
+
     def getRequestSummaryWithJobInfo(self, requestName):
         """
         get request info with job status

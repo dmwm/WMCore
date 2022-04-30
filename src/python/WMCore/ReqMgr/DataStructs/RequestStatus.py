@@ -85,6 +85,10 @@ ACTIVE_STATUS = ["new",
                  "aborted-completed",
                  "rejected"]
 
+ARCHIVED_STATUS = ["normal-archived",
+                   "rejected-archived",
+                   "aborted-archived"]
+
 ### WMSTATS_JOB_INFO + WMSTATS_NO_JOB_INFO is meant to be equal to ACTIVE_STATUS
 WMSTATS_JOB_INFO = ["running-open",
                     "running-closed",

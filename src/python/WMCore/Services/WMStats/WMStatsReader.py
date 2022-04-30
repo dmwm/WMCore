@@ -9,7 +9,7 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
-from WMCore.ReqMgr.DataStructs.RequestStatus import T0_ACTIVE_STATUS, WMSTATS_JOB_INFO, WMSTATS_NO_JOB_INFO
+from WMCore.ReqMgr.DataStructs.RequestStatus import ARCHIVED_STATUS, T0_ACTIVE_STATUS, WMSTATS_JOB_INFO, WMSTATS_NO_JOB_INFO
 
 REQUEST_PROPERTY_MAP = {
     "_id": "_id",
@@ -304,6 +304,15 @@ class WMStatsReader(object):
 
         return self.getRequestByStatus(T0_ACTIVE_STATUS, jobInfoFlag)
 
+    def getT0ArchivedData(self, jobInfoFlag=False, startTime=0):
+        """
+        A wrapper method to call getRequestByStatusAndStartTime (To be used mostly by T0)
+        :param jobInfoFlag: A flag to state if to update the workflow with jobInfo too if set it implies `detail=True` as well.
+        :param startTime:   unix start timestamp
+        :return:            A dictionary with worklflows info in status *-archived since startTime.
+        """
+        return self.getRequestByStatusAndStartTime(ARCHIVED_STATUS, detail=True, jobInfoFlag=jobInfoFlag, startTime=startTime)
+
     def getRequestByStatus(self, statusList, jobInfoFlag=False, limit=None, skip=None,
                            legacyFormat=False):
 
@@ -332,14 +341,15 @@ class WMStatsReader(object):
 
         return results
 
-    def getRequestByStatusAndStartTime(self, status, detail=False, startTime=0):
+    def getRequestByStatusAndStartTime(self, statusList, jobInfoFlag=False, detail=False, startTime=0):
         """
         This is just a wrapper method to call getRequestByStatusAndStartTime from
         request DB. It queries for requests that are in a specific status since startTime.
         For this one to work we need reqDBURL to be set and reqDB object created.
-        :param detail: Bool flag to state if request details need to be included in the result
-        :param startTime: unix start timestamp
-        :return: A list of workflow names if details=False or a dictionary with workflow details otherwise.
+        :param detail:      Bool flag to state if request details need to be included in the result
+        :param jobInfoFlag: A flag to state if to update the workflow with jobInfo too if set it implies `detail=True` as well.
+        :param startTime:   unix start timestamp
+        :return:            A list of workflow names if details=False or a dictionary with workflow details otherwise.
         """
         if not self.reqDB:
             msg = "We cannot fetch requests list for status: %s and startTime: %s."
@@ -347,7 +357,29 @@ class WMStatsReader(object):
             self.logger.error(msg, status, startTime)
             # NOTE: We may consider raising an error from here.
             return []
-        result = self.reqDB.getRequestByStatusAndStartTime(status, detail=detail, startTime=startTime)
+
+        if jobInfoFlag:
+            detail = True
+
+        if detail:
+            result = {}
+        else:
+            result = []
+
+        for status in statusList:
+            msg = "Fetching workflows in status: %s, since %s from ReqMgr2."
+            self.logger.info(msg, status, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(startTime)))
+            requestsInfo = self.reqDB.getRequestByStatusAndStartTime(status, detail=detail, startTime=startTime)
+            if detail:
+                result.update(requestInfo)
+            else:
+                result = result + requestsInfo
+
+        # now update these requests with agent information too
+        if results and jobInfoFlag:
+            self.logger.info("Now updating these requests with job info...")
+            self._updateRequestInfoWithJobInfo(results)
+
         return result
 
     def getRequestSummaryWithJobInfo(self, requestName):

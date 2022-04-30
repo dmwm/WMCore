@@ -31,12 +31,8 @@ class CleanUpTask(CherryPyPeriodicTask):
         """
         self.logger.info("getting archived data")
         if self.cleanCouchDelayHours > 0:
-            requestNames = []
             satartTime = int(time.time()) - int(self.cleanCouchDelayHours * 60 * 60)
-            for status in ARCHIVED_STATUS:
-                msg = "Getting requests in status: %s, since: %s"
-                self.logger.info(msg, status, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(startTime)))
-                requestNames.append(self.wmstatsDB.getRequestByStatusAndStartTime(status, startTime=startTime, detail=False))
+            requestNames = self.wmstatsDB.getRequestByStatusAndStartTime(ARCHIVED_STATUS, startTime=startTime, detail=False, jobInfoFlag=False)
         else:
             requestNames = self.wmstatsDB.getArchivedRequests()
         self.logger.info("archived list %s", requestNames)

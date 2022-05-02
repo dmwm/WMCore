@@ -445,8 +445,6 @@ class WMBSHelper(WMConnectionBase):
         create wmbs files from given dbs block.
         as well as run lumi update
         """
-        blockOpen = block.get('IsOpen', False)
-
         if self.topLevelTask.getInputACDC():
             self.isDBS = False
             logging.info('Adding ACDC files into WMBS for %s', self.wmSpec.name())
@@ -470,7 +468,8 @@ class WMBSHelper(WMConnectionBase):
                      self.wmSpec.name())
         self._createFilesInDBSBuffer()
 
-        self.topLevelFileset.markOpen(blockOpen)
+        # DBS blocks are always closed, so mark fileset as closed as well
+        self.topLevelFileset.markOpen(False)
         return totalFiles
 
     def getMergeOutputMapping(self):

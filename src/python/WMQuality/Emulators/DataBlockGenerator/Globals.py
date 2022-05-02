@@ -104,14 +104,6 @@ class GlobalParams(object):
         return int(blockName.split('#')[-1])
 
     @staticmethod
-    def setBlocksOpenForWriting(blocksOpenForWriting):
-        GlobalParams._blocks_open_for_writing = blocksOpenForWriting
-
-    @staticmethod
-    def blocksOpenForWriting():
-        return GlobalParams._blocks_open_for_writing
-
-    @staticmethod
     def resetParams():
         """
         reset the parameter to default value

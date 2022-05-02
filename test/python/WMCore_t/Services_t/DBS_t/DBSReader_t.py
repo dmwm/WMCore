@@ -208,15 +208,9 @@ class DBSReaderTest(EmulatedUnitTestCase):
         blocks = self.dbs.listFileBlocks(DATASET)
         self.assertTrue(BLOCK in blocks)
         # block is closed
-        block = self.dbs.listFileBlocks(DATASET, blockName=BLOCK, onlyClosedBlocks=True)[0]
+        block = self.dbs.listFileBlocks(DATASET, blockName=BLOCK)[0]
         self.assertEqual(block, BLOCK)
         self.assertTrue(BLOCK in block)
-
-    def testListOpenFileBlocks(self):
-        """listOpenFileBlocks finds open blocks"""
-        # hard to find a dataset with open blocks, so don't bother
-        self.dbs = DBSReader(self.endpoint)
-        self.assertFalse(self.dbs.listOpenFileBlocks(DATASET))
 
     def testBlockExists(self):
         """blockExists returns existence of blocks"""
@@ -283,7 +277,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """getFileBlock returns block"""
         self.dbs = DBSReader(self.endpoint)
         block = self.dbs.getFileBlock(BLOCK)
-        self.assertEqual(len(block), 3)
+        self.assertEqual(len(block), 2)
         self.assertEqual(2, len(block['Files']))
 
         self.assertRaises(DBSReaderError, self.dbs.getFileBlock, BLOCK + 'asas')
@@ -292,7 +286,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """getFileBlockWithParents returns block and parents"""
         self.dbs = DBSReader(self.endpoint)
         block = self.dbs.getFileBlockWithParents(BLOCK_WITH_PARENTS)
-        self.assertEqual(len(block), 3)
+        self.assertEqual(len(block), 2)
         self.assertEqual(PARENT_FILE, block['Files'][0]['ParentList'][0]['LogicalFileName'])
 
         self.assertRaises(DBSReaderError, self.dbs.getFileBlockWithParents, BLOCK + 'asas')
@@ -304,11 +298,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertItemsEqual([PARENT_BLOCK], parents)
 
         self.assertFalse(self.dbs.listBlockParents(PARENT_BLOCK))
-
-    def testBlockIsOpen(self):
-        """blockIsOpen checks if a block is open"""
-        self.dbs = DBSReader(self.endpoint)
-        self.assertFalse(self.dbs.blockIsOpen(BLOCK))
 
     def testBlockToDatasetPath(self):
         """blockToDatasetPath extracts path from block name"""

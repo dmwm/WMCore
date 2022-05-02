@@ -59,7 +59,7 @@ class Block(StartPolicyInterface):
                                  NumberOfFiles=int(block['NumberOfFiles']),
                                  NumberOfEvents=int(block['NumberOfEvents']),
                                  Jobs=estimateJobs,
-                                 OpenForNewData=True if str(block.get('OpenForWriting')) == '1' else False,
+                                 OpenForNewData=False,
                                  NoInputUpdate=self.initialTask.getTrustSitelists().get('trustlists'),
                                  NoPileupUpdate=self.initialTask.getTrustSitelists().get('trustPUlists')
                                 )
@@ -102,7 +102,7 @@ class Block(StartPolicyInterface):
                 blocks.append(str(data))
             else:
                 Lexicon.dataset(data)  # check dataset name
-                for block in dbs.listFileBlocks(data, onlyClosedBlocks=True):
+                for block in dbs.listFileBlocks(data):
                     blocks.append(str(block))
 
         for blockName in blocks:
@@ -248,10 +248,9 @@ class Block(StartPolicyInterface):
         """
         self.initialTask = task
         dbs = self.dbs()
-        openBlocks = dbs.listOpenFileBlocks(task.getInputDatasetPath())
-        if openBlocks:
-            return True
-        return False
+        allBlocks = dbs.listFileBlocks(task.getInputDatasetPath())
+        newBlocks = set(allBlocks) - set(self.rejectedWork) - set(self.badWork)
+        return bool(newBlocks)
 
     @staticmethod
     def supportsWorkAddition():

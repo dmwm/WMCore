@@ -24,6 +24,18 @@ class NewSubscription(DBFormatter):
           """
 
     def _createPhEDExSubBinds(self, datasetID, subscriptionInfo, custodialFlag):
+        """
+        Creates the database binds for both custodial and non custodial data
+        placements.
+
+        :param datasetID: integer with the dataset id
+        :param subscriptionInfo: dictionary object from the request spec
+        :param custodialFlag: boolean flag defining whether it's custodial or not
+        :return: a list of dictionary binds
+        """
+        # NOTE: the subscription information is already validated upstream, at
+        # the request factory. Thus, there is no need to cast/validate anything
+        # at this level.
 
         # DeleteFromSource is not supported for move subscriptions
         delete_blocks = None
@@ -40,15 +52,17 @@ class NewSubscription(DBFormatter):
 
         binds = []
         for site in sites:
-            binds.append({'id': datasetID,
-                          'site': site,
-                          'custodial': custodialFlag,
-                          'auto_approve': 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
-                          'move': isMove,
-                          'priority': subscriptionInfo['Priority'],
-                          'phedex_group': phedex_group,
-                          'delete_blocks': delete_blocks,
-                          'dataset_lifetime': subscriptionInfo['DatasetLifetime']})
+            bind = {'id': datasetID,
+                    'site': site,
+                    'custodial': 1 if custodialFlag else 0,
+                    'auto_approve': 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
+                    'move': isMove,
+                    'priority': subscriptionInfo['Priority'],
+                    'phedex_group': phedex_group,
+                    'delete_blocks': delete_blocks}
+            if subscriptionInfo['DatasetLifetime'] is not None:
+                bind.update(dict(dataset_lifetime=subscriptionInfo['DatasetLifetime']))
+            binds.append(bind)
         return binds
 
     def execute(self, datasetID, subscriptionInfo, conn=None, transaction=False):

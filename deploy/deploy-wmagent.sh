@@ -374,7 +374,7 @@ echo "Done!" && echo
 echo "*** Setting up US opportunistic resources ***"
 if [[ "$HOSTNAME" == *fnal.gov ]]; then
   sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
-  for resourceName in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil,T3_ES_PIC_BSC};
+  for resourceName in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil,T3_US_Lancium,T3_ES_PIC_BSC};
   do
     ./manage execute-agent wmagent-resource-control --plugin=SimpleCondorPlugin --opportunistic \
       --pending-slots=$HPC_PEND_JOBS --running-slots=$HPC_RUNN_JOBS --add-one-site $resourceName

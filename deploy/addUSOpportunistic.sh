@@ -3,7 +3,7 @@ PEND_JOBS=3000
 RUNN_JOBS=3000
 # default manage location
 manage=/data/srv/wmagent/current/config/wmagent/manage
-for site in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil};
+for site in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil,T3_US_Lancium};
 do
   echo "Adding site: $site into the resource-control with $PEND_JOBS pending and $RUNN_JOBS running slots"
   $manage execute-agent wmagent-resource-control --site-name=$site --cms-name=$site --ce-name=$site --pnn=$site --plugin=SimpleCondorPlugin  --pending-slots=1000 --running-slots=1000;

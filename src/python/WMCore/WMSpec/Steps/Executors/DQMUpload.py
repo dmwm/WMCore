@@ -14,6 +14,7 @@ import os
 import sys
 import pickle
 import json
+import time
 from io import BytesIO
 from functools import reduce
 from gzip import GzipFile
@@ -48,23 +49,26 @@ from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.Storage.DeleteMgr import DeleteMgr, DeleteMgrError
 from WMCore.Storage.FileManager import DeleteMgr as NewDeleteMgr
 import WMCore.Storage.StageOutMgr as StageOutMgr
-import time
 
 class DQMUpload(Executor):
     """
     _DQMUpload_
 
     Execute a DQMUpload Step
+    We support and execute two DQM Upload methods:
+    1) Old method: Upload ROOT files to old DQM gui (visDQMUpload)
+    2) New method: Upload ROOT files to EOS and register file in new DQM gui
 
+    Refer to the GH issue below for more information  and details:
+    https://github.com/dmwm/WMCore/issues/10287
     """
 
     def __init__(self):
         super(DQMUpload, self).__init__()
         self.retryDelay = 300
         self.retryCount = 3
-        self.registerLFNBase = '/store/unmerged/DQMGUI'
+        self.registerLFNBase = '/store/group/dqmgui'
         self.registerEOSPrefix = '/eos/cms'
-        self.registerURL = 'https://cmsweb-testbed.cern.ch/dqm/offline-test-new/api/v1/register'
 
     def pre(self, emulator=None):
         """
@@ -279,38 +283,34 @@ class DQMUpload(Executor):
         Perform a file upload to the dqm server using HTTPS auth with the
         service proxy provided
         """
-        ident = "WMAgent python/%d.%d.%d" % sys.version_info[:3]
-        uploadProxy = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
-        logging.info("Using proxy file: %s", uploadProxy)
-        logging.info("Using CA certificate path: %s", os.environ.get('X509_CERT_DIR'))
-
         msg = "HTTP POST upload arguments:\n"
         for arg in args:
             msg += "  ==> %s: %s\n" % (arg, args[arg])
         logging.info(msg)
 
-        handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
-        opener = OpenerDirector()
-        opener.add_handler(handler)
-
         # setup the request object
         url = decodeBytesToUnicode(url) if PY3 else encodeUnicodeToBytes(url)
         datareq = Request(url + '/data/put')
-        datareq.add_header('Accept-encoding', 'gzip')
-        datareq.add_header('User-agent', ident)
         self.marshall(args, {'file': filename}, datareq)
-
-        if 'https://' in url:
-            result = opener.open(datareq)
-        else:
-            opener.add_handler(ProxyHandler({}))
-            result = opener.open(datareq)
-
+        result = self._getHttpsOpener(datareq)
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':
             data = GzipFile(fileobj=BytesIO(data)).read()
 
         return (result.headers, data)
+
+    def getRegisterURL(self):
+        """
+        Get the URL for the register site is derived from the step.upload.URL using the following mapping:
+        https://github.com/dmwm/WMCore/issues/10287#issuecomment-1105344078
+        {"https://cmsweb.cern.ch/dqm/offline": "https://cmsweb.cern.ch/dqm/offline-new/api/v1/register",
+         "https://cmsweb.cern.ch/dqm/relval": "https://cmsweb.cern.ch/dqm/relval-new/api/v1/register",
+         "https://cmsweb.cern.ch/dqm/dev": "https://cmsweb.cern.ch/dqm/dev-new/api/v1/register"}
+        :return: str, with register URL
+        """
+        registerURL = "%s-new/api/v1/register" % self.step.upload.URL
+
+        return registerURL
 
     def _uploadToEOS(self, stepLocation, analysisFile):
         """
@@ -384,6 +384,32 @@ class DQMUpload(Executor):
 
         return lfn
 
+    def _getHttpsOpener(self, dataReq):
+        """
+        Get HTTP(s) opener
+        :param: dataReq: urlib Request object
+        :return: opener object
+        """
+        ident = "WMAgent python/%d.%d.%d" % sys.version_info[:3]
+        uploadProxy = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
+        logging.info("Using proxy file: %s", uploadProxy)
+        logging.info("Using CA certificate path: %s", os.environ.get('X509_CERT_DIR'))
+        handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
+        opener = OpenerDirector()
+        opener.add_handler(handler)
+
+        # Add encoding and user agent identity to data request
+        dataReq.add_header('Accept-encoding', 'gzip')
+        dataReq.add_header('User-agent', ident)
+
+        if 'https://' in dataReq.get_full_url():
+            result = opener.open(dataReq)
+        else:
+            opener.add_handler(ProxyHandler({}))
+            result = opener.open(dataReq)
+
+        return result
+
     def _register(self, registerURL, args):
         """
         POST request to register URL
@@ -392,31 +418,14 @@ class DQMUpload(Executor):
         :param args: dict, POST arguments
         :return: result object from opening  the request
         """
-
-        ident = "WMAgent python/%d.%d.%d" % sys.version_info[:3]
-        uploadProxy = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
-        logging.info("Using proxy file: %s", uploadProxy)
-        logging.info("Using CA certificate path: %s", os.environ.get('X509_CERT_DIR'))
-
         msg = "HTTP Register POST arguments: %s\n" % args
         logging.info(msg)
-
-        handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
-        opener = OpenerDirector()
-        opener.add_handler(handler)
 
         # setup the request object
         url = decodeBytesToUnicode(registerURL)
         datareq = Request(url)
-        datareq.add_header('Accept-encoding', 'gzip')
-        datareq.add_header('User-agent', ident)
         datareq.data = encodeUnicodeToBytes(json.dumps(args))
-
-        if 'https://' in url:
-            result = opener.open(datareq)
-        else:
-            opener.add_handler(ProxyHandler({}))
-            result = opener.open(datareq)
+        result = self._getHttpsOpener(datareq)
 
         return result
 
@@ -460,14 +469,14 @@ class DQMUpload(Executor):
         args['fileformat'] = 1
 
         msg = "HTTP Upload is about to start:\n"
-        msg += " => URL: %s\n" % self.registerURL
+        msg += " => URL: %s\n" % self.getRegisterURL()
         msg += " => Filename: %s\n" % args['file']
         logging.info(msg)
 
         for numRetry in range(self.retryCount + 1):
             try:
                 logException = True
-                result = self._register(self.registerURL, [args])
+                result = self._register(self.getRegisterURL(), [args])
                 msg = '  Status code: %s\n' % result.getcode()
                 if result.getcode() >= 400 or result.getcode() is None:
                     logException = False
@@ -477,14 +486,15 @@ class DQMUpload(Executor):
                     logging.info(msg)
                     break
             except Exception as ex:
-                if numRetry == self.retryCount:
+                if numRetry < self.retryCount:
+                    time.sleep(self.retryDelay)
+                else:
                     msg = 'HTTP POST to register url failed! Error:\n%s' % str(ex)
                     if logException:
                         logging.exception(msg)
                     else:
                         logging.error(msg)
                     raise WMExecutionFailure(70319, "DQMUploadFailure", msg)
-                time.sleep(self.retryDelay)
 
         return
 

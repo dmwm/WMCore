@@ -24,14 +24,25 @@ help(){
                                      (in double quotes and space separated e.g. "5906 5934 5922")
       -m  <security string>          The security string to be used during deployment. Will be needed at startup [Default: ""]
       -l  <service_list>             List of services to be deployed [Default: "wmcore" - WMCore metapackage]
+                                     The full list of installable services: "reqmgr2 reqmgr2ms workqueue reqmon t0_reqmon"
                                      (in double quotes and space separated e.g. "rqmgr2 reqmgr2ms")
                                      (pip based package version syntax is also acceptable e.g. "wmcore==2.0.0")
       -i <pypi-index>                The pypi index to use (i.e. prod or test) [Default: prod - pointing to https://pypi.org/simple/]
       -h <help>                      Provides help to the current script
 
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -n -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
-    # Example: ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
+    # Example: Deploy WMCore central services version 2.0.3rc1 linked with `cmsweb-test1.cern.ch' as a frontend from `test' pypi index
+    #          at destination /data/tmp/WMCore.venv3/ and using `Some security string' as a security string for operationss at runtime:
+    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
+
+    # Example: Same as above, but do not cleanup deployment area and reuse it from previous installtion - usefull for testing behaviour
+    #          of different versions during development or mix running from source and from pypi installed packages.
+    #          NOTE: The `current' link must point to the proper deployment area e.g. either to `srv/master' for running from source
+    #                or to `srv/2.0.3rc1' for running from pypi installed package):
+    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -n -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
+
+    # Example: Deploy WMCore central services from source repository, use tag 2.0.0.pre3, linked with `cmsweb-test1.cern.ch' as a frontend
+    #          at destination /data/tmp/WMCore.venv3/ and using `Some security string' as a security string for operationss at runtime:
+    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
     # To chose the default flow and rely only on the pameters set to configure the deployment steps. This will avoid human intervention during deployment:
     # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/

@@ -946,8 +946,22 @@ EOF
     fi
 }
 
+checkNeeded(){
+    # Function used to check the current script dependencies.
+    # It uses hard coded list of tools required by the current script in order
+    # to be able to complete the run.
+    # :param: None
+    local neededTools="git awk grep"
+    for tool in $neededTools
+    do
+        command -v $tool 2>&1 > /dev/null || { error=$?;
+                                               echo "The current setup script requires: $tool in order to continue. Please install it and rerun." ;
+                                               return $error ;}
+    done
+}
 
 main(){
+    checkNeeded      || handleReturn $?
     startSetupVenv   || handleReturn $?
     createVenv       || handleReturn $?
     activateVenv     || handleReturn $?

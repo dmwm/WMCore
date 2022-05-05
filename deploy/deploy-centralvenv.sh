@@ -3,7 +3,7 @@
 help(){
     echo -e $1
     cat <<EOF
-    Usage: deploy-centralvenv.sh -c <central_services_url> [-s] [-n] [-v]
+    Usage: deploy-centralvenv.sh -c <central_services_url> [-s] [-n] [-v] [-y]
                                 [-r <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
                                 [-g <wmcore_config_repository>] [-d <wmcore_config_branch>]
                                 [-d wmcore_path] [-p <patches>] [-m <security string>]
@@ -12,8 +12,9 @@ help(){
 
       -c  <central_services>         Url to central services (e.g. cmsweb-test1.cern.ch)
       -s  <run_from_source>          Bool flag to setup run from source [Default: false]
-      -n  <no_venv_cleanup>          Bool flag to skip virtual environment space cleanup before deployment [Default: false]
+      -n  <no_venv_cleanup>          Bool flag to skip virtual environment space cleanup before deployment [Default: false - ALWAYS cleanup before deployment]
       -v  <verbose_mode>             Bool flag to set verbose mode [Default: false]
+      -y  <assume yes>               Bool flag to assume 'Yes' to all deployment questions.
       -r  <wmcore_source_repository> WMCore source repository [Default: git://github.com/dmwm/wmcore.git"]
       -b  <wmcore_source_branch>     WMCore source branch [Default: master]
       -t  <wmcore_tag>               WMCore tag to be used for this deployment [Default: None]
@@ -30,23 +31,24 @@ help(){
       -i <pypi-index>                The pypi index to use (i.e. prod or test) [Default: prod - pointing to https://pypi.org/simple/]
       -h <help>                      Provides help to the current script
 
-    # Example: Deploy WMCore central services version 2.0.3rc1 linked with `cmsweb-test1.cern.ch' as a frontend from `test' pypi index
-    #          at destination /data/tmp/WMCore.venv3/ and using `Some security string' as a security string for operationss at runtime:
+    # Example: Deploy WMCore central services version 2.0.3rc1 linked with 'cmsweb-test1.cern.ch' as a frontend from 'test' pypi index
+    #          at destination /data/tmp/WMCore.venv3/ and using 'Some security string' as a security string for operationss at runtime:
     # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
     # Example: Same as above, but do not cleanup deployment area and reuse it from previous installtion - usefull for testing behaviour
     #          of different versions during development or mix running from source and from pypi installed packages.
-    #          NOTE: The `current' link must point to the proper deployment area e.g. either to `srv/master' for running from source
-    #                or to `srv/2.0.3rc1' for running from pypi installed package):
+    #          NOTE: The 'current' link must point to the proper deployment area e.g. either to 'srv/master' for running from source
+    #                or to 'srv/2.0.3rc1' for running from pypi installed package):
     # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -n -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
-    # Example: Deploy WMCore central services from source repository, use tag 2.0.0.pre3, linked with `cmsweb-test1.cern.ch' as a frontend
-    #          at destination /data/tmp/WMCore.venv3/ and using `Some security string' as a security string for operationss at runtime:
+    # Example: Deploy WMCore central services from source repository, use tag 2.0.0.pre3, linked with 'cmsweb-test1.cern.ch' as a frontend
+    #          at destination /data/tmp/WMCore.venv3/ and using 'Some security string' as a security string for operationss at runtime:
     # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
-    # To chose the default flow and rely only on the pameters set to configure the deployment steps. This will avoid human intervention during deployment:
-    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/
-    # Example: yes | ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -i test -l wmcore==2.0.3rc1 -d /data/tmp/WMCore.venv3/
+    # Example: Same as above, but assume 'Yes' to all questions. To be used in order to chose the default flow and rely only
+    #          on the pameters set for configuring the deployment steps. This will avoid human intervention during deployment:
+    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -y -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
+
 EOF
 }
 
@@ -108,6 +110,7 @@ vmName=""                                                                 # host
 vmName=${vmName%%.*}
 pipIndex="prod"                                                           # pypi Index to use
 verboseMode=false
+assumeYes=false
 noVenvCleanup=false
 secString=""
 
@@ -124,7 +127,7 @@ pythonCmd=python
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
-while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvh" opt; do
+while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvyh" opt; do
     case ${opt} in
         d)
             venvPath=$OPTARG
@@ -156,6 +159,8 @@ while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvh" opt; do
             noVenvCleanup=true ;;
         v)
             verboseMode=true ;;
+        y)
+            assumeYes=true ;;
         h)
             help
             exit 0 ;;
@@ -169,6 +174,9 @@ while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvh" opt; do
 done
 
 $verboseMode && set -x
+
+# Swap noVenvCleanup flag with venvCleanup to avoid double negation and confusion:
+venvCleanup=true && $noVenvCleanup && venvCleanup=false
 
 # check for mandatory parameters:
 [[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
@@ -287,21 +295,25 @@ startSetupVenv(){
     echo "======================================================="
     echo "Deployment parameters:"
     echo "-------------------------------------------------------"
-    echo "serviceList: $serviceList"
-    echo "enabledList: $enabledList"
-    echo "venvPath: $venvPath"
-    echo "wmCfgBranch: $wmCfgBranch"
-    echo "wmTag: $wmTag"
-    echo "serPatch: $serPatch"
-    echo "pypi Index: $pipIndex"
-    echo "runFromSource: $runFromSource"
-    echo "noVenvCleanup: $noVenvCleanup"
-    echo "verboseMode: $verboseMode"
+    echo "serviceList          : $serviceList"
+    echo "enabledList          : $enabledList"
+    echo "venvPath             : $venvPath"
+    echo "wmCfgRepo            : $wmCfgRepo"
+    echo "wmCfgBranch          : $wmCfgBranch"
+    echo "wmSrcRepo            : $wmSrcRepo"
+    echo "wmSrcBranch          : $wmSrcBranch"
+    echo "wmTag                : $wmTag"
+    echo "serPatch             : $serPatch"
+    echo "pypi Index           : $pipIndex"
+    echo "runFromSource        : $runFromSource"
+    echo "Cleanup Virtual Env  : $venvCleanup"
+    echo "verboseMode          : $verboseMode"
+    echo "assumeYes            : $assumeYes"
     echo "central services host: $vmName"
-    echo "secSring: $secString"
+    echo "secSring             : $secString"
     echo "======================================================="
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 102
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 102
     echo "..."
     echo "You still have 5 sec. to cancel before we proceed."
     sleep 5
@@ -313,14 +325,14 @@ createVenv(){
     echo "======================================================="
     echo "Creating minimal virtual environment:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 102
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 102
     echo "..."
 
     [[ -d $venvPath ]] || mkdir -p $venvPath || return $?
-    if $noVenvCleanup ; then
-        $pythonCmd -m venv $venvPath || return $?
-    else
+    if $venvCleanup ; then
         $pythonCmd -m venv --clear $venvPath || return $?
+    else
+        $pythonCmd -m venv $venvPath || return $?
     fi
 }
 
@@ -330,7 +342,7 @@ cloneWMCore(){
     echo "======================================================="
     echo "Cloning WMCore source code:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 101
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
     [[ -d $wmSrcPath ]] ||  mkdir -p $wmSrcPath || return $?
@@ -345,7 +357,7 @@ setupConfig(){
     echo "======================================================="
     echo "Cloning WMCore configuration files:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 101
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
     [[ -d $wmCfgPath ]] ||  mkdir -p $wmCfgPath || return $?
@@ -384,7 +396,7 @@ activateVenv(){
     echo "======================================================="
     echo "Activate WMCore virtual env:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 102
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 102
     echo "..."
     source ${venvPath}/bin/activate
     _pipUpgradeVenv
@@ -405,7 +417,7 @@ _pkgInstall(){
         echo "There were some package dependencies that couldn't be satisfied."
         echo "List of packages failed to install: $depFail"
         echo -n "Should we try to reinstall them while releasing version constraint? [y]: "
-        read x && [[ $x =~ (n|N) ]] && return 101
+        $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
         echo "..."
         echo "Retrying to satisfy dependency releasing version constraint:"
         # NOTE: by releasing the package constrains here and installing from `test'
@@ -431,7 +443,7 @@ pkgInstall(){
     echo "======================================================="
     echo "Install all requested services inside the virtual env:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 102
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 102
     echo "..."
     _pkgInstall $serviceList || return $?
 
@@ -461,7 +473,7 @@ setupDependencies(){
     echo "======================================================="
     echo "Install all WMCore python dependencies inside the virtual env:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 101
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
     reqList=""
@@ -487,7 +499,7 @@ setupRucio(){
     echo "======================================================="
     echo "Create minimal Rucio client setup inside the virtual env:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 101
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
     _pkgInstall rucio-clients
@@ -514,7 +526,7 @@ setupDeplTree(){
     echo "======================================================="
     echo "Setup WMCore paths inside the virtual env:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 102
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 102
     echo "..."
     # NOTE: Setting the `current' symlink pointing to the actual wmcore version
     #       deployed. We are no longer having the cmsweb deployment tag HG20***
@@ -615,7 +627,7 @@ setupInitScripts(){
     echo "======================================================="
     echo "Setup WMCore init scripts inside the virtual env:"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 101
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
     # DONE: To create the init.sh scripts
@@ -801,7 +813,7 @@ setupIpython(){
     echo "======================================================="
     echo "If the current environment is about to be used for deployment Ipython would be a good recomemndation, but is not mandatory."
     echo -n "Skip Ipython installation? [y]: "
-    read x && [[ $x =~ (n|N) ]] || return 101
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] || return 101
     echo "Installing ipython..."
     pip install $pipOpt ipython
 }
@@ -814,7 +826,7 @@ setupVenvHooks(){
     echo "======================================================="
     echo "Setup the WMCore hooks at the virtual environment activate script"
     echo -n "Continue? [y]: "
-    read x && [[ $x =~ (n|N) ]] && return 101
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
     echo "############# WMCore env vars ################" >> ${VIRTUAL_ENV}/bin/activate

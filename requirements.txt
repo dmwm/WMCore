@@ -12,7 +12,7 @@
 # for more details please refer to official Python documentation, see
 # https://www.python.org/dev/peps/pep-0440/#version-specifiers
 
-Cheetah3~=3.2.6.post2         # wmcore,wmagent,reqmgr2,reqmon
+Cheetah3~=3.2.6.post1         # wmcore,wmagent,reqmgr2,reqmon
 CherryPy~=17.4.0              # wmcore,wmagent,wmagent-devtools,reqmgr2,reqmon,global-workqueue,reqmgr2ms
 CMSCouchapp~=1.3.4            # wmcore,wmagent
 CMSMonitoring~=0.3.4          # wmcore,wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
@@ -30,10 +30,10 @@ mox3~=1.1.0                   # wmcore,wmagent-devtools
 mysqlclient~=2.0.3            # wmcore,wmagent
 nose~=1.3.7                   # wmcore,wmagent-devtools
 nose2~=0.10.0                 # wmcore,wmagent-devtools
-pep8~=1.7.1                   # wmcore,wmagent-devtools
+pycodestyle~=2.8.0            # wmcore,wmagent-devtools
 psutil~=5.8.0                 # wmcore,wmagent,wmagent-devtools,reqmgr2,reqmon,global-workqueue
 pycurl~=7.43.0.6              # wmcore,wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
-pylint~=2.7.0                 # wmcore,wmagent-devtools
+pylint~=2.13.5                # wmcore,wmagent-devtools
 pymongo~=4.0.1                # wmcore,wmagent-devtools,reqmgr2ms
 pyOpenSSL~=18.0.0             # wmcore,wmagent
 pyzmq~=19.0.2                 # wmcore,wmagent

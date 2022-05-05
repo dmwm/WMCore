@@ -7,7 +7,7 @@ help(){
                                 [-r <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
                                 [-g <wmcore_config_repository>] [-d <wmcore_config_branch>]
                                 [-d wmcore_path] [-p <patches>] [-m <security string>]
-                                [-l <component_list>] [-i <pypi_index>]
+                                [-l <service_list>] [-i <pypi_index>]
                                 [-h <help>]
 
       -c  <central_services>         Url to central services (e.g. cmsweb-test1.cern.ch)
@@ -23,7 +23,7 @@ help(){
       -p  <patches>                  List of PR numbers [Default: None]
                                      (in double quotes and space separated e.g. "5906 5934 5922")
       -m  <security string>          The security string to be used during deployment. Will be needed at startup [Default: ""]
-      -l  <component_list>           List of components to be deployed [Default: "wmcore" - WMCore metapackage]
+      -l  <service_list>             List of services to be deployed [Default: "wmcore" - WMCore metapackage]
                                      (in double quotes and space separated e.g. "rqmgr2 reqmgr2ms")
                                      (pip based package version syntax is also acceptable e.g. "wmcore==2.0.0")
       -i <pypi-index>                The pypi index to use (i.e. prod or test) [Default: prod - pointing to https://pypi.org/simple/]
@@ -82,9 +82,9 @@ FULL_SCRIPT_PATH="$(_realPath "${0}")"
 # Setting default values for all input parameters.
 # Command line options overwrite the default values.
 # All of the lists from bellow are interval separated.
-# e.g. componentList="admin reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
+# e.g. serviceList="admin reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
 
-componentList="wmcore"                                                    # default is the WMCore meta package
+serviceList="wmcore"                                                    # default is the WMCore meta package
 venvPath="./WMCore.venv3"                                                 # WMCore virtual environment target path
 wmSrcRepo="https://github.com/dmwm/WMCore.git"                            # WMCore source Repo
 wmSrcBranch="master"                                                      # WMCore source branch
@@ -136,7 +136,7 @@ while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvh" opt; do
         m)
             secString=$OPTARG ;;
         l)
-            componentList=$OPTARG ;;
+            serviceList=$OPTARG ;;
         i)
             pipIndex=$OPTARG ;;
         s)
@@ -167,10 +167,10 @@ secString=$(echo $secString | md5sum | awk '{print $1}')
 
 # expand the enabled services list
 # TODO: Find a proper way to include the `acdcserver' in the list bellow (its config is missing from service_configs).
-if [[ ${componentList} =~ ^wmcore.* ]]; then
+if [[ ${serviceList} =~ ^wmcore.* ]]; then
     _enabledListTmp="reqmgr2 reqmgr2ms workqueue reqmon t0_reqmon"
 else
-    _enabledListTmp=$componentList
+    _enabledListTmp=$serviceList
 fi
 
 # NOTE: The following extra expansion won't be needed once we have the set of
@@ -276,7 +276,7 @@ startSetupVenv(){
     echo "======================================================="
     echo "Deployment parameters:"
     echo "-------------------------------------------------------"
-    echo "componentList: $componentList"
+    echo "serviceList: $serviceList"
     echo "enabledList: $enabledList"
     echo "venvPath: $venvPath"
     echo "wmCfgBranch: $wmCfgBranch"
@@ -422,7 +422,7 @@ pkgInstall(){
     echo -n "Continue? [y]: "
     read x && [[ $x =~ (n|N) ]] && return 102
     echo "..."
-    _pkgInstall $componentList || return $?
+    _pkgInstall $serviceList || return $?
 
     # if we have deployed from pip then the $wmDepPath ends with `latest'
     # so we need to change it with the actual package version deployed
@@ -509,7 +509,7 @@ setupDeplTree(){
     #       deployed. We are no longer having the cmsweb deployment tag HG20***
     #       Currently we have three possible cases:
     #       * The pypi package version deployed - we must pay attention if we
-    #         have version misalignment of different components/services installed
+    #         have version misalignment of different services installed
     #       * The WMCore tag deployed if we are running from source and having
     #         a tag specified for this deployment.
     #       * The WMCore branch deployed if we are running from source and having

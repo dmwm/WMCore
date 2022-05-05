@@ -97,7 +97,7 @@ FULL_SCRIPT_PATH="$(_realPath "${0}")"
 # All of the lists from bellow are interval separated.
 # e.g. serviceList="admin reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
 
-serviceList="wmcore"                                                    # default is the WMCore meta package
+serviceList="wmcore"                                                      # default is the WMCore meta package
 venvPath="./WMCore.venv3"                                                 # WMCore virtual environment target path
 wmSrcRepo="https://github.com/dmwm/WMCore.git"                            # WMCore source Repo
 wmSrcBranch="master"                                                      # WMCore source branch
@@ -292,6 +292,10 @@ handleReturn(){
 }
 
 startSetupVenv(){
+    # A function used for Initial setup parameters visualisation. It waits for 5 sec.
+    # before continuing, to give the option for canceling in case of wrong parameter set.
+    # :param: None
+
     echo "======================================================="
     echo "Deployment parameters:"
     echo "-------------------------------------------------------"
@@ -320,7 +324,9 @@ startSetupVenv(){
 }
 
 createVenv(){
-    # Cleanup your setup space
+    # Function for creating minimal virtual environment. It uses global
+    # $venvCleanup to check if to clean the venv space before deployment.
+    # :param: None
     echo
     echo "======================================================="
     echo "Creating minimal virtual environment:"
@@ -337,7 +343,9 @@ createVenv(){
 }
 
 cloneWMCore(){
-    # clone deployment scripts
+    # Function for cloning WMCore source code and checkout to the proper branch
+    # or tag based on the script's runtime prameters.
+    # :param: None
     echo
     echo "======================================================="
     echo "Cloning WMCore source code:"
@@ -352,7 +360,9 @@ cloneWMCore(){
 }
 
 setupConfig(){
-    # clone deployment scripts
+    # Function for cloning WMCore service_config files from gitlab and checkout
+    # to the proper config branch based on the script's runtime parameters.
+    # :param: None
     echo
     echo "======================================================="
     echo "Cloning WMCore configuration files:"
@@ -382,7 +392,8 @@ setupConfig(){
 }
 
 _pipUpgradeVenv(){
-    # upgrade pip for the current virtual env
+    # Helper function used only for pip Upgrade for the current virtual env
+    # :param: None
     cd $venvPath
     # pip install $pipOpt wheel
     # pip install $pipOpt --upgrade pip
@@ -391,7 +402,8 @@ _pipUpgradeVenv(){
 }
 
 activateVenv(){
-    # activate virtual environment
+    # Function for activating the virtual environment
+    # :param: None
     echo
     echo "======================================================="
     echo "Activate WMCore virtual env:"
@@ -403,7 +415,10 @@ activateVenv(){
 }
 
 _pkgInstall(){
-    # Basic pip install caller
+    # Helper function to follow default procedure in trying to install a package
+    # through pip and eventually resolve package dependency issues.
+    # :param $*: A string including a space separated list of all packages to be installed
+
     pkgList=$*
     pkgFail=""
     for pkg in $pkgList
@@ -438,7 +453,12 @@ _pkgInstall(){
 }
 
 pkgInstall(){
-    # install the service package list inside the virtual environment:
+    # Function for installing the service package list inside the virtual, isolating
+    # every package related to WMCore inside the $wmCurrPath. Once completed with the
+    # deployment, renames the target directory to the proper WMcore version installed
+    # and recreates the `current' soft link pointing to point to the new destiation
+    # It uses the script's runtime prameters from global scope.
+    # :param: None
     echo
     echo "======================================================="
     echo "Install all requested services inside the virtual env:"
@@ -468,7 +488,12 @@ pkgInstall(){
 }
 
 setupDependencies(){
-    # install all python dependencies inside the virtual environment:
+    # Function to install all WMCore python dependencies inside the virtual environment
+    # based on the default WMCore/requirements.txt file. It will be found only if we
+    # are deploying from source, otherwise the dependencies will be resolved by the
+    # pypi package requirements and the step will be skipped. If not all dependencies
+    # are satisfied a WARNING message is printed and the setup continues.
+    # :param: None
     echo
     echo "======================================================="
     echo "Install all WMCore python dependencies inside the virtual env:"
@@ -494,7 +519,16 @@ setupDependencies(){
 }
 
 setupRucio(){
-    # minimal setup for the Rucio package inside the virtual environment:
+    # Function to create a minimal setup for the Rucio package inside the virtual
+    # environment. It uses rucio integration as default server to avoid interference
+    # with production installations.
+    # :param: None
+
+    # NOTE: This configuration files will be used mostly during operations and
+    #       development or running from source. The different services usually rely
+    #       on their own configuration service_config script for defining the Rucio
+    #       instance, but we still my consider adding an extra parameter to the script
+
     echo
     echo "======================================================="
     echo "Create minimal Rucio client setup inside the virtual env:"
@@ -521,7 +555,14 @@ EOF
 }
 
 setupDeplTree(){
-    # Setup WMcore deployment paths:
+    # Function for setting up the default WMCore deployment tree.
+    # Also creates a temporary `current' soft link to the deployment and configuration
+    # path, which will be properly renamed and switched to point to the actual version
+    # deployed on a later stage.
+    # It also adds all WMCore related virtual environments to both: currently running
+    # virtual environment and the WMCore hooks to be added to bin/activate
+    # It uses the script's runtime prameters from global scope.
+    # :param: None
     echo
     echo "======================================================="
     echo "Setup WMCore paths inside the virtual env:"
@@ -622,7 +663,15 @@ setupDeplTree(){
 }
 
 setupInitScripts(){
-    # Setup WMcore init scripts:
+    # Function to build the WMcore init scripts, based on the current setup
+    # configuration and set of enabled services
+    # Two types of scripts are created:
+    #  * `manage' script per enabled service, supporting basic operation like:
+    #     start, stop, restart, status
+    #  * `wmcmanage' global script for iterating through all enabled services. Supports:
+    #     start[:service], stop[:service], restart[:service], status[:service], version[:service]
+    # It uses the script's runtime prameters from global scope.
+    #:param: None
     echo
     echo "======================================================="
     echo "Setup WMCore init scripts inside the virtual env:"
@@ -808,20 +857,23 @@ EOF
 }
 
 setupIpython(){
-    # Setup Ipython:
+    # Helper function to install Ipython during manual installation, it is skipped by default.
+    # :param: None
     echo
     echo "======================================================="
     echo "If the current environment is about to be used for deployment Ipython would be a good recomemndation, but is not mandatory."
     echo -n "Skip Ipython installation? [y]: "
     $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] || return 101
     echo "Installing ipython..."
-    pip install $pipOpt ipython
+    pip install ipython
 }
 
 setupVenvHooks(){
-    # Setting up the WMCore virtual environment hooks using the WMCoreVenvVars
-    # from the global scope. We also redefine the deactivate function for the
-    # virtual environment.
+    # Function used for setting up the WMCore virtual environment hooks
+    # It uses the WMCoreVenvVars from the global scope. We also redefine the
+    # deactivate function for the virtual environment such that we can restore
+    # all WMCore related env. variables at deactivation time.
+    # :param: None
     echo
     echo "======================================================="
     echo "Setup the WMCore hooks at the virtual environment activate script"
@@ -903,8 +955,8 @@ main(){
     if $runFromSource; then
         cloneWMCore  || handleReturn $?
     fi
-    # pkgInstall       || handleReturn $?
-    # setupDependencies|| handleReturn $?
+    pkgInstall       || handleReturn $?
+    setupDependencies|| handleReturn $?
     setupRucio       || handleReturn $?
     setupConfig      || handleReturn $?
     setupInitScripts || handleReturn $?

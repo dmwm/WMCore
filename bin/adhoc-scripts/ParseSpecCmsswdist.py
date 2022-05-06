@@ -110,13 +110,17 @@ import argparse
 import os
 import logging
 # import pprint
+from pprint import pformat
+
+
+DEPS_SPEC = set()
 
 
 def getDepsSpec(specdir, specfile):
     """
     - Opens a spec files
     - Gets the list of Requirements
-    - Gets the list of Requirements that start with `py2-`
+    - Gets the list of Requirements that start with `py2-` or `py3-`
     """
     specsPy = []  # p5- is for cpan, perl5 dependencies
     specsAll = []
@@ -139,25 +143,38 @@ def getDepsSpec(specdir, specfile):
     return specsPy, specsAll
 
 
-DEPS_SPEC = []
-
-
-def getDepsRecursive(specdir, specfile):
+def getDepsRecursive(specdir, specfile, buildAllDep=False, recursionDepth=-1):
     """
     - calls getDepsSpec()
     - add all the dependencies that start with `py2-` or `py3-` to deps_spec
     - call recursively getDepsSpec() on all the dependencies
+    :param specdir: The directory holding all the spec files to iterate through
+    :param specfile: The initial spec file.
+    :param buildAllDep: A Bool flag to signal building of all dependencies not only python related
+    :param recursionDepth: An integer to set the maximum recursion depth.
     """
+
+    global DEPS_SPEC
     # first time that we call this, no specfile is saved because
     # is it the parent specfile
+    if recursionDepth == 0:
+        return
+    elif recursionDepth < 0:
+        # if recursionDepth is negative means indefinite.
+        pass
+    else:
+        recursionDepth -= 1
+
     specsPy, specsAll = getDepsSpec(specdir, specfile)
-    logging.info("%s %s", specfile, specsAll)
-    logging.info("%s %s", specfile, specsPy)
-    for spec in specsPy:
-        if spec not in DEPS_SPEC:
-            DEPS_SPEC.append(spec)
+    logging.debug("%s: specsAll: \n%s", specfile, pformat(specsAll))
+    logging.debug("%s: sepcsPy: \n%s", specfile, pformat(specsPy))
+    if buildAllDep:
+        DEPS_SPEC |= set(specsAll)
+    else:
+        DEPS_SPEC |= set(specsPy)
+
     for spec in specsAll:
-        getDepsRecursive(specdir, spec)
+        getDepsRecursive(specdir, spec, buildAllDep=buildAllDep, recursionDepth=recursionDepth)
 
 
 def buildWithPip(lines):
@@ -227,7 +244,15 @@ def getPipVersion(specdir, specfile):
         line0 = lines[0].strip()
         nameAndVer = []
         if "### RPM external" in line0:
-            nameAndVer = line0[line0.find("-") + 1:].split(" ")
+            # nameAndVer = line0[line0.find("-") + 1:].split(" ")
+            line0List = line0.split(" ")
+            name=line0List[-2]
+            # getting rid of py{2,3}- prefix in the package name.
+            for patternStr in ("py2-", "py3-"):
+                name = name.replace(patternStr, "")
+
+            version=line0List[-1]
+            nameAndVer = [name, version]
             logging.debug("%s %s", specfile, nameAndVer)
             if buildWithPip(lines):
                 name = getNameBuiltwithpip(lines)
@@ -244,6 +269,7 @@ def writeRequirements(specdir, depsspec, requirementsFilename):
     """Writes requirements.txt file"""
     requirementLines = []
     for spec in depsspec:
+        # logging.info("finding pip version for spec: %s", spec)
         line = getPipVersion(specdir, spec)
         if line:
             line += "\n"
@@ -254,12 +280,16 @@ def writeRequirements(specdir, depsspec, requirementsFilename):
 
 def main():
     """
-    :param spec_dir: Path to base direcotry that contains the spec files
-    :type spec_dir: str, required
-    :param spec_file: filename of the spec file
-    :type spec_file: str, required
+    All parameters taken through argument parsing:
+    :param --spec-dir: Path to base direcotry that contains the spec files
+    :type spec-dir: str, required
+    :param spec-file: filename of the spec file
+    :type spec-file: str, required
+    :param --level: Recursion level.
+    :param --all: A Bool flag to signal for building all dependencies not python related.
+    :param --recursive: A Bool flag to signal recursive iteration through spec files.
     """
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--spec-dir",
@@ -271,21 +301,35 @@ def main():
                         help="spec file filename (e.g. `t0.spec`)",
                         type=str,
                         required=True)
+    parser.add_argument("-a", '--all', dest='buildAllDep', action='store_true', default=False)
+    parser.add_argument("-l", '--level',
+                        help="Recursion level. If --recursive is True and --level \
+                              is specified recursion will stop at depth=level. Negative value means indefinite - This is the Default.",
+                        dest='recursionDepth',
+                        type=int,
+                        default=-1)
+
     featureParser = parser.add_mutually_exclusive_group(required=False)
-    featureParser.add_argument('--recursive', dest='recursive', action='store_true')
-    featureParser.add_argument('--no-recursive', dest='recursive', action='store_false')
+    featureParser.add_argument('--recursive', dest='recursive',
+                               action='store_true',
+                               help="Iterate recursively trough all spec files at SPEC_DIR.")
+    featureParser.add_argument('--no-recursive', dest='recursive',
+                               action='store_false',
+                               help="Parse only the current spec file - This is the Default.")
     parser.set_defaults(feature=False)
     args = parser.parse_args()
 
+
     if args.recursive:
-        getDepsRecursive(args.spec_dir, args.spec_file)
+        getDepsRecursive(args.spec_dir, args.spec_file,
+                         buildAllDep=args.buildAllDep,
+                         recursionDepth=args.recursionDepth)
     else:
-        specsPy, _ = getDepsSpec(args.spec_dir, args.spec_file)
-        for spec in specsPy:
-            if spec not in DEPS_SPEC:
-                DEPS_SPEC.append(spec)
-    # pprint.pprint(DEPS_SPEC)
-    logging.info(len(DEPS_SPEC))
+        getDepsRecursive(args.spec_dir, args.spec_file,
+                         buildAllDep=args.buildAllDep,
+                         recursionDepth=1)
+
+    logging.info("DEPS_SPEC: len: %s: \n%s", len(DEPS_SPEC), pformat(DEPS_SPEC))
 
     writeRequirements(args.spec_dir, DEPS_SPEC,
                       "requirements_" + args.spec_file + "_auto.txt")

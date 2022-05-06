@@ -49,6 +49,22 @@ help(){
     #          on the pameters set for configuring the deployment steps. This will avoid human intervention during deployment:
     # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -y -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
+
+    # DEPENDENCIES: All WMCore packages have OS or external libraries/packages dependencies, which are not having a pypi equivalent.
+    #               So far those has been resolved through the set of *.spec files maintained at: https://github.com/cms-sw/cmsdist/tree/comp_gcc630
+    #               Here follows the list of all direct (first level) dependencies per service generated from those spec files:
+
+    #               acdcserver: [python3==3.8.2, rotatelogs==2.2.25, couchdb16==1.6.1]
+    #               reqmgr2ms : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25, mongo==3.2.10]
+    #               reqmgr2   : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25, couchdb16==1.6.1]
+    #               reqmon    : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25]
+    #               t0_reqmon : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25]
+    #               workqueue : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25, couchdb16==1.6.1, yui==2.9.0]
+
+    #               The above lists can be re-generated at any time by:
+    #               git clone https://github.com/cms-sw/cmsdist/tree/comp_gcc630
+    #               python WMCore/bin/adhoc-scripts/ParseSpecCmsswdist.py -a -d cmsdist/ -f <service.spec, e.g. reqmgr2ms.spec>
+
 EOF
 }
 

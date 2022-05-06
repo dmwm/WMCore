@@ -231,15 +231,13 @@ class Block(StartPolicyInterface):
 
     def modifyPolicyForWorkAddition(self, inboxElement):
         """
-            A block blacklist modifier will be created,
-            this policy object will split excluding the blocks in both the spec
-            blacklist and the blacklist modified
+        A block blacklist modifier will be created,
+        this policy object will split excluding the blocks in both the spec
+        blacklist and the blacklist modified
         """
         # Get the already processed input blocks from the inbox element
-        existingBlocks = inboxElement.get('ProcessedInputs', [])
-        self.blockBlackListModifier = existingBlocks
+        self.blockBlackListModifier = inboxElement.get('ProcessedInputs', [])
         self.blockBlackListModifier.extend(inboxElement.get('RejectedInputs', []))
-        return
 
     def newDataAvailable(self, task, inbound):
         """
@@ -255,6 +253,6 @@ class Block(StartPolicyInterface):
     @staticmethod
     def supportsWorkAddition():
         """
-            Block start policy supports continuous addition of work
+        Block start policy supports continuous addition of work
         """
         return True

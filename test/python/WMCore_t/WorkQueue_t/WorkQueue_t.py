@@ -1284,7 +1284,8 @@ class WorkQueueTest(WorkQueueTestCase):
                          False)
 
         # close the global inbox elements, they won't be split anymore
-        self.globalQueue.closeWork(['testProcessing', 'testProduction'])
+        #self.globalQueue.closeWork(['testProcessing', 'testProduction'])
+        self.globalQueue.closeWork()
         self.localQueue.getWMBSInjectionStatus()
         time.sleep(1)
         # There are too many jobs to pull down for testProcessing still has element not in WMBS
@@ -1395,7 +1396,9 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Try adding work, no change in blocks available. No work should be added
         logging.info("Adding work - already added - for spec name: %s", processingSpec.name())
-        self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
+        workInbox = self.globalQueue.backend.getInboxElements(WorkflowName=processingSpec.name(),
+                                                              loadSpec=True)
+        self.assertEqual(0, self.globalQueue.addWork(workInbox[0]))
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
         # Now pull work from the global to the local queue
@@ -1412,10 +1415,8 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         syncQueues(self.globalQueue)
 
-        # FIXME: for some reason, it tries to reinsert all those elements again
-        # however, if we call it again, it won't retry anything
-        self.assertEqual(47, self.globalQueue.addWork(processingSpec.name()))
-        self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
+        workInbox = self.globalQueue.backend.getInboxElements(status="Running", loadSpec=True)
+        self.assertEqual(0, self.globalQueue.addWork(workInbox[0]))
 
         self.assertEqual(NBLOCKS_HICOMM - 1, len(self.globalQueue))
         self.assertEqual(len(self.globalQueue.backend.getInboxElements(status="Running")), 1)
@@ -1426,10 +1427,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue), 30)
         self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 30 - 1)
 
-        # FIXME: for some reason, it tries to reinsert all those elements again
-        # however, if we call it again, it won't retry anything
-        self.assertEqual(47, self.globalQueue.addWork(processingSpec.name()))
-        self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
+        workInbox = self.globalQueue.backend.getInboxElements(WorkflowName=processingSpec.name(), loadSpec=True)
+        self.assertEqual(0, self.globalQueue.addWork(workInbox[0]))
 
         return
 

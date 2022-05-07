@@ -54,14 +54,14 @@ help(){
     #               So far those has been resolved through the set of *.spec files maintained at: https://github.com/cms-sw/cmsdist/tree/comp_gcc630
     #               Here follows the list of all direct (first level) dependencies per service generated from those spec files:
 
-    #               acdcserver: [python3==3.8.2, rotatelogs==2.2.25, couchdb16==1.6.1]
-    #               reqmgr2ms : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25, mongo==3.2.10]
-    #               reqmgr2   : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25, couchdb16==1.6.1]
-    #               reqmon    : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25]
-    #               t0_reqmon : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25]
-    #               workqueue : [python3==3.8.2, jemalloc==5.2.0, rotatelogs==2.2.25, couchdb16==1.6.1, yui==2.9.0]
+    #               acdcserver: [python3, rotatelogs, couchdb]
+    #               reqmgr2ms : [python3, jemalloc, rotatelogs, mongo]
+    #               reqmgr2   : [python3, jemalloc, rotatelogs, couchdb]
+    #               reqmon    : [python3, jemalloc, rotatelogs]
+    #               t0_reqmon : [python3, jemalloc, rotatelogs]
+    #               workqueue : [python3, jemalloc, rotatelogs, couchdb, yui]
 
-    #               The above lists can be re-generated at any time by:
+    #               The above list is generated from the 'cmsdist' repository by:
     #               git clone https://github.com/cms-sw/cmsdist/tree/comp_gcc630
     #               python WMCore/bin/adhoc-scripts/ParseSpecCmsswdist.py -a -d cmsdist/ -f <service.spec, e.g. reqmgr2ms.spec>
 

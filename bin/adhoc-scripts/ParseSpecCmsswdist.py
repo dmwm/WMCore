@@ -126,7 +126,7 @@ def getDepsSpec(specdir, specfile):
     specsAll = []
     specfilePath = os.path.join(specdir, specfile)
     logging.info(specfilePath)
-    with open(specfilePath) as specFile:
+    with open(specfilePath, encoding='utf-8') as specFile:
         for line in specFile.readlines():
             requiresPattern = "Requires:"
             if line.strip().startswith(requiresPattern):
@@ -239,7 +239,7 @@ def getPipVersion(specdir, specfile):
     spec files only
     """
     specpath = os.path.join(specdir, specfile)
-    with open(specpath) as specFile:
+    with open(specpath, encoding='utf-8') as specFile:
         lines = specFile.readlines()
         line0 = lines[0].strip()
         nameAndVer = []
@@ -274,7 +274,7 @@ def writeRequirements(specdir, depsspec, requirementsFilename):
         if line:
             line += "\n"
             requirementLines.append(line)
-    with open(requirementsFilename, "w") as requirementsFile:
+    with open(requirementsFilename, "w", encoding='utf-8') as requirementsFile:
         requirementsFile.writelines(requirementLines)
 
 

@@ -3,12 +3,12 @@
 help(){
     echo -e $1
     cat <<EOF
-    Usage: deploy-centralvenv.sh -c <central_services_url> [-s] [-n] [-v] [-y]
-                                [-r <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
-                                [-g <wmcore_config_repository>] [-d <wmcore_config_branch>]
-                                [-d wmcore_path] [-p <patches>] [-m <security string>]
-                                [-l <service_list>] [-i <pypi_index>]
-                                [-h <help>]
+    Usage: deploy-centralvenv.sh [-c <central_services_url>] [-s] [-n] [-v] [-y]
+                                 [-r <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
+                                 [-g <wmcore_config_repository>] [-d <wmcore_config_branch>]
+                                 [-d wmcore_path] [-p <patches>] [-m <security string>]
+                                 [-l <service_list>] [-i <pypi_index>]
+                                 [-h <help>]
 
       -c  <central_services>         Url to central services (e.g. cmsweb-test1.cern.ch)
       -s  <run_from_source>          Bool flag to setup run from source [Default: false]
@@ -43,23 +43,26 @@ help(){
 
     # Example: Deploy WMCore central services from source repository, use tag 2.0.0.pre3, linked with 'cmsweb-test1.cern.ch' as a frontend
     #          at destination /data/tmp/WMCore.venv3/ and using 'Some security string' as a security string for operationss at runtime:
-    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
+    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -s -t 2.0.0.pre3 -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
     # Example: Same as above, but assume 'Yes' to all questions. To be used in order to chose the default flow and rely only
     #          on the pameters set for configuring the deployment steps. This will avoid human intervention during deployment:
-    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -y -s -t 2.0.0.pre3 -p "10003 9998" -d /data/tmp/WMCore.venv3/ -m "Some security string"
+    # ./deploy-centralvenv.sh -c cmsweb-test1.cern.ch -y -s -t 2.0.0.pre3 -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
+    # Example: Deploy WMCore central services from source repository, use tag 2.0.0.pre3, linked with a frontend defined from service_config files
+    #          at destination /data/tmp/WMCore.venv3/ and using 'Some security string' as a security string for operationss at runtime:
+    # ./deploy-centralvenv.sh -s -t 2.0.0.pre3 -d /data/tmp/WMCore.venv3/ -m "Some security string"
 
     # DEPENDENCIES: All WMCore packages have OS or external libraries/packages dependencies, which are not having a pypi equivalent.
     #               So far those has been resolved through the set of *.spec files maintained at: https://github.com/cms-sw/cmsdist/tree/comp_gcc630
     #               Here follows the list of all direct (first level) dependencies per service generated from those spec files:
 
     #               acdcserver: [python3, rotatelogs, couchdb]
-    #               reqmgr2ms : [python3, jemalloc, rotatelogs, mongo]
-    #               reqmgr2   : [python3, jemalloc, rotatelogs, couchdb]
-    #               reqmon    : [python3, jemalloc, rotatelogs]
-    #               t0_reqmon : [python3, jemalloc, rotatelogs]
-    #               workqueue : [python3, jemalloc, rotatelogs, couchdb, yui]
+    #               reqmgr2ms : [python3, rotatelogs, mongo]
+    #               reqmgr2   : [python3, rotatelogs, couchdb]
+    #               reqmon    : [python3, rotatelogs]
+    #               t0_reqmon : [python3, rotatelogs]
+    #               workqueue : [python3, rotatelogs, couchdb, yui]
 
     #               The above list is generated from the 'cmsdist' repository by:
     #               git clone https://github.com/cms-sw/cmsdist/tree/comp_gcc630
@@ -75,6 +78,23 @@ usage(){
 }
 
 _realPath(){
+    # A function to find the absolute path of a given entity (directory or file)
+    # It also expands and follows soft links e.g. if we have the following link:
+    #
+    # $ ll ~/WMCoreDev.d
+    # lrwxrwxrwx 1 user user 21 Apr 15  2020 /home/user/WMCoreDev.d -> Projects/WMCoreDev.d/
+    #
+    # An entity from inside the linked path will be expanded as:
+    # $ _realPath ~/WMCoreDev.d/DBS
+    # /home/user/Projects/WMCoreDev.d/DBS
+    #
+    # It uses only bash internals for compatibility with any Unix-like OS capable of running bash.
+    # For simplicity reasons, it does not support shell path expansions like:
+    # /home/*/WMCoreDev.d, but can be used with single paths solely.
+    #
+    # :param $1: The path to be followed to the / (root) base
+    # :return:   Echos the absolute path of the entity
+
     [[ -z $1 ]] &&  return
     pathExpChars="\? \* \+ \@ \! \{ \} \[ \]"
     for i in $pathExpChars
@@ -127,8 +147,9 @@ vmName=${vmName%%.*}
 pipIndex="prod"                                                           # pypi Index to use
 verboseMode=false
 assumeYes=false
-noVenvCleanup=false
-secString=""
+noVenvCleanup=false                                                       # a Bool flag to state if the virtual env is to be cleaned before deployment
+secString=""                                                              # The security string to be used during deployment.
+                                                                          # This one will be needed later to start the services.
 
 # NOTE: We are about to stick to Python3 solely from now on. So if the default
 #       python executable for the system we are working on (outside the virtual
@@ -193,9 +214,6 @@ $verboseMode && set -x
 
 # Swap noVenvCleanup flag with venvCleanup to avoid double negation and confusion:
 venvCleanup=true && $noVenvCleanup && venvCleanup=false
-
-# check for mandatory parameters:
-[[ -z $vmName ]] && usage "Missing mandatory argument: -c <central_services>"
 
 # Calculate the security string md5 sum;
 secString=$(echo $secString | md5sum | awk '{print $1}')
@@ -745,6 +763,9 @@ CFGFILE=(\$CFGDIR/config*.py)
 # check if the file is actually readable:
 [[ -r \$CFGFILE ]] || { echo "Could not find the service configuration file for: \$ME at: \$CFGFILE "; exit 1 ;}
 
+# find auxiliary jemalloc.sh script for running the service with memeory usage optimizations.
+jemalloc=\$(command -v jemalloc.sh)
+
 LOG=$service
 AUTHDIR=\$ROOT/current/auth/\$ME
 COLOR_OK="\\033[0;32m"
@@ -759,7 +780,7 @@ COLOR_NORMAL="\\033[0;39m"
 sysboot()
 {
   if [ -f \$CFGFILE ]; then
-    jemalloc.sh wmc-httpd -v -d \$STATEDIR -l "|rotatelogs \$LOGDIR/\$LOG-%Y%m%d-`hostname -s`.log 86400" \$CFGFILE
+    \$jemalloc wmc-httpd -v -d \$STATEDIR -l "|rotatelogs \$LOGDIR/\$LOG-%Y%m%d-`hostname -s`.log 86400" \$CFGFILE
   fi
 }
 
@@ -768,7 +789,7 @@ start()
 {
   echo "starting \$ME"
   if [ -f \$CFGFILE ]; then
-    jemalloc.sh wmc-httpd -r -d \$STATEDIR -l "|rotatelogs \$LOGDIR/\$LOG-%Y%m%d-`hostname -s`.log 86400" \$CFGFILE
+    \$jemalloc wmc-httpd -r -d \$STATEDIR -l "|rotatelogs \$LOGDIR/\$LOG-%Y%m%d-`hostname -s`.log 86400" \$CFGFILE
   fi
 }
 

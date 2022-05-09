@@ -387,10 +387,15 @@ cloneWMCore(){
     $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
-    [[ -d $wmSrcPath ]] ||  mkdir -p $wmSrcPath || return $?
-    cd $wmSrcPath
-    git clone $wmSrcRepo $wmSrcPath && git checkout $wmSrcBranch && [[ -n $wmTag ]] && git reset --hard $wmTag
-    cd -
+    if $noVenvCleanup && [[ -d $wmSrcPath ]]; then
+        echo "WMCore source has already been cloned and the NO Virtual Environment Cleanup is True."
+        return 101
+    else
+        [[ -d $wmSrcPath ]] ||  mkdir -p $wmSrcPath || return $?
+        cd $wmSrcPath
+        git clone $wmSrcRepo $wmSrcPath && git checkout $wmSrcBranch && [[ -n $wmTag ]] && git reset --hard $wmTag
+        cd -
+    fi
 }
 
 setupConfig(){

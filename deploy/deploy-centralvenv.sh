@@ -387,7 +387,12 @@ cloneWMCore(){
     $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
 
-    if $noVenvCleanup && [[ -d $wmSrcPath ]]; then
+    # NOTE: If the Virtual Environment is not to be cleaned during the current
+    #       deployment and we already have either a source directory synced from
+    #       previous deployments or a link at $wmSrcPath pointing to a source
+    #       directory outside the virtual env. we simply skip git actions to protect
+    #       developer's previous work.
+    if $noVenvCleanup && ( [[ -d $wmSrcPath ]] || [[ -h $wmSrcPath ]] ); then
         echo "WMCore source has already been cloned and the NO Virtual Environment Cleanup is True."
         return 101
     else

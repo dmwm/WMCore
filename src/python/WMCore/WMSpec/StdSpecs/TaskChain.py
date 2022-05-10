@@ -277,7 +277,8 @@ class TaskChainWorkloadFactory(StdBase):
                     # process an existing dataset
                     self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
                                                           taskConf['SplittingArguments'],
-                                                          blowupFactor=blowupFactor)
+                                                          blowupFactor=blowupFactor,
+                                                          OpenRunningTimeout=self.openRunningTimeout)
                     self.setupTask(task, taskConf)
             else:
                 # all subsequent tasks have to be processing tasks

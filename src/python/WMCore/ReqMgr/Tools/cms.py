@@ -117,7 +117,7 @@ def web_ui_names():
     "Return dict of web UI JSON naming conventions"
     maps = {
         "TimePerEvent": "TimePerEvent (seconds)",
-        "OpenRunningTimeout": "OpenRunningTimeout (deprecated)",
+        "OpenRunningTimeout": "OpenRunningTimeout (seconds)",
         "SizePerEvent": "SizePerEvent (KBytes)",
         "Memory": "Memory (MBytes)",
         "BlockCloseMaxSize": "BlockCloseMaxSize (Bytes)",

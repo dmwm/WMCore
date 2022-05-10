@@ -101,7 +101,8 @@ class StepChainWorkloadFactory(StdBase):
         else:
             self.workload.setDashboardActivity("processing")
             self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
-                                                  taskConf['SplittingArguments'])
+                                                  taskConf['SplittingArguments'],
+                                                  OpenRunningTimeout=self.openRunningTimeout)
             self.setupTask(firstTask, taskConf)
 
         # Now modify this task to add the next steps

@@ -1,3 +1,10 @@
+2.0.3.pre5 to 2.0.3.pre6:
+  - Add buildAllDep option && Fix package verstion estimation for ParseSpecCmsswdist. (Todor Ivanov) #11132
+  - Bring dbs3-client version to 4.0.8 (Alan Malta Rodrigues) #11138
+  - speed up listDatasetFileDetails API (Valentin Kuznetsov) #11099
+  - Remove profile scope (Valentin Kuznetsov) #11134
+
+
 2.0.3.pre4 to 2.0.3.pre5:
   - fix unit tests (Alan Malta Rodrigues) #11119
   - Properly handle OpenRunningTimeout in WorkQueue (Alan Malta Rodrigues) #11119

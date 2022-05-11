@@ -934,7 +934,7 @@ setupVenvHooks(){
     for var in ${!WMCoreVenvVars[@]}
     do
         echo "WMCoreVenvVars[$var]=${WMCoreVenvVars[$var]}" >> ${VIRTUAL_ENV}/bin/activate
-        echo -e "WMCoreVenvVars[$var]\t:\t${WMCoreVenvVars[$var]}"
+        # echo -e "WMCoreVenvVars[$var]\t:\t${WMCoreVenvVars[$var]}"
     done
 
     # NOTE: If we have the WMCore hooks setup at the current virtual environment
@@ -1021,6 +1021,49 @@ checkNeeded(){
     done
 }
 
+printVenvSetup(){
+    # Function to print the current virtual environment setup. And a basic
+    # deployment area tree, no deeper than 3 levels relative to the deployment
+    # root path.
+    # :param:  None
+    # :return: Dumps a formatted string with the information for the current setup
+
+    echo "======================================================="
+    echo "Printing the final WMCore virtual environment parameters:"
+    echo "-------------------------------------------------------"
+
+    local prefix="WMCoreVenvVars[]: "
+    local prefixLen=${#prefix}
+
+    # NOTE: Here choosing the common alignment position for all variables printed
+    #       the position count starts from the beginning of line + prefixLen.
+    local valAllign=0
+    for var in ${!WMCoreVenvVars[@]}
+    do
+        vLen=${#var}
+        [[ $valAllign -lt $vLen ]] && valAllign=$vLen
+    done
+
+    for var in ${!WMCoreVenvVars[@]}
+    do
+        vLen=${#var}
+        spaceLen=$(($valAllign - $vLen))
+        space=""
+        for ((i=0; i<=$spaceLen; i++))
+        do
+            space="$space "
+        done
+        spaceNewLineLen=$(($spaceLen + $prefixLen +$vLen))
+        spaceNewLine=""
+        for ((i=0; i<=$spaceNewLineLen; i++))
+        do
+            spaceNewLine="$spaceNewLine "
+        done
+        echo -e "WMCoreVenvVars[$var]${space}: ${WMCoreVenvVars[$var]//:/\n$spaceNewLine}"
+
+    done
+}
+
 main(){
     checkNeeded      || handleReturn $?
     startSetupVenv   || handleReturn $?
@@ -1037,6 +1080,7 @@ main(){
     setupInitScripts || handleReturn $?
     setupIpython     || handleReturn $?
     setupVenvHooks   || handleReturn $?
+    printVenvSetup
 }
 
 startPath=$(pwd)

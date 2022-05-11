@@ -507,7 +507,7 @@ pkgInstall(){
     echo "======================================================="
     echo "Install all requested services inside the virtual env:"
     echo -n "Continue? [y]: "
-    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 102
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "..."
     _pkgInstall $serviceList || return $?
 
@@ -703,6 +703,7 @@ setupDeplTree(){
     if $runFromSource; then
         _addWMCoreVenvVar PYTHONPATH ${wmSrcPath}/src/python/:$PYTHONPATH
         _addWMCoreVenvVar PATH ${wmSrcPath}/bin/:$PATH
+        _addWMCoreVenvVar WMCORE_SERVICE_SRC ${wmSrcPath}
     fi
 }
 
@@ -933,7 +934,7 @@ setupVenvHooks(){
     for var in ${!WMCoreVenvVars[@]}
     do
         echo "WMCoreVenvVars[$var]=${WMCoreVenvVars[$var]}" >> ${VIRTUAL_ENV}/bin/activate
-        echo "WMCoreVenvVars[$var]=${WMCoreVenvVars[$var]}"
+        echo -e "WMCoreVenvVars[$var]\t:\t${WMCoreVenvVars[$var]}"
     done
 
     # NOTE: If we have the WMCore hooks setup at the current virtual environment
@@ -998,12 +999,25 @@ checkNeeded(){
     # It uses hard coded list of tools required by the current script in order
     # to be able to complete the run.
     # :param: None
-    local neededTools="git awk grep"
+
+    # NOTE: First of all, check for minimal bash version required.
+    #       Associative arrays are not supported for bash versions earlier than 4.*
+    #       This causes issues on OS X systems with the following error:
+    #       ./deploy-centralvenv.sh: line 280: declare: -A: invalid option
+    #       declare: usage: declare [-afFirtx] [-p] [name[=value] ...]
+    verString=$(bash --version)
+    [[ $verString =~ ^GNU[[:blank:]]+bash,[[:blank:]]+version[[:blank:]]+[4-9]+\..* ]] || {
+        error=$?;
+        echo "The current setup script requires bash version: 4.* or later. Please install it and rerun.";
+        return $error ;}
+
+    local neededTools="git awk grep md5sum"
     for tool in $neededTools
     do
-        command -v $tool 2>&1 > /dev/null || { error=$?;
-                                               echo "The current setup script requires: $tool in order to continue. Please install it and rerun." ;
-                                               return $error ;}
+        command -v $tool 2>&1 > /dev/null || {
+            error=$?;
+            echo "The current setup script requires: $tool in order to continue. Please install it and rerun." ;
+            return $error ;}
     done
 }
 

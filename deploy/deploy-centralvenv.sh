@@ -1011,7 +1011,7 @@ checkNeeded(){
         echo "The current setup script requires bash version: 4.* or later. Please install it and rerun.";
         return $error ;}
 
-    local neededTools="git awk grep md5sum"
+    local neededTools="git awk grep md5sum tree"
     for tool in $neededTools
     do
         command -v $tool 2>&1 > /dev/null || {
@@ -1019,6 +1019,36 @@ checkNeeded(){
             echo "The current setup script requires: $tool in order to continue. Please install it and rerun." ;
             return $error ;}
     done
+}
+
+_sort(){
+    # Simple auxiliary sort function.
+    # :param $*: All parameters need to be string values to be sorted
+    # :return:   Prints the alphabetically sorted list of all input parameters
+    local -a result
+    i=0
+    result[$i]=$1
+    shift
+    for key in $*
+    do
+        let i++
+        x=$i
+        y=$i
+        result[$i]=$key
+        while [[ $x -gt 0 ]]
+        do
+            let x--
+            if [[ ${result[$x]} > ${result[$y]} ]]; then
+                tmpKey=${result[$x]}
+                result[$x]=${result[$y]}
+                result[$y]=$tmpKey
+            else
+                break
+            fi
+            let y--
+        done
+    done
+    echo ${result[*]}
 }
 
 printVenvSetup(){
@@ -1029,7 +1059,11 @@ printVenvSetup(){
     # :return: Dumps a formatted string with the information for the current setup
 
     echo "======================================================="
-    echo "Printing the final WMCore virtual environment parameters:"
+    echo "Printing the final WMCore virtual environment parameters and tree:"
+    echo "-------------------------------------------------------"
+    echo
+    tree -d -L 3 $venvPath
+    echo
     echo "-------------------------------------------------------"
 
     local prefix="WMCoreVenvVars[]: "
@@ -1044,7 +1078,7 @@ printVenvSetup(){
         [[ $valAllign -lt $vLen ]] && valAllign=$vLen
     done
 
-    for var in ${!WMCoreVenvVars[@]}
+    for var in $(_sort ${!WMCoreVenvVars[@]})
     do
         vLen=${#var}
         spaceLen=$(($valAllign - $vLen))

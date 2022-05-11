@@ -100,6 +100,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("mongoDocsCreatedSecs", 6 * 30 * 24 * 60 * 60)
         self.msConfig.setdefault("sendNotification", False)
         self.msConfig.setdefault("relvalPolicy", [])
+        self.msConfig.setdefault("ruleLifetimeRelVal", [])
 
         self.uConfig = {}
         # service name used to route alerts via AlertManager
@@ -111,6 +112,7 @@ class MSOutput(MSCore):
         allDBSDatatiers = getDataTiers(self.msConfig['dbsUrl'])
         allDiskRSEs = self.rucio.evaluateRSEExpression("*", returnTape=False)
         self.relvalPolicy = RelValPolicy(self.msConfig['relvalPolicy'],
+                                         self.msConfig['ruleLifetimeRelVal'],
                                          allDBSDatatiers, allDiskRSEs, logger=logger)
 
         self.cric = CRIC(logger=self.logger)
@@ -298,9 +300,6 @@ class MSOutput(MSCore):
                      'comment': 'WMCore MSOutput output data placement'}
         # add a configurable weight value
         ruleAttrs["weight"] = self.msConfig['rucioDiskRuleWeight']
-        # and RelVals have a different lifetime setting
-        if workflow['IsRelVal']:
-            ruleAttrs["lifetime"] = self.msConfig['ruleLifetimeRelVal']
 
         # if anything fail along the way, set it back to "pending"
         transferStatus = "done"
@@ -318,10 +317,16 @@ class MSOutput(MSCore):
                 self.logger.info(msg)
                 continue
 
-            self.logger.info("Performing rucio rule creation for workflow: %s, dataset: %s",
-                             workflow['RequestName'], dMap['Dataset'])
-
             ruleAttrs.update({'copies': dMap['Copies']})
+            # RelVals have a different lifetime setting and it depends on the sample type
+            if workflow['IsRelVal']:
+                ruleLifeT = self.relvalPolicy.getLifetimeByDataset(dMap['Dataset'])
+                ruleAttrs["lifetime"] = ruleLifeT
+
+            msg = "Performing rucio rule creation for workflow: {}, ".format(workflow['RequestName'])
+            msg += "with the following information: {}".format(dMap)
+            self.logger.info(msg)
+
             if self.msConfig['enableDataPlacement']:
                 resp = self.rucio.createReplicationRule(dMap['Dataset'], dMap['DiskDestination'], **ruleAttrs)
                 if not resp:

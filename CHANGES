@@ -1,3 +1,13 @@
+2.0.3.pre6 to 2.0.3.pre7:
+  - [MSTransferor] Lock the whole input container for growing workflows (Alan Malta Rodrigues) #11141
+  - unit tests for RelValPolicy (Alan Malta Rodrigues) #11139
+  - Apply different rule lifetime for RelVal pre-release samples (Alan Malta Rodrigues) #11139
+  - Add support for IAM token (Valentin Kuznetsov) #10939
+  - update a couple of json templates with OpenRunningTimeout (Alan Malta Rodrigues) #11135
+  - fix where OpenRunningTimeout is retrieved in the workqueue element (Alan Malta Rodrigues) #11135
+  - Add support to OpenRunningTimeout for TaskChain/StepChain (Alan Malta Rodrigues) #11135
+
+
 2.0.3.pre5 to 2.0.3.pre6:
   - Add buildAllDep option && Fix package verstion estimation for ParseSpecCmsswdist. (Todor Ivanov) #11132
   - Bring dbs3-client version to 4.0.8 (Alan Malta Rodrigues) #11138

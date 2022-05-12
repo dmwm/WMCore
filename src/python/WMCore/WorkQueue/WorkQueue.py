@@ -681,9 +681,8 @@ class WorkQueue(WorkQueueBase):
             # if global queue, then update workflow stats to request mgr couch doc
             # remove the "UnittestFlag" - need to create the reqmgrSvc emulator
             if not self.params.get("UnittestFlag", False):
-                # get statistics for the new work
+                # get statistics for the new work. It's already validated on the server side
                 totalStats = self._getTotalStats(newWork)
-                # FIXME TODO: stats need to be updated, not written only once!
                 self.reqmgrSvc.updateRequestStats(inboundElem['WMSpec'].name(), totalStats)
 
             if badWork:
@@ -882,7 +881,8 @@ class WorkQueue(WorkQueueBase):
         currentTime = time.time()
         for element in workflowsToCheck:
             # fetch attributes from the inbox workqueue element
-            openRunningTimeout = element.get('OpenRunningTimeout', 0)
+            startPol = element.get('StartPolicy', {})
+            openRunningTimeout = startPol.get('OpenRunningTimeout', 0)
             foundNewDataTime = element.get('TimestampFoundNewData', 0)
             if not openRunningTimeout:
                 self.logger.info("Workflow %s has no OpenRunningTimeout. Queuing to be closed.",

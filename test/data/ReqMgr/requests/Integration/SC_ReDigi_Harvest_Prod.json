@@ -31,8 +31,8 @@
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
             "WorkFlowDesc": ["3 Steps with input data and same PU in Step1 and Step2; ~221EpJ / 2LpJ; Harvesting enabled; ",
-                             "Drop output of Step1 - GEN-SIM-DIGI-RAW; Assigned with diff AcqEra/ProcStr;"],
-	    "CheckList": ["SC ReDigi; SC with different AcqEra/ProcStr/ProcVer; SC harvesting"]
+                             "Drop output of Step1 - GEN-SIM-DIGI-RAW; Assigned with diff AcqEra/ProcStr; StepChain with growing dataset"],
+	        "CheckList": ["SC ReDigi; SC with different AcqEra/ProcStr/ProcVer; SC harvesting; keep WorkQueue inbox open for 2h"]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
@@ -44,7 +44,8 @@
         "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
         "IncludeParents": false, 
         "Memory": 12000, 
-        "Multicore": 4, 
+        "Multicore": 4,
+        "OpenRunningTimeout": 7200,
         "PrepID": "TEST-CMSSW_11_2_0_pre8__PDMVRELVALS-100-TTbar_14TeV-00002", 
         "ProcessingString": "DEFAULT_ProcStr", 
         "ProcessingVersion": 1, 

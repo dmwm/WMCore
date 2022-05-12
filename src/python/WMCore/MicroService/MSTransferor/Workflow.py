@@ -337,17 +337,17 @@ class Workflow(object):
         """
         return self.childToParentBlocks
 
+    # TODO: all this chunk logic is no longer needed for Rucio
+    # Maybe, in the future, we might need to do data management
+    # for primary + parent cases, I hope not!
     def getChunkBlocks(self, numChunks=1):
         """
         Break down the input and parent blocks by a given number
         of chunks (usually the amount of sites available for data
         placement).
         :param numChunks: integer representing the number of chunks to be created
-        :return: it returns two lists:
-          * a list of sets, where each set corresponds to a set of blocks to be
-            transferred to a single location;
-          * and a list integers, which references the total size of each chunk in
-            the list above (same order).
+        :return: it returns a list with unique block names and an integer
+            with total size in bytes
         """
         if numChunks == 1:
             thisChunk = set()
@@ -357,7 +357,7 @@ class Workflow(object):
                 thisChunk.update(list(self.getParentBlocks()))
                 thisChunkSize += sum([blockInfo['blockSize'] for blockInfo in viewvalues(self.getParentBlocks())])
             # keep same data structure as multiple chunks, so list of lists
-            return [thisChunk], [thisChunkSize]
+            return thisChunk, thisChunkSize
 
         # create a descendant list of blocks according to their sizes
         sortedPrimary = sorted(viewitems(self.getPrimaryBlocks()), key=lambda item: item[1]['blockSize'], reverse=True)

@@ -477,3 +477,10 @@ class Workflow(object):
         if self.isRelVal():
             return "relval"
         return "production"
+
+    def getOpenRunningTimeout(self):
+        """
+        Retrieve the OpenRunningTimeout parameter for this workflow
+        :return: an integer with the amount of secs
+        """
+        return self.data.get("OpenRunningTimeout", 0)

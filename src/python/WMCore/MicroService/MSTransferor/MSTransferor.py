@@ -82,6 +82,10 @@ class MSTransferor(MSCore):
         self.msConfig.setdefault("warningTransferThreshold", 100. * (1000 ** 4))  # 100TB
         # weight expression for the input replication rules
         self.msConfig.setdefault("rucioRuleWeight", 'ddm_quota')
+        # Workflows with open running timeout are used for growing input dataset, thus
+        # make a container level rule for the whole container whenever the open running
+        # timeout is larger than what is configured (or the default of 7 days below)
+        self.msConfig.setdefault("openRunning", 7 * 24 * 60 * 60)
 
         quotaAccount = self.msConfig["rucioAccount"]
 
@@ -153,12 +157,12 @@ class MSTransferor(MSCore):
         counterProblematicRequests = 0
         counterSuccessRequests = 0
         summary = dict(TRANSFEROR_REPORT)
+        self.logger.info("Service set to process up to %s requests per cycle.",
+                         self.msConfig["limitRequestsPerCycle"])
         try:
             requestRecords = self.getRequestRecords(reqStatus)
             self.updateReportDict(summary, "total_num_requests", len(requestRecords))
-            msg = "  retrieved %s requests. " % len(requestRecords)
-            msg += "Service set to process up to %s requests per cycle." % self.msConfig["limitRequestsPerCycle"]
-            self.logger.info(msg)
+            self.logger.info("Retrieved %s requests.", len(requestRecords))
         except Exception as err:  # general error
             requestRecords = []
             msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
@@ -671,14 +675,33 @@ class MSTransferor(MSCore):
         :return: a boolean flagging whether it succeeded or not, and the rule id
         """
         success, transferId = True, set()
-        subLevel = "ALL" if subLevel == "container" else "DATASET"
-        dids = blocks if blocks else [dataIn['name']]
+
+        if subLevel == "container":
+            grouping = "ALL"
+            dids = [dataIn['name']]
+        elif wflow.getOpenRunningTimeout() > self.msConfig["openRunning"]:
+            grouping = "DATASET"
+            dids = [dataIn['name']]
+            msg = "Workflow {} is defined to be open running for ".format(wflow.getName())
+            msg += "{} seconds. Transferring whole container.".format(wflow.getOpenRunningTimeout())
+            self.logger.info(msg)
+        elif blocks:
+            grouping = "DATASET"
+            dids = blocks
+        else:
+            # this case should likely not happen, but perhaps it does
+            # when a workflow has no valid input block
+            grouping = "DATASET"
+            dids = [dataIn['name']]
+            msg = "Workflow {} probably has no input valid blocks, ".format(wflow.getName())
+            msg += "proceeding with a container-level data placement for {}.".format(dids)
+            self.logger.warning(msg)
 
         ruleAttrs = {'copies': 1,
                      'activity': 'Production Input',
                      'lifetime': self.msConfig['rulesLifetime'],
                      'account': self.msConfig['rucioAccount'],
-                     'grouping': subLevel,
+                     'grouping': grouping,
                      'weight': self.msConfig['rucioRuleWeight'],
                      'meta': {'workflow_group': wflow.getWorkflowGroup()},
                      'comment': 'WMCore MSTransferor input data placement'}
@@ -715,7 +738,7 @@ class MSTransferor(MSCore):
 
             # Then make the data subscription, for real!!!
             self.logger.info("Creating rule for workflow %s with %d DIDs in container %s, RSEs: %s, grouping: %s",
-                             wflow.getName(), len(dids), dataIn['name'], rseExpr, subLevel)
+                             wflow.getName(), len(dids), dataIn['name'], rseExpr, grouping)
             try:
                 res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
             except Exception as exc:
@@ -864,6 +887,11 @@ class MSTransferor(MSCore):
             # whole dataset within the same location
             if wflow.getReqType() == "DQMHarvest":
                 numNodes = 1
+            # and except for workflows defined with growing input dataset. Also make a
+            # container level rule for those
+            if wflow.getOpenRunningTimeout() > self.msConfig["openRunning"]:
+                numNodes = 1
+
             # if there is no parent data, just make one big rule for all the primary data
             # against all RSEs available for the workflow (intersection with PU data
             if not wflow.getParentBlocks():

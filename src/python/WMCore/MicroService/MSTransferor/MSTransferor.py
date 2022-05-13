@@ -27,7 +27,7 @@ from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
 from WMCore.MicroService.Tools.Common import gigaBytes, teraBytes
 from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
-from WMCore.MicroService.MSTransferor.RSEQuotas import RSEQuotas
+from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
@@ -374,7 +374,7 @@ class MSTransferor(MSCore):
 
                 if not campSecLocations:
                     msg = "Workflow has been incorrectly assigned: %s. The secondary dataset: %s, "
-                    msg += "belongs to the campaign: %s, with does not define the secondary "
+                    msg += "belongs to the campaign: %s, which does not define the secondary "
                     msg += "dataset or it has defined an empty location list."
                     self.logger.error(msg, wflow.getName(), dsetName, dataIn['campaign'])
                     return
@@ -399,8 +399,9 @@ class MSTransferor(MSCore):
             # then there is only one pileup dataset in the workflow
             wflowFinalLocation = campBasedLocation[0] & wflowPnns
         else:
-            # then there are multiple pileups, get an intersection of their
-            # expected location as final workflow destination
+            # then there are multiple pileups, meaning possibly different
+            # campaigns and expected locations. Use their location
+            # intersection as final workflow destination
             wflowFinalLocation = campBasedLocation[0].intersection(*campBasedLocation)
         self.logger.info("Final location for workflow: %s is: %s", wflow.getName(), wflowFinalLocation)
         wflow.setPURSElist(wflowFinalLocation)
@@ -434,43 +435,45 @@ class MSTransferor(MSCore):
         self.logger.info("Handling data subscriptions for request: %s", wflow.getName())
 
         for dataIn in wflow.getDataCampaignMap():
+            dsetName = dataIn['name']
             if dataIn["type"] == "parent":
                 msg = "Skipping 'parent' data subscription (done with the 'primary' data), for: %s" % dataIn
                 self.logger.info(msg)
                 continue
-            elif dataIn["type"] == "secondary" and dataIn['name'] not in wflow.getSecondarySummary():
+            elif dataIn["type"] == "secondary" and dsetName not in wflow.getSecondarySummary():
                 # secondary already in place
                 continue
 
             if wflow.getPURSElist() and not wflow.isRelVal():
                 rses = list(wflow.getPURSElist() & self.rseQuotas.getAvailableRSEs())
-                if not rses:
-                    msg = "Workflow: %s can only run in RSEs with no available space: %s. "
-                    msg += "Skipping this workflow until space gets released"
-                    self.logger.warning(msg, wflow.getName(), wflow.getPURSElist())
-                    return False, response
             else:
                 rses = self._getValidSites(wflow, dataIn)
-                if not rses:
-                    msg = "There are no RSEs with available space for %s. " % wflow.getName()
-                    msg += "Skipping this workflow until RSEs get enough free space"
-                    self.logger.warning(msg)
-                    return False, response
+            if not rses:
+                msg = "Workflow: %s can only run in RSEs with no available space: %s. "
+                msg += "Skipping this workflow until space gets released"
+                self.logger.warning(msg, wflow.getName(), wflow.getPURSElist())
+                return False, response
 
+            # create a transfer record data structure
             transRec = newTransferRec(dataIn)
-            # figure out to configure the rucio rule
-            dids, didsSize, grouping = self.decideDataPlacement(wflow, dataIn)
-            if not dids and dataIn["type"] == "primary":
-                # no valid files in any blocks, it will likely fail in global workqueue
-                self.logger.warning("  found 0 primary/parent blocks for dataset: %s, moving on...", dataIn['name'])
-                return success, response
-
-            # figure out number of copies
-            if dataIn["type"] == "secondary":
+            # figure out dids, number of copies and which grouping to use
+            if dataIn["type"] == "primary":
+                dids, didsSize = wflow.getInputData()
+                grouping = wflow.getRucioGrouping()
+                copies = 1
+                if not dids:
+                    # no valid files in any blocks, it will likely fail in global workqueue
+                    self.logger.warning("  found 0 primary/parent blocks for dataset: %s, moving on...", dataIn['name'])
+                    return success, response
+            # then it's secondary type
+            else:
+                # we can have multiple pileup datasets
+                puSummary = wflow.getSecondarySummary()
+                dids = [dsetName]
+                didsSize = puSummary[dsetName]['dsetSize']
+                grouping = "ALL"
                 # one replica for each RSE
                 copies = len(rses)
-            else:
-                copies = 1
 
             success, transferId = self.makeTransferRucio(wflow, dataIn, dids, didsSize,
                                                          grouping, copies, rses)
@@ -505,7 +508,7 @@ class MSTransferor(MSCore):
         :param dids: a list of the DIDs to be added to the rule
         :param dataSize: amount of data being placed by this rule
         :param grouping: whether blocks need to be placed altogether (ALL)
-            or if the can be scattered around (DATASET).
+                         or if the can be scattered around (DATASET).
         :param copies: integer with the number of copies to use in the rule
         :param nodes: list of nodes/RSE
         :return: a boolean flagging whether it succeeded or not, and the rule id
@@ -659,66 +662,6 @@ class MSTransferor(MSCore):
         self.logger.info("List of out-of-space RSEs dropped for '%s' is: %s",
                          wflow.getName(), pnns & self.rseQuotas.getOutOfSpaceRSEs())
         return list(pnns & self.rseQuotas.getAvailableRSEs())
-
-    def decideDataPlacement(self, wflow, dataIn):
-        """
-        Evaluate how data placement needs to be performed, for which
-        DIDs, what number of copies and how data should be grouped.
-
-        Grouping can be:
-          ALL: every single block is placed under the same RSE
-          DATASET: blocks can be scattered in different RSEs
-        Pileup data placement can have more than 1 copy, targetting
-        one replica for each RSE.
-
-        :param wflow: workflow object
-        :param dataIn: dictionary with a summary of the data to be placed
-        :return: a triple of the dids to transfer, their total size and
-            the grouping to use
-        """
-        dsetName = dataIn['name']
-        # default values
-        listBlockSets = set()
-        listSetsSize = 0
-        grouping = "ALL"
-        if wflow.getReqType() == "DQMHarvest":
-            # all blocks must be placed under the same location
-            listBlockSets, listSetsSize = wflow.getChunkBlocks()
-            msg = f"Placing {len(listBlockSets)} blocks ({gigaBytes(listSetsSize)} GB), "
-            msg += f"with grouping: {grouping} for DQMHarvest workflow."
-        elif wflow.getOpenRunningTimeout() > self.msConfig["openRunning"]:
-            # here we need to make a rule against the container
-            grouping = "DATASET"
-            # make this call only to get the total size
-            listBlockSets, listSetsSize = wflow.getChunkBlocks()
-            listBlockSets = [dsetName]
-            msg = f"Placing whole dataset {dsetName} ({gigaBytes(listSetsSize)} GB), "
-            msg += f"with grouping: {grouping} for open running workflow."
-        elif dataIn["type"] == "primary" and wflow.getParentBlocks():
-            # FIXME: if this workflow becomes common, we need to rethink
-            # this data placement, for now put everything under the same
-            # RSE, to ensure that parent and primary blocks are together
-            listBlockSets, listSetsSize = wflow.getChunkBlocks()
-            msg = f"Placing {len(listBlockSets)} primary and parent blocks "
-            msg += f"({gigaBytes(listSetsSize)} GB) with grouping: {grouping}."
-        elif dataIn["type"] == "primary":
-            # spread primary blocks all over the sitelist
-            grouping = "DATASET"
-            listBlockSets, listSetsSize = wflow.getChunkBlocks()
-            msg = f"Placing {len(listBlockSets)} primary blocks "
-            msg += f"({gigaBytes(listSetsSize)} GB) with grouping: {grouping}."
-        elif dataIn["type"] == "secondary":
-            # secondary datasets are transferred as a whole, until better days...
-            puSummary = wflow.getSecondarySummary()
-            listSetsSize = puSummary[dsetName]['dsetSize']
-            listBlockSets = [dsetName]
-            msg = f"Placing whole pileup dataset {dsetName} ({gigaBytes(listSetsSize)} GB)"
-            msg += f" with grouping: {grouping}."
-        else:
-            msg = "ERROR case, code should never reach this code!"
-
-        self.logger.info(msg)
-        return listBlockSets, listSetsSize, grouping
 
     def createTransferDoc(self, reqName, transferRecords):
         """

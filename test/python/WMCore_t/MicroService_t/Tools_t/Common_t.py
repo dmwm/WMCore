@@ -5,10 +5,13 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 from __future__ import division, print_function
 
+import json
 import unittest
 
-from WMCore.MicroService.Tools.Common import \
-        dbsInfo, getEventsLumis, findParent, isEmptyResults
+from nose.plugins.attrib import attr
+
+from WMCore.MicroService.Tools.Common import (dbsInfo, getEventsLumis,
+                                              findParent, hasHTTPFailed)
 
 
 class CommonTest(unittest.TestCase):
@@ -20,6 +23,7 @@ class CommonTest(unittest.TestCase):
                          '/ZMM_14TeV/Summer12-DESIGN42_V17_SLHCTk-v1/GEN-SIM']
         self.child = ['/SingleElectron/Run2016B-18Apr2017_ver2-v1/AOD']
 
+    @attr("integration")
     def testDbsInfo(self):
         "Test function for dbsInfo()"
         datasetBlocks, datasetSizes, datasetTransfers = dbsInfo(self.datasets, self.dbsUrl)
@@ -31,36 +35,46 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(expect, sizes)
         self.assertEqual(len(self.datasets), len(datasetTransfers))
 
+    @attr("integration")
     def testGetEventsLumis(self):
         "Test function for getEventsLumis()"
         totEvts = totLumis = 0
         for dataset in self.datasets:
             nevts, nlumis = getEventsLumis(dataset, self.dbsUrl)
+            print("dataset: {} with evts: {} and lumis: {}".format(dataset, nevts, nlumis))
             totEvts += nevts
             totLumis += nlumis
-        expect = 10250 + 10616
+        expect = 7398 + 0
         self.assertEqual(expect, totEvts)
-        expect = 22 + 10
+        expect = 16 + 0
         self.assertEqual(expect, totLumis)
 
+    @attr("integration")
     def test_findParent(self):
         "Test function for findParent()"
         parents = findParent(self.child, self.dbsUrl)
         self.assertEqual(parents[self.child[0]], '/SingleElectron/Run2016B-v2/RAW')
 
-    def test_isEmptyResults(self):
-        row = {'code': 200, 'data': None}
-        result = isEmptyResults(row)
-        self.assertEqual(result, True)
-        row = {'code': 200, 'data': []}
-        result = isEmptyResults(row)
-        self.assertEqual(result, True)
-        row = {'code': 400, 'data': None}
-        result = isEmptyResults(row)
-        self.assertEqual(result, False)
-        row = {'code': 400, 'data': []}
-        result = isEmptyResults(row)
-        self.assertEqual(result, False)
+    def testHasHTTPFailed(self):
+        """Test the hasHTTPFailed method"""
+        self.assertTrue(hasHTTPFailed({}))
+        self.assertTrue(hasHTTPFailed({'data': '', 'code': 301, 'error': ''}))
+        self.assertTrue(hasHTTPFailed({'data': '', 'code': 301, 'error': 'blah'}))
+        self.assertTrue(hasHTTPFailed({'data': 1, 'code': 400, 'error': 'blah'}))
+        self.assertTrue(hasHTTPFailed({'data': 1, 'code': 500, 'error': []}))
+        self.assertTrue(hasHTTPFailed({'data': 1, 'code': 500, 'error': None}))
+
+        self.assertFalse(hasHTTPFailed({'data': []}))
+        self.assertFalse(hasHTTPFailed({'data': None}))
+        self.assertFalse(hasHTTPFailed({'data': json.dumps([])}))
+        self.assertFalse(hasHTTPFailed({'data': json.dumps(None)}))
+        self.assertFalse(hasHTTPFailed({'data': ['blah']}))
+        self.assertFalse(hasHTTPFailed({'data': 'blah'}))
+        self.assertFalse(hasHTTPFailed({'data': json.dumps('blah')}))
+        self.assertFalse(hasHTTPFailed({'data': 'blah', 'code': 200}))
+        # result below should never happen, but let's test the status code
+        self.assertFalse(hasHTTPFailed({'data': 1, 'code': 200, 'error': 'blah'}))
+
 
 if __name__ == '__main__':
     unittest.main()

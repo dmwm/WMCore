@@ -1,3 +1,9 @@
+2.0.3 to 2.0.4.pre1:
+  - Reorganization and classification of workflows and policies (Alan Malta Rodrigues) #11143
+  - [MSTransferor] Create rule for each pileup location (Alan Malta Rodrigues) #11143
+  - Fix logic to check for empty results in MS/Common (Alan Malta Rodrigues) #11148
+
+
 2.0.3.pre7 to 2.0.3:
 
 

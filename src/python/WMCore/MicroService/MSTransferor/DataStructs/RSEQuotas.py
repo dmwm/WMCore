@@ -111,7 +111,7 @@ class RSEQuotas(object):
                           "bytes": amount of bytes currently used/archived,
                           "bytes_remaining": space remaining for the acct/group}
         """
-        self.logger.debug("Using Rucio for storage usage, with acct: %s", self.dataAcct)
+        self.logger.info("Using Rucio for storage usage, with acct: %s", self.dataAcct)
         for item in dataSvcObj.getAccountUsage(self.dataAcct):
             if item['rse'] not in self.nodeUsage:
                 self.logger.warning("Rucio RSE: %s has data usage but no quota available.", item['rse'])
@@ -149,11 +149,11 @@ class RSEQuotas(object):
         for node in sorted(self.nodeUsage.keys()):
             msg = "  %s:\t\tbytes_limit: %.2f, bytes_used: %.2f, bytes_remaining: %.2f, "
             msg += "quota: %.2f, quota_avail: %.2f"
-            self.logger.debug(msg, node, teraBytes(self.nodeUsage[node]['bytes_limit']),
-                              teraBytes(self.nodeUsage[node]['bytes']),
-                              teraBytes(self.nodeUsage[node]['bytes_remaining']),
-                              teraBytes(self.nodeUsage[node]['quota']),
-                              teraBytes(self.nodeUsage[node]['quota_avail']))
+            self.logger.info(msg, node, teraBytes(self.nodeUsage[node]['bytes_limit']),
+                             teraBytes(self.nodeUsage[node]['bytes']),
+                             teraBytes(self.nodeUsage[node]['bytes_remaining']),
+                             teraBytes(self.nodeUsage[node]['quota']),
+                             teraBytes(self.nodeUsage[node]['quota_avail']))
         self.logger.info("List of RSE's out of quota: %s", self.outOfSpaceNodes)
 
     def updateNodeUsage(self, node, dataSize):

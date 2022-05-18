@@ -9,7 +9,8 @@ from future.utils import viewitems, viewvalues, listvalues
 
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.MicroService.Tools.Common import getMSLogger, gigaBytes
+from WMCore.MicroService.Tools.Common import getMSLogger
+from WMCore.Services.Rucio.Rucio import GROUPING_DSET
 
 
 class Workflow(object):
@@ -337,101 +338,6 @@ class Workflow(object):
         """
         return self.childToParentBlocks
 
-    def getChunkBlocks(self, numChunks=1):
-        """
-        Break down the input and parent blocks by a given number
-        of chunks (usually the amount of sites available for data
-        placement).
-        :param numChunks: integer representing the number of chunks to be created
-        :return: it returns two lists:
-          * a list of sets, where each set corresponds to a set of blocks to be
-            transferred to a single location;
-          * and a list integers, which references the total size of each chunk in
-            the list above (same order).
-        """
-        if numChunks == 1:
-            thisChunk = set()
-            thisChunk.update(list(self.getPrimaryBlocks()))
-            thisChunkSize = sum([blockInfo['blockSize'] for blockInfo in viewvalues(self.getPrimaryBlocks())])
-            if self.getParentDataset():
-                thisChunk.update(list(self.getParentBlocks()))
-                thisChunkSize += sum([blockInfo['blockSize'] for blockInfo in viewvalues(self.getParentBlocks())])
-            # keep same data structure as multiple chunks, so list of lists
-            return [thisChunk], [thisChunkSize]
-
-        # create a descendant list of blocks according to their sizes
-        sortedPrimary = sorted(viewitems(self.getPrimaryBlocks()), key=lambda item: item[1]['blockSize'], reverse=True)
-        if len(sortedPrimary) < numChunks:
-            msg = "There are less blocks than chunks to create. "
-            msg += "Reducing numChunks from %d to %d" % (numChunks, len(sortedPrimary))
-            self.logger.info(msg)
-            numChunks = len(sortedPrimary)
-        chunkSize = sum(item[1]['blockSize'] for item in sortedPrimary) // numChunks
-
-        self.logger.info("Found %d blocks and the avg chunkSize is: %s GB",
-                         len(sortedPrimary), gigaBytes(chunkSize))
-        # list of sets with the block names
-        blockChunks = []
-        # list of integers with the total block sizes in each chunk (same order as above)
-        sizeChunks = []
-        for i in range(numChunks):
-            thisChunk = set()
-            thisChunkSize = 0
-            idx = 0
-            while True:
-                self.logger.debug("Chunk: %d and idx: %s and length: %s", i, idx, len(sortedPrimary))
-                if not sortedPrimary or idx >= len(sortedPrimary):
-                    # then all blocks have been distributed
-                    break
-                elif not thisChunkSize:
-                    # then this site/chunk is empty, assign a block to it
-                    thisChunk.add(sortedPrimary[idx][0])
-                    thisChunkSize += sortedPrimary[idx][1]['blockSize']
-                    sortedPrimary.pop(idx)
-                elif thisChunkSize + sortedPrimary[idx][1]['blockSize'] <= chunkSize:
-                    thisChunk.add(sortedPrimary[idx][0])
-                    thisChunkSize += sortedPrimary[idx][1]['blockSize']
-                    sortedPrimary.pop(idx)
-                else:
-                    idx += 1
-            if thisChunk:
-                blockChunks.append(thisChunk)
-                sizeChunks.append(thisChunkSize)
-
-        # now take care of the leftovers... in a round-robin style....
-        while sortedPrimary:
-            for chunkNum in range(numChunks):
-                blockChunks[chunkNum].add(sortedPrimary[0][0])
-                sizeChunks[chunkNum] += sortedPrimary[0][1]['blockSize']
-                sortedPrimary.pop(0)
-                if not sortedPrimary:
-                    break
-        self.logger.info("Created %d primary data chunks out of %d chunks",
-                         len(blockChunks), numChunks)
-        self.logger.info("    with chunk size distribution: %s", sizeChunks)
-
-        if not self.getParentDataset():
-            return blockChunks, sizeChunks
-
-        # now add the parent blocks, considering that input blocks were evenly
-        # distributed, I'd expect the same to automatically happen to the parents...
-        childParent = self.getChildToParentBlocks()
-        parentsSize = self.getParentBlocks()
-        for chunkNum in range(numChunks):
-            parentSet = set()
-            for child in blockChunks[chunkNum]:
-                parentSet.update(childParent[child])
-
-            # now with the final list of parents in hand, update the list
-            # of blocks within the chunk and update the chunk size as well
-            blockChunks[chunkNum].update(parentSet)
-            for parent in parentSet:
-                sizeChunks[chunkNum] += parentsSize[parent]['blockSize']
-        self.logger.info("Created %d primary+parent data chunks out of %d chunks",
-                         len(blockChunks), numChunks)
-        self.logger.info("    with chunk size distribution: %s", sizeChunks)
-        return blockChunks, sizeChunks
-
     def _getValue(self, keyName, defaultValue=None):
         """
         Provide a property/keyName, return its valid value if any
@@ -484,3 +390,33 @@ class Workflow(object):
         :return: an integer with the amount of secs
         """
         return self.data.get("OpenRunningTimeout", 0)
+
+    def getInputData(self):
+        """
+        Returns all the primary and parent data that has to be locked
+        and transferred with Rucio
+        :return: a list of unique block names and an integer
+                 with their total size
+        """
+        blockList = list(self.getPrimaryBlocks())
+        totalBlockSize = sum([blockInfo['blockSize'] for blockInfo in self.getPrimaryBlocks().values()])
+
+        # if it has parent blocks, add all of them as well
+        if self.getParentDataset():
+            blockList.extend(list(self.getParentBlocks()))
+            totalBlockSize += sum([blockInfo['blockSize'] for blockInfo in viewvalues(self.getParentBlocks())])
+        return blockList, totalBlockSize
+
+    def getRucioGrouping(self):
+        """
+        Returns the rucio rule grouping to be defined for a primary
+        and/or parent input data placement, where:
+            * ALL: all CMS blocks are placed under the same RSE
+            * DATASET: CMS blocks can be scattered in multiple RSEs
+
+        NOTE that this does not apply to secondary data placement,
+        which is always "ALL" (whole container in the same RSE).
+
+        :return: a string with the required DID grouping
+        """
+        return GROUPING_DSET

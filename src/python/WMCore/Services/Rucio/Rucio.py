@@ -22,6 +22,10 @@ from Utils.MemoryCache import MemoryCache
 from WMCore.WMException import WMException
 
 RUCIO_VALID_PROJECT = ("Production", "RelVal", "Tier0", "Test", "User")
+# grouping values are extracted from:
+# https://github.com/rucio/rucio/blob/master/lib/rucio/common/schema/cms.py#L117
+GROUPING_DSET = "DATASET"
+GROUPING_ALL = "ALL"
 
 
 class WMRucioException(WMException):

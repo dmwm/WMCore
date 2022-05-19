@@ -1,3 +1,7 @@
+2.0.4.pre1 to 2.0.4.pre2:
+  - [MSTransferor] Define grouping=ALL for workflows with parents (Alan Malta Rodrigues) #11153
+
+
 2.0.3 to 2.0.4.pre1:
   - Reorganization and classification of workflows and policies (Alan Malta Rodrigues) #11143
   - [MSTransferor] Create rule for each pileup location (Alan Malta Rodrigues) #11143

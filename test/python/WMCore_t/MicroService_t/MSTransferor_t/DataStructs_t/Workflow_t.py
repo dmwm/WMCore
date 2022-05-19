@@ -326,6 +326,26 @@ class WorkflowTest(unittest.TestCase):
                                                "DbsUrl": "a_dbs_url"})
             self.assertEqual(wflowObj.getWorkflowGroup(), "relval")
 
+    def testGetRucioGrouping(self):
+        """
+        Test the `getRucioGrouping` method, which is supposed to return
+        a basic string with the Rucio grouping for this template (static
+        output).
+        """
+        parentDset = "/rereco/parent-dataset/tier"
+        rerecoSpec = {"RequestType": "ReReco",
+                      "InputDataset": "/rereco/input-dataset/tier",
+                      "Campaign": "any-campaign",
+                      "RequestName": "whatever_name",
+                      "DbsUrl": "a_dbs_url",
+                      "SiteWhitelist": ["CERN", "FNAL", "DESY"],
+                      "SiteBlacklist": ["FNAL"]}
+        wflow = Workflow(rerecoSpec['RequestName'], rerecoSpec)
+        self.assertEqual(wflow.getRucioGrouping(), "DATASET")
+
+        wflow.setParentDataset(parentDset)
+        self.assertEqual(wflow.getRucioGrouping(), "ALL")
+
 
 if __name__ == '__main__':
     unittest.main()

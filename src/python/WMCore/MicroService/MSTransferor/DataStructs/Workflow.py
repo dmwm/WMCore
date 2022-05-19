@@ -10,7 +10,7 @@ from future.utils import viewitems, viewvalues, listvalues
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.Tools.Common import getMSLogger
-from WMCore.Services.Rucio.Rucio import GROUPING_DSET
+from WMCore.Services.Rucio.Rucio import GROUPING_DSET, GROUPING_ALL
 
 
 class Workflow(object):
@@ -419,4 +419,6 @@ class Workflow(object):
 
         :return: a string with the required DID grouping
         """
+        if self.getParentDataset():
+            return GROUPING_ALL
         return GROUPING_DSET

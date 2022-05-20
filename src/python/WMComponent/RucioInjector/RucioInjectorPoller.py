@@ -339,7 +339,7 @@ class RucioInjectorPoller(BaseWorkerThread):
 
         # in short, dbsbuffer_file.in_phedex = 1 AND dbsbuffer_block.status = 'InDBS'
         migratedBlocks = self.getMigrated.execute()
-        ### FIXME the data format returned by this DAO
+        # FIXME the data format returned by this DAO
         for location in migratedBlocks:
             for container in migratedBlocks[location]:
                 for block in migratedBlocks[location][container]:
@@ -383,7 +383,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         blockDict = {}
         for block in completedBlocksList:
             if block['workflowName'] in deletableWfsDict and \
-             now - block['blockCreateTime'] > self.blockDeletionDelaySeconds:
+               now - block['blockCreateTime'] > self.blockDeletionDelaySeconds:
                 blockDict[block['blockName']] = block
 
         logging.info("Found %d final candidate blocks for rule deletion", len(blockDict))
@@ -452,7 +452,6 @@ class RucioInjectorPoller(BaseWorkerThread):
                     if deletedRules == len(rules):
                         binds.append({'DELETED': 1, 'BLOCKNAME': block})
                         logging.info("Successfully deleted all rules for block %s.", block)
-
 
             self.markBlocksDeleted.execute(binds)
             logging.info("Marked %d blocks as deleted in the database", len(binds))
@@ -523,7 +522,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                     ruleKwargs['lifetime'] = lifetime
                 if self.testRSEs:
                     rseName = "%s_Test" % rseName
-                #Checking whether we need to ask for rule approval
+                # Checking whether we need to ask for rule approval
                 try:
                     if self.rucio.requiresApproval(rseName):
                         ruleKwargs['ask_approval'] = True

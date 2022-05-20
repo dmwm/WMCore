@@ -85,12 +85,12 @@ class GetCompletedBlocks(DBFormatter):
 
         # NOTE: We need to rename all the keys to follow the cammelCase standard. And also to comply
         #       with the key names as expected from the rest of the already existing python code
-        keyMap={'blockname': 'blockName',
-                'name': 'workflowName',
-                'pnn': 'location',
-                'site': 'sites',
-                'path': 'dataset',
-                'create_time': 'blockCreateTime'}
+        keyMap = {'blockname': 'blockName',
+                  'name': 'workflowName',
+                  'pnn': 'location',
+                  'site': 'sites',
+                  'path': 'dataset',
+                  'create_time': 'blockCreateTime'}
 
         dictResults = DBFormatter.formatDict(self, result)
         for record in dictResults:

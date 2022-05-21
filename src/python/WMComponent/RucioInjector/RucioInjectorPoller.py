@@ -8,12 +8,12 @@ General reminder about PhEDEx and Rucio definitions:
 * CMS file is equivalent to a Rucio file
 * A Rucio replica is a file, under a given scope, at a given RSE
 """
-from __future__ import division
 
 import json
 import logging
 import threading
 import time
+from pprint import pformat
 
 from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
@@ -82,6 +82,8 @@ class RucioInjectorPoller(BaseWorkerThread):
 
         self.useDsetReplicaDeep = getattr(config.RucioInjector, "useDsetReplicaDeep", False)
         self.delBlockSlicesize = getattr(config.RucioInjector, "delBlockSlicesize", 100)
+        self.blockDeletionDelayHours = getattr(config.RucioInjector, "blockDeletionDelayHours", 0)
+        self.blockDeletionDelaySeconds = self.blockDeletionDelayHours * 3600
 
         # metadata dictionary information to be added to block/container rules
         # cannot be a python dictionary, but a JSON string instead
@@ -97,6 +99,20 @@ class RucioInjectorPoller(BaseWorkerThread):
             self.isT0agent = True
         else:
             self.isT0agent = False
+
+        # NOTE: Setting to None all attributes inside __init__ to suppress pylint warnings
+        self.getUninjected = None
+        self.getMigrated = None
+        self.getUnsubscribedBlocks = None
+        self.setBlockRules = None
+        self.findDeletableBlocks = None
+        self.getCompletedBlocks = None
+        self.markBlocksDeleted = None
+        self.getUnsubscribedDsets = None
+        self.markSubscribed = None
+        self.setStatus = None
+        self.setBlockClosed = None
+        self.getDeletableWorkflows = None
 
         logging.info("Component configured to create block rules: %s", self.createBlockRules)
 
@@ -117,6 +133,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.setBlockRules = daofactory(classname="SetBlocksRule")
 
         self.findDeletableBlocks = daofactory(classname="GetDeletableBlocks")
+        self.getCompletedBlocks = daofactory(classname="GetCompletedBlocks")
         self.markBlocksDeleted = daofactory(classname="MarkBlocksDeleted")
         self.getUnsubscribedDsets = daofactory(classname="GetUnsubscribedDatasets")
         self.markSubscribed = daofactory(classname="MarkDatasetSubscribed")
@@ -125,6 +142,10 @@ class RucioInjectorPoller(BaseWorkerThread):
                                 logger=self.logger, dbinterface=myThread.dbi)
         self.setStatus = daofactory(classname="DBSBufferFiles.SetPhEDExStatus")
         self.setBlockClosed = daofactory(classname="SetBlockClosed")
+
+        daofactory = DAOFactory(package="WMCore.WMBS",
+                                logger=self.logger, dbinterface=myThread.dbi)
+        self.getDeletableWorkflows = daofactory(classname="Workflow.GetDeletableWorkflows")
 
     @timeFunction
     def algorithm(self, parameters):
@@ -169,7 +190,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         except Exception as ex:
             msg = "Caught unexpected exception in RucioInjector. Details:\n%s" % str(ex)
             logging.exception(msg)
-            raise RucioInjectorException(msg)
+            raise RucioInjectorException(msg) from None
 
         return
 
@@ -305,7 +326,7 @@ class RucioInjectorPoller(BaseWorkerThread):
             else:
                 msg = "Failed to update file status in the database, reason: %s" % str(ex)
                 logging.error(msg)
-                raise RucioInjectorException(msg)
+                raise RucioInjectorException(msg) from None
         else:
             if recovery:
                 self.filesToRecover = []
@@ -318,7 +339,7 @@ class RucioInjectorPoller(BaseWorkerThread):
 
         # in short, dbsbuffer_file.in_phedex = 1 AND dbsbuffer_block.status = 'InDBS'
         migratedBlocks = self.getMigrated.execute()
-        ### FIXME the data format returned by this DAO
+        # FIXME the data format returned by this DAO
         for location in migratedBlocks:
             for container in migratedBlocks[location]:
                 for block in migratedBlocks[location][container]:
@@ -339,13 +360,34 @@ class RucioInjectorPoller(BaseWorkerThread):
         logging.info("Checking if there are block rules to be deleted...")
 
         # Get list of blocks that can be deleted
-        blockDict = self.findDeletableBlocks.execute(transaction=False)
+        # blockDict = self.findDeletableBlocks.execute(transaction=False)
+        completedBlocksList = self.getCompletedBlocks.execute(transaction=False)
 
-        if not blockDict:
-            logging.info("No candidate blocks found for rule deletion")
+        if not completedBlocksList:
+            logging.info("No candidate blocks found for rule deletion.")
             return
 
-        logging.info("Found %d candidate blocks for rule deletion", len(blockDict))
+        logging.info("Found %d completed blocks", len(completedBlocksList))
+        logging.debug("Full completedBlocksList: %s", pformat(completedBlocksList))
+
+        deletableWfsDict = self.getDeletableWorkflows.execute()
+
+        if not deletableWfsDict:
+            logging.info("No workflow chains (Parent + child workflows) in fully terminal state found. Skipping block level rule deletion in the current run.")
+            return
+
+        logging.info("Found %d workflows in terminal state.", len(deletableWfsDict))
+        logging.debug("Full deletableWfsDict: %s", pformat(deletableWfsDict))
+
+        now = int(time.time())
+        blockDict = {}
+        for block in completedBlocksList:
+            if block['workflowName'] in deletableWfsDict and \
+               now - block['blockCreateTime'] > self.blockDeletionDelaySeconds:
+                blockDict[block['blockName']] = block
+
+        logging.info("Found %d final candidate blocks for rule deletion", len(blockDict))
+        logging.debug("Final deletable blocks dict: %s", pformat(blockDict))
 
         for blocksSlice in grouper(blockDict, self.delBlockSlicesize):
             logging.info("Handeling %d candidate blocks", len(blocksSlice))
@@ -393,7 +435,7 @@ class RucioInjectorPoller(BaseWorkerThread):
             for block in blocksToDelete:
                 try:
                     rules = self.rucio.listDataRules(block, scope=self.scope, account=self.rucioAcct)
-                except WMRucioException as exc:
+                except WMRucioException:
                     logging.warning("Unable to retrieve replication rules for block: %s. Will retry in the next cycle.", block)
                 else:
                     if not rules:
@@ -410,7 +452,6 @@ class RucioInjectorPoller(BaseWorkerThread):
                     if deletedRules == len(rules):
                         binds.append({'DELETED': 1, 'BLOCKNAME': block})
                         logging.info("Successfully deleted all rules for block %s.", block)
-
 
             self.markBlocksDeleted.execute(binds)
             logging.info("Marked %d blocks as deleted in the database", len(binds))
@@ -481,7 +522,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                     ruleKwargs['lifetime'] = lifetime
                 if self.testRSEs:
                     rseName = "%s_Test" % rseName
-                #Checking whether we need to ask for rule approval
+                # Checking whether we need to ask for rule approval
                 try:
                     if self.rucio.requiresApproval(rseName):
                         ruleKwargs['ask_approval'] = True

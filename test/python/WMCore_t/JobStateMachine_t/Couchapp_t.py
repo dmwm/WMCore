@@ -168,33 +168,5 @@ class CouchappTest(unittest.TestCase):
         return testJobGroup
 
 
-    def testHighestJobID(self):
-        """
-        _highestJobID_
-
-        This is a jobDump function that should tell us the highest jobID
-        currently being stored in the couch DB.
-        """
-
-        workloadPath = os.path.join(self.testDir, 'spec.pkl')
-        workload     = self.createWorkload(workloadName = workloadPath)
-        testJobGroup = self.createTestJobGroup(name = workload.name(),
-                                               specLocation = workloadPath,
-                                               error = False, nJobs = 10)
-
-        jobID = self.jobsdatabase.loadView("JobDump", "highestJobID")['rows'][0]['value']
-        self.assertEqual(jobID, 9)
-
-        testJobGroup2 = self.createTestJobGroup(name = workload.name(),
-                                                specLocation = workloadPath,
-                                                error = False, nJobs = 10)
-
-
-        jobID = self.jobsdatabase.loadView("JobDump", "highestJobID")['rows'][0]['value']
-        self.assertEqual(jobID, 19)
-
-        return
-
-
 if __name__ == '__main__':
     unittest.main()

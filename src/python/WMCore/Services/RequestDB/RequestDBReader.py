@@ -73,14 +73,24 @@ class RequestDBReader(object):
             return list(result)
 
     def _getRequestByName(self, requestName, detail):
+        """
+        Retrieves a request dictionary from CouchDB
+        :param requestName: string with the request name
+        :param detail: boolean with False value for retrieving only the
+            workflow name, or True for retrieving all its description
+        :return: a list with the request name. Or a dictionary with the
+            request description if detail=true
+        """
+        # this returns a dictionary with the workflow description, or
+        # an empty dictionary if nothing is found in CouchDB
         result = self.couchDB.getDoc(requestName)
+        if not result:
+            return dict()
         if detail:
             result.pop('_attachments', None)
             result.pop('_rev', None)
-            result = {result['RequestName']: result}
-        else:
-            result = [result['RequestName']]
-        return result
+            return {result['RequestName']: result}
+        return [result['RequestName']]
 
     def _getRequestByNames(self, requestNames, detail):
         """

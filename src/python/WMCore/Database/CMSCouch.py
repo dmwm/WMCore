@@ -438,11 +438,22 @@ class Database(CouchDBRequests):
     def delete_doc(self, id, rev=None):
         """
         Immediately delete a document identified by id and rev.
+        If revision is not provided, we need to first fetch this
+        document to read the current revision number.
+
+        :param id: string with the document name
+        :param rev: string with the revision number
+        :return: an empty dictionary if it fails to fetch the document,
+            or a dictionary with the deletion outcome, e.g.:
+            {'ok': True, 'id': 'doc_name', 'rev': '3-f68156d'}
         """
         uri = '/%s/%s' % (self.name, urllib.parse.quote_plus(id))
         if not rev:
             # then we need to fetch the latest revision number
             doc = self.getDoc(id)
+            if "_rev" not in doc:
+                logging.warning("Failed to retrieve doc id: %s for deletion.", id)
+                return doc
             rev = doc["_rev"]
         uri += '?' + urllib.parse.urlencode({'rev': rev})
         return self.delete(uri)

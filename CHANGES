@@ -1,3 +1,12 @@
+2.0.4.pre2 to 2.0.4.pre3:
+  - Check if key exists when deleting standalone documents in Couch (Alan Malta Rodrigues) #11165
+  - Avoid raising exception when ReqMgr2 request is not found (Alan Malta Rodrigues) #11159
+  - Remove CouchDB JobDump/highestJobID view (Alan Malta Rodrigues) #11161
+  - fix: requirements.txt to reduce vulnerabilities (snyk-bot) #11155
+  - Split Deletable Blocks checks in two stages. (Todor Ivanov) #11127
+  - Remove CouchDB all_or_nothing option for bulk API (Alan Malta Rodrigues) #11011
+
+
 2.0.4.pre1 to 2.0.4.pre2:
   - [MSTransferor] Define grouping=ALL for workflows with parents (Alan Malta Rodrigues) #11153
 

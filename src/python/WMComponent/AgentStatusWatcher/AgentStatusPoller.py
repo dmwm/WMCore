@@ -93,7 +93,7 @@ class AgentStatusPoller(BaseWorkerThread):
             localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
             self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL,
                                         'filter': wqfilter, 'query_params': query_params})
-            self.replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL,
+            self.replicatorDocs.append({'source': localQInboxURL, 'target': parentQURL,
                                         'filter': wqfilter, 'query_params': query_params})
 
         # delete old replicator docs before setting up
@@ -104,8 +104,6 @@ class AgentStatusPoller(BaseWorkerThread):
                 rp['source'], rp['target'], filter=rp['filter'],
                 query_params=rp.get('query_params', False),
                 continuous=True)
-        # First cicle need to be skipped since document is not updated that fast
-        self.skipReplicationCheck = True
 
     def setup(self, parameters):
         """
@@ -169,22 +167,16 @@ class AgentStatusPoller(BaseWorkerThread):
 
         return results
 
-    def collectCouchDBInfo(self):
-
+    def checkCouchStatus(self):
+        """
+        This method checks whether CouchDB is running properly and it also
+        verifies whether all the replication tasks are progressing as expected
+        :return: a dictionary with the status for CouchServer
+        """
         couchInfo = {'name': 'CouchServer', 'status': 'ok', 'error_message': ""}
 
-        if self.skipReplicationCheck:
-            # skipping the check this round set if False so it can be checked next round.
-            self.skipReplicationCheck = False
-            return couchInfo
-
-        for rp in self.replicatorDocs:
-            cInfo = self.localCouchMonitor.checkCouchServerStatus(rp['source'],
-                                                                  rp['target'], checkUpdateSeq=False)
-            if cInfo['status'] != 'ok':
-                couchInfo['status'] = 'error'
-                couchInfo['error_message'] = cInfo['error_message']
-
+        cInfo = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
+        couchInfo.update(cInfo)
         return couchInfo
 
     def collectAgentInfo(self):
@@ -211,7 +203,7 @@ class AgentStatusPoller(BaseWorkerThread):
         else:
             agentInfo['drain_mode'] = False
 
-        couchInfo = self.collectCouchDBInfo()
+        couchInfo = self.checkCouchStatus()
         if couchInfo['status'] != 'ok':
             agentInfo['down_components'].append(couchInfo['name'])
             agentInfo['status'] = couchInfo['status']

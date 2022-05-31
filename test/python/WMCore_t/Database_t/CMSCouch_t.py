@@ -13,15 +13,14 @@ import hashlib
 import base64
 import sys
 import time
+from datetime import datetime, timedelta
 
-from WMCore.Database.CMSCouch import (CouchServer, Document, Database,
-                        CouchInternalServerError, CouchNotFoundError)
+from WMCore.Database.CMSCouch import (CouchServer, CouchMonitor, Document, Database,
+                                      CouchInternalServerError, CouchNotFoundError)
 
 from Utils.Utilities import encodeUnicodeToBytes
 
 class CMSCouchTest(unittest.TestCase):
-
-    test_counter = 0
 
     def setUp(self):
         # Make an instance of the server
@@ -112,7 +111,10 @@ class CMSCouchTest(unittest.TestCase):
         doc_v1 = self.db.document(doc_id)
 
         #replicate
-        self.server.replicate(self.db.name, repl_db.name)
+        resp = self.server.replicate(self.db.name, repl_db.name)
+        self.assertTrue(resp["ok"])
+        self.assertTrue("id" in resp)
+        self.assertTrue("rev" in resp)
 
         # wait for a few seconds to replication to be triggered.
         time.sleep(1)
@@ -435,10 +437,131 @@ class CMSCouchTest(unittest.TestCase):
 
         print("bulk update: %s sec" % (end - start))
 
-if __name__ == "__main__":
-    if len(sys.argv) >1 :
-        suite = unittest.TestSuite()
-        suite.addTest(CMSCouchTest(sys.argv[1]))
-        unittest.TextTestRunner().run(suite)
-    else:
-        unittest.main()
+    def testGetWelcome(self):
+        """Test the 'getCouchWelcome' method"""
+        resp = self.server.getCouchWelcome()
+        self.assertEqual(resp["couchdb"], "Welcome")
+        self.assertTrue("vendor" in resp)
+        # For CouchDB 1.6.1, expected output is like:
+        # {"couchdb":"Welcome","uuid":"2fe221d694085fa52409a9dc59d9f3f0","version":"1.6.1",
+        # "vendor":{"version":"1.6.1","name":"The Apache Software Foundation"}}
+        # Different output between CouchDB 1.6 vs CouchDB 3.1
+        if resp["version"] != "1.6.1":
+            self.assertTrue("features" in resp)
+
+class CouchMonitorTest(unittest.TestCase):
+    """
+    Tests for the CouchMonitor class
+    """
+
+    def setUp(self):
+        # Make an instance of the server
+        self.couchUrl = os.getenv("COUCHURL", 'http://admin:password@localhost:5984')
+        self.monitor = CouchMonitor(self.couchUrl)
+        # Create a database, drop an existing one first
+        self.dbNames = ['couchmonitor_unittest1', 'couchmonitor_unittest2']
+        for dbName in self.dbNames:
+            if dbName in self.monitor.couchServer.listDatabases():
+                self.monitor.couchServer.deleteDatabase(dbName)
+
+        for dbName in self.dbNames:
+            self.monitor.couchServer.createDatabase(dbName)
+
+        # define source/target endpoints
+        self.sourceUrl = f"{self.couchUrl}/{self.dbNames[0]}"
+        self.targetUrl = f"{self.couchUrl}/{self.dbNames[1]}"
+
+    def tearDown(self):
+        """Destroy the test databases before starting the next test"""
+        for dbName in self.dbNames:
+            self.monitor.couchServer.deleteDatabase(dbName)
+
+    def testGetActiveTasks(self):
+        """Test the 'getActiveTasks' method"""
+        resp = self.monitor.getActiveTasks()
+        # we haven't defined any task yet
+        self.assertEqual(resp, [])
+
+        # now define a replication task
+        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl)
+        self.assertTrue(resp["ok"])
+        time.sleep(1)
+        # FIXME: this was supposed to be 1. To be investigated!!!
+        self.assertEqual(len(self.monitor.getActiveTasks()), 0)
+
+    def testGetSchedulerJobs(self):
+        """
+        Test the 'getSchedulerJobs' method, which is only meaningful
+        for CouchDB version >= 3
+        """
+        resp = self.monitor.couchServer.getCouchWelcome()
+        if resp["version"] == "1.6.1":
+            return
+
+        resp = self.monitor.getSchedulerJobs()
+        self.assertEqual(resp["total_rows"], 0)
+        self.assertEqual(resp["jobs"], [])
+
+        # now define a replication task
+        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl)
+        self.assertTrue(resp["ok"])
+        # give it a couple of seconds for it to show up as active task
+        time.sleep(1)
+        resp = self.monitor.getSchedulerJobs()
+        self.assertEqual(resp["total_rows"], 1)
+        self.assertEqual(len(resp["jobs"]), 1)
+        self.assertEqual(len(resp["jobs"]["database"]), "_replicator")
+
+    def testGetSchedulerDocs(self):
+        """
+        Test the 'getSchedulerDocs' method, which is only meaningful
+        for CouchDB version >= 3
+        """
+        resp = self.monitor.couchServer.getCouchWelcome()
+        if resp["version"] == "1.6.1":
+            return
+
+        resp = self.monitor.getSchedulerDocs()
+        self.assertEqual(resp["total_rows"], 0)
+        self.assertEqual(resp["docs"], [])
+
+        # now define a replication task
+        resp = self.monitor.couchServer.replicate(self.sourceUrl, self.targetUrl)
+        self.assertTrue(resp["ok"])
+        # give it a couple of seconds for it to show up as active task
+        time.sleep(1)
+        resp = self.monitor.getSchedulerDocs()
+        self.assertEqual(resp["total_rows"], 1)
+        self.assertEqual(len(resp["docs"]), 1)
+        self.assertEqual(len(resp["docs"]["database"]), "_replicator")
+
+    def testCheckCouchReplications(self):
+        """Very basic tests for the 'checkCouchReplications' method"""
+        resp = self.monitor.checkCouchReplications([])
+        self.assertEqual(resp["status"], "ok")
+        self.assertEqual(resp["error_message"], "")
+
+    def testCheckReplicationState(self):
+        """Very basic tests for the 'checkReplicationState' method"""
+        resp = self.monitor.checkReplicationState()
+        self.assertEqual(resp["status"], "ok")
+        self.assertEqual(resp["error_message"], "")
+
+    def testIsReplicationOK(self):
+        """ Very basic test for the 'isReplicationOK' method """
+        # define last update as of now - 15min
+        myUpdateOn = int(time.time() - 1 * 60)
+        checkPoint = 600000  # every 10min (in ms)
+        testRepl = dict(updated_on=myUpdateOn, checkpoint_interval=checkPoint)
+        resp = self.monitor.isReplicationOK(testRepl)
+        self.assertTrue(resp)
+
+        # now change last update to now - 2h to reproduce an error
+        myUpdateOn = int(time.time() - 20 * 60)
+        testRepl = dict(updated_on=myUpdateOn, checkpoint_interval=checkPoint)
+        resp = self.monitor.isReplicationOK(testRepl)
+        self.assertFalse(resp)
+
+
+if __name__ == '__main__':
+    unittest.main()

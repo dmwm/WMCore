@@ -1,3 +1,7 @@
+2.0.4.pre3 to 2.0.4.pre4:
+  - New CouchDB 3.x APIs for tracking replications; fix replication check in AgentStatusPoller (Alan Malta Rodrigues) #11039
+
+
 2.0.4.pre2 to 2.0.4.pre3:
   - Check if key exists when deleting standalone documents in Couch (Alan Malta Rodrigues) #11165
   - Avoid raising exception when ReqMgr2 request is not found (Alan Malta Rodrigues) #11159

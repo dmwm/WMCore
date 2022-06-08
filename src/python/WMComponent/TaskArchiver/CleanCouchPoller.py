@@ -45,7 +45,6 @@ class CleanCouchPollerException(WMException):
 
     Customized exception for the CleanCouchPoller
     """
-    pass
 
 
 class CleanCouchPoller(BaseWorkerThread):
@@ -94,6 +93,23 @@ class CleanCouchPoller(BaseWorkerThread):
         self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
         self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", None)
         self.DataKeepDays = getattr(config.TaskArchiver, "DataKeepDays", 0.125)  # 3 hours
+
+        # Initialise with None all setup defined variables:
+        self.teamName = None
+        self.useReqMgrForCompletionCheck = None
+        self.archiveDelayHours = None
+        self.wmstatsCouchDB = None
+        self.centralRequestDBReader = None
+        self.centralRequestDBWriter = None
+        self.deletableState = None
+        self.reqmgr2Svc = None
+        self.jobCouchdb = None
+        self.jobsdatabase = None
+        self.fwjrdatabase = None
+        self.fwjrService = None
+        self.workCouchdb = None
+        self.workdatabase = None
+        self.statsumdatabase = None
 
     def setup(self, parameters=None):
         """
@@ -217,7 +233,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 if self.dashBoardUrl is not None:
                     self.publishRecoPerfToDashBoard(spec)
             else:
-                logging.warn("Workflow spec was not found for %s", workflow)
+                logging.warning("Workflow spec was not found for %s", workflow)
 
         return
 
@@ -379,6 +395,16 @@ class CleanCouchPoller(BaseWorkerThread):
         # Get the finished workflows, in descending order
         deletableWorkflowsDAO = self.daoFactory(classname="Workflow.GetDeletableWorkflows")
         deletablewfs = deletableWorkflowsDAO.execute()
+
+        # For T0 subtract the workflows which are not having all their blocks deleted yet:
+        if not self.useReqMgrForCompletionCheck:
+            undeletedBlocksByWorkflowDAO = self.dbsDaoFactory(classname="CountUndeletedBlocksByWorkflow")
+            wfsWithUndeletedBlocks = [record['name'] for record in undeletedBlocksByWorkflowDAO.execute()]
+            for workflow in list(deletablewfs):
+                if workflow in wfsWithUndeletedBlocks:
+                    msg = "Removing workflow: %s from the list of deletable workflows. It still has blocks NOT deleted."
+                    self.logger.info(msg, workflow)
+                    deletablewfs.pop(workflow)
 
         # Only delete those where the upload and notification succeeded
         logging.info("Found %d candidate workflows for deletion.", len(deletablewfs))
@@ -973,7 +999,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 return False
         except Exception as ex:
             logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s', dataset, run)
-            logging.exception(ex)  # Let's print the stacktrace with generic Exception
+            logging.exception(str(ex))  # Let's print the stacktrace with generic Exception
             return False
 
         try:
@@ -982,6 +1008,7 @@ class CleanCouchPoller(BaseWorkerThread):
         except Exception as ex:
             logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out",
                          dataset, run)
+            logging.exception(str(ex))  # Let's print the stacktrace with generic Exception
             return False
         # If it gets here before returning False or responseJSON, it went wrong
         return False

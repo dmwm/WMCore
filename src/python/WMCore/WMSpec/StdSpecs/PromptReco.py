@@ -10,7 +10,7 @@ from future.utils import viewitems
 from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import procstringT0
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
-
+from WMCore.WMSpec.WMWorkloadTools import validateOutputModules
 
 class PromptRecoWorkloadFactory(DataProcessing):
     """
@@ -164,6 +164,14 @@ class PromptRecoWorkloadFactory(DataProcessing):
                                                "include_parents": True})
 
         return self.buildWorkload()
+
+    def validateWorkload(self, workload):
+        """
+        _validateWorkload_
+
+        Validation of output module names in the workflow
+        """        
+        validateOutputModules(workload)
 
     @staticmethod
     def getWorkloadCreateArgs():

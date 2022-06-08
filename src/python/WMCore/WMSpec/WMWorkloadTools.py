@@ -16,6 +16,7 @@ import re
 import inspect
 
 from Utils.Utilities import makeList
+from WMCore.Lexicon import outputModule
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
@@ -323,7 +324,6 @@ def validateUnknownArgs(arguments, argumentDefinition):
             raise WMSpecFactoryException(msg)
     return
 
-
 def setArgumentsWithDefault(arguments, argumentDefinition):
     """
     Set arguments not provided by the user with a default spec value
@@ -349,6 +349,18 @@ def setAssignArgumentsWithDefault(arguments, argumentDefinition):
             arguments[argument] = argumentDefinition[argument]["default"]
 
     return
+
+def validateOutputModules(workload):
+    """
+    Makes sure all output modules comply with DBS restrictions
+    """
+    for task in workload.getAllTasks():
+        modules = task.getOutputModulesForTask()
+        for module in modules:
+            for modName in module._internal_children:
+                if not outputModule(modName):
+                    msg = "An output module name in your request is not valid: %s" % modName)
+                    raise WMSpecFactoryException(msg)
 
 def loadSpecClassByType(specType):
     factoryName = "%sWorkloadFactory" % specType

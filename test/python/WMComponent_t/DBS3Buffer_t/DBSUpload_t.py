@@ -638,6 +638,21 @@ class DBSUploadTest(unittest.TestCase):
                            'OpenSSL SSL_connect: SSL_ERROR_SYSCALL']:
             self.assertIs(isPassiveError(MyTestException(errMessage)), True)
 
+    def testParseDBSException(self):
+        """
+        test parseDBSException function to parse DBS Go-based server exception message
+        """
+        exc = """[{"error":{"reason":"DBSError Code:110 Description:DBS DB insert record error Function:dbs.bulkblocks.insertFilesViaChunks Message: Error: concurrency error","message":"7cf3dee6307fdaa1f72d0dc03551fd0e6665f32114d752c37819c238cef7a231 unable to insert files, error DBSError Code:110 Description:DBS DB insert record error Function:dbs.bulkblocks.insertFilesViaChunks Message: Error: concurrency error","function":"dbs.bulkblocks.InsertBulkBlocksConcurrently","code":110},"http":{"method":"POST","code":400,"timestamp":"2022-05-27 19:21:45.67710595 +0000 UTC m=+191328.489143316","path":"/dbs/prod/global/DBSWriter/bulkblocks","user_agent":"DBSClient/Unknown/","x_forwarded_host":"dbs-prod.cern.ch","x_forwarded_for":"137.138.157.32","remote_addr":"137.138.63.204:39950"},"exception":400,"type":"HTTPError","message":"DBSError Code:110 Description:DBS DB insert record error Function:dbs.bulkblocks.InsertBulkBlocksConcurrently Message:7cf3dee6307fdaa1f72d0dc03551fd0e6665f32114d752c37819c238cef7a231 unable to insert files, error DBSError Code:110 Description:DBS DB insert record error Function:dbs.bulkblocks.insertFilesViaChunks Message: Error: concurrency error Error: nested DBSError Code:110 Description:DBS DB insert record error Function:dbs.bulkblocks.insertFilesViaChunks Message: Error: concurrency error"}]"""
+        data = parseDBSException(exc)
+        expect = 'DBSError Code:110 Description:DBS DB insert record error Function:dbs.bulkblocks.insertFilesViaChunks Message: Error: concurrency error'
+        self.assertEqual(data, expect)
+
+        # test another type of exception
+        exc = Exception()
+        data = parseDBSException(exc)
+        self.assertEqual(data, exc)
+        self.assertIs(isinstance(exc, Exception), True)
+
 
 if __name__ == '__main__':
     unittest.main()

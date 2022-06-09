@@ -22,7 +22,7 @@ from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
-from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller, isPassiveError
+from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller, isPassiveError, parseDBSException
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUIDLib import makeUUID

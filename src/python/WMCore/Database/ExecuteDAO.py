@@ -210,10 +210,10 @@ class ExecuteDAO():
                 msg += "%s: %s"
                 msg += "\n----------------------------------------------------------------------\n"
                 self.logger.info(msg, sqlName, sqlStr)
-            self.logger.info("DAO SQL arguments provided:\n{}, {}".format(pformat(sqlArgs), pformat(sqlKwArgs)))
+            self.logger.info("DAO SQL arguments provided:\n%s, %s", pformat(sqlArgs), pformat(sqlKwArgs))
         else:
             results = self.dao.execute(*sqlArgs, **sqlKwArgs)
-            self.logger.info("DAO Results:\n{}".format(pformat(results if isinstance(results, dict) else list(results))))
+            self.logger.info("DAO Results:\n%s", pformat(results if isinstance(results, dict) else list(results)))
         return results
 
     def getSqlQuery(self):

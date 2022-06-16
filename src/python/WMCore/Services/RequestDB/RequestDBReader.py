@@ -21,7 +21,10 @@ class RequestDBReader(object):
             self.dbName = self.couchDB.name
             self.couchServer = CouchServer(self.couchURL)
         else:
-            couchURL = sanitizeURL(couchURL)['url']
+            # NOTE: starting in CouchDB 3.x, we need to provide the couch credentials in
+            # order to be able to write to the database, thus a RequestDBWriter object
+            if isinstance(self.__class__, RequestDBReader):
+                couchURL = sanitizeURL(couchURL)['url']
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
             self.couchServer = CouchServer(self.couchURL)
             self.couchDB = self.couchServer.connectDatabase(self.dbName, False)

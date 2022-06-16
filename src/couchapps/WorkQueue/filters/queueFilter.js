@@ -1,5 +1,5 @@
 function(doc, req) {
-	if (doc._deleted){
+    if (doc._deleted){
        return false;
     }
     

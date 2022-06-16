@@ -1,3 +1,9 @@
+2.0.4 to 2.0.4.patch1:
+  - Better error handling for DBS3Upload block injection (Alan Malta Rodrigues) #11184
+  - Ensure dataset_lifetime bind is defined for DBS3Buffer/NewSubscription (Alan Malta Rodrigues) #11184
+  - Fix delayed replication in CouchDB 3.x (Alan Malta Rodrigues) #11184
+
+
 2.0.4.pre4 to 2.0.4:
   - Add extra protection for T0 to prevent archival of workflows having blocks not yet deleted. (Todor Ivanov) #11169
 

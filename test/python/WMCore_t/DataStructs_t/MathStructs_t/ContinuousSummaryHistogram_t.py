@@ -14,6 +14,7 @@ from __future__ import division
 from builtins import range
 from future.utils import viewvalues
 
+import os
 import unittest
 import random
 
@@ -35,7 +36,7 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setupCouch("histogram_dump_t")
         random.seed()
-        self.histogramDB = Database(dbname = "histogram_dump_t")
+        self.histogramDB = Database(url=os.getenv("COUCHURL"), dbname="histogram_dump_t")
 
     def tearDown(self):
         """

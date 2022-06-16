@@ -14,16 +14,7 @@ class RotatingDatabaseTest(unittest.TestCase):
     def setUp(self):
         self.couchURL = os.getenv("COUCHURL")
         self.server = CouchServer(self.couchURL)
-        # Kill off any databases left over from previous runs
-        # In python 3 the variables defined inside a comprehension are deteled
-        # outside the comprehension. See: pylint W1662 comprehension-escape
-        dbs = [db for db in self.server.listDatabases() if db.startswith('rotdb_unittest_')]
-        for db in dbs:
-            try:
-                self.server.deleteDatabase(db)
-            except:
-                pass
-        # Create a database, drop an existing one first
+
         testname = self.id().split('.')[-1].lower()
         self.dbname = 'rotdb_unittest_%s' % testname
         self.arcname = 'rotdb_unittest_%s_archive' % testname
@@ -35,16 +26,14 @@ class RotatingDatabaseTest(unittest.TestCase):
                                    archivename = self.arcname, timing = self.timing)
 
     def tearDown(self):
-        testname = self.id().split('.')[-1].lower()
-        if sys.exc_info()[0] == None:
-            # This test has passed, clean up after it
-            to_go = [db for db in self.server.listDatabases() if db.startswith('rotdb_unittest_%s' % testname)]
-            for dbname in to_go:
-                try:
-                    self.server.deleteDatabase(dbname)
-                except CouchNotFoundError:
-                    # db has already gone
-                    pass
+        """Delete all the test couchdb databases"""
+        to_go = [db for db in self.server.listDatabases() if db.startswith('rotdb_unittest_')]
+        for dbname in to_go:
+            try:
+                self.server.deleteDatabase(dbname)
+            except CouchNotFoundError:
+                # db has already gone
+                pass
 
     def testRotate(self):
         """

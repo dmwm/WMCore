@@ -54,9 +54,11 @@ class DbsApi(object):
             currentInfo.append(blockDump)
             json.dump(currentInfo, outFileHandle)
 
-        randomNumber = random()
-        if randomNumber < 0.2:
-            raise Exception("Proxy Error, this is a mock proxy error.")
+        # VK: once we introduced parseDBSException function we do not need to simulate Proxy Error
+        # see https://github.com/dmwm/WMCore/pull/11176#issuecomment-1158758332
+        # randomNumber = random()
+        # if randomNumber < 0.2:
+        #     raise Exception("Proxy Error, this is a mock proxy error.")
 
         return
 

@@ -86,7 +86,7 @@ class WorkQueueBackend(object):
         self.sendToParent(continuous=True)
 
     def pullFromParent(self, continuous=True, cancel=False):
-        """Replicate from parent couch - blocking: used only int test"""
+        """Replicate from parent couch - blocking: used only in unit tests"""
         try:
             if self.parentCouchUrlWithAuth and self.queueUrlWithAuth:
                 self.logger.info("Forcing pullFromParent from parentCouch: %s to queueUrl %s/%s",
@@ -97,7 +97,8 @@ class WorkQueueBackend(object):
                                       query_params={'childUrl': self.queueUrl,
                                                     'parentUrl': self.parentCouchUrl},
                                       continuous=continuous,
-                                      cancel=cancel)
+                                      cancel=cancel,
+                                      sleepSecs=6)
         except Exception as ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrlWithAuth, str(ex)))
 

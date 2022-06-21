@@ -99,23 +99,33 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
                 logging.warning("Block %s already exists. Marking it as uploaded.", name)
                 logging.debug("Exception: %s", exString)
                 results.put({'name': name, 'success': "uploaded"})
-            elif 'Proxy Error' in exString:
-                # This is probably a successfully insertion that went bad.
-                # Put it on the check list
-                msg = "Got a proxy error for block %s." % name
-                logging.warning(msg)
-                results.put({'name': name, 'success': "check"})
             elif 'Missing data when inserting to dataset_parents' in exString:
                 msg = "Parent dataset is not inserted yet for block %s." % name
                 logging.warning(msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
             else:
-                msg = "Error trying to process block %s through DBS. Error: %s" % (name, exString)
+                reason = parseDBSException(exString)
+                msg = "Error trying to process block %s through DBS. Error: %s" % (name, reason)
                 logging.exception(msg)
                 logging.debug("block info: %s \n", block)
                 results.put({'name': name, 'success': "error", 'error': msg})
 
     return
+
+
+def parseDBSException(exBodyString):
+    """
+    parse DBS Go-based server exception
+    :param exBodyString: exception message body string (not exception).
+    The upstream code extract HTTP body from exception object and pass it here.
+    :return: either (parsed) concise exception message or original body string
+    """
+    try:
+        data = json.loads(exBodyString)
+        # dbs2go always return a list
+        return data[0]['error']['reason']
+    except:
+        return exBodyString
 
 
 def isPassiveError(exceptionObj):

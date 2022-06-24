@@ -1,3 +1,12 @@
+2.1.0.pre1 to 2.1.0.pre2:
+  - Update deployment scripts for 2.0.4 and test campaigns in central couch (Alan Malta Rodrigues) #11177
+  - Consistent return data type for closing workqueue elements (Alan Malta Rodrigues) #11193
+  - remove all the CMS authz logic from the CouchDB validate functions (Alan Malta Rodrigues) #11191
+  - Comment out Proxy Error mocking (Valentin Kuznetsov) #11176
+  - Give enough time for replication to complete in unit tests (Alan Malta Rodrigues) #11185
+  - Provide uniform way to handle DBS server errors (Valentin Kuznetsov) #11176
+
+
 2.0.4 to 2.1.0.pre1:
   - Bundle of fixes required for migration to CouchDB 3.x #11001
   - Ensure dataset_lifetime bind is defined for DBS3Buffer/NewSubscription (Alan Malta Rodrigues) #11179

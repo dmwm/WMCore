@@ -86,9 +86,8 @@ def syncQueues(queue, skipWMBS=False):
     time.sleep(1)
     work = queue.processInboundWork()
     queue.performQueueCleanupActions(skipWMBS=skipWMBS)
-    # queue.backend.forceQueueSync() ## FIXME TODO: AMR, maybe revert it
     # after replication need to wait a while to update result
-    time.sleep(1)
+    time.sleep(3)
     return work
 
 
@@ -814,6 +813,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1000}), totalSpec)
         syncQueues(self.localQueue)
+        # give a few extra seconds for work to move between local/global queues
+        time.sleep(2)
         self.assertEqual(len(self.localQueue.status(status='Available')), totalSpec)
         self.assertEqual(len(self.globalQueue.status(status='Acquired')), totalSpec)
         self.localQueue.updateLocationInfo()

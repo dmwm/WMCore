@@ -869,15 +869,16 @@ class WorkQueue(WorkQueueBase):
 
         :return: list of workqueue_inbox elements that have been closed
         """
+        workflowsToClose = []
         if self.params['LocalQueueFlag']:
-            return  # GlobalQueue-only service
+            # this is a Global WorkQueue only functionality
+            return workflowsToClose
         if not self.backend.isAvailable():
             self.logger.warning('Backend busy or down: Can not close work at this time')
-            return
+            return workflowsToClose
 
         workflowsToCheck = self.backend.getInboxElements(OpenForNewData=True)
         self.logger.info("Retrieved a list of %d open workflows", len(workflowsToCheck))
-        workflowsToClose = []
         currentTime = time.time()
         for element in workflowsToCheck:
             # fetch attributes from the inbox workqueue element

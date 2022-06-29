@@ -1,3 +1,7 @@
+2.1.0.pre2 to 2.1.0.pre3:
+  - Create filter function to drop deleted documents (Alan Malta Rodrigues) #11196
+
+
 2.1.0.pre1 to 2.1.0.pre2:
   - Update deployment scripts for 2.0.4 and test campaigns in central couch (Alan Malta Rodrigues) #11177
   - Consistent return data type for closing workqueue elements (Alan Malta Rodrigues) #11193

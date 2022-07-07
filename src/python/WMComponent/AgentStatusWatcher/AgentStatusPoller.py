@@ -26,7 +26,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteS
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 # CMSMonitoring modules
-from CMSMonitoring.StompAMQ import StompAMQ
+from CMSMonitoring.StompAMQ7 import StompAMQ7 as StompAMQ
 
 
 class AgentStatusPoller(BaseWorkerThread):
@@ -570,8 +570,8 @@ class AgentStatusPoller(BaseWorkerThread):
                                 logger=logging)
 
             for doc in docs:
-                singleNotif, _, _ = stompSvc.make_notification(payload=doc, docType=docType,
-                                                               ts=timeS, dataSubfield="payload")
+                singleNotif, _, _ = stompSvc.make_notification(payload=doc, doc_type=docType,
+                                                               ts=timeS, data_subfield="payload")
                 notifications.append(singleNotif)
 
             failures = stompSvc.send(notifications)

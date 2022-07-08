@@ -1,3 +1,7 @@
+2.1.0.pre4 to 2.1.0.pre5:
+  - Updated stomp.py package version from 4.1.21 to 7.0.0
+
+
 2.1.0.pre3 to 2.1.0.pre4:
   - Load credentials when saving spec file in local workqueue (Alan Malta Rodrigues) #11204
   - Update CMSMonitoring module version to use StompAMQ7 with latest stomp.py (mrceyhun) #11189

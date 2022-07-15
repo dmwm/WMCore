@@ -6,7 +6,7 @@ with in the input data placement (MSTransferor)
 """
 
 from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
-from WMCore.Services.Rucio.Rucio import GROUPING_DSET
+from WMCore.Services.Rucio.RucioUtils import GROUPING_DSET
 
 
 class GrowingWorkflow(Workflow):

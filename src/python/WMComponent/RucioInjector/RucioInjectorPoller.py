@@ -18,7 +18,8 @@ from pprint import pformat
 from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.Rucio.Rucio import Rucio, WMRucioException, RUCIO_VALID_PROJECT
+from WMCore.Services.Rucio.Rucio import Rucio, WMRucioException
+from WMCore.Services.Rucio.RucioUtils import RUCIO_VALID_PROJECT
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from Utils.IteratorTools import grouper

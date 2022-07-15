@@ -10,7 +10,7 @@ from future.utils import viewitems, viewvalues, listvalues
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.Tools.Common import getMSLogger
-from WMCore.Services.Rucio.Rucio import GROUPING_DSET, GROUPING_ALL
+from WMCore.Services.Rucio.RucioUtils import GROUPING_DSET, GROUPING_ALL
 
 
 class Workflow(object):

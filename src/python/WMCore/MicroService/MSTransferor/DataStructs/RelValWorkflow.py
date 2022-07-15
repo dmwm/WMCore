@@ -6,7 +6,7 @@ have to be dealt with in the input data placement (MSTransferor)
 """
 
 from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
-from WMCore.Services.Rucio.Rucio import GROUPING_ALL
+from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
 
 
 class RelValWorkflow(Workflow):

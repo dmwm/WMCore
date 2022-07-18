@@ -1214,13 +1214,16 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setWorkQueueSplitPolicy(self, policyName, splitAlgo, splitArgs, **kwargs):
         """
-        _setWorkQueueSplitPolicy_
+        Sets the WorkQueue start policy.
 
-        Set the WorkQueue split policy.
-        policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
-        different policy could be added in the workqueue plug in.
-        Additionally general parameters can be specified, these are not mapped and passed directly to the startPolicyArgs,
-        also record the splitting algorithm in case the WorkQUeue policy needs it.
+        :param policyName: string with the policy name. Supported values should match  the
+            WMCore/WorkQueue/Policy/Start module names (Dataset, Block, MonteCarlo or ResubmitBlock)
+        :param splitAlgo: string with the job splitting algorithm name. Supported values should
+            match the WMCore/JobSplitting module names.
+        :param splitArgs: dictionary with job splitting arguments
+        :param kwargs: dictionary with additional arguments that can be passed directly to
+            the startPolicyArgs
+        :return: None
         """
         SplitAlgoToStartPolicy = {"FileBased": ["NumberOfFiles"],
                                   "EventBased": ["NumberOfEvents",

@@ -12,20 +12,15 @@ from future.utils import viewitems, viewvalues
 
 import json
 import logging
-import random
 from copy import deepcopy
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
                                     UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound)
 from Utils.MemoryCache import MemoryCache
+from WMCore.Services.Rucio.RucioUtils import (validateMetaData, weightedChoice,
+                                              isTapeRSE, dropTapeRSEs)
 from WMCore.WMException import WMException
-
-RUCIO_VALID_PROJECT = ("Production", "RelVal", "Tier0", "Test", "User")
-# grouping values are extracted from:
-# https://github.com/rucio/rucio/blob/master/lib/rucio/common/schema/cms.py#L117
-GROUPING_DSET = "DATASET"
-GROUPING_ALL = "ALL"
 
 
 class WMRucioException(WMException):
@@ -42,64 +37,6 @@ class WMRucioDIDNotFoundException(WMException):
     Generic WMCore exception for Rucio
     """
     pass
-
-
-def validateMetaData(did, metaDict, logger):
-    """
-    This function can be extended in the future, for now it will only
-    validate the DID creation metadata, more specifically only the
-    "project" parameter
-    :param did: the DID that will be inserted
-    :param metaDict: a dictionary with all the DID metadata data to be inserted
-    :param logger: a logger object
-    :return: False if validation fails, otherwise True
-    """
-    if metaDict.get("project", "Production") in RUCIO_VALID_PROJECT:
-        return True
-    msg = "DID: %s has an invalid 'project' meta-data value: %s" % (did, metaDict['project'])
-    msg += "The supported 'project' values are: %s" % str(RUCIO_VALID_PROJECT)
-    logger.error(msg)
-    return False
-
-
-def weightedChoice(choices):
-    # from https://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
-    # Python 3.6 includes something like this in the random library itself
-
-    total = sum(w for c, w in choices)
-    r = random.uniform(0, total)
-    upto = 0
-    for c, w in choices:
-        if upto + w >= r:
-            return c
-        upto += w
-    assert False, "Shouldn't get here"
-
-
-def isTapeRSE(rseName):
-    """
-    Given an RSE name, return True if it's a Tape RSE (rse_type=TAPE), otherwise False
-    :param rseName: string with the RSE name
-    :return: True or False
-    """
-    # NOTE: a more reliable - but more expensive - way to know that would be
-    # to query `get_rse` and evaluate the rse_type parameter
-    return rseName.endswith("_Tape")
-
-
-def dropTapeRSEs(listRSEs):
-    """
-    Method to parse a list of RSE names and return only those that
-    are not a rse_type=TAPE, so in general only Disk endpoints
-    :param listRSEs: list with the RSE names
-    :return: a new list with only DISK RSE names
-    """
-    diskRSEs = []
-    for rse in listRSEs:
-        if rse.endswith("_Tape"):
-            continue
-        diskRSEs.append(rse)
-    return diskRSEs
 
 
 class Rucio(object):
@@ -783,7 +720,8 @@ class Rucio(object):
         Returns: A tuple of the chosen RSE and if the chosen RSE requires approval to write (rule property)
         """
         matchingRSEs = self.evaluateRSEExpression(rseExpression)
-        rsesWithWeights = []
+        rsesWithApproval = []
+        rsesWeight = []
 
         for rse in matchingRSEs:
             attrs = self.cli.list_rse_attributes(rse)
@@ -796,10 +734,10 @@ class Rucio(object):
                 quota = 1
             requiresApproval = attrs.get('requires_approval', False)
             if quota > minNeeded:
-                rsesWithWeights.append(((rse, requiresApproval), quota))
+                rsesWithApproval.append((rse, requiresApproval))
+                rsesWeight.append(quota)
 
-        choice = weightedChoice(rsesWithWeights)
-        return choice
+        return weightedChoice(rsesWithApproval, rsesWeight)
 
     def requiresApproval(self, rse):
         """

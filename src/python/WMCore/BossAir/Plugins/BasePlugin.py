@@ -155,9 +155,7 @@ class BasePlugin(object):
     @staticmethod
     def scramArchtoRequiredArch(scramArch=None):
         """
-        Converts a given ScramArch to a unique target CPU architecture.
-        Note that an architecture precedence is enforced in case there are
-        multiple matches.
+        Converts a given ScramArch to a list of target CPU architectures.
         In case no scramArch is defined, leave the architecture undefined.
         :param scramArch: can be either a string or a list of ScramArchs
         :return: a string with the matched architecture
@@ -177,14 +175,9 @@ class BasePlugin(object):
                 raise BossAirPluginException(msg)
             requiredArchs.add(SCRAM_TO_ARCH.get(arch))
 
-        # now we have the final list of architectures, return only 1 of them
-        if len(requiredArchs) == 1:
-            return requiredArchs.pop()
-        elif "X86_64" in requiredArchs:
-            return "X86_64"
-        elif "ppc64le" in requiredArchs:
-            return "ppc64le"
-        elif "aarch64" in requiredArchs:
-            return "aarch64"
-        else:  # should never get here!
-            return defaultArch
+        # now we have the final list of architectures
+        archs = ",".join(requiredArchs)
+        if archs == '':
+            archs = defaultArch
+
+        return archs

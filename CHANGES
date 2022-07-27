@@ -1,3 +1,7 @@
+2.1.1.pre1 to 2.1.1.pre2:
+  - Adopt ReqMgr2 authorization based on the request status (Alan Malta Rodrigues) #11223
+
+
 2.1.0 to 2.1.1.pre1:
   - Update CMSMonitoring version in the requirements file to 0.6.5 (Alan Malta Rodrigues) #11229
   - Implement support for gzipped stream for RucioConMon (Valentin Kuznetsov) #11142

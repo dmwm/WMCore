@@ -72,6 +72,20 @@ data.couch_acdc_db = "acdcserver"
 data.couch_workqueue_db = "workqueue"
 data.central_logdb_url = LOG_DB_URL
 data.log_reporter = LOG_REPORTER
+# Fake permissions for unit tests
+data.authorized_roles = {"admin": {'role': ["admin_role"], 'group': ["admin_group"]},
+                         "ops": {'role': ["admin_role", "ops_role"],
+                                 'group': ["admin_group", "ops_group"]},
+                         "ppd": {'role': ["admin_role", "ops_role", "ppd_role"],
+                                 'group': ["admin_group", "ops_group", "ppd_group"]}}
+data.authz_by_status = [{"permission": "admin",
+                         "statuses": ["acquired", "running-open", "running-closed", "completed", "aborted-completed",
+                                      "failed", "rejected-archived", "aborted-archived", "normal-archived"]},
+                        {"permission": "ops",
+                         "statuses": ["assigned", "staging", "staged", "force-complete",
+                                      "closed-out", "announced"]},
+                        {"permission": "ppd",
+                         "statuses": ["new", "assignment-approved", "rejected", "aborted", "NO_STATUS"]}]
 
 # number of past days since when to display requests in the default view
 data.default_view_requests_since_num_days = 30  # days
@@ -114,8 +128,5 @@ config.views.ui.static_content_dir = path.join(first_part, "WMCore/src/data")
 
 config.views.data.couch_host = getenv("COUCHURL", None)
 
-
-
 # end of deployment/reqmgr2/config-localhost.py
 # ---------------------------------------------------------------------------
-

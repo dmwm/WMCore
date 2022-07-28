@@ -125,6 +125,13 @@ class CouchDBRequests(JSONRequests):
         """
         incoming_headers = incoming_headers or {}
         incoming_headers.update(self.additionalHeaders)
+        # request to CouchDB should include keep-alive header to keep
+        # HTTP connection for requests which requires large data transfer
+        # see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive
+        if not ('keep-alive' in incoming_headers or 'Keep-Alive' in incoming_headers):
+            # we expect any request to complete in 2mins interval, therefore setup
+            # timeout=120 and max it to FE allowed one
+            incoming_headers.update({'Keep-Alive': 'timeout=120, max=300'})
         try:
             if not cache:
                 incoming_headers.update({'Cache-Control': 'no-cache'})

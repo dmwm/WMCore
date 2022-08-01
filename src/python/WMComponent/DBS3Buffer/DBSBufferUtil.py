@@ -123,6 +123,19 @@ class DBSBufferUtil(WMConnectionBase):
 
         return result
 
+    def loadDataset(self, datasetName):
+        """
+        Given a dataset name, load its information from DBSBuffer
+        :param datasetName: string with the dataset name
+        :return: a dictionary with the dataset info
+        """
+        loadDataset = self.daoFactory(classname="ListDataset")
+        result = loadDataset.execute(datasetPath=datasetName, transaction=False)
+        if not result:
+            # this should never happen, but just in case...
+            return {}
+        return result[0]
+
     def findUploadableFilesByDAS(self, datasetpath):
         """
         _findUploadableDAS_

@@ -5,6 +5,7 @@ from future.utils import viewitems, listvalues, listitems
 import copy
 import socket
 from collections import defaultdict
+import logging
 
 # From top level
 
@@ -283,16 +284,21 @@ def convertStepValue(stepValue):
         if not stepValue['input']:
             # if empty convert to list from {}
             stepValue['input'] = []
-
-        elif len(stepValue['input']) > 1:
-            # assume only one input value
-            raise Exception("more than one input value %s" % list(stepValue['input']))
-
-        elif list(stepValue['input'].keys())[0] in input_keys:
-            stepValue['input'] = convertInput(stepValue['input'][list(stepValue['input'])[0]])
-
         else:
-            raise Exception("Unknow iput key %s" % list(stepValue['input']))
+            if len(stepValue['input']) > 1:
+                # skip input values that are not in input_keys
+                # to work around issue #11168
+                for key in list(stepValue['input']):
+                    if key not in input_keys:
+                        del stepValue['input'][key]
+                if len(stepValue['input']) > 1:
+                    raise Exception("more than one input value %s" % list(stepValue['input']))
+                else:
+                    logging.info("Input values with empty tags found. They will be ignored.")
+            if list(stepValue['input'].keys())[0] in input_keys:
+                stepValue['input'] = convertInput(stepValue['input'][list(stepValue['input'])[0]])
+            else:
+                raise Exception("Unknow iput key %s" % list(stepValue['input']))
 
     if "output" in stepValue:
         # remove output module name layer

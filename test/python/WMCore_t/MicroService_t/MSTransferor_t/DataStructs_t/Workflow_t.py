@@ -346,6 +346,21 @@ class WorkflowTest(unittest.TestCase):
         wflow.setParentDataset(parentDset)
         self.assertEqual(wflow.getRucioGrouping(), "ALL")
 
+    def testGetReplicaCopies(self):
+        """
+        Test the `getReplicaCopies` method, which is supposed to return
+        an integer with the number of copies that a rule has to request
+        """
+        rerecoSpec = {"RequestType": "ReReco",
+                      "InputDataset": "/rereco/input-dataset/tier",
+                      "Campaign": "any-campaign",
+                      "RequestName": "whatever_name",
+                      "DbsUrl": "a_dbs_url",
+                      "SiteWhitelist": ["CERN", "FNAL", "DESY"],
+                      "SiteBlacklist": ["FNAL"]}
+        wflow = Workflow(rerecoSpec['RequestName'], rerecoSpec)
+        self.assertEqual(wflow.getReplicaCopies(), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

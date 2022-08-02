@@ -10,7 +10,7 @@ from future.utils import viewitems, viewvalues, listvalues
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.Tools.Common import getMSLogger
-from WMCore.Services.Rucio.RucioUtils import GROUPING_DSET, GROUPING_ALL
+from WMCore.Services.Rucio.RucioUtils import GROUPING_DSET, GROUPING_ALL, NUM_COPIES_DEFAULT
 
 
 class Workflow(object):
@@ -422,3 +422,12 @@ class Workflow(object):
         if self.getParentDataset():
             return GROUPING_ALL
         return GROUPING_DSET
+
+    def getReplicaCopies(self):
+        """
+        Returns the number of replica copies to be defined in
+        a given rucio rule. Standard/default value is 1.
+
+        :return: an integer with the number of copies
+        """
+        return NUM_COPIES_DEFAULT

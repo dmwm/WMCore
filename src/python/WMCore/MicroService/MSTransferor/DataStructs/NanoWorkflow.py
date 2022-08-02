@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Workflow object representing how growing workflows have to be dealt
-with in the input data placement (MSTransferor)
+Workflow object representing how MiniAODSIM to NanoAODSIM workflows
+have to be dealt with in terms of input data placement (MSTransferor)
 """
 
 from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
-from WMCore.Services.Rucio.RucioUtils import GROUPING_DSET
+from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL, NUM_COPIES_NANO
 
 
-class GrowingWorkflow(Workflow):
+class NanoWorkflow(Workflow):
     """
-    Class to represent a Growing workflow in the context
-    of input data placement in MSTransferor
+    Class to represent a very short workflows processing Mini and creating
+    Nano data, in the context of input data placement in MSTransferor
     """
 
     def getInputData(self):
@@ -37,4 +37,13 @@ class GrowingWorkflow(Workflow):
 
         :return: a string with the required DID grouping
         """
-        return GROUPING_DSET
+        return GROUPING_ALL
+
+    def getReplicaCopies(self):
+        """
+        Returns the number of replica copies to be defined in
+        a given rucio rule. Standard/default value is 1.
+
+        :return: an integer with the number of copies
+        """
+        return NUM_COPIES_NANO

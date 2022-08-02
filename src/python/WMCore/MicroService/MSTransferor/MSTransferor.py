@@ -460,7 +460,7 @@ class MSTransferor(MSCore):
             if dataIn["type"] == "primary":
                 dids, didsSize = wflow.getInputData()
                 grouping = wflow.getRucioGrouping()
-                copies = 1
+                copies = wflow.getReplicaCopies()
                 if not dids:
                     # no valid files in any blocks, it will likely fail in global workqueue
                     self.logger.warning("  found 0 primary/parent blocks for dataset: %s, moving on...", dataIn['name'])

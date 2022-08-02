@@ -1,0 +1,131 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "Digi_2021": "AcquisitionEra-OVERRIDE-ME",
+            "GenSimFull": "AcquisitionEra-OVERRIDE-ME",
+            "RecoNano_2021": "AcquisitionEra-OVERRIDE-ME"
+        },
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "Digi_2021": "ProcessingString-OVERRIDE-ME",
+            "GenSimFull": "ProcessingString-OVERRIDE-ME",
+            "RecoNano_2021": "ProcessingString-OVERRIDE-ME"
+        },
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_13_0_0_pre3",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": "StepChain from scratch, on EL8 and relying on storage.json; SC MC harvesting enabled; SC requiring GPU",
+            "WorkFlowDesc": "StepChain from scratch on EL8 resources, depending on storage.json, MC harvesting, Step1: noGPU, Step2: optional, Step3: required"
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMConfigCacheID": "f4692bbf8e905aa9a4eeb7b42190f84b",
+        "DQMHarvestUnit": "byRun",
+        "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/relval",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "DeterministicPileup": false,
+        "EnableHarvesting": true,
+        "EventStreams": 0,
+        "GPUParams": "null",
+        "GlobalTag": "130X_mcRun3_2022_realistic_v2",
+        "IncludeParents": false,
+        "Memory": 6000,
+        "Multicore": 8,
+        "PrepID": "TEST-TEST-TEST-CMSSW_13_0_0_pre3__fullsim_noPU_2022_14TeV-ZTT_14-00001",
+        "PrimaryDataset": "UPDATEME",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 1,
+        "RequestPriority": 700000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "StepChain",
+        "RequiresGPU": "forbidden",
+        "ScramArch": [
+            "el8_amd64_gcc11"
+        ],
+        "SizePerEvent": 1,
+        "Step1": {
+            "AcquisitionEra": "CMSSW_13_0_0_pre3",
+            "CMSSWVersion": "CMSSW_13_0_0_pre3",
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "f4692bbf8e905aa9a4eeb7b4218efa7d",
+            "EventStreams": 2,
+            "EventsPerJob": 100,
+            "EventsPerLumi": 50,
+            "RequiresGPU": "forbidden",
+            "GPUParams": "{\"GPUMemoryMB\": 1234, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+            "GlobalTag": "130X_mcRun3_2022_realistic_v2",
+            "KeepOutput": true,
+            "Memory": 2000,
+            "Multicore": 8,
+            "PrimaryDataset": "RelValZTT_14",
+            "ProcessingString": "Step1_WMCore_TEST",
+            "RequestNumEvents": 9000,
+            "ScramArch": [
+                "el8_amd64_gcc11"
+            ],
+            "Seeding": "AutomaticSeeding",
+            "SplittingAlgo": "EventBased",
+            "StepName": "GenSimFull"
+        },
+        "Step2": {
+            "AcquisitionEra": "CMSSW_13_0_0_pre3",
+            "CMSSWVersion": "CMSSW_13_0_0_pre3",
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "f4692bbf8e905aa9a4eeb7b4218f1c20",
+            "EventStreams": 2,
+            "RequiresGPU": "optional",
+            "GPUParams": "{\"GPUMemoryMB\": 1234, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+            "GlobalTag": "130X_mcRun3_2022_realistic_v2",
+            "InputFromOutputModule": "FEVTDEBUGoutput",
+            "InputStep": "GenSimFull",
+            "KeepOutput": true,
+            "Memory": 4000,
+            "Multicore": 8,
+            "ProcessingString": "Step2_WMCore_TEST",
+            "ScramArch": [
+                "el8_amd64_gcc11"
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "Digi_2021"
+        },
+        "Step3": {
+            "AcquisitionEra": "CMSSW_13_0_0_pre3",
+            "CMSSWVersion": "CMSSW_13_0_0_pre3",
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "f4692bbf8e905aa9a4eeb7b421903bbe",
+            "EventStreams": 2,
+            "RequiresGPU": "required",
+            "GPUParams": "{\"GPUMemoryMB\": 1234, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+            "GlobalTag": "130X_mcRun3_2022_realistic_v2",
+            "InputFromOutputModule": "FEVTDEBUGHLToutput",
+            "InputStep": "Digi_2021",
+            "KeepOutput": true,
+            "Memory": 6000,
+            "Multicore": 8,
+            "ProcessingString": "Step3_WMCore_TEST",
+            "ScramArch": [
+                "el8_amd64_gcc11"
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "RecoNano_2021"
+        },
+        "StepChain": 3,
+        "TimePerEvent": 2
+    }
+}

@@ -99,7 +99,6 @@ from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 #
 # simple utils for data mining the request dictionary
 #
-isGenerator = lambda args: not args["Task1"].get("InputDataset", None)
 parentTaskModule = lambda args: args.get("InputFromOutputModule", None)
 
 
@@ -265,20 +264,19 @@ class TaskChainWorkloadFactory(StdBase):
 
             if i == 1:
                 # First task will either be generator or processing
-                self.workload.setDashboardActivity("relval")
-                if isGenerator(arguments):
+                startPolicy = self.decideWorkQueueStartPolicy(arguments)
+                self.workload.setWorkQueueSplitPolicy(startPolicy, taskConf['SplittingAlgo'],
+                                                      taskConf['SplittingArguments'],
+                                                      blowupFactor=blowupFactor,
+                                                      OpenRunningTimeout=self.openRunningTimeout)
+                if startPolicy == "MonteCarlo":
                     # generate mc events
-                    self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'],
-                                                          taskConf['SplittingArguments'],
-                                                          blowupFactor=blowupFactor)
+                    self.workload.setDashboardActivity("production")
                     self.workload.setEndPolicy("SingleShot")
                     self.setupGeneratorTask(task, taskConf)
                 else:
                     # process an existing dataset
-                    self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
-                                                          taskConf['SplittingArguments'],
-                                                          blowupFactor=blowupFactor,
-                                                          OpenRunningTimeout=self.openRunningTimeout)
+                    self.workload.setDashboardActivity("processing")
                     self.setupTask(task, taskConf)
             else:
                 # all subsequent tasks have to be processing tasks
@@ -762,3 +760,18 @@ class TaskChainWorkloadFactory(StdBase):
         except Exception as ex:
             self.raiseValidationException(str(ex))
 
+    def decideWorkQueueStartPolicy(self, reqDict):
+        """
+        Given a request dictionary, decides which WorkQueue start
+        policy needs to be used in a given request.
+        :param reqDict: a dictionary with the creation request information
+        :return: a string with the start policy to be used.
+        """
+        if not reqDict["Task1"].get("InputDataset"):
+            return "MonteCarlo"
+
+        inputDset = reqDict["Task1"]["InputDataset"]
+        if inputDset.endswith("/MINIAODSIM"):
+            return "Dataset"
+        else:
+            return "Block"

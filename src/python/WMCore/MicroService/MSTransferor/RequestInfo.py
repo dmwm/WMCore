@@ -18,6 +18,7 @@ from Utils.IteratorTools import grouper
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.MSTransferor.DataStructs.DQMHarvestWorkflow import DQMHarvestWorkflow
 from WMCore.MicroService.MSTransferor.DataStructs.GrowingWorkflow import GrowingWorkflow
+from WMCore.MicroService.MSTransferor.DataStructs.NanoWorkflow import NanoWorkflow
 from WMCore.MicroService.MSTransferor.DataStructs.RelValWorkflow import RelValWorkflow
 from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getPileupContainerSizesRucio,
@@ -26,6 +27,24 @@ from WMCore.MicroService.Tools.Common import (elapsedTime, findBlockParents,
                                               findParent, getBlocksByDsetAndRun,
                                               getFileLumisInBlock, getRunsInBlock)
 from WMCore.MicroService.MSCore import MSCore
+
+
+def isNanoWorkflow(reqDict):
+    """
+    Function to parse the request dictionary and decide whether it
+    corresponds to a MiniAODSIM to NanoAODSIM workflow.
+    :param reqDict: dictionary with the workflow description
+    :return: a boolean True if workflow is Nano, False otherwise.
+    """
+    inputDset = ""
+    if reqDict['RequestType'] == "TaskChain":
+        inputDset = reqDict["Task1"].get("InputDataset", "")
+    elif reqDict['RequestType'] == "StepChain":
+        inputDset = reqDict["Step1"].get("InputDataset", "")
+
+    if inputDset.endswith("/MINIAODSIM"):
+        return True
+    return False
 
 
 class RequestInfo(MSCore):
@@ -87,6 +106,8 @@ class RequestInfo(MSCore):
                 wflow = DQMHarvestWorkflow(record['RequestName'], record, logger=self.logger)
             elif record.get("OpenRunningTimeout", 0) > self.openRunning:
                 wflow = GrowingWorkflow(record['RequestName'], record, logger=self.logger)
+            elif isNanoWorkflow(record):
+                wflow = NanoWorkflow(record['RequestName'], record, logger=self.logger)
             else:
                 wflow = Workflow(record['RequestName'], record, logger=self.logger)
 

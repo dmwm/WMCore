@@ -1,3 +1,10 @@
+2.1.1.pre2 to 2.1.1.pre3:
+  - MS: Implement new object for Nano input data placement (Alan Malta Rodrigues) #11219
+  - Update DBS mock calls and data with MINIAODSIM (Alan Malta Rodrigues) #11219
+  - Set start policy to Dataset for workflows processing MINIAODSIM dataset (Alan Malta Rodrigues) #11219
+  - Allow list of multiple architectures (khurtado) #11228
+
+
 2.1.1.pre1 to 2.1.1.pre2:
   - Adopt ReqMgr2 authorization based on the request status (Alan Malta Rodrigues) #11223
 

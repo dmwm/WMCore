@@ -86,21 +86,28 @@ class GetCompletedBlocks(DBFormatter):
         # NOTE: We need to rename all the keys to follow the cammelCase standard. And also to comply
         #       with the key names as expected from the rest of the already existing python code
         keyMap = {'blockname': 'blockName',
-                  'name': 'workflowName',
+                  'name': 'workflowNames',
                   'pnn': 'location',
                   'site': 'sites',
                   'path': 'dataset',
                   'create_time': 'blockCreateTime'}
 
-        dictResults = DBFormatter.formatDict(self, result)
-        for record in dictResults:
-            for dbKey, pyKey in keyMap.items():
-                if dbKey == 'site':
-                    sites = record.pop(dbKey)
-                    record[pyKey] = set()
-                    record[pyKey].add(sites)
-                else:
-                    record[pyKey] = record.pop(dbKey)
+        listResults = DBFormatter.formatDict(self, result)
+        dictResults = {}
+        for record in listResults:
+            # Populates results dict and adds all workflows of the same block to a single record
+            blockname = record['blockname']
+            if blockname in dictResults:
+                dictResults[blockname]['workflowNames'].add(record['name'])
+            else:
+                for dbKey, pyKey in keyMap.items():
+                    if dbKey == 'site' or dbKey == 'name':
+                        data = record.pop(dbKey)
+                        record[pyKey] = set()
+                        record[pyKey].add(data)
+                    else:
+                        record[pyKey] = record.pop(dbKey)
+                dictResults[blockname] = record
 
         return dictResults
 

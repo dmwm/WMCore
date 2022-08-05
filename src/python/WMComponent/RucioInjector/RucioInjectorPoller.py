@@ -362,16 +362,16 @@ class RucioInjectorPoller(BaseWorkerThread):
 
         # Get list of blocks that can be deleted
         # blockDict = self.findDeletableBlocks.execute(transaction=False)
-        completedBlocksList = self.getCompletedBlocks.execute(transaction=False)
+        completedBlocksDict = self.getCompletedBlocks.execute(transaction=False)
 
-        if not completedBlocksList:
+        if not completedBlocksDict:
             logging.info("No candidate blocks found for rule deletion.")
             return
 
-        logging.info("Found %d completed blocks", len(completedBlocksList))
-        logging.debug("Full completedBlocksList: %s", pformat(completedBlocksList))
+        logging.info("Found %d completed blocks", len(completedBlocksDict))
+        logging.debug("Full completedBlocksDict: %s", pformat(completedBlocksDict))
 
-        deletableWfsDict = self.getDeletableWorkflows.execute()
+        deletableWfsDict = set(self.getDeletableWorkflows.execute())
 
         if not deletableWfsDict:
             logging.info("No workflow chains (Parent + child workflows) in fully terminal state found. Skipping block level rule deletion in the current run.")
@@ -382,8 +382,8 @@ class RucioInjectorPoller(BaseWorkerThread):
 
         now = int(time.time())
         blockDict = {}
-        for block in completedBlocksList:
-            if block['workflowName'] in deletableWfsDict and \
+        for block in completedBlocksDict.values():
+            if block['workflowNames'].issubset(deletableWfsDict) and \
                now - block['blockCreateTime'] > self.blockDeletionDelaySeconds:
                 blockDict[block['blockName']] = block
 

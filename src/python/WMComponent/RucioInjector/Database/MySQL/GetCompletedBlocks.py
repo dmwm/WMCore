@@ -98,6 +98,7 @@ class GetCompletedBlocks(DBFormatter):
             blockname = record['blockname']
             if blockname in dictResults:
                 dictResults[blockname]['workflowNames'].add(record['name'])
+                dictResults[blockname]['sites'].add(record['site'])
             else:
                 for dbKey, pyKey in keyMap.items():
                     if dbKey == 'site' or dbKey == 'name':

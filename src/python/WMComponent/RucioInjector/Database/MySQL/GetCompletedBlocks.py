@@ -49,7 +49,6 @@ class GetCompletedBlocks(DBFormatter):
                       dbsbuffer_dataset_subscription.site,
                       dbsbuffer_workflow.name,
                       dbsbuffer_block.create_time
-             HAVING COUNT(*) = SUM(dbsbuffer_workflow.completed)
              """
 
     def format(self, result):

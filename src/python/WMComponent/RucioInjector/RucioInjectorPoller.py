@@ -391,14 +391,15 @@ class RucioInjectorPoller(BaseWorkerThread):
         logging.debug("Final deletable blocks dict: %s", pformat(blockDict))
 
         for blocksSlice in grouper(blockDict, self.delBlockSlicesize):
-            logging.info("Handeling %d candidate blocks", len(blocksSlice))
+            logging.info("Handling %d candidate blocks", len(blocksSlice))
             containerDict = {}
-            # Populate containerDict, assigning each block to its correspondant container
+            # Populate containerDict, assigning each block to its correspondent container
             for blockName in blocksSlice:
                 container = blockDict[blockName]['dataset']
                 # If the container is not in the dictionary, create a new entry for it
                 if container not in containerDict:
-                    # Set of sites to which the container needs to be transferred
+                    # All blocks belonging to a container need to be sent to the same sites, so we simply take the sites list 
+                    # from the current block to determine the containers required final RSEs.
                     sites = set(x.replace("_MSS", "_Tape") for x in blockDict[blockName]['sites'])
                     containerDict[container] = {'blocks': [], 'rse': sites}
                 containerDict[container]['blocks'].append(blockName)

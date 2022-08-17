@@ -49,7 +49,6 @@ class GetCompletedBlocks(DBFormatter):
                       dbsbuffer_dataset_subscription.site,
                       dbsbuffer_workflow.name,
                       dbsbuffer_block.create_time
-             HAVING COUNT(*) = SUM(dbsbuffer_workflow.completed)
              """
 
     def format(self, result):
@@ -59,20 +58,27 @@ class GetCompletedBlocks(DBFormatter):
         Format the query results into the proper dictionary expected at the upper layer Python code.
         The input should be a list of database objects each representing a line returned from the database
         with key names matching the column names from the sql query
-        The result should be a list of dictionaries one record per line returned from the database
-        with key names mapped to the python code expected structures.
+        The result should be a list of dictionaries one record per block returned from the database
+        with key names mapped to the python code expected structures. All workflows and sites are aggregated 
+        into the same block record.
 
         e.g.
-        [{'blockName': '/Cosmics/Tier0_REPLAY_2022-v425/RAW#aa3dbb67-dab0-4671-a550-711bdf9f4b08',
-          'workflowName': 'Repack_Run351572_StreamPhysics_Tier0_REPLAY_2022_ID220513161632_v425_220514_2038',
-          'location': 'T0_CH_CERN_Disk',
-          'site': {'T0_CH_CERN_Disk'},
-          'dataset': '/Cosmics/Tier0_REPLAY_2022-v425/RAW'},
-         {'blockName': '/NoBPTX/Tier0_REPLAY_2022-v425/RAW#6b8e95c3-656b-4302-8265-275df1195f4c',
-          'workflowName': 'Repack_Run351572_StreamPhysics_Tier0_REPLAY_2022_ID220513161632_v425_220514_2038',
-          'location': 'T0_CH_CERN_Disk',
-          'site': {'T0_CH_CERN_Disk'},
-          'dataset': '/NoBPTX/Tier0_REPLAY_2022-v425/RAW'}]
+        { '/Tau/Run2022C-PromptReco-v1/MINIAOD#2dd5a82b-873a-4403-8da1-6b943dac7081': {'blockCreateTime': 1659675842,
+                                                                              'blockName': '/Tau/Run2022C-PromptReco-v1/MINIAOD#2dd5a82b-873a-4403-8da1-6b943dac7081',
+                                                                              'dataset': '/Tau/Run2022C-PromptReco-v1/MINIAOD',
+                                                                              'location': 'T0_CH_CERN_Disk',
+                                                                              'sites': {'T1_ES_PIC_Disk',
+                                                                                        'T1_ES_PIC_MSS'},
+                                                                              'workflowNames': {'PromptReco_Run356614_Tau'}},
+          '/Tau/Run2022C-PromptReco-v1/MINIAOD#f6bf5cc7-cab2-4572-8f30-574296bb109d': {'blockCreateTime': 1659723755,
+                                                                              'blockName': '/Tau/Run2022C-PromptReco-v1/MINIAOD#f6bf5cc7-cab2-4572-8f30-574296bb109d',
+                                                                              'dataset': '/Tau/Run2022C-PromptReco-v1/MINIAOD',
+                                                                              'location': 'T0_CH_CERN_Disk',
+                                                                              'sites': {'T1_ES_PIC_Disk',
+                                                                                        'T1_ES_PIC_MSS'},
+                                                                              'workflowNames': {'PromptReco_Run356615_Tau',
+                                                                                                'PromptReco_Run356619_Tau'}}
+        }
 
 
         NOTE:
@@ -80,27 +86,35 @@ class GetCompletedBlocks(DBFormatter):
          * site(s):  Means where the dataset gets a container-level rule
 
         :param result: The result as returned by the mysql query execution.
-        :return:       List of dictionaries
+        :return:       Dictionary of dictionaries, each one describing a block.
         """
 
         # NOTE: We need to rename all the keys to follow the cammelCase standard. And also to comply
         #       with the key names as expected from the rest of the already existing python code
         keyMap = {'blockname': 'blockName',
-                  'name': 'workflowName',
+                  'name': 'workflowNames',
                   'pnn': 'location',
                   'site': 'sites',
                   'path': 'dataset',
                   'create_time': 'blockCreateTime'}
 
-        dictResults = DBFormatter.formatDict(self, result)
-        for record in dictResults:
-            for dbKey, pyKey in keyMap.items():
-                if dbKey == 'site':
-                    sites = record.pop(dbKey)
-                    record[pyKey] = set()
-                    record[pyKey].add(sites)
-                else:
-                    record[pyKey] = record.pop(dbKey)
+        listResults = DBFormatter.formatDict(self, result)
+        dictResults = {}
+        for record in listResults:
+            # Populates results dict and adds all workflows and sites of the same block to a single record
+            blockName = record['blockname']
+            if blockName in dictResults:
+                dictResults[blockName]['workflowNames'].add(record['name'])
+                dictResults[blockName]['sites'].add(record['site'])
+            else:
+                for dbKey, pyKey in keyMap.items():
+                    if dbKey == 'site' or dbKey == 'name':
+                        data = record.pop(dbKey)
+                        record[pyKey] = set()
+                        record[pyKey].add(data)
+                    else:
+                        record[pyKey] = record.pop(dbKey)
+                dictResults[blockName] = record
 
         return dictResults
 

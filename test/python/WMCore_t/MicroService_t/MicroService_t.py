@@ -7,6 +7,8 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 from __future__ import division, print_function
 
 import unittest
+import json
+import gzip
 
 import cherrypy
 from WMCore_t.MicroService_t import TestConfig
@@ -80,28 +82,86 @@ class MicroServiceTest(unittest.TestCase):
         api = "status"
         url = '%s/%s' % (self.url, api)
         params = {}
-        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        self.assertEqual(data['result'][0]['microservice'], self.managerName)
-        self.assertEqual(data['result'][0]['api'], api)
+        # perform check with and without gzip encoding
+        for hdr in ['', 'gzip']:
+            headers = {'Accept-Encoding': hdr}
+            data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+            # check if our data is returned as bytes (gzip encoding)
+            if isinstance(data, bytes) and hdr == 'gzip':
+                data = gzip.decompress(data)
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8")
+                data = json.loads(data)
+            print("### testGetStatus, headers=", headers, "data=", data, type(data))
+            # check that result key is present in data
+            if 'result' in data:
+                self.assertEqual(data['result'][0]['microservice'], self.managerName)
+                self.assertEqual(data['result'][0]['api'], api)
+            else:
+                print("### result is not present in data")
+                print(data)
+                self.assertEqual('result' in data, True)
 
-        params = {"service": "transferor"}
-        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        self.assertEqual(data['result'][0]['microservice'], self.managerName)
-        self.assertEqual(data['result'][0]['api'], api)
+            params = {"service": "transferor"}
+            data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+            # check if our data is returned as bytes (gzip encoding)
+            if isinstance(data, bytes) and hdr == 'gzip':
+                data = gzip.decompress(data)
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8")
+                data = json.loads(data)
+            print("### testGetStatus, headers=", headers, "data=", data, type(data))
+            # check that result key is present in data
+            if 'result' in data:
+                self.assertEqual(data['result'][0]['microservice'], self.managerName)
+                self.assertEqual(data['result'][0]['api'], api)
+            else:
+                print("### result is not present in data")
+                print(data)
+                self.assertEqual('result' in data, True)
 
     def testGetInfo(self):
         "Test function for getting state of the MicroService"
         api = "status"
         url = '%s/%s' % (self.url, api)
         params = {}
-        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        self.assertEqual(data['result'][0]['microservice'], self.managerName)
-        self.assertEqual(data['result'][0]['api'], api)
+        # perform check with and without gzip encoding
+        for hdr in ['', 'gzip']:
+            headers = {'Accept-Encoding': hdr}
+            data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+            # check if our data is returned as bytes (gzip encoding)
+            if isinstance(data, bytes) and hdr == 'gzip':
+                data = gzip.decompress(data)
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8")
+                data = json.loads(data)
+            print("### testGetInfo, headers=", headers, "data=", data, type(data))
+            # check that result key is present in data
+            if 'result' in data:
+                self.assertEqual(data['result'][0]['microservice'], self.managerName)
+                self.assertEqual(data['result'][0]['api'], api)
+            else:
+                print("### result is not present in data")
+                print(data)
+                self.assertEqual('result' in data, True)
 
-        params = {"request": "fake_request_name"}
-        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        self.assertEqual(data['result'][0]['microservice'], self.managerName)
-        self.assertEqual(data['result'][0]['api'], api)
+            params = {"request": "fake_request_name"}
+            data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+            # check if our data is returned as bytes (gzip encoding)
+            if isinstance(data, bytes) and hdr == 'gzip':
+                data = gzip.decompress(data)
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8")
+                data = json.loads(data)
+            print("### testGetInfo, headers=", headers, "data=", data, type(data))
+            # check that result key is present in data
+            if 'result' in data:
+                self.assertEqual(data['result'][0]['microservice'], self.managerName)
+                self.assertEqual(data['result'][0]['api'], api)
+            else:
+                print("### result is not present in data")
+                print(data)
+                self.assertEqual('result' in data, True)
 
     def testPostCall(self):
         "Test function for getting state of the MicroService"

@@ -17,6 +17,7 @@ curl -X POST -H "Content-type: application/json" -d '{"request":{"spec":"spec"}}
 from __future__ import print_function, division
 
 # system modules
+import gzip
 import json
 import traceback
 import importlib
@@ -94,6 +95,11 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
             res.update(self.mgr.status(detail, **kwds))
         elif kwds.get('API') == "info":
             res.update(self.mgr.info(kwds.pop("request", None), **kwds))
+        if cherrypy.request.headers.get('Accept-Encoding', '') == 'gzip':
+            cherrypy.response.headers['Content-Encoding'] = 'gzip'
+            # generate data similar to restcall, e.g. `{"result":[...]}`
+            data = {"result": results(res)}
+            return gzip.compress(bytes(json.dumps(data), 'utf-8'))
         return results(res)
 
     @restcall(formats=[('application/json', JSONFormat())])
@@ -113,6 +119,11 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
             if 'request' in data:
                 reqName = data['request']
                 result = self.mgr.info(reqName)
+            if cherrypy.request.headers.get('Accept-Encoding', '') == 'gzip':
+                cherrypy.response.headers['Content-Encoding'] = 'gzip'
+                # generate data similar to restcall, e.g. `{"result":[...]}`
+                data = {"result": results(result)}
+                return gzip.compress(bytes(json.dumps(data), 'utf-8'))
             return results(result)
         except cherrypy.HTTPError:
             raise

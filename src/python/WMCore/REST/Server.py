@@ -36,7 +36,8 @@ _RX_CENSOR = re.compile(r"(identified by) \S+", re.I)
 _COMPRESSIBLE = ['text/html', 'text/html; charset=utf-8',
                  'text/plain', 'text/plain; charset=utf-8',
                  'text/css', 'text/css; charset=utf-8',
-                 'text/javascript', 'text/javascript; charset=utf-8']
+                 'text/javascript', 'text/javascript; charset=utf-8',
+                 'application/json']
 
 #: Type alias for arguments passed to REST validation methods, consisting
 #: of `args`, the additional path arguments, and `kwargs`, the query
@@ -836,6 +837,8 @@ class MiniRESTApi(object):
         # Format the response.
         response.headers['X-REST-Status'] = 100
         response.headers['Content-Type'] = format
+        if cherrypy.request.headers.get('Accept-Encoding', '') == 'gzip':
+            return obj
         etagger = apiobj.get('etagger', None) or SHA1ETag()
         reply = stream_compress(fmthandler(obj, etagger),
                                 apiobj.get('compression', self.compression),

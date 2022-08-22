@@ -100,6 +100,8 @@ class Requests(dict):
         urlComponent = sanitizeURL(url)
         if urlComponent['username'] is not None:
             self.addBasicAuth(urlComponent['username'], urlComponent['password'])
+            # CouchDB 3.x requires user/passwd in the source/target of replication docs
+            # More info in: https://github.com/dmwm/WMCore/pull/11001
             url = urlComponent['url']  # remove user, password from url
 
         self.setdefault("host", url)

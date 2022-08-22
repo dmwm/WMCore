@@ -289,10 +289,10 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy check
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 200, 'SliceType': 'NumberOfEvents',
-                                                                    'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
-                                                                    'SubSliceType': 'NumberOfEventsPerLumi',
-                                                                    'policyName': 'MonteCarlo'})
+        workqueueSplit = {'SliceSize': 200, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
+                          'SubSliceSize': 100, 'SubSliceType': 'NumberOfEventsPerLumi',
+                          'policyName': 'MonteCarlo', 'OpenRunningTimeout': 0}
+        self.assertDictEqual(testWorkload.startPolicyParameters(), workqueueSplit)
         # workload tasks check
         tasks = ['GENSIM', 'GENSIMMergeMINIAODSIMoutput',
                  'GENSIMMINIAODSIMoutputMergeLogCollect', 'GENSIMCleanupUnmergedMINIAODSIMoutput']
@@ -387,10 +387,10 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy check
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 200, 'SliceType': 'NumberOfEvents',
-                                                                    'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
-                                                                    'SubSliceType': 'NumberOfEventsPerLumi',
-                                                                    'policyName': 'MonteCarlo'})
+        workqueueSplit = {'SliceSize': 200, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
+                          'SubSliceSize': 100, 'SubSliceType': 'NumberOfEventsPerLumi',
+                          'policyName': 'MonteCarlo', 'OpenRunningTimeout': 0}
+        self.assertDictEqual(testWorkload.startPolicyParameters(), workqueueSplit)
         # workload tasks check
         tasks = ['GENSIM', 'GENSIMMergeRAWSIMoutput', 'RECOMergeAODSIMoutput', 'RECOMergeDQMoutput',
                  'RECOMergeRECOSIMoutput', 'GENSIMRAWSIMoutputMergeLogCollect', 'RECOAODSIMoutputMergeLogCollect',
@@ -2386,6 +2386,37 @@ class StepChainTests(EmulatedUnitTestCase):
 
         with self.assertRaises(WMSpecFactoryException):
             factory.factoryWorkloadConstruction("ElevenSteps", testArguments)
+
+    def testWQStartPolicy(self):
+        """
+        Test workqueue start policy settings based on the input dataset
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(getSingleStepOverride())
+        testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase),
+        if isinstance(testArguments['Step1']['ConfigCacheID'], tuple):
+            testArguments['Step1']['ConfigCacheID'] = testArguments['Step1']['ConfigCacheID'][0]
+
+        testArguments['Step1']['InputDataset'] = "/MinBias_TuneCP5_13TeV-pythia8_pilot/RunIIFall18MiniAOD-pilot_102X_upgrade2018_realistic_v11-v1/MINIAODSIM"
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        # MINIAODSIM datatier requires "Dataset" start policy
+        self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "Dataset")
+
+        # MINIAOD and other datatiers require "Block" start policy
+        testArguments['Step1']['InputDataset'] = "/JetHT/Run2022B-PromptReco-v1/MINIAOD"
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "Block")
+
+        # no input data, that means MonteCarlo policy
+        testArguments['Step1'].pop('InputDataset', None)
+        testArguments['Step1']['PrimaryDataset'] = "Test"
+        testArguments['Step1']['RequestNumEvents'] = 123
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "MonteCarlo")
 
 
 if __name__ == '__main__':

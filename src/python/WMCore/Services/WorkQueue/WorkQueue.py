@@ -239,7 +239,7 @@ class WorkQueue(object):
         # Update the spec, if it exists
         if self.db.documentExists(wf):
             wmspec = WMWorkloadHelper()
-            wmspec.load(self.db['host'] + "/%s/%s/spec" % (self.db.name, wf))
+            wmspec.load(self.hostWithAuth + "/%s/%s/spec" % (self.db.name, wf))
             wmspec.setPriority(priority)
             dummy_values = {'name': wmspec.name()}
             wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)

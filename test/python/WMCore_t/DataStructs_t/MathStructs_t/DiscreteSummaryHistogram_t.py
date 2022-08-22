@@ -13,6 +13,7 @@ Created on Nov 20, 2012
 
 from builtins import range
 import unittest
+import os
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
 from WMCore.Database.CMSCouch import Database
@@ -31,7 +32,7 @@ class DiscreteSummaryHistogramTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setupCouch("histogram_dump_t")
-        self.histogramDB = Database(dbname = "histogram_dump_t")
+        self.histogramDB = Database(url=os.getenv("COUCHURL") ,dbname = "histogram_dump_t")
 
     def tearDown(self):
         """

@@ -18,6 +18,7 @@ from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
 from WMCore.REST.Auth import get_user_info
+from WMCore.ReqMgr.DataStructs.AuthzByStatus import AuthzByStatus
 
 from WMCore.ReqMgr.DataStructs.Request import RequestInfo
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
@@ -27,7 +28,8 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST, REQUEST
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
                                             validate_clone_create_args, validateOutputDatasets,
-                                            validate_request_priority, workqueue_stat_validation)
+                                            validate_request_priority, workqueue_stat_validation,
+                                            isUserAllowed)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
@@ -36,6 +38,7 @@ class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)
+        self.reqmgrAuthzByStatus = AuthzByStatus(config.authz_by_status, config.authorized_roles)
         self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
         self.reqmgr_db_service = RequestDBWriter(self.reqmgr_db, couchapp="ReqMgr")
         # this need for the post validtiaon
@@ -76,6 +79,10 @@ class Request(RESTEntity):
             request_args = json.loads(data)
         else:
             request_args = {}
+
+        # first, verify if user is allowed to perform such action
+        isUserAllowed(self.reqmgrAuthzByStatus, request_args)
+
         cherrypy.log('Updating request "%s" with these user-provided args: %s' % (requestName, request_args))
 
         # In case key args are also passed and request body also exists.
@@ -144,6 +151,8 @@ class Request(RESTEntity):
 
             del param.kwargs["ids"]
 
+        isUserAllowed(self.reqmgrAuthzByStatus, request_args)
+
         safe.kwargs['workload_pair_list'] = []
 
         for request_name in request_names:
@@ -196,8 +205,10 @@ class Request(RESTEntity):
                     self._getRequestNamesFromBody(safe)
                 else:
                     self._validateRequestBase(param, safe, validate_request_create_args)
+        except cherrypy.HTTPError as exc:
+            raise exc from None
         except InvalidSpecParameterValue as ex:
-            raise ex
+            raise ex from None
         except Exception as ex:
             # TODO add proper error message instead of trace back
             msg = traceback.format_exc()
@@ -209,7 +220,7 @@ class Request(RESTEntity):
                     msg = str(ex)
             else:
                 msg = str(ex)
-            raise InvalidSpecParameterValue(msg)
+            raise InvalidSpecParameterValue(msg) from None
 
     def _maskResult(self, mask, result):
         """

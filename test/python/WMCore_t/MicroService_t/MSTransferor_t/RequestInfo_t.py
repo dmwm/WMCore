@@ -1,21 +1,48 @@
 """
-Unit tests for Unified/RequestInfo.py module
-
-Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
+Unit tests for the WMCore/MicroService/DataStructs/NanoWorkflow module
 """
-from __future__ import division, print_function
-
 import unittest
 
-from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
+from WMCore.MicroService.MSTransferor.RequestInfo import isNanoWorkflow
 
 
 class RequestInfoTest(unittest.TestCase):
-    "Unit test for RequestInfo module"
+    """
+    Test the very basic functionality of the RequestInfo module
+    """
 
     def setUp(self):
-        self.mode = 'test'
-        self.reqInfo = RequestInfo(microConfig={}, uniConfig={})
+        """
+        Defined some basic data structs to use in the unit tests
+        :return: None
+        """
+        pass
+
+    def tearDown(self):
+        pass
+
+    def testIsNanoWorkflow(self):
+        """
+        Test object instance type
+        """
+        testDict = {'RequestType': 'ReReco'}
+        self.assertFalse(isNanoWorkflow(testDict))
+        testDict = {'RequestType': 'ReReco', 'InputDataset': '/PrimDset/AcqEra-ProcStr/MINIAODSIM'}
+        self.assertFalse(isNanoWorkflow(testDict))
+
+        testDict = {'RequestType': 'TaskChain', 'Task1': {}, 'InputDataset': '/PrimDset/AcqEra-ProcStr/MINIAODSIM'}
+        self.assertFalse(isNanoWorkflow(testDict))
+        testDict = {'RequestType': 'TaskChain', 'Task1': {'InputDataset': '/PrimDset/AcqEra-ProcStr/MINIAOD'}}
+        self.assertFalse(isNanoWorkflow(testDict))
+        testDict = {'RequestType': 'TaskChain', 'Task1': {'InputDataset': '/PrimDset/AcqEra-ProcStr/MINIAODSIM'}}
+        self.assertTrue(isNanoWorkflow(testDict))
+
+        testDict = {'RequestType': 'StepChain', 'Step1': {}, 'InputDataset': '/PrimDset/AcqEra-ProcStr/MINIAODSIM'}
+        self.assertFalse(isNanoWorkflow(testDict))
+        testDict = {'RequestType': 'StepChain', 'Step1': {'InputDataset': '/PrimDset/AcqEra-ProcStr/MINIAOD'}}
+        self.assertFalse(isNanoWorkflow(testDict))
+        testDict = {'RequestType': 'StepChain', 'Step1': {'InputDataset': '/PrimDset/AcqEra-ProcStr/MINIAODSIM'}}
+        self.assertTrue(isNanoWorkflow(testDict))
 
 
 if __name__ == '__main__':

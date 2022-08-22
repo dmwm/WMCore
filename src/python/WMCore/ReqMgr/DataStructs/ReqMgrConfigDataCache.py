@@ -5,12 +5,10 @@ from future.utils import viewitems
 
 from WMCore.ReqMgr.DataStructs.DefaultConfig.EDITABLE_SPLITTING_PARAM_CONFIG import EDITABLE_SPLITTING_PARAM_CONFIG
 from WMCore.ReqMgr.DataStructs.DefaultConfig.DAS_RESULT_FILTER import DAS_RESULT_FILTER
-from WMCore.ReqMgr.DataStructs.DefaultConfig.PERMISSION_BY_REQUEST_TYPE import PERMISSION_BY_REQUEST_TYPE
 
 #TODO need to find the better way to import all the config from DefaultConfig area
 DEFAULT_CONFIG = {'EDITABLE_SPLITTING_PARAM_CONFIG': EDITABLE_SPLITTING_PARAM_CONFIG,
-                  'DAS_RESULT_FILTER': DAS_RESULT_FILTER,
-                  'PERMISSION_BY_REQUEST_TYPE': PERMISSION_BY_REQUEST_TYPE}
+                  'DAS_RESULT_FILTER': DAS_RESULT_FILTER}
 
 class ReqMgrConfigDataCache(object):
     # this cache shouldn't be accessed directly
@@ -38,7 +36,7 @@ class ReqMgrConfigDataCache(object):
         # TODO only get the exception when server is not available.
         except Exception as ex:
             config = ReqMgrConfigDataCache._req_config_data_cache.get(doc_name, None)
-            print("Getting from Cache due to: %s" % str(ex))
+            print(f"Getting document '{doc_name}' from cache due to error: {str(ex)}")
         return config
 
     @staticmethod

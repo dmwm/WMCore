@@ -246,7 +246,8 @@ class testJSONRequests(unittest.TestCase):
     def testSpecialCharacterPasswords(self):
         url = 'http://username:p@ssw:rd@localhost:6666'
         req = JSONRequests(url)
-        self.assertEqual(req['host'], 'http://localhost:6666')
+        # the url is sanitized before persisted in the object
+        self.assertEqual(req['host'], "http://localhost:6666")
         self.assertEqual(req.additionalHeaders['Authorization'], 'Basic dXNlcm5hbWU6cEBzc3c6cmQ=')
 
 

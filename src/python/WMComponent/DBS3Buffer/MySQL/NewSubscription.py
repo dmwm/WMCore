@@ -39,6 +39,8 @@ class NewSubscription(DBFormatter):
 
         # DeleteFromSource is not supported for move subscriptions
         delete_blocks = None
+        # if None, force it to 0 as per the table schema
+        dataLifetime = subscriptionInfo.get('DatasetLifetime', 0) or 0
         if custodialFlag:
             sites = subscriptionInfo['CustodialSites']
             phedex_group = subscriptionInfo['CustodialGroup']
@@ -59,9 +61,8 @@ class NewSubscription(DBFormatter):
                     'move': isMove,
                     'priority': subscriptionInfo['Priority'],
                     'phedex_group': phedex_group,
-                    'delete_blocks': delete_blocks}
-            if subscriptionInfo['DatasetLifetime'] is not None:
-                bind.update(dict(dataset_lifetime=subscriptionInfo['DatasetLifetime']))
+                    'delete_blocks': delete_blocks,
+                    'dataset_lifetime': dataLifetime}
             binds.append(bind)
         return binds
 

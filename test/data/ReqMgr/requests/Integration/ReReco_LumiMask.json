@@ -22,8 +22,9 @@
         "CMSSWVersion": "CMSSW_10_6_12", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
-            "CheckList": "ReReco with LumiList", 
-            "WorkFlowDesc": "ReReco NanoAOD with LumiList, 3 runs and 46 lumis, bringing in 2 blocks; 2cores and 2GB; do not write logs to EOS"
+            "CheckList": "ReReco with LumiList; ReReco with growing dataset",
+            "WorkFlowDesc": ["ReReco NanoAOD with LumiList, 3 runs and 46 lumis, bringing in 2 blocks; 2cores and 2GB;",
+                            "do not write logs to EOS; keep WorkQueue inbox open for 2h"]
         }, 
         "ConfigCacheID": "6d0b906879c210bde4baecd2e78ded41", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
@@ -34,6 +35,7 @@
         "LumiList": {"320836": [[1, 10], [16, 20]], "322605": [[264, 275]], "324841": [[560, 565], [855, 860], [920, 926]]},
         "Memory": 2000, 
         "Multicore": 2, 
+        "OpenRunningTimeout": 7200,
         "PrepID": "TEST-ReReco-Run2018D-NoBPTX-Nano02Dec2019-00001", 
         "ProcessingString": "Nano02Dec2019_12Nov2019_UL2018", 
         "ProcessingVersion": 2, 

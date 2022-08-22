@@ -11,10 +11,14 @@ from future import standard_library
 
 from urllib.parse import urlencode
 
+import gzip
 import json
 import logging
 
 from WMCore.Services.Service import Service
+from Utils.Utilities import decodeBytesToUnicode
+
+
 standard_library.install_aliases()
 
 
@@ -36,10 +40,14 @@ class RucioConMon(Service):
         super(RucioConMon, self).__init__(configDict)
         self['logger'].debug("Initializing RucioConMon with url: %s", self['endpoint'])
 
-    def _getResult(self, uri, callname="", clearCache=False, args=None):
+    def _getResult(self, uri, callname="", clearCache=False, args=None, binary=False):
         """
         Either fetch data from the cache file or query the data-service
         :param uri: The endpoint uri
+        :param callname: alias for caller function
+        :param clearCache: parameter to control the cache behavior
+        :param args: additional parameters to HTTP request call
+        :param binary: specifies request for binary object from HTTP requests (e.g. zipped content)
         :return:    A dictionary
         """
 
@@ -59,9 +67,14 @@ class RucioConMon(Service):
 
         if clearCache:
             self.clearCache(cachedApi, args)
-        data = self.refreshCache(cachedApi, apiUrl)
-        results = data.read()
-        data.close()
+        results = '{}' # explicitly define results which will be loaded by json.loads below
+        if binary:
+            with self.refreshCache(cachedApi, apiUrl, decoder=False, binary=True) as istream:
+                results = gzip.decompress(istream.read())
+            return results
+        else:
+            with self.refreshCache(cachedApi, apiUrl) as istream:
+                results = istream.read()
 
         results = json.loads(results)
         return results
@@ -71,9 +84,15 @@ class RucioConMon(Service):
         This method is retrieving a zipped file from the uri privided, instead
         of the normal json
         :param uri: The endpoint uri
-        :return:    A dictionary
+        :param callname: alias for caller function
+        :param clearCache: parameter to control the cache behavior
+        :param args: additional parameters to HTTP request call
+        :return:    a list of LFNs
         """
-        raise NotImplementedError
+        data = self._getResult(uri, callname, clearCache, args, binary=True)
+        # convert bytes which we received upstream to string
+        data = decodeBytesToUnicode(data)
+        return [f for f in data.split('\n') if f]
 
     def getRSEStats(self):
         """
@@ -103,11 +122,7 @@ class RucioConMon(Service):
             rseUnmerged = self._getResult(uri, callname=rseName)
             return rseUnmerged
         else:
-            pass
-            # TODO: To implement the _getResultZipped() method
-            # NOTE: An alternative uri - providing the file with .zip extension:
-            #       uri = "WM/files/files.gz?rse=%s&format=raw" % rseName
-            #       The uri from below provides the file zipped but with no extension
-            # uri = "WM/files?rse=%s&format=raw" % rseName
-            # rseUnmerged = self._getResultZipped(rseName,  callname='unmerged.zipped', clearCache=True)
-            # return rseUnmerged
+            uri = "WM/files?rse=%s&format=raw" % rseName
+            callname = '{}.zipped'.format(rseName)
+            rseUnmerged = self._getResultZipped(uri,  callname=callname, clearCache=True)
+            return rseUnmerged

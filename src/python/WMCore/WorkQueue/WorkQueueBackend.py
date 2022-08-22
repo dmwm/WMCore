@@ -76,43 +76,47 @@ class WorkQueueBackend(object):
         self.db = self.server.connectDatabase(db_name, create=False, size=10000)
         self.hostWithAuth = db_url
         self.inbox = self.server.connectDatabase(inbox_name, create=False, size=10000)
+        self.queueUrlWithAuth = queueUrl or (db_url + '/' + db_name)
         self.queueUrl = sanitizeURL(queueUrl or (db_url + '/' + db_name))['url']
         self.eleKey = 'WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'
 
     def forceQueueSync(self):
-        """Force a blocking replication - used only in tests"""
-        self.pullFromParent(continuous=False)
-        self.sendToParent(continuous=False)
+        """Setup CouchDB replications - used only in tests"""
+        self.pullFromParent(continuous=True)
+        self.sendToParent(continuous=True)
 
     def pullFromParent(self, continuous=True, cancel=False):
-        """Replicate from parent couch - blocking: used only int test"""
+        """Replicate from parent couch - blocking: used only in unit tests"""
         try:
-            if self.parentCouchUrl and self.queueUrl:
+            if self.parentCouchUrlWithAuth and self.queueUrlWithAuth:
                 self.logger.info("Forcing pullFromParent from parentCouch: %s to queueUrl %s/%s",
-                                 self.parentCouchUrl, self.queueUrl, self.inbox.name)
-                self.server.replicate(source=self.parentCouchUrl,
+                                 self.parentCouchUrlWithAuth, self.queueUrlWithAuth, self.inbox.name)
+                self.server.replicate(source=self.parentCouchUrlWithAuth,
                                       destination="%s/%s" % (self.hostWithAuth, self.inbox.name),
                                       filter='WorkQueue/queueFilter',
-                                      query_params={'childUrl': self.queueUrl, 'parentUrl': self.parentCouchUrl},
+                                      query_params={'childUrl': self.queueUrl,
+                                                    'parentUrl': self.parentCouchUrl},
                                       continuous=continuous,
-                                      cancel=cancel)
+                                      cancel=cancel,
+                                      sleepSecs=6)
         except Exception as ex:
-            self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
+            self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrlWithAuth, str(ex)))
 
     def sendToParent(self, continuous=True, cancel=False):
         """Replicate to parent couch - blocking: used only int test"""
         try:
-            if self.parentCouchUrl and self.queueUrl:
+            if self.parentCouchUrlWithAuth and self.queueUrlWithAuth:
                 self.logger.info("Forcing sendToParent from queueUrl %s/%s to parentCouch: %s",
-                                 self.queueUrl, self.inbox.name, self.parentCouchUrl)
+                                 self.queueUrlWithAuth, self.inbox.name, self.parentCouchUrlWithAuth)
                 self.server.replicate(source="%s" % self.inbox.name,
                                       destination=self.parentCouchUrlWithAuth,
                                       filter='WorkQueue/queueFilter',
-                                      query_params={'childUrl': self.queueUrl, 'parentUrl': self.parentCouchUrl},
+                                      query_params={'childUrl': self.queueUrl,
+                                                    'parentUrl': self.parentCouchUrl},
                                       continuous=continuous,
                                       cancel=cancel)
         except Exception as ex:
-            self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
+            self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrlWithAuth, str(ex)))
 
     def getElementsForSplitting(self):
         """Returns the elements from the inbox that need to be split,
@@ -158,7 +162,6 @@ class WorkQueueBackend(object):
         self.insertWMSpec(units[0]['WMSpec'])
         newUnitsInserted = []
         for unit in units:
-
             # cast to couch
             if not isinstance(unit, CouchWorkQueueElement):
                 unit = CouchWorkQueueElement(self.db, elementParams=dict(unit))
@@ -171,10 +174,11 @@ class WorkQueueBackend(object):
             if unit._couch.documentExists(unit.id):
                 self.logger.info('Element "%s" already exists, skip insertion.' % unit.id)
                 continue
-            else:
-                newUnitsInserted.append(unit)
+
+            newUnitsInserted.append(unit)
             unit.save()
-            unit._couch.commit(all_or_nothing=True)
+            # FIXME: this is not performing bulk request, but single document commits(!)
+            unit._couch.commit()
 
         return newUnitsInserted
 

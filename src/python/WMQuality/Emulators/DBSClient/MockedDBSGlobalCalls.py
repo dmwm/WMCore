@@ -57,6 +57,8 @@ calls = [['listDataTiers'],
          ['listDatasets', {'dataset_access_type': '*', 'dataset': '/MET/Run2015B-05Aug2015-v1/DQMIO'}],
          ['listDatasets', {'dataset': '/NoBPTX/Run2016F-23Sep2016-v1/DQMIO', 'dataset_access_type': '*'}],
          ['listDatasets', {'dataset': '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM', 'dataset_access_type': '*'}],
+         ['listDatasets', {'dataset': '/MinBias_TuneCP5_13TeV-pythia8_pilot/RunIIFall18MiniAOD-pilot_102X_upgrade2018_realistic_v11-v1/MINIAODSIM', 'dataset_access_type': '*'}],
+         ['listDatasets', {'dataset': '/JetHT/Run2022B-PromptReco-v1/MINIAOD', 'dataset_access_type': '*'}],
          ['listFileLumiArray', {'logical_file_name': [
              '/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root']}],
          ['listFileLumiArray', {'logical_file_name': [

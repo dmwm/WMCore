@@ -202,7 +202,7 @@ class ReqMgr(Service):
                                'input_events': 100, 'input_num_files': 100}
         specific to ReqMgr app. not implemented for T0
         """
-        # TODO: add stats validation here
+        # this stats dict will be validated on the server side
         self.updateRequestProperty(request, stats)
 
     def updateRequestProperty(self, request, propDict):

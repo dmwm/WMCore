@@ -11,7 +11,6 @@ from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
-from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_clone
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
@@ -47,15 +46,6 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     couchurl = '%s/%s' % (config.couch_host, config.couch_reqmgr_db)
     workload = WMWorkloadHelper()
     workload.loadSpecFromCouch(couchurl, request_name)
-
-    # first validate the permission by status and request type.
-    # if the status is not set only ReqMgr Admin can change the values
-    # TODO for each step, assigned, approved, announce find out what other values
-    # can be set
-    request_args["RequestType"] = workload.getRequestType()
-    permission = getWritePermission(request_args)
-    authz_match(permission['role'], permission['group'])
-    del request_args["RequestType"]
 
     # validate the status
     if "RequestStatus" in request_args:
@@ -105,9 +95,6 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
         workload, request_args = validate_resubmission_create_args(request_args, config, reqmgr_db_service)
     else:
         initialize_request_args(request_args, config)
-        # check the permission for creating the request
-        permission = getWritePermission(request_args)
-        authz_match(permission['role'], permission['group'])
 
         # load the correct class in order to validate the arguments
         specClass = loadSpecClassByType(request_args["RequestType"])
@@ -152,9 +139,6 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
     cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
     initialize_request_args(cloned_args, config)
 
-    permission = getWritePermission(cloned_args)
-    authz_match(permission['role'], permission['group'])
-
     specClass = loadSpecClassByType(request_args["RequestType"])
     spec = specClass()
     workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"],
@@ -187,9 +171,6 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
 
     cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
     initialize_request_args(cloned_args, config)
-
-    permission = getWritePermission(cloned_args)
-    authz_match(permission['role'], permission['group'])
 
     spec = specClass()
     workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"], cloned_args)
@@ -289,3 +270,17 @@ def _validateDatatier(datatier, dbsUrl, expiration=3600):
     badTiers = list(set(datatier) - set(dbsTiers))
     if badTiers:
         raise InvalidSpecParameterValue("Bad datatier(s): %s not available in DBS." % badTiers)
+
+
+def isUserAllowed(authzCls, requestArgs):
+    """
+    Checks whether user is allowed to perform a given action,
+    based on the request arguments provided and the user's
+    roles and groups
+    :param authzCls: an instance of the AuthzByStatus class
+    :param requestArgs: dictionary with the arguments provided by the user
+    :return: raise an HTTPError if the user is not allowed to
+        perform action, otherwise return None
+    """
+    permission = authzCls.getRolesGroupsByStatus(requestArgs)
+    authz_match(permission['role'], permission['group'])

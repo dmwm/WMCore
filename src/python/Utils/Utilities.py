@@ -63,11 +63,16 @@ def makeNonEmptyList(stringList):
 
 def strToBool(string):
     """
-    _strToBool_
-
-    Try to convert a string to boolean. i.e. "True" to python True
+    Try to convert different variations of True or False (including a string
+    type object) to a boolean value.
+    In short:
+     * True gets mapped from: True, "True", "true", "TRUE".
+     * False gets mapped from: False, "False", "false", "FALSE"
+     * anything else will fail
+    :param string: expects a boolean or a string, but it could be anything else
+    :return: a boolean value, or raise an exception if value passed in is not supported
     """
-    if string in [False, True]:
+    if string is False or string is True:
         return string
     elif string in ["True", "true", "TRUE"]:
         return True

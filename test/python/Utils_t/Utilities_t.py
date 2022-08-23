@@ -75,7 +75,7 @@ class UtilitiesTests(unittest.TestCase):
         for v in [False, "False", "FALSE", "false"]:
             self.assertFalse(strToBool(v))
 
-        for v in ["", "alan", [], [''], {'a': 123}]:
+        for v in [1, 0, "", "alan", [], [''], {'a': 123}]:
             self.assertRaises(ValueError, strToBool, v)
 
     def testSafeStr(self):

@@ -185,13 +185,6 @@ class DBSBufferBlock(object):
         elif dbsFile.get('processing_ver', False):
             self.setProcessingVer(dbsFile['processing_ver'])
 
-        # Take care of the dataset
-        self.setDataset(datasetName  = dbsFile['datasetPath'],
-                        primaryType  = primaryDatasetType,
-                        datasetType  = datasetType,
-                        physicsGroup = dbsFile.get('physicsGroup', None),
-                        prep_id = dbsFile.get('prep_id', None))
-
         return
 
     def addFileParent(self, child, parent):
@@ -294,20 +287,7 @@ class DBSBufferBlock(object):
 
         Lexicon.primaryDatasetType(primaryType)
 
-        if not datasetType in ['VALID', 'PRODUCTION', 'INVALID', 'DEPRECATED', 'DELETED']:
-            msg = "Invalid processedDatasetType %s\n" % datasetType
-            logging.error(msg)
-            raise DBSBufferBlockException(msg)
-
-        try:
-            if datasetName[0] == '/':
-                _, primary, processed, tier = datasetName.split('/')
-            else:
-                primary, processed, tier = datasetName.split('/')
-        except Exception:
-            msg = "Invalid dataset name %s" % datasetName
-            logging.error(msg)
-            raise DBSBufferBlockException(msg)
+        _, primary, processed, tier = datasetName.split('/')
 
         # Do the primary dataset
         self.data['primds']['primary_ds_name'] = primary

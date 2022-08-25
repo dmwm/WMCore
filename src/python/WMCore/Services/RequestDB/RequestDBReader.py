@@ -21,7 +21,10 @@ class RequestDBReader(object):
             self.dbName = self.couchDB.name
             self.couchServer = CouchServer(self.couchURL)
         else:
-            couchURL = sanitizeURL(couchURL)['url']
+            # NOTE: starting in CouchDB 3.x, we need to provide the couch credentials in
+            # order to be able to write to the database, thus a RequestDBWriter object
+            if isinstance(self.__class__, RequestDBReader):
+                couchURL = sanitizeURL(couchURL)['url']
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
             self.couchServer = CouchServer(self.couchURL)
             self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
@@ -73,14 +76,24 @@ class RequestDBReader(object):
             return list(result)
 
     def _getRequestByName(self, requestName, detail):
+        """
+        Retrieves a request dictionary from CouchDB
+        :param requestName: string with the request name
+        :param detail: boolean with False value for retrieving only the
+            workflow name, or True for retrieving all its description
+        :return: a list with the request name. Or a dictionary with the
+            request description if detail=true
+        """
+        # this returns a dictionary with the workflow description, or
+        # an empty dictionary if nothing is found in CouchDB
         result = self.couchDB.getDoc(requestName)
+        if not result:
+            return dict()
         if detail:
             result.pop('_attachments', None)
             result.pop('_rev', None)
-            result = {result['RequestName']: result}
-        else:
-            result = [result['RequestName']]
-        return result
+            return {result['RequestName']: result}
+        return [result['RequestName']]
 
     def _getRequestByNames(self, requestNames, detail):
         """

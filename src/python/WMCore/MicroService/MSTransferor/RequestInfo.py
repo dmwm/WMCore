@@ -16,13 +16,35 @@ from pprint import pformat
 from copy import deepcopy
 from Utils.IteratorTools import grouper
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.MicroService.MSTransferor.Workflow import Workflow
+from WMCore.MicroService.MSTransferor.DataStructs.DQMHarvestWorkflow import DQMHarvestWorkflow
+from WMCore.MicroService.MSTransferor.DataStructs.GrowingWorkflow import GrowingWorkflow
+from WMCore.MicroService.MSTransferor.DataStructs.NanoWorkflow import NanoWorkflow
+from WMCore.MicroService.MSTransferor.DataStructs.RelValWorkflow import RelValWorkflow
+from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getPileupContainerSizesRucio,
                                                    listReplicationRules, getBlocksAndSizeRucio)
 from WMCore.MicroService.Tools.Common import (elapsedTime, findBlockParents,
                                               findParent, getBlocksByDsetAndRun,
                                               getFileLumisInBlock, getRunsInBlock)
 from WMCore.MicroService.MSCore import MSCore
+
+
+def isNanoWorkflow(reqDict):
+    """
+    Function to parse the request dictionary and decide whether it
+    corresponds to a MiniAODSIM to NanoAODSIM workflow.
+    :param reqDict: dictionary with the workflow description
+    :return: a boolean True if workflow is Nano, False otherwise.
+    """
+    inputDset = ""
+    if reqDict['RequestType'] == "TaskChain":
+        inputDset = reqDict["Task1"].get("InputDataset", "")
+    elif reqDict['RequestType'] == "StepChain":
+        inputDset = reqDict["Step1"].get("InputDataset", "")
+
+    if inputDset.endswith("/MINIAODSIM"):
+        return True
+    return False
 
 
 class RequestInfo(MSCore):
@@ -41,6 +63,7 @@ class RequestInfo(MSCore):
         self.rucio = rucioObj
         self.rucioToken = None
         self.tokenValidity = None
+        self.openRunning = self.msConfig["openRunning"]
 
     def __call__(self, reqRecords):
         """
@@ -55,21 +78,45 @@ class RequestInfo(MSCore):
             return []
         self.logger.info("Going to process %d requests.", len(reqRecords))
 
-        # create a Workflow object representing the request
-        workflows = []
-        for record in reqRecords:
-            wflow = Workflow(record['RequestName'], record, logger=self.logger)
-            workflows.append(wflow)
-            msg = "Processing request: %s, with campaigns: %s, " % (wflow.getName(),
-                                                                    wflow.getCampaigns())
-            msg += "and input data as:\n%s" % pformat(wflow.getDataCampaignMap())
-            self.logger.info(msg)
+        # create a Workflow object representing the request, matching
+        # against some specific templates
+        workflows = self.classifyWorkflows(reqRecords)
 
         # setup the Rucio token
         self.setupRucio()
         # get complete requests information (based on Unified Transferor logic)
         self.unified(workflows)
 
+        return workflows
+
+    def classifyWorkflows(self, reqRecords):
+        """
+        This method classifies the provided workflows into their
+        respective MS templates. Making it easier to retrieve
+        input data and parameters for input data placement.
+
+        :param reqRecords: list of workflow dictionaries (from ReqMgr2)
+        :return: a custom python object for the workflow type
+        """
+        workflows = []
+        for record in reqRecords:
+            if record.get("SubRequestType") in ['RelVal', 'HIRelVal']:
+                wflow = RelValWorkflow(record['RequestName'], record, logger=self.logger)
+            elif record.get("RequestType") == "DQMHarvest":
+                wflow = DQMHarvestWorkflow(record['RequestName'], record, logger=self.logger)
+            elif record.get("OpenRunningTimeout", 0) > self.openRunning:
+                wflow = GrowingWorkflow(record['RequestName'], record, logger=self.logger)
+            elif isNanoWorkflow(record):
+                wflow = NanoWorkflow(record['RequestName'], record, logger=self.logger)
+            else:
+                wflow = Workflow(record['RequestName'], record, logger=self.logger)
+
+            workflows.append(wflow)
+            msg = f"Processing request: {wflow.getName()}, "
+            msg += f"with transferor template: {wflow.__class__.__name__}, "
+            msg += f"with campaigns: {wflow.getCampaigns()} and "
+            msg += f"input data as:\n{pformat(wflow.getDataCampaignMap())}"
+            self.logger.info(msg)
         return workflows
 
     def setupRucio(self):
@@ -104,27 +151,27 @@ class RequestInfo(MSCore):
         time0 = time.time()
         parentMap = self.getParentDatasets(workflows)
         self.setParentDatasets(workflows, parentMap)
-        self.logger.debug(elapsedTime(time0, "### getParentDatasets"))
+        self.logger.info(elapsedTime(time0, "### getParentDatasets"))
 
         # then check the secondary dataset sizes and locations
         time0 = time.time()
         sizeByDset, locationByDset = self.getSecondaryDatasets(workflows)
         locationByDset = self.resolveSecondaryRSEs(locationByDset)
         self.setSecondaryDatasets(workflows, sizeByDset, locationByDset)
-        self.logger.debug(elapsedTime(time0, "### getSecondaryDatasets"))
+        self.logger.info(elapsedTime(time0, "### getSecondaryDatasets"))
 
         # get final primary and parent list of valid blocks,
         # considering run, block and lumi lists
         time0 = time.time()
         blocksByDset = self.getInputDataBlocks(workflows)
         self.setInputDataBlocks(workflows, blocksByDset)
-        self.logger.debug(elapsedTime(time0, "### getInputDataBlocks"))
+        self.logger.info(elapsedTime(time0, "### getInputDataBlocks"))
 
         # get a final list of parent blocks
         time0 = time.time()
         parentageMap = self.getParentChildBlocks(workflows)
         self.setParentChildBlocks(workflows, parentageMap)
-        self.logger.debug(elapsedTime(time0, "### getParentChildBlocks"))
+        self.logger.info(elapsedTime(time0, "### getParentChildBlocks"))
         self.logger.info(elapsedTime(orig, '### total time for unified method'))
         self.logger.info("Unified method successfully processed %d requests", len(workflows))
 
@@ -224,7 +271,7 @@ class RequestInfo(MSCore):
         if retryDatasets:
             for wflow in workflows:
                 for pileup in wflow.getPileupDatasets():
-                    if pileup in  retryDatasets:
+                    if pileup in retryDatasets:
                         retryWorkflows.append(wflow)
             # remove workflows that failed one or more of the bulk queries to the data-service
             self._workflowRemoval(workflows, retryWorkflows)

@@ -290,16 +290,6 @@ class WMAgentConfig(AuxBaseAPI):
         self.name = "WMAGENT_CONFIG"
 
 
-class PermissionsConfig(AuxBaseAPI):
-    """
-    Handle group/role permissions that can act on specific request types
-    and update specific data in couch.
-    """
-
-    def setName(self):
-        self.name = "PERMISSION_BY_REQUEST_TYPE"
-
-
 class CampaignConfig(AuxBaseAPI):
     """
     Handle central production campaign configuration documents.

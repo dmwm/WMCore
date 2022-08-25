@@ -190,11 +190,23 @@ class Service(dict):
         return cachefile
 
     def refreshCache(self, cachefile, url='', inputdata=None, openfile=True,
-                     encoder=True, decoder=True, verb='GET', contentType=None, incoming_headers=None):
+                     encoder=True, decoder=True, verb='GET', contentType=None, incoming_headers=None, binary=False):
         """
         See if the cache has expired. If it has make a new request to the
         service for the input data. Return the cachefile as an open file object.
         If cachefile is None returns StringIO.
+
+        :param cachefile: cache file name
+        :param url: url value
+        :param inputdata: HTTP (JSON) payload string
+        :param openfile: flag to use open file, boolean
+        :param encoder: flag to use encoder, boolean
+        :param decoder: flag to use decode, boolean
+        :param verb: HTTP method, string
+        :param contentType: HTTP content type value, string
+        :param incoming_headers: set of HTTP headers, dict
+        :param binary: use binary mode to decode HTTP data, boolean
+        :return: either file object or StringIO
         """
         inputdata = inputdata or {}
         incoming_headers = incoming_headers or {}
@@ -203,23 +215,37 @@ class Service(dict):
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         if cache_expired(cachefile, self["cacheduration"]):
-            self.getData(cachefile, url, inputdata, incoming_headers, encoder, decoder, verb, contentType)
+            self.getData(cachefile, url, inputdata, incoming_headers, encoder, decoder, verb, contentType, binary=binary)
         else:
             self['logger'].debug('Data is from the Service cache')
 
         # cachefile may be filename or file object
         if openfile and not isfile(cachefile):
-            return open(cachefile, 'r')
+            if binary:
+                return open(cachefile, 'rb')
+            return open(cachefile, 'r', encoding='utf-8')
         else:
             return cachefile
 
     def forceRefresh(self, cachefile, url='', inputdata=None, openfile=True,
                      encoder=True, decoder=True, verb='GET',
-                     contentType=None, incoming_headers=None):
+                     contentType=None, incoming_headers=None, binary=False):
         """
         Make a new request to the service for the input data, regardless of the
         cache state. Return the cachefile as an open file object.
         If cachefile is None returns StringIO.
+
+        :param cachefile: cache file name
+        :param url: url value
+        :param inputdata: HTTP (JSON) payload string
+        :param openfile: flag to use open file, boolean
+        :param encoder: flag to use encoder, boolean
+        :param decoder: flag to use decode, boolean
+        :param verb: HTTP method, string
+        :param contentType: HTTP content type value, string
+        :param incoming_headers: set of HTTP headers, dict
+        :param binary: use binary mode to decode HTTP data, boolean
+        :return: either file object or StringIO
         """
         inputdata = inputdata or {}
         incoming_headers = incoming_headers or {}
@@ -230,9 +256,11 @@ class Service(dict):
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
         incoming_headers.update({'cache-control': 'no-cache'})
         self.getData(cachefile, url, inputdata, incoming_headers,
-                     encoder, decoder, verb, contentType, force_refresh=True, )
+                     encoder, decoder, verb, contentType, force_refresh=True, binary=binary)
         if openfile and not isfile(cachefile):
-            return open(cachefile, 'r')
+            if binary:
+                return open(cachefile, 'rb')
+            return open(cachefile, 'r', encoding='utf-8')
         else:
             return cachefile
 
@@ -256,13 +284,24 @@ class Service(dict):
 
     def getData(self, cachefile, url, inputdata=None, incoming_headers=None,
                 encoder=True, decoder=True,
-                verb='GET', contentType=None, force_refresh=False):
+                verb='GET', contentType=None, force_refresh=False, binary=False):
         """
         Takes the already generated *full* path to cachefile and the url of the
         resource. Don't need to call self.cacheFileName(cachefile, verb, inputdata)
         here.
 
         If cachefile is StringIO append to that
+
+        :param cachefile: cache file name
+        :param url: url value
+        :param inputdata: HTTP (JSON) payload string
+        :param encoder: flag to use encoder, boolean
+        :param decoder: flag to use decode, boolean
+        :param verb: HTTP method, string
+        :param contentType: HTTP content type value, string
+        :param force_refresh: refresh internal cache, boolean
+        :param binary: use binary mode to decode HTTP data, boolean
+        :return: None
         """
         inputdata = inputdata or {}
         incoming_headers = incoming_headers or {}
@@ -288,17 +327,19 @@ class Service(dict):
                 # second cache, or do we?
                 self['logger'].debug('Data is from the Requests cache')
             else:
-                # Don't need to prepend the cachepath, the methods calling
                 # getData have done that for us
                 if isfile(cachefile):
                     cachefile.write(data)
                     cachefile.seek(0, 0)  # return to beginning of file
+                elif binary:
+                    with open(cachefile, 'wb') as f:
+                        f.write(data)
+                elif isinstance(data, (dict, list)):
+                    with open(cachefile, 'w', encoding='utf-8') as f:
+                        f.write(json.dumps(data))
                 else:
-                    with open(cachefile, 'w') as f:
-                        if isinstance(data, dict) or isinstance(data, list):
-                            f.write(json.dumps(data))
-                        else:
-                            f.write(data)
+                    with open(cachefile, 'w', encoding='utf-8') as f:
+                        f.write(data)
 
 
         except (IOError, HttpLib2Error, HTTPException) as he:

@@ -279,14 +279,15 @@ def insertTestCampaigns(mgr):
 
     defaultCamp = {'CampaignName': '', 'MaxCopies': 1, 'PartialCopy': 1, 'TiersToDM': [],
                    'PrimaryAAA': False, 'Secondaries': {}, 'SecondaryAAA': False,
-                   'SecondaryLocation': ["T1_US_FNAL", "T2_CH_CERN"],
+                   'SecondaryLocation': ["T1_US_FNAL_Disk", "T2_CH_CERN"],
                    'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
 
     testCamp = ("CMSSW_10_6_1_patch1_Step1", "CMSSW_10_6_1_patch1_Step2",
                 "CMSSW_7_3_2__test2inwf-1510737328", "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628",
-                "RelVal_Generic_Campaign", "Agent154_Val", "Agent156_Val", "Agent158_Val",
-                "Oct2021_Val", "Nov2021_Val", "Dec2021_Val", "Jan2022_Val", "Feb2022_Val",
-                "HG2110_Val", "HG2111_Val", "HG2112_Val", "HG2201_Val", "HG2202_Val")
+                "RelVal_Generic_Campaign", "DMWM_Test",
+                "Agent204_Val", "Agent211_Val", "Agent213_Val", "Agent215_Val",
+                "Jun2022_Val", "Jul2022_Val", "Aug2022_Val", "Sept2022_Val", "Oct2022_Val",
+                "HG2206_Val", "HG2207_Val", "HG2208_Val", "HG2209_Val", "HG2210_Val")
     for campName in testCamp:
         defaultCamp['CampaignName'] = campName
         upload(mgr, defaultCamp)

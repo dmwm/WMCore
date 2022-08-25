@@ -82,14 +82,12 @@ def syncQueues(queue, skipWMBS=False):
     """Sync parent & local queues and split work
         Workaround having to wait for couchdb replication and splitting polling
     """
-
     queue.backend.forceQueueSync()
-    time.sleep(2)
+    time.sleep(1)
     work = queue.processInboundWork()
     queue.performQueueCleanupActions(skipWMBS=skipWMBS)
-    queue.backend.forceQueueSync()
     # after replication need to wait a while to update result
-    time.sleep(2)
+    time.sleep(3)
     return work
 
 
@@ -319,27 +317,6 @@ class WorkQueueTest(WorkQueueTestCase):
         super(WorkQueueTest, self).tearDown()
         # Delete WMBSAgent config file
         EmulatorSetup.deleteConfig(self.configFile)
-
-    def createWQReplication(self, parentQURL, childURL):
-        wqfilter = 'WorkQueue/queueFilter'
-        query_params = {'childUrl': childURL, 'parentUrl': sanitizeURL(parentQURL)['url']}
-        localQInboxURL = "%s_inbox" % childURL
-        replicatorDocs = []
-        replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL,
-                               'filter': wqfilter, 'query_params': query_params})
-        replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL,
-                               'filter': wqfilter, 'query_params': query_params})
-
-        for rp in replicatorDocs:
-            self.localCouchMonitor.couchServer.replicate(
-                rp['source'], rp['target'], filter=rp['filter'],
-                query_params=rp.get('query_params', False),
-                continuous=False)
-        return
-
-    def pullWorkWithReplication(self, localQ, resources):
-        localQ.pullWork(resources)
-        self.createWQReplication(localQ.params['ParentQueueCouchUrl'], localQ.params['QueueURL'])
 
     def createResubmitSpec(self, serverUrl, couchDB, parentage=False):
         """
@@ -836,6 +813,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1000}), totalSpec)
         syncQueues(self.localQueue)
+        # give a few extra seconds for work to move between local/global queues
+        time.sleep(2)
         self.assertEqual(len(self.localQueue.status(status='Available')), totalSpec)
         self.assertEqual(len(self.globalQueue.status(status='Acquired')), totalSpec)
         self.localQueue.updateLocationInfo()
@@ -1249,7 +1228,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA': 1000}, {})))
 
     def testWMBSInjectionStatus(self):
-
+        syncQueues(self.localQueue)
         self.globalQueue.queueWork(self.spec.specUrl())
         processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
         self.globalQueue.queueWork(processingSpec.specUrl())
@@ -1265,7 +1244,6 @@ class WorkQueueTest(WorkQueueTestCase):
                          [{'testProcessing': False}, {'testProduction': False}])
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
                          False)
-        syncQueues(self.localQueue)
         self.localQueue.processInboundWork()
         self.localQueue.updateLocationInfo()
         self.localQueue.getWork({'T2_XX_SiteA': 1000},
@@ -1277,14 +1255,14 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # update parents status but is still running open since it is the default
         self.localQueue.performQueueCleanupActions()
-        self.localQueue.backend.sendToParent(continuous=False)
+        # NOTE: these 2 assertions below are different when running from local docker container
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
                          [{'testProcessing': False}, {'testProduction': False}])
-        self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
-                         False)
+        self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()), False)
 
         # close the global inbox elements, they won't be split anymore
-        self.globalQueue.closeWork(['testProcessing', 'testProduction'])
+        #self.globalQueue.closeWork(['testProcessing', 'testProduction'])
+        self.globalQueue.closeWork()
         self.localQueue.getWMBSInjectionStatus()
         time.sleep(1)
         # There are too many jobs to pull down for testProcessing still has element not in WMBS
@@ -1359,16 +1337,23 @@ class WorkQueueTest(WorkQueueTestCase):
         # FIXME: This does not work currently because we don't actually have 0 event blocks.
 
         Globals.GlobalParams.setNumOfEventsPerFile(0)
+        syncQueues(self.localQueue)
+
         processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
         processingSpec.setStartPolicy('Block', SliceType='NumberOfEvents')
         processingSpec.save(processingSpec.specUrl())
         self.globalQueue.queueWork(processingSpec.specUrl())
-        # all blocks pulled as each has 0 jobs
+        # pulls one block from global queue to local queue inbox
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1}), 1)
-        syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.status()), 1)
-        self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': 1},
-                                                     {})), 1)
+        time.sleep(1)
+        # now we should have 1 element in the local inbox and 0 in local queue
+        self.assertEqual(len(self.localQueue.statusInbox()), 1)
+        self.assertEqual(len(self.localQueue.status()), 0)
+
+        self.localQueue.processInboundWork()
+        time.sleep(1)
+        # now acquire the local inbox element (create it in the local queue)
+        self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': 1}, {})), 1)
         for element in self.localQueue.status():
             # check files added and subscription made
             self.assertEqual(element['NumOfFilesAdded'], 1)
@@ -1395,7 +1380,9 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Try adding work, no change in blocks available. No work should be added
         logging.info("Adding work - already added - for spec name: %s", processingSpec.name())
-        self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
+        workInbox = self.globalQueue.backend.getInboxElements(WorkflowName=processingSpec.name(),
+                                                              loadSpec=True)
+        self.assertEqual(0, self.globalQueue.addWork(workInbox[0]))
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
         # Now pull work from the global to the local queue
@@ -1412,10 +1399,8 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         syncQueues(self.globalQueue)
 
-        # FIXME: for some reason, it tries to reinsert all those elements again
-        # however, if we call it again, it won't retry anything
-        self.assertEqual(47, self.globalQueue.addWork(processingSpec.name()))
-        self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
+        workInbox = self.globalQueue.backend.getInboxElements(status="Running", loadSpec=True)
+        self.assertEqual(0, self.globalQueue.addWork(workInbox[0]))
 
         self.assertEqual(NBLOCKS_HICOMM - 1, len(self.globalQueue))
         self.assertEqual(len(self.globalQueue.backend.getInboxElements(status="Running")), 1)
@@ -1426,10 +1411,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue), 30)
         self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 30 - 1)
 
-        # FIXME: for some reason, it tries to reinsert all those elements again
-        # however, if we call it again, it won't retry anything
-        self.assertEqual(47, self.globalQueue.addWork(processingSpec.name()))
-        self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
+        workInbox = self.globalQueue.backend.getInboxElements(WorkflowName=processingSpec.name(), loadSpec=True)
+        self.assertEqual(0, self.globalQueue.addWork(workInbox[0]))
 
         return
 

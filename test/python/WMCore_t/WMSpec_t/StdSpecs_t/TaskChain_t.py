@@ -1166,7 +1166,7 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # test workload properties
         self.assertEqual(testWorkload.getRequestType(), REQUEST['RequestType'])
-        self.assertEqual(testWorkload.getDashboardActivity(), "relval")
+        self.assertEqual(testWorkload.getDashboardActivity(), "production")
         self.assertEqual(testWorkload.getCampaign(), REQUEST['Campaign'])
         self.assertEqual(testWorkload.getAcquisitionEra(), REQUEST['AcquisitionEra'])
         self.assertEqual(testWorkload.getProcessingString(), REQUEST['ProcessingString'])
@@ -1195,10 +1195,10 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy checks
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 300, 'SliceType': 'NumberOfEvents',
-                                                                    'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
-                                                                    'SubSliceType': 'NumberOfEventsPerLumi',
-                                                                    'blowupFactor': 3.4, 'policyName': 'MonteCarlo'})
+        workqueueSplit = {'SliceSize': 300, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
+                          'SubSliceSize': 100, 'SubSliceType': 'NumberOfEventsPerLumi', 'blowupFactor': 3.4,
+                          'policyName': 'MonteCarlo', 'OpenRunningTimeout': 0}
+        self.assertDictEqual(testWorkload.startPolicyParameters(), workqueueSplit)
 
         # nasty splitting settings check
         splitArgs = testWorkload.listJobSplittingParametersByTask()
@@ -2447,6 +2447,38 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertEqual(arguments['GPUParams'], json.dumps(None))
         self.assertEqual(arguments["Task1"]['GPUParams'], json.dumps(gpuParams))
         self.assertEqual(arguments["Task2"]['GPUParams'], json.dumps(gpuParams))
+
+    def testWQStartPolicy(self):
+        """
+        Test workqueue start policy settings based on the input dataset
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(deepcopy(REQUEST_INPUT))
+        arguments['Task1']['InputDataset'] = "/MinBias_TuneCP5_13TeV-pythia8_pilot/RunIIFall18MiniAOD-pilot_102X_upgrade2018_realistic_v11-v1/MINIAODSIM"
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+        # MINIAODSIM datatier requires "Dataset" start policy
+        self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "Dataset")
+
+        # MINIAOD and other datatiers require "Block" start policy
+        arguments['Task1']['InputDataset'] = "/JetHT/Run2022B-PromptReco-v1/MINIAOD"
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+        self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "Block")
+
+        # no input data, that means MonteCarlo policy
+        arguments['Task1'].pop('InputDataset', None)
+        arguments['Task1']['PrimaryDataset'] = "Test"
+        arguments['Task1']['RequestNumEvents'] = 123
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+        self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "MonteCarlo")
 
 
 if __name__ == '__main__':

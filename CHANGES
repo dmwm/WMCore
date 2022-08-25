@@ -1,3 +1,109 @@
+2.1.1.pre3 to 2.1.1:
+
+
+2.1.1.pre2 to 2.1.1.pre3:
+  - MS: Implement new object for Nano input data placement (Alan Malta Rodrigues) #11219
+  - Update DBS mock calls and data with MINIAODSIM (Alan Malta Rodrigues) #11219
+  - Set start policy to Dataset for workflows processing MINIAODSIM dataset (Alan Malta Rodrigues) #11219
+  - Allow list of multiple architectures (khurtado) #11228
+
+
+2.1.1.pre1 to 2.1.1.pre2:
+  - Adopt ReqMgr2 authorization based on the request status (Alan Malta Rodrigues) #11223
+
+
+2.1.0 to 2.1.1.pre1:
+  - Update CMSMonitoring version in the requirements file to 0.6.5 (Alan Malta Rodrigues) #11229
+  - Implement support for gzipped stream for RucioConMon (Valentin Kuznetsov) #11142
+  - Add ExecuteDAO script. (Todor Ivanov) #11174
+  - Move some Rucio utils over to RucioUtils module (Alan Malta Rodrigues) #11218
+
+
+2.1.0.pre5 to 2.1.0:
+
+
+2.1.0.pre4 to 2.1.0.pre5:
+  - Updated stomp.py package version from 4.1.21 to 7.0.0
+
+
+2.1.0.pre3 to 2.1.0.pre4:
+  - Load credentials when saving spec file in local workqueue (Alan Malta Rodrigues) #11204
+  - Update CMSMonitoring module version to use StompAMQ7 with latest stomp.py (mrceyhun) #11189
+
+
+2.1.0.pre2 to 2.1.0.pre3:
+  - Create filter function to drop deleted documents (Alan Malta Rodrigues) #11196
+
+
+2.1.0.pre1 to 2.1.0.pre2:
+  - Update deployment scripts for 2.0.4 and test campaigns in central couch (Alan Malta Rodrigues) #11177
+  - Consistent return data type for closing workqueue elements (Alan Malta Rodrigues) #11193
+  - remove all the CMS authz logic from the CouchDB validate functions (Alan Malta Rodrigues) #11191
+  - Comment out Proxy Error mocking (Valentin Kuznetsov) #11176
+  - Give enough time for replication to complete in unit tests (Alan Malta Rodrigues) #11185
+  - Provide uniform way to handle DBS server errors (Valentin Kuznetsov) #11176
+
+
+2.0.4 to 2.1.0.pre1:
+  - Bundle of fixes required for migration to CouchDB 3.x #11001
+  - Ensure dataset_lifetime bind is defined for DBS3Buffer/NewSubscription (Alan Malta Rodrigues) #11179
+
+
+2.0.4.pre4 to 2.0.4:
+  - Add extra protection for T0 to prevent archival of workflows having blocks not yet deleted. (Todor Ivanov) #11169
+
+
+2.0.4.pre3 to 2.0.4.pre4:
+  - New CouchDB 3.x APIs for tracking replications; fix replication check in AgentStatusPoller (Alan Malta Rodrigues) #11039
+
+
+2.0.4.pre2 to 2.0.4.pre3:
+  - Check if key exists when deleting standalone documents in Couch (Alan Malta Rodrigues) #11165
+  - Avoid raising exception when ReqMgr2 request is not found (Alan Malta Rodrigues) #11159
+  - Remove CouchDB JobDump/highestJobID view (Alan Malta Rodrigues) #11161
+  - fix: requirements.txt to reduce vulnerabilities (snyk-bot) #11155
+  - Split Deletable Blocks checks in two stages. (Todor Ivanov) #11127
+  - Remove CouchDB all_or_nothing option for bulk API (Alan Malta Rodrigues) #11011
+
+
+2.0.4.pre1 to 2.0.4.pre2:
+  - [MSTransferor] Define grouping=ALL for workflows with parents (Alan Malta Rodrigues) #11153
+
+
+2.0.3 to 2.0.4.pre1:
+  - Reorganization and classification of workflows and policies (Alan Malta Rodrigues) #11143
+  - [MSTransferor] Create rule for each pileup location (Alan Malta Rodrigues) #11143
+  - Fix logic to check for empty results in MS/Common (Alan Malta Rodrigues) #11148
+
+
+2.0.3.pre7 to 2.0.3:
+
+
+2.0.3.pre6 to 2.0.3.pre7:
+  - [MSTransferor] Lock the whole input container for growing workflows (Alan Malta Rodrigues) #11141
+  - unit tests for RelValPolicy (Alan Malta Rodrigues) #11139
+  - Apply different rule lifetime for RelVal pre-release samples (Alan Malta Rodrigues) #11139
+  - Add support for IAM token (Valentin Kuznetsov) #10939
+  - update a couple of json templates with OpenRunningTimeout (Alan Malta Rodrigues) #11135
+  - fix where OpenRunningTimeout is retrieved in the workqueue element (Alan Malta Rodrigues) #11135
+  - Add support to OpenRunningTimeout for TaskChain/StepChain (Alan Malta Rodrigues) #11135
+
+
+2.0.3.pre5 to 2.0.3.pre6:
+  - Add buildAllDep option && Fix package verstion estimation for ParseSpecCmsswdist. (Todor Ivanov) #11132
+  - Bring dbs3-client version to 4.0.8 (Alan Malta Rodrigues) #11138
+  - speed up listDatasetFileDetails API (Valentin Kuznetsov) #11099
+  - Remove profile scope (Valentin Kuznetsov) #11134
+
+
+2.0.3.pre4 to 2.0.3.pre5:
+  - fix unit tests (Alan Malta Rodrigues) #11119
+  - Properly handle OpenRunningTimeout in WorkQueue (Alan Malta Rodrigues) #11119
+  - Switch from pep8 to pycodestyle (Erik Gough) #11128
+  - first draft of iam-token script (Valentin Kuznetsov) #11093
+  - Add T3_US_Lancium. (Todor Ivanov) #11126
+
+
 2.0.3.pre3 to 2.0.3.pre4:
   - Enforce dataset_lifetime column to be integer and not null (Alan Malta Rodrigues) #11115
   - Remove block open logic from DBS3Reader and WorkQueue (Alan Malta Rodrigues) #11123

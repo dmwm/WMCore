@@ -60,6 +60,7 @@ from urllib.parse import urlencode
 
 from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 from Utils.PortForward import portForward, PortForward
+from Utils.TokenManager import TokenManager
 
 
 def decompress(body, headers):
@@ -165,6 +166,11 @@ class RequestHandler(object):
         self.followlocation = config.get('followlocation', defaultOpts['FOLLOWLOCATION'])
         self.maxredirs = config.get('maxredirs', defaultOpts['MAXREDIRS'])
         self.logger = logger if logger else logging.getLogger()
+        self.tokenLocation = config.get('iam_token_file', '')
+        if self.tokenLocation:
+            self.tmgr = TokenManager(self.tokenLocation)
+        else:
+            self.tmgr = None
 
     def encode_params(self, params, verb, doseq, encode):
         """ Encode request parameters for usage with the 4 verbs.
@@ -245,6 +251,11 @@ class RequestHandler(object):
                 curl.setopt(pycurl.POSTFIELDS, encoded_data)
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
+
+        if self.tmgr:
+            token = self.tmgr.getToken()
+            if token:
+                headers['Authorization'] = 'Bearer {}'.format(token)
 
         if verb in ('POST', 'PUT'):
             # only these methods (and PATCH) require this header

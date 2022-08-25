@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 2.0.2.patch1 -d HG2204f -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 2.0.2.patch1 -d HG2204f -t testbed-vocms001 -p "10998" -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 2.0.4.patch1 -d HG2207c -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 2.0.4-b954b0745339a347ea28afd5b5767db4 -d HG2206e -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
 ### Usage:
 
 IAM=`whoami`
@@ -131,7 +131,7 @@ check_certs()
     echo -e "\n  ... nope, trying to copy them from another node, you might be prompted for the cmst1 password."
     set -e
     if [[ "$IAM" == cmst1 ]]; then
-      scp cmst1@vocms0250:/data/certs/* /data/certs/
+      scp cmst1@vocms0255:/data/certs/* /data/certs/
     else
       scp cmsdataops@cmsgwms-submit3:/data/certs/* /data/certs/
     fi
@@ -285,7 +285,7 @@ echo "Done!" && echo
 # XXX: update the PR number below, if needed :-)
 echo -e "\n*** Applying database schema patches ***"
 cd $CURRENT_DIR
-#  wget -nv https://github.com/dmwm/WMCore/pull/10263.patch -O - | patch -d apps/${RPM_NAME}/ -p 1
+#  curl https://patch-diff.githubusercontent.com/raw/dmwm/WMCore/pull/11001.patch | patch -d apps/${RPM_NAME}/ -p 1
 cd -
 echo "Done!" && echo
 
@@ -294,7 +294,7 @@ echo -e "\n*** Applying agent patches ***"
 if [ "x$PATCHES" != "x" ]; then
   cd $CURRENT_DIR
   for pr in $PATCHES; do
-    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/${RPM_NAME}/lib/python*/site-packages/ -p 3
+    curl https://patch-diff.githubusercontent.com/raw/dmwm/WMCore/pull/$pr.patch | patch -d apps/${RPM_NAME}/lib/python*/site-packages/ -p 3
   done
 cd -
 fi

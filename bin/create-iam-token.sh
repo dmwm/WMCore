@@ -45,7 +45,6 @@ if [ -n "IAM_TOKEN" ]; then
     # grant_type=client_credentials key=value pair is required by IAM provider
     # to specify that request contains clients credentials
     curl -s -k -d grant_type=client_credentials \
-            -d scope="profile" \
             -u ${client_id}:${client_secret} \
             https://cms-auth.web.cern.ch/token | jq -r '.access_token' > $IAM_TOKEN
     echo "New IAM token generated and can be found at $IAM_TOKEN"

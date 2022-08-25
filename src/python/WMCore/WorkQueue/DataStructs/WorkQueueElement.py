@@ -5,7 +5,7 @@ A dictionary based object meant to represent a WorkQueue element
 """
 
 from future.utils import viewitems, viewvalues
-
+import time
 from hashlib import md5
 
 from Utils.Utilities import encodeUnicodeToBytesConditional
@@ -98,16 +98,16 @@ class WorkQueueElement(dict):
         self.setdefault('NumOfFilesAdded', 0)
         # Mask used to constrain MC run/lumi ranges
         self.setdefault('Mask', None)
-        # is new data being added to the inputs i.e. open block with new files or dataset with new closed blocks?
+        # is new data being added to the workflow (e.g., growing input datasets)
         self.setdefault('OpenForNewData', False)
-        # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
-        self.setdefault('TimestampFoundNewData', 0)
+        # EPOCH time for when the last block was found and added to the workflow
+        self.setdefault('TimestampFoundNewData', int(time.time()))
         # Trust initial input dataset location only or not
         self.setdefault('NoInputUpdate', False)
         # Trust initial pileup dataset location only or not
         self.setdefault('NoPileupUpdate', False)
-        # set the creation time for wq element, need for sorting
-        self.setdefault('CreationTime', 0)
+        # EPOCH time with the creation time for this wq element, needed for sorting
+        self.setdefault('CreationTime', int(time.time()))
         # set to true when updated from a WorkQueueElementResult
         self.modified = False
 

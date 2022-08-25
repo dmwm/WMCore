@@ -25,9 +25,6 @@ from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsCreate, parsePileupC
                                            checkMemCore, checkEventStreams, checkTimePerEvent)
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
-# simple utils for data mining the request dictionary
-isGenerator = lambda args: not args["Step1"].get("InputDataset", None)
-
 
 class StepChainWorkloadFactory(StdBase):
     """
@@ -92,16 +89,16 @@ class StepChainWorkloadFactory(StdBase):
         self.createStepMappings(arguments)
 
         # Create a proper task and set workload level arguments
-        if isGenerator(arguments):
+        startPolicy = self.decideWorkQueueStartPolicy(arguments)
+        self.workload.setWorkQueueSplitPolicy(startPolicy, taskConf['SplittingAlgo'],
+                                              taskConf['SplittingArguments'],
+                                              OpenRunningTimeout=self.openRunningTimeout)
+        if startPolicy == "MonteCarlo":
             self.workload.setDashboardActivity("production")
-            self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'],
-                                                  taskConf['SplittingArguments'])
             self.workload.setEndPolicy("SingleShot")
             self.setupGeneratorTask(firstTask, taskConf)
         else:
             self.workload.setDashboardActivity("processing")
-            self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
-                                                  taskConf['SplittingArguments'])
             self.setupTask(firstTask, taskConf)
 
         # Now modify this task to add the next steps
@@ -613,3 +610,19 @@ class StepChainWorkloadFactory(StdBase):
             self.raiseValidationException(str(ex))
 
         return
+
+    def decideWorkQueueStartPolicy(self, reqDict):
+        """
+        Given a request dictionary, decides which WorkQueue start
+        policy needs to be used in a given request.
+        :param reqDict: a dictionary with the creation request information
+        :return: a string with the start policy to be used.
+        """
+        if not reqDict["Step1"].get("InputDataset"):
+            return "MonteCarlo"
+
+        inputDset = reqDict["Step1"]["InputDataset"]
+        if inputDset.endswith("/MINIAODSIM"):
+            return "Dataset"
+        else:
+            return "Block"

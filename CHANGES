@@ -1,3 +1,12 @@
+2.1.1 to 2.1.2.pre1:
+  - Update WMCore dependencies (Valentin Kuznetsov) #11258
+  - Remove threadlocal parameter for SQLAlchemy as it is deprecated in new release (Valentin Kuznetsov) #11257
+  - Fix strToBool validate function to fail on integer values (Alan Malta Rodrigues) #11251
+  - Validate StdBase ValidStatus parameter for DBS output data (Alan Malta Rodrigues) #11237
+  - Update CMSMonitoring python library to 0.6.7 (Alan Malta Rodrigues) #11255
+  - Combines block records in single dict that includes all associated wfs (#11245) (Germán Felipe Giraldo Villa) #11245
+
+
 2.1.1.pre3 to 2.1.1:
 
 

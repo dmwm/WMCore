@@ -21,7 +21,7 @@ from WMCore.Lexicon import (couchurl, procstring, activity, procversion, primdat
                             dataset, block, campaign, subRequestType)
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
+from WMCore.Services.Rucio.RucioUtils import RUCIO_RULES_PRIORITY
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import (makeLumiList, checkDBSURL, validateArgumentsCreate)
@@ -1134,16 +1134,8 @@ class StdBase(object):
                                         "validate": lambda x: all([cmsname(y) for y in x])},
                      "NonCustodialSites": {"default": [], "type": makeList, "assign_optional": True,
                                            "validate": lambda x: all([cmsname(y) for y in x])},
-                     "AutoApproveSubscriptionSites": {"default": [], "type": makeList, "assign_optional": True,
-                                                      "validate": lambda x: all([cmsname(y) for y in x])},
-                     "CustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
-                                          "validate": lambda x: x in ["Move", "Replica"]},
-                     "NonCustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
-                                             "validate": lambda x: x in ["Move", "Replica"]},
-                     "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
-                     "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
                      "SubscriptionPriority": {"default": "Low", "assign_optional": True,
-                                              "validate": lambda x: x.lower() in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES},
+                                              "validate": lambda x: x.lower() in RUCIO_RULES_PRIORITY},
                      "DeleteFromSource": {"default": False, "type": strToBool},
                      # merge settings
                      "UnmergedLFNBase": {"assign_optional": True},

@@ -18,8 +18,6 @@ import inspect
 from Utils.Utilities import makeList
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
-
 
 def checkMemCore(paramInfo, minValue=1):
     """
@@ -236,31 +234,6 @@ def _getChainKey(arguments, keyName):
     return value
 
 
-def validatePhEDExSubscription(arguments):
-    """
-    _validatePhEDExSubscription_
-
-    Validate all the PhEDEx arguments provided during request
-    creation and assignment.
-    """
-    for site in arguments.get("AutoApproveSubscriptionSites", []):
-        if site.endswith('_MSS'):
-            raise WMSpecFactoryException("Auto-approval to MSS endpoint is not allowed: %s" % site)
-    if arguments.get("SubscriptionPriority", "Low").lower() not in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES:
-        raise WMSpecFactoryException("Invalid subscription priority: %s" % arguments["SubscriptionPriority"])
-    if arguments.get("CustodialSubType", "Replica") not in ["Move", "Replica"]:
-        raise WMSpecFactoryException("Invalid custodial subscription type: %s" % arguments["CustodialSubType"])
-    if arguments.get("NonCustodialSubType", "Replica") not in ["Move", "Replica"]:
-        raise WMSpecFactoryException("Invalid non custodial subscription type: %s" % arguments["NonCustodialSubType"])
-
-    if arguments.get("CustodialSubType") == "Move":
-        _validateMoveSubscription("CustodialSubType", arguments.get('CustodialSites', []))
-    if arguments.get("NonCustodialSubType") == "Move":
-        _validateMoveSubscription("NonCustodialSubType", arguments.get('NonCustodialSites', []))
-
-    return
-
-
 def _validateMoveSubscription(subType, sites):
     """
     Move subscriptions are only allowed to T0 or T1s, see #7760
@@ -318,7 +291,6 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     """
     validateUnknownArgs(arguments, argumentDefinition)
     _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
-    validatePhEDExSubscription(arguments)
     validateSiteLists(arguments)
 
     return

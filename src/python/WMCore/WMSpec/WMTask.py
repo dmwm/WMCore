@@ -985,9 +985,6 @@ class WMTaskHelper(TreeHelper):
         return outputDatasets
 
     def setSubscriptionInformation(self, custodialSites=None, nonCustodialSites=None,
-                                   autoApproveSites=None,
-                                   custodialSubType="Replica", nonCustodialSubType="Replica",
-                                   custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
                                    useSkim=False, isSkim=False,
                                    dataTier=None, deleteFromSource=False,
@@ -1002,17 +999,13 @@ class WMTaskHelper(TreeHelper):
         data.subscriptions.<outputSection>.outputModule
         data.subscriptions.<outputSection>.custodialSites
         data.subscriptions.<outputSection>.nonCustodialSites
-        data.subscriptions.<outputSection>.autoApproveSites
         data.subscriptions.<outputSection>.priority
-        data.subscriptions.<outputSection>.custodialSubType
-        data.subscriptions.<outputSection>.nonCustodialSubType
 
         The filters arguments allow to define a dataTier and primaryDataset. Only datasets
         matching those values will be configured.
         """
         custodialSites = custodialSites or []
         nonCustodialSites = nonCustodialSites or []
-        autoApproveSites = autoApproveSites or []
 
         if not hasattr(self.data, "subscriptions"):
             self.data.section_("subscriptions")
@@ -1044,11 +1037,6 @@ class WMTaskHelper(TreeHelper):
             outputSection.outputModule = outputModule
             outputSection.custodialSites = custodialSites
             outputSection.nonCustodialSites = nonCustodialSites
-            outputSection.autoApproveSites = autoApproveSites
-            outputSection.custodialSubType = custodialSubType
-            outputSection.nonCustodialSubType = nonCustodialSubType
-            outputSection.custodialGroup = custodialGroup
-            outputSection.nonCustodialGroup = nonCustodialGroup
             outputSection.priority = priority
             outputSection.deleteFromSource = deleteFromSource
             outputSection.datasetLifetime = datasetLifetime
@@ -1063,7 +1051,6 @@ class WMTaskHelper(TreeHelper):
         return a dictionary with the following structure
         {<dataset> : {CustodialSites : [],
                       NonCustodialSites : [],
-                      AutoApproveSites : [],
                       Priority : "Low",
                       CustodialSubType : "Replica",
                       NonCustodialSubType : "Replica"
@@ -1082,19 +1069,11 @@ class WMTaskHelper(TreeHelper):
 
             subInformation[dataset] = {"CustodialSites": outputSection.custodialSites,
                                        "NonCustodialSites": outputSection.nonCustodialSites,
-                                       "AutoApproveSites": outputSection.autoApproveSites,
                                        "Priority": outputSection.priority,
                                        # These might not be present in all specs
-                                       "CustodialGroup": getattr(outputSection, "custodialGroup", "DataOps"),
-                                       "NonCustodialGroup": getattr(outputSection, "nonCustodialGroup",
-                                                                    "DataOps"),
                                        "DeleteFromSource": getattr(outputSection, "deleteFromSource", False),
-                                       # Specs assigned before HG1303 don't have the CustodialSubtype
-                                       "CustodialSubType": getattr(outputSection, "custodialSubType", "Replica"),
-                                       "NonCustodialSubType": getattr(outputSection, "nonCustodialSubType",
-                                                                      "Replica"),
-                                      # Spec assigned for T0 ContainerRules
-                                      "DatasetLifetime": getattr(outputSection, "datasetLifetime", 0)}
+                                       # Spec assigned for T0 ContainerRules
+                                       "DatasetLifetime": getattr(outputSection, "datasetLifetime", 0)}
         return subInformation
 
     def parentProcessingFlag(self):

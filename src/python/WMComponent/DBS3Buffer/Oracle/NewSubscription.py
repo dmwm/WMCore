@@ -18,9 +18,9 @@ class NewSubscription(MySQLNewSubscription):
     """
 
     sql = """INSERT INTO dbsbuffer_dataset_subscription
-             (id, dataset_id, site, custodial, auto_approve, move, priority, subscribed, phedex_group, delete_blocks, dataset_lifetime)
-             SELECT dbsbuffer_dataset_sub_seq.nextval, :id, :site, :custodial, :auto_approve,
-                    :move, :priority, 0, :phedex_group, :delete_blocks, :dataset_lifetime
+             (id, dataset_id, site, custodial, priority, subscribed, delete_blocks, dataset_lifetime)
+             SELECT dbsbuffer_dataset_sub_seq.nextval, :id, :site, :custodial,
+                    :priority, 0, :delete_blocks, :dataset_lifetime
              FROM DUAL
              WHERE NOT EXISTS
                ( SELECT *
@@ -28,8 +28,6 @@ class NewSubscription(MySQLNewSubscription):
                  WHERE dataset_id = :id
                  AND site = :site
                  AND custodial = :custodial
-                 AND auto_approve = :auto_approve
-                 AND move = :move
                  AND priority = :priority
                  AND dataset_lifetime = :dataset_lifetime )
              """

@@ -19,7 +19,7 @@ from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Rucio.Rucio import Rucio, WMRucioException
-from WMCore.Services.Rucio.RucioUtils import RUCIO_VALID_PROJECT
+from WMCore.Services.Rucio.RucioUtils import RUCIO_VALID_PROJECT, RUCIO_RULES_PRIORITY
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from Utils.IteratorTools import grouper
@@ -490,6 +490,7 @@ class RucioInjectorPoller(BaseWorkerThread):
             rseName = subInfo['site'].replace("_MSS", "_Tape")
             container = subInfo['path']
             lifetime = subInfo['dataset_lifetime']
+            rulepriority = RUCIO_RULES_PRIORITY.get(subInfo['priority'])
             # Skip central production Tape rules
             if not self.isT0agent and rseName.endswith("_Tape"):
                 logging.info("Bypassing Production container Tape data placement for container: %s and RSE: %s",
@@ -506,6 +507,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                               account=self.rucioAcct,
                               grouping="ALL",
                               comment=ruleComment,
+                              priority=rulepriority,
                               meta=self.metaData)
             if not rseName.endswith(("_Tape", "_Tape_Test")):
                 # add extra parameters to the Disk rule as defined in the component configuration
@@ -518,7 +520,6 @@ class RucioInjectorPoller(BaseWorkerThread):
                     rseName = rseName.replace("cms_type=real", "cms_type=test")
             else:
                 # then it's a T0 container placement
-                ruleKwargs['priority'] = 4
                 if not rseName.endswith("_Tape") and lifetime > 0:
                     ruleKwargs['lifetime'] = lifetime
                 if self.testRSEs:

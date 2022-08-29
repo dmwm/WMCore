@@ -12,6 +12,10 @@ RUCIO_VALID_PROJECT = ("Production", "RelVal", "Tier0", "Test", "User")
 # https://github.com/rucio/rucio/blob/master/lib/rucio/common/schema/cms.py#L117
 GROUPING_DSET = "DATASET"
 GROUPING_ALL = "ALL"
+RUCIO_RULES_PRIORITY = {"low": 2, "normal": 3, "high": 4, "reserved": 5}
+# number of copies to be defined when creating replication rules
+NUM_COPIES_DEFAULT = 1
+NUM_COPIES_NANO = 2
 
 
 def validateMetaData(did, metaDict, logger):

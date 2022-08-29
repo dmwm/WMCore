@@ -20,10 +20,7 @@ class GetUnsubscribedDatasets(DBFormatter):
                              dbsbuffer_dataset.path,
                              dbsbuffer_dataset_subscription.site,
                              dbsbuffer_dataset_subscription.custodial,
-                             dbsbuffer_dataset_subscription.auto_approve,
-                             dbsbuffer_dataset_subscription.move,
                              dbsbuffer_dataset_subscription.priority,
-                             dbsbuffer_dataset_subscription.phedex_group,
                              dbsbuffer_dataset_subscription.dataset_lifetime
                FROM dbsbuffer_dataset_subscription
                INNER JOIN dbsbuffer_dataset ON
@@ -44,16 +41,11 @@ class GetUnsubscribedDatasets(DBFormatter):
         as the PhEDEx datasvc uses
         """
         for entry in result:
-            if entry['auto_approve'] == 1:
-                entry['request_only'] = 'n'
+            entry['request_only'] = 'y'
+            if entry['custodial'] == 1:
+                entry['custodial'] = 'y'
             else:
-                entry['request_only'] = 'y'
-            del entry['auto_approve']
-            for key in ['custodial', 'move']:
-                if entry[key] == 1:
-                    entry[key] = 'y'
-                else:
-                    entry[key] = 'n'
+                entry['custodial'] = 'n'
             entry['priority'] = entry['priority'].lower()
         return result
 

@@ -1483,9 +1483,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return taskList
 
     def setSubscriptionInformation(self, initialTask=None, custodialSites=None,
-                                   nonCustodialSites=None, autoApproveSites=None,
-                                   custodialSubType="Replica", nonCustodialSubType="Replica",
-                                   custodialGroup="DataOps", nonCustodialGroup="DataOps",
+                                   nonCustodialSites=None,
                                    priority="Low", primaryDataset=None,
                                    useSkim=False, isSkim=False,
                                    dataTier=None, deleteFromSource=False,
@@ -1501,8 +1499,6 @@ class WMWorkloadHelper(PersistencyHelper):
             custodialSites = [custodialSites]
         if nonCustodialSites and not isinstance(nonCustodialSites, list):
             nonCustodialSites = [nonCustodialSites]
-        if autoApproveSites and not isinstance(autoApproveSites, list):
-            autoApproveSites = [autoApproveSites]
 
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
@@ -1511,18 +1507,12 @@ class WMWorkloadHelper(PersistencyHelper):
 
         for task in taskIterator:
             task.setSubscriptionInformation(custodialSites, nonCustodialSites,
-                                            autoApproveSites,
-                                            custodialSubType, nonCustodialSubType,
-                                            custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
                                             useSkim, isSkim,
                                             dataTier, deleteFromSource,
                                             datasetLifetime)
             self.setSubscriptionInformation(task,
                                             custodialSites, nonCustodialSites,
-                                            autoApproveSites,
-                                            custodialSubType, nonCustodialSubType,
-                                            custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
                                             useSkim, isSkim,
                                             dataTier, deleteFromSource,
@@ -1544,10 +1534,6 @@ class WMWorkloadHelper(PersistencyHelper):
         extendWithoutDups = lambda x, y: x + list(set(y) - set(x))
         # Choose the lowest priority
         solvePrioConflicts = lambda x, y: y if x == "High" or y == "Low" else x
-        # Choose replica over move
-        solveTypeConflicts = lambda x, y: y if x == "Move" else x
-        # Choose the 'smallest' group (based on string comparison)
-        solveGroupConflicts = lambda x, y: y if x > y else x
         # Always choose a logical AND
         solveDelConflicts = lambda x, y: x and y
 
@@ -1565,23 +1551,10 @@ class WMWorkloadHelper(PersistencyHelper):
                                                                            subInfo[dataset]["CustodialSites"])
                     subInfo[dataset]["NonCustodialSites"] = extendWithoutDups(taskSubInfo[dataset]["NonCustodialSites"],
                                                                               subInfo[dataset]["NonCustodialSites"])
-                    subInfo[dataset]["AutoApproveSites"] = extendWithoutDups(taskSubInfo[dataset]["AutoApproveSites"],
-                                                                             subInfo[dataset]["AutoApproveSites"])
                     subInfo[dataset]["Priority"] = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
                                                                       subInfo[dataset]["Priority"])
                     subInfo[dataset]["DeleteFromSource"] = solveDelConflicts(taskSubInfo[dataset]["DeleteFromSource"],
                                                                              subInfo[dataset]["DeleteFromSource"])
-                    subInfo[dataset]["CustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["CustodialSubType"],
-                                                                              subInfo[dataset]["CustodialSubType"])
-                    subInfo[dataset]["NonCustodialSubType"] = solveTypeConflicts(
-                        taskSubInfo[dataset]["NonCustodialSubType"],
-                        subInfo[dataset]["NonCustodialSubType"])
-                    subInfo[dataset]["CustodialGroup"] = solveGroupConflicts(taskSubInfo[dataset]["CustodialGroup"],
-                                                                             subInfo[dataset]["CustodialGroup"])
-                    subInfo[dataset]["NonCustodialGroup"] = solveGroupConflicts(
-                        taskSubInfo[dataset]["NonCustodialGroup"],
-                        subInfo[dataset]["NonCustodialGroup"])
-
                 else:
                     subInfo[dataset] = taskSubInfo[dataset]
                 subInfo[dataset]["CustodialSites"] = list(
@@ -2043,11 +2016,6 @@ class WMWorkloadHelper(PersistencyHelper):
         if kwargs.get("CustodialSites") or kwargs.get("NonCustodialSites"):
             self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
                                             nonCustodialSites=kwargs["NonCustodialSites"],
-                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
-                                            custodialSubType=kwargs["CustodialSubType"],
-                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
-                                            custodialGroup=kwargs["CustodialGroup"],
-                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
                                             priority=kwargs["SubscriptionPriority"],
                                             deleteFromSource=kwargs["DeleteFromSource"])
 

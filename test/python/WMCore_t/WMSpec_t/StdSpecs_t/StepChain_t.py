@@ -719,26 +719,16 @@ class StepChainTests(EmulatedUnitTestCase):
         """
         Build a StepChain workload defining different processed dataset name among the steps
         """
-        subscriptionInfo = {'AutoApproveSites': ['T1_US_FNAL_Disk'],
-                            'CustodialGroup': 'FacOps',
-                            'CustodialSites': ['T1_US_FNAL_MSS'],
-                            'CustodialSubType': 'Replica',
+        subscriptionInfo = {'CustodialSites': ['T1_US_FNAL_MSS'],
                             'DeleteFromSource': False,
-                            'NonCustodialGroup': 'AnalysisOps',
                             'NonCustodialSites': ['T1_US_FNAL_Disk'],
-                            'NonCustodialSubType': 'Move',
                             'Priority': 'High',
                             'DatasetLifetime': None}
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "RequestStatus": "assigned", "RequestPriority": 111,
                       "CustodialSites": subscriptionInfo['CustodialSites'],
                       "NonCustodialSites": subscriptionInfo['NonCustodialSites'],
-                      "AutoApproveSubscriptionSites": subscriptionInfo['AutoApproveSites'],
                       "SubscriptionPriority": subscriptionInfo['Priority'],
-                      "CustodialSubType": subscriptionInfo['CustodialSubType'],
-                      "NonCustodialSubType": subscriptionInfo['NonCustodialSubType'],
-                      "CustodialGroup": subscriptionInfo['CustodialGroup'],
-                      "NonCustodialGroup": subscriptionInfo['NonCustodialGroup'],
                       "DatasetLifetime": subscriptionInfo['DatasetLifetime']
                       }
 

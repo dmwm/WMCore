@@ -5,7 +5,6 @@
     "Requestor": "pdmvserv", 
     "RunBlacklist": [], 
     "TotalInputFiles": 2729, 
-    "CustodialGroup": "DataOps", 
     "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
     "SubRequestType": "", 
     "TrustPUSitelists": false, 
@@ -74,14 +73,12 @@
       "slc7_amd64_gcc700"
     ], 
     "CouchDBName": "reqmgr_config_cache", 
-    "NonCustodialGroup": "DataOps", 
     "EventsPerJob": 9600, 
     "InputDataset": "/SingleElectron/Run2017F-v1/RAW", 
     "DeleteFromSource": false, 
     "TotalInputEvents": 15066632, 
     "SizePerEvent": 300, 
     "ConfigCacheID": "335e35b42a8778432d1e878330036b02", 
-    "CustodialSubType": "Replica", 
     "GracePeriod": 300, 
     "MergedLFNBase": "/store/data", 
     "EnableNewStageout": false, 
@@ -92,9 +89,6 @@
     "Team": "production", 
     "AllowOpportunistic": false, 
     "DQMHarvestUnit": "byRun", 
-    "AutoApproveSubscriptionSites": [
-      "T1_IT_CNAF_Disk"
-    ], 
     "RequestWorkflow": "https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache/pdmvserv_Run2017F-v1_SingleElectron_09Aug2019_UL2017_EcalRecovery_200506_120455_3146/spec", 
     "BlockBlacklist": [], 
     "BlockCloseMaxFiles": 500, 
@@ -133,7 +127,6 @@
       "/SingleElectron/Run2017F-HcalCalIterativePhiSym-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO"
     ], 
     "PrimaryDataset": null, 
-    "NonCustodialSubType": "Replica", 
     "BlockCloseMaxSize": 5000000000000, 
     "MaxMergeSize": 4294967296, 
     "OverrideCatalog": null, 

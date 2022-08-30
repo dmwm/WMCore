@@ -33,7 +33,6 @@
             ]
         }
     }, 
-    "CustodialGroup": "DataOps", 
     "MaxMergeSize": 4294967296, 
     "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
     "SubRequestType": "", 
@@ -59,13 +58,11 @@
         "slc6_amd64_gcc491"
     ], 
     "CouchDBName": "reqmgr_config_cache", 
-    "NonCustodialGroup": "DataOps", 
     "DeleteFromSource": false, 
     "TotalInputEvents": 418808, 
     "SizePerEvent": 512, 
     "ConfigCacheID": null, 
     "StepChain": 1, 
-    "CustodialSubType": "Replica", 
     "GracePeriod": 300, 
     "MergedLFNBase": "/store/backfill/1", 
     "ParentageResolved": false, 
@@ -75,7 +72,6 @@
     "Team": "testbed-vocms0193", 
     "AllowOpportunistic": false, 
     "DQMHarvestUnit": "byRun", 
-    "AutoApproveSubscriptionSites": [], 
     "RequestWorkflow": "https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache/amaltaro_StepChain_InclParents_April2020_Val_200414_120713_81/spec", 
     "BlockCloseMaxFiles": 500, 
     "VoGroup": "unknown", 
@@ -101,7 +97,6 @@
         "/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO"
     ], 
     "PrimaryDataset": null, 
-    "NonCustodialSubType": "Replica", 
     "RunNumber": 0, 
     "OverrideCatalog": null, 
     "PeriodicHarvestInterval": 0, 

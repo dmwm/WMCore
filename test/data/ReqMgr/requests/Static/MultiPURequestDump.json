@@ -58,7 +58,6 @@
             ]
         }
     }, 
-    "CustodialGroup": "DataOps", 
     "MaxMergeSize": 4294967296, 
     "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
     "SubRequestType": "", 
@@ -82,13 +81,11 @@
     "Campaign": "HG2002_Val", 
     "Multicore": 1, 
     "CouchDBName": "reqmgr_config_cache", 
-    "NonCustodialGroup": "DataOps", 
     "DeleteFromSource": false, 
     "TotalInputEvents": 4000, 
     "SizePerEvent": 250, 
     "ConfigCacheID": null, 
     "StepChain": 2, 
-    "CustodialSubType": "Replica", 
     "GracePeriod": 300, 
     "MergedLFNBase": "/store/backfill/1", 
     "ParentageResolved": false, 
@@ -98,7 +95,6 @@
     "Team": "testbed-vocms0193", 
     "AllowOpportunistic": false, 
     "DQMHarvestUnit": "byRun", 
-    "AutoApproveSubscriptionSites": [], 
     "RequestWorkflow": "https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache/tivanov_SC_MultiPU_HG2002_Val_200121_043659_4925/spec", 
     "BlockCloseMaxFiles": 500, 
     "VoGroup": "unknown", 
@@ -130,7 +126,6 @@
         "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM-RAW"
     ], 
     "PrimaryDataset": "DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8", 
-    "NonCustodialSubType": "Replica", 
     "RunNumber": 0, 
     "OverrideCatalog": null, 
     "PeriodicHarvestInterval": 0, 

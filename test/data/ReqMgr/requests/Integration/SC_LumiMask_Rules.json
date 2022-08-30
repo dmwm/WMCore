@@ -22,12 +22,7 @@
         "UnmergedLFNBase": "/store/unmerged",
         "CustodialSites": ["T1_US_FNAL_MSS"],
         "NonCustodialSites": ["T1_US_FNAL_Disk"],
-        "AutoApproveSubscriptionSites": ["T1_US_FNAL_Disk"],
-        "SubscriptionPriority": "Normal",
-        "CustodialSubType": "Replica",
-        "NonCustodialSubType": "Move",
-        "CustodialGroup": "FacOps",
-        "NonCustodialGroup": "AnalysisOps"
+        "SubscriptionPriority": "Normal"
     },
     "createRequest": {
         "AcquisitionEra": "DEFAULT_AcqEra",

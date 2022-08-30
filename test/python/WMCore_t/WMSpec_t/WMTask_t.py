@@ -618,11 +618,6 @@ class WMTaskTest(unittest.TestCase):
 
         testTask.setSubscriptionInformation(custodialSites=["mercury"],
                                             nonCustodialSites=["mars", "earth"],
-                                            autoApproveSites=["earth"],
-                                            custodialSubType="Replica",
-                                            nonCustodialSubType="Move",
-                                            custodialGroup="DataOps",
-                                            nonCustodialGroup="AnalysisOps",
                                             priority="Normal",
                                             deleteFromSource=True,
                                             primaryDataset="OneParticle",
@@ -630,11 +625,6 @@ class WMTaskTest(unittest.TestCase):
         subInfo = testTask.getSubscriptionInformation()
         outputRecoSubInfo = {"CustodialSites": ["mercury"],
                              "NonCustodialSites": ["mars", "earth"],
-                             "AutoApproveSites": ["earth"],
-                             "CustodialSubType": "Replica",
-                             "NonCustodialSubType": "Move",
-                             "CustodialGroup": "DataOps",
-                             "NonCustodialGroup": "AnalysisOps",
                              "Priority": "Normal",
                              "DeleteFromSource": True,
                              "DatasetLifetime": None}
@@ -651,11 +641,6 @@ class WMTaskTest(unittest.TestCase):
         subInfo = testTask.getSubscriptionInformation()
         outputDQMSubInfo = {"CustodialSites": ["jupiter"],
                             "NonCustodialSites": [],
-                            "AutoApproveSites": [],
-                            "CustodialSubType": "Replica",
-                            "NonCustodialSubType": "Replica",
-                            "CustodialGroup": "DataOps",
-                            "NonCustodialGroup": "DataOps",
                             "Priority": "Low",
                             "DeleteFromSource": False,
                             "DatasetLifetime": None}
@@ -674,11 +659,6 @@ class WMTaskTest(unittest.TestCase):
         subInfo = testTask.getSubscriptionInformation()
         outputAODSubInfo = {"CustodialSites": [],
                             "NonCustodialSites": ["jupiter"],
-                            "AutoApproveSites": [],
-                            "CustodialSubType": "Replica",
-                            "NonCustodialSubType": "Replica",
-                            "CustodialGroup": "DataOps",
-                            "NonCustodialGroup": "DataOps",
                             "Priority": "Low",
                             "DeleteFromSource": False,
                             "DatasetLifetime": None}

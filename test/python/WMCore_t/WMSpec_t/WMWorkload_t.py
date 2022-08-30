@@ -1216,18 +1216,12 @@ class WMWorkloadTest(unittest.TestCase):
                              "Wrong custodial sites for %s" % outputDataset)
             self.assertEqual(datasetSub["NonCustodialSites"], ["CMSSite_2"],
                              "Wrong non-custodial sites for %s" % outputDataset)
-            self.assertEqual(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
             self.assertEqual(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
-            self.assertEqual(datasetSub["CustodialSubType"], "Replica",
-                             "Wrong custodial subscription type for %s" % outputDataset)
-            self.assertEqual(datasetSub["NonCustodialSubType"], "Replica",
-                             "Wrong custodial subscription type for %s" % outputDataset)
 
         testWorkload = self.makeTestWorkload()[0]
         testWorkload.setSubscriptionInformation(custodialSites=["CMSSite_1", "CMSSite_2"],
                                                 nonCustodialSites=["CMSSite_3"],
-                                                autoApproveSites=["CMSSite_2"], custodialSubType="Move",
-                                                nonCustodialSubType="Move", priority="Normal")
+                                                priority="Normal")
         subInformation = testWorkload.getSubscriptionInformation()
 
         for outputDataset in outputDatasets:
@@ -1236,33 +1230,9 @@ class WMWorkloadTest(unittest.TestCase):
                              "Wrong custodial sites for %s" % outputDataset)
             self.assertEqual(datasetSub["NonCustodialSites"], ["CMSSite_3"],
                              "Wrong non-custodial sites for %s" % outputDataset)
-            self.assertEqual(datasetSub["AutoApproveSites"], ["CMSSite_2"],
-                             "Wrong auto-approve sites for %s" % outputDataset)
             self.assertEqual(datasetSub["Priority"], "Normal", "Wrong priority for %s" % outputDataset)
-            self.assertEqual(datasetSub["CustodialSubType"], "Move",
-                             "Wrong custodial subscription type for %s" % outputDataset)
-            self.assertEqual(datasetSub["NonCustodialSubType"], "Move",
-                             "Wrong custodial subscription type for %s" % outputDataset)
+
         return
-
-    def testValidatePhEDExSubscription(self):
-        """
-        _testValidatePhEDExSubscription_
-
-        Verify that we cannot auto-approve subscriptions to MSS endpoints
-        """
-        from WMCore.WMSpec.WMWorkloadTools import validatePhEDExSubscription
-        args = {'AutoApproveSubscriptionSites': ['T1_CH_CERN', 'T2_CH_CERN', 'T1_US_FNAL_Disk']}
-        self.assertEqual(validatePhEDExSubscription(args), None)
-
-        # test an invalid case
-        args = {'AutoApproveSubscriptionSites': ['T1_CH_CERN', 'T2_CH_CERN', 'T1_IT_CNAF_MSS', 'T1_US_FNAL_Disk']}
-        raises = False
-        try:
-            validatePhEDExSubscription(args)
-        except WMSpecFactoryException:
-            raises = True
-        self.assertTrue(raises, "Auto-approval to 'T1_IT_CNAF_MSS' is not allowed.")
 
     def testValidateSiteLists(self):
         """

@@ -29,7 +29,7 @@ from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
 from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
+
 
 def newTransferRec(dataIn):
     """
@@ -105,8 +105,6 @@ class MSTransferor(MSCore):
         self.blockCounter = 0
         # service name used to route alerts via AlertManager
         self.alertServiceName = "ms-transferor"
-        self.alertManagerUrl = self.msConfig.get("alertManagerUrl", None)
-        self.alertManagerApi = AlertManagerAPI(self.alertManagerUrl, logger=logger)
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -557,17 +555,6 @@ class MSTransferor(MSCore):
             msg = "DRY-RUN: making Rucio rule for workflow: %s, dids: %s, rse: %s, kwargs: %s"
             self.logger.info(msg, wflow.getName(), dids, rseExpr, ruleAttrs)
         return success, transferId
-
-    def sendAlert(self, alertName, severity, summary, description, service, endSecs=1 * 60 * 60):
-        """
-        Send alert to Prometheus, wrap function in a try-except clause
-        """
-        try:
-            # alert to expiry in an hour from now
-            self.alertManagerApi.sendAlert(alertName, severity, summary, description,
-                                           service, endSecs=endSecs)
-        except Exception as ex:
-            self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))
 
     def alertPUMisconfig(self, workflowName):
         """

@@ -2,7 +2,7 @@
 Definition of valid status values for a request and valid status transitions.
 
 """
-
+from copy import copy
 from future.utils import viewitems
 
 # make this list to ensure insertion order here
@@ -68,9 +68,7 @@ REQUEST_HUMAN_STATES = ["assignment-approved",
                         "rejected",
                         "aborted"]
 
-ACTIVE_STATUS = ["new",
-                 "assignment-approved",
-                 "assigned",
+ACTIVE_STATUS = ["assigned",
                  "staging",
                  "staged",
                  "acquired",
@@ -85,6 +83,8 @@ ACTIVE_STATUS = ["new",
                  "aborted-completed",
                  "rejected"]
 
+NON_ARCHIVED_STATUS = ["new", "assignment-approved"] + copy(ACTIVE_STATUS)
+
 ### WMSTATS_JOB_INFO + WMSTATS_NO_JOB_INFO is meant to be equal to ACTIVE_STATUS
 WMSTATS_JOB_INFO = ["running-open",
                     "running-closed",
@@ -92,9 +92,7 @@ WMSTATS_JOB_INFO = ["running-open",
                     "completed",
                     "closed-out"]
 
-WMSTATS_NO_JOB_INFO = ["new",
-                       "assignment-approved",
-                       "assigned",
+WMSTATS_NO_JOB_INFO = ["assigned",
                        "staging",
                        "staged",
                        "acquired",
@@ -164,8 +162,8 @@ STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in viewitems(ALLOWED_ACTI
 # is name of the status
 REQUEST_STATE_LIST = list(REQUEST_STATE_TRANSITION)
 
-ACTIVE_STATUS_FILTER = {"RequestStatus": ['assignment-approved', 'assigned', 'staging', 'staged',
-                                          'failed', 'acquired', 'running-open', 'running-closed',
+ACTIVE_STATUS_FILTER = {"RequestStatus": ['assigned', 'staging', 'staged', 'failed', 'acquired',
+                                          'running-open', 'running-closed',
                                           'force-complete', 'completed', 'closed-out']}
 
 

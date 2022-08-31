@@ -21,7 +21,7 @@ import re
 import time
 from copy import deepcopy
 from WMCore.REST.Auth import get_user_info
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 
 
 def initialize_request_args(request, config):
@@ -157,20 +157,6 @@ def generateRequestName(request):
 
     request["RequestName"] = "%s_%s" % (request["Requestor"], request.get("RequestString"))
     request["RequestName"] += "_%s_%s" % (currentTime, seconds)
-
-
-def protectedLFNs(requestInfo):
-    reqData = RequestInfo(requestInfo)
-    result = []
-    if reqData.andFilterCheck(ACTIVE_STATUS_FILTER):
-        outs = requestInfo.get('OutputDatasets', [])
-        base = requestInfo.get('UnmergedLFNBase', '/store/unmerged')
-        for out in outs:
-            dsn, ps, tier = out.split('/')[1:]
-            acq, rest = ps.split('-', 1)
-            dirPath = '/'.join([base, acq, dsn, tier, rest])
-            result.append(dirPath)
-    return result
 
 
 class RequestInfo(object):

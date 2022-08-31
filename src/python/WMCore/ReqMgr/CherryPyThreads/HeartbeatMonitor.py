@@ -5,7 +5,7 @@ from future.utils import viewitems
 
 import time
 from WMCore.REST.HeartbeatMonitorBase import HeartbeatMonitorBase
-from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
+from WMCore.ReqMgr.DataStructs.RequestStatus import NON_ARCHIVED_STATUS
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 
 
@@ -45,7 +45,7 @@ def initMetrics():
                "requestsByStatusAndPrio": {},
                "requestsByStatusAndNumEvts": {}}
 
-    for st in ACTIVE_STATUS:
+    for st in NON_ARCHIVED_STATUS:
         results["requestsByStatus"].setdefault(st, 0)
         results["requestsByStatusAndNumEvts"].setdefault(st, 0)
         results["requestsByStatusAndCampaign"].setdefault(st, {})

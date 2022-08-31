@@ -1,3 +1,8 @@
+2.1.2.pre2 to 2.1.2.pre3:
+  - Create alert for pileup containers eligible for rule deletion (Alan Malta Rodrigues) #11264
+  - New version of DBS3Client 4.0.10 (Valentin Kuznetsov) #11261
+
+
 2.1.2.pre1 to 2.1.2.pre2:
   - Dropping PhEDEx UnitTest (Jhonatan Amado) #11181
   - Dropping PhEDEx args (Jhonatan Amado) #11181

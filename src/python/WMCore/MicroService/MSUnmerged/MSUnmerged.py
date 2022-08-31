@@ -36,7 +36,6 @@ from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.MSUnmerged.MSUnmergedRSE import MSUnmergedRSE
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-# from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
@@ -133,10 +132,6 @@ class MSUnmerged(MSCore):
             msg = "Failed to import gfal2 library while it's not "
             msg += "set to emulate it. Crashing the service!"
             raise ImportError(msg)
-
-        # TODO: Add 'alertManagerUrl' to msConfig'
-        # self.alertServiceName = "ms-unmerged"
-        # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
 
         # Instantiating the Rucio Consistency Monitor Client
         self.rucioConMon = RucioConMon(self.msConfig['rucioConMon'], logger=self.logger)

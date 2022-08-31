@@ -27,7 +27,6 @@ from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
 from WMCore.MicroService.MSOutput.RelValPolicy import RelValPolicy
 from WMCore.WMException import WMException
-from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
 
 class MSOutputException(WMException):
@@ -105,7 +104,6 @@ class MSOutput(MSCore):
         self.uConfig = {}
         # service name used to route alerts via AlertManager
         self.alertServiceName = "ms-output"
-        self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
 
         # RelVal output data placement policy from the service configuration
         self.msConfig.setdefault("dbsUrl", "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")

@@ -335,10 +335,8 @@ class JobFactory(WMObject):
         if isinstance(resultProxy.keys, list):
             keys = resultProxy.keys
         else:
-            keys = resultProxy.keys()  # do not futurize this!
-            if isinstance(keys, set):
-                # If it's a set, handle it
-                keys = list(keys)
+            # the object below is of the type: sqlalchemy.engine.result.RMKeyView
+            keys = list(resultProxy.keys())
         files = set()
 
         while len(rawResults) < size and len(self.proxies) > 0:

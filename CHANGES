@@ -1,3 +1,8 @@
+2.1.2.pre3 to 2.1.2.pre4:
+  - Remove extra request parameter checks for [Non]CustodialSubType && AutoApproveSubscriptionSites. (Todor Ivanov) #11270
+  - Cast SQLAlchemy RMKeyView object to list (Alan Malta Rodrigues) #11268
+
+
 2.1.2.pre2 to 2.1.2.pre3:
   - Create alert for pileup containers eligible for rule deletion (Alan Malta Rodrigues) #11264
   - New version of DBS3Client 4.0.10 (Valentin Kuznetsov) #11261

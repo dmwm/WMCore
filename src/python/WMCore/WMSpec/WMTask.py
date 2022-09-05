@@ -1051,9 +1051,7 @@ class WMTaskHelper(TreeHelper):
         return a dictionary with the following structure
         {<dataset> : {CustodialSites : [],
                       NonCustodialSites : [],
-                      Priority : "Low",
-                      CustodialSubType : "Replica",
-                      NonCustodialSubType : "Replica"
+                      Priority : "Low"
                      }
         }
         """

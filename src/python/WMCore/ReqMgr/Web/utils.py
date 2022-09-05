@@ -95,7 +95,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                         % (key, json.dumps(val))
             else:
 
-                MULTI_SELECTION_KEYS = ['SiteWhitelist', 'SiteBlacklist', 'AutoApproveSubscriptionSites']
+                MULTI_SELECTION_KEYS = ['SiteWhitelist', 'SiteBlacklist']
                 if key in MULTI_SELECTION_KEYS:
                     sel = "<select class=\"width-100\" name=\"%s\" multiple>" % key
                 else:

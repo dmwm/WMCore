@@ -93,8 +93,6 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
         # This Disk expression wil target all real DISK T1 and T2 RSEs
         self.msConfig.setdefault("rucioDiskExpression", '(tier=2|tier=1)&cms_type=real&rse_type=DISK')
-        self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
-        self.msConfig.setdefault("mongoDBPort", 8230)
         # fetch documents created in the last 6 months (default value)
         self.msConfig.setdefault("mongoDocsCreatedSecs", 6 * 30 * 24 * 60 * 60)
         self.msConfig.setdefault("sendNotification", False)
@@ -118,18 +116,25 @@ class MSOutput(MSCore):
         self.campaigns = {}
         self.psn2pnnMap = {}
 
+        self.msConfig.setdefault("mongoDBRetryCount", 3)
+        self.msConfig.setdefault("mongoDBReplicaset", None)
+        self.msConfig.setdefault("mockMongoDB", False)
+
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
-            'database': 'msOutDB',
+            'database': self.msConfig['mongoDB'],
             'server': self.msConfig['mongoDBUrl'],
             'port': self.msConfig['mongoDBPort'],
+            'replicaset': self.msConfig['mongoDBReplicaset'],
             'logger': self.logger,
             'create': True,
+            'replicaset': self.msConfig['mongoDBReplicaset'],
             'collections': [
                 ('msOutRelValColl', msOutIndex),
                 ('msOutNonRelValColl', msOutIndex)]}
 
-        self.msOutDB = MongoDB(**msOutDBConfig).msOutDB
+        mongoClt = MongoDB(**msOutDBConfig)
+        self.msOutDB = getattr(mongoClt, self.msConfig['mongoDB'])
         self.msOutRelValColl = self.msOutDB['msOutRelValColl']
         self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
 

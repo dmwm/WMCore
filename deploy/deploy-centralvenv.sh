@@ -134,7 +134,7 @@ FULL_SCRIPT_PATH="$(_realPath "${0}")"
 # e.g. serviceList="admin reqmgr2 reqmgr2ms workqueue reqmon acdcserver"
 
 serviceList="wmcore"                                                      # default is the WMCore meta package
-venvPath="./WMCore.venv3"                                                 # WMCore virtual environment target path
+venvPath=$(_realPath "./WMCore.venv3")                                    # WMCore virtual environment target path
 wmSrcRepo="https://github.com/dmwm/WMCore.git"                            # WMCore source Repo
 wmSrcBranch="master"                                                      # WMCore source branch
 wmCfgRepo="https://:@gitlab.cern.ch:8443/cmsweb-k8s/services_config.git"  # WMCore config Repo

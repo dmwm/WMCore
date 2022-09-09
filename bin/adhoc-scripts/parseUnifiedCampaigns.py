@@ -285,9 +285,9 @@ def insertTestCampaigns(mgr):
     testCamp = ("CMSSW_10_6_1_patch1_Step1", "CMSSW_10_6_1_patch1_Step2",
                 "CMSSW_7_3_2__test2inwf-1510737328", "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628",
                 "RelVal_Generic_Campaign", "DMWM_Test",
-                "Agent204_Val", "Agent211_Val", "Agent213_Val", "Agent215_Val",
-                "Jun2022_Val", "Jul2022_Val", "Aug2022_Val", "Sept2022_Val", "Oct2022_Val",
-                "HG2206_Val", "HG2207_Val", "HG2208_Val", "HG2209_Val", "HG2210_Val")
+                "Agent212_Val", "Agent214_Val", "Agent216_Val",
+                "Sept2022_Val", "Oct2022_Val", "Nov2022_Val", "Dec2022_Val", "Jan2023_Val",
+                "HG2209_Val", "HG2210_Val", "HG2211_Val", "HG2212_Val", "HG2301_Val")
     for campName in testCamp:
         defaultCamp['CampaignName'] = campName
         upload(mgr, defaultCamp)

@@ -8,9 +8,9 @@ from __future__ import division, print_function
 
 from future.utils import viewitems
 from builtins import str, bytes
-
 from time import time
 from copy import deepcopy
+from WMCore.MicroService.Tools.Common import isRelVal
 
 
 class MSOutputTemplate(dict):
@@ -248,7 +248,7 @@ class MSOutputTemplate(dict):
         Evaluates whether it's a release validation request, if so, set the flag to True
         :param myDoc: the request dictionary
         """
-        if myDoc.get('SubRequestType') in ['RelVal', 'HIRelVal']:
+        if isRelVal(myDoc):
             self.setKey('IsRelVal', True)
 
     def setTransferStatus(self, newStatus):

@@ -169,6 +169,7 @@ class MSRuleCleanerWflow(dict):
             {
             "RequestName": "ReqName",
             "RequestType": "Type",
+            "SubRequestType": "Type",
             "RequestStatus": "Status",
             "OutputDatasets": [],
             'RulesToClean': {'plineMSTrCont': [],
@@ -200,6 +201,7 @@ class MSRuleCleanerWflow(dict):
         docTemplate = [
             ('RequestName', None, (bytes, str)),
             ('RequestType', None, (bytes, str)),
+            ('SubRequestType', None, (bytes, str)),
             ('RequestStatus', None, (bytes, str)),
             ('OutputDatasets', [], list),
             ('RulesToClean', {}, dict),

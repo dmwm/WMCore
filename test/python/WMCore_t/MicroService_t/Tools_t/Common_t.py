@@ -10,12 +10,12 @@ import unittest
 
 from nose.plugins.attrib import attr
 
-from WMCore.MicroService.Tools.Common import (dbsInfo, getEventsLumis,
-                                              findParent, hasHTTPFailed)
+from WMCore.MicroService.Tools.Common import (dbsInfo, getEventsLumis, findParent,
+                                              hasHTTPFailed, isRelVal)
 
 
 class CommonTest(unittest.TestCase):
-    "Unit test for Common module"
+    """Unit test for Common module"""
 
     def setUp(self):
         self.dbsUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
@@ -75,6 +75,19 @@ class CommonTest(unittest.TestCase):
         # result below should never happen, but let's test the status code
         self.assertFalse(hasHTTPFailed({'data': 1, 'code': 200, 'error': 'blah'}))
 
+    def testIsRelVal(self):
+        """
+        Test the `isRelVal` method functionality
+        """
+        badSubReqType = ("ReDigi", "TaskChain", "")
+        goodSubReqType = ("RelVal", "HIRelVal")
+        for subType in badSubReqType:
+            testReqDict = {"RequestType": "StepChain", "DbsUrl": "a_dbs_url", "SubRequestType": subType}
+            self.assertFalse(isRelVal(testReqDict))
+
+        for subType in goodSubReqType:
+            testReqDict = {"RequestType": "StepChain", "DbsUrl": "a_dbs_url", "SubRequestType": subType}
+            self.assertTrue(isRelVal(testReqDict))
 
 if __name__ == '__main__':
     unittest.main()

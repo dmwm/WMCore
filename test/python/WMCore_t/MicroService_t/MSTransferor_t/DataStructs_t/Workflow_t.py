@@ -285,29 +285,6 @@ class WorkflowTest(unittest.TestCase):
         self.assertItemsEqual(blockChunks, {"block_A", "block_B", "parent_A", "parent_B", "parent_C"})
         self.assertEqual(sizeChunks, 39)
 
-
-    def testIsRelVal(self):
-        """
-        Test the `isRelVal` method functionality
-        """
-        requestTypes = ("StepChain", "TaskChain", "ReReco")
-        for wflowType in requestTypes:
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "DbsUrl": "a_dbs_url"})
-            self.assertFalse(wflowObj.isRelVal())
-
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "ReDigi",
-                                               "DbsUrl": "a_dbs_url"})
-            self.assertFalse(wflowObj.isRelVal())
-
-        for wflowType in requestTypes:
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "RelVal",
-                                               "DbsUrl": "a_dbs_url"})
-            self.assertTrue(wflowObj.isRelVal())
-
-            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "HIRelVal",
-                                               "DbsUrl": "a_dbs_url"})
-            self.assertTrue(wflowObj.isRelVal())
-
     def testGetWorkflowGroup(self):
         """
         Test the `getWorkflowGroup` method functionality

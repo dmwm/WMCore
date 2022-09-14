@@ -34,7 +34,7 @@ from WMCore.ReqMgr.DataStructs import RequestStatus
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.MicroService.Tools.Common import findParent
+from WMCore.MicroService.Tools.Common import findParent, isRelVal
 from Utils.Pipeline import Pipeline, Functor
 from Utils.CertTools import ckey, cert
 
@@ -684,7 +684,8 @@ class MSRuleCleaner(MSCore):
                         msg = "Pileup container %s has the following container-level rules to be removed: %s."
                         msg += " However, this component is no longer removing pileup rules."
                         self.logger.info(msg, dataCont, ruleIds)
-                        self.alertDeletablePU(wflow['RequestName'], dataCont, ruleIds)
+                        if not isRelVal(wflow):
+                            self.alertDeletablePU(wflow['RequestName'], dataCont, ruleIds)
                     elif ruleIds:
                         wflow['RulesToClean'][currPline].extend(ruleIds)
                         msg = "Container %s has the following container-level rules to be removed: %s"

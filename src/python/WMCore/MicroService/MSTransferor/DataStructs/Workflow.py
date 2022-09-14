@@ -9,7 +9,7 @@ from future.utils import viewitems, viewvalues, listvalues
 
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.MicroService.Tools.Common import getMSLogger
+from WMCore.MicroService.Tools.Common import getMSLogger, isRelVal
 from WMCore.Services.Rucio.RucioUtils import GROUPING_DSET, GROUPING_ALL, NUM_COPIES_DEFAULT
 
 
@@ -366,13 +366,6 @@ class Workflow(object):
                 break
         self.dataCampaignMap.append(newItem)
 
-    def isRelVal(self):
-        """
-        Helper function to evaluate whether this workflow corresponds to
-        a RelVal workflow or not.
-        """
-        return self.data.get('SubRequestType') in ['RelVal', 'HIRelVal']
-
     def getWorkflowGroup(self):
         """
         Defines a workflow according to its group/activity, such as:
@@ -380,7 +373,7 @@ class Workflow(object):
           *) standard central production workflows
         :return: a string with the workflow class: relval, processing
         """
-        if self.isRelVal():
+        if isRelVal(self.data):
             return "relval"
         return "production"
 

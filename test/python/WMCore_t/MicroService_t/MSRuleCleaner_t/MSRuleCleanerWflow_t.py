@@ -52,6 +52,7 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         wflow = MSRuleCleanerWflow({})
         self.assertEqual(wflow["RequestName"], None)
         self.assertEqual(wflow["RequestType"], None)
+        self.assertEqual(wflow["SubRequestType"], None)
         self.assertEqual(wflow["RequestStatus"], None)
         self.assertEqual(wflow["OutputDatasets"], [])
         self.assertEqual(wflow["RulesToClean"], {})
@@ -109,6 +110,7 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                                                {u'DN': u'', u'Status': u'closed-out', u'UpdateTime': 1607347706},
                                                {u'DN': u'', u'Status': u'announced', u'UpdateTime': 1607359514}],
                          'RequestType': u'TaskChain',
+                         'SubRequestType': u'',
                          'RulesToClean': {},
                          'TargetStatus': None,
                          'TransferDone': False,
@@ -152,6 +154,7 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                                                {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1588775354},
                                                {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1589041121}],
                          'RequestType': u'ReReco',
+                         'SubRequestType': u'',
                          'RulesToClean': {},
                          'TargetStatus': None,
                          'TransferDone': False,
@@ -190,6 +193,7 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                                                {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1586861535},
                                                {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1586863942}],
                          'RequestType': u'StepChain',
+                         'SubRequestType': u'',
                          'RulesToClean': {},
                          'TargetStatus': None,
                          'TransferDone': False,
@@ -231,6 +235,7 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                                                {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1579579378},
                                                {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1579587203}],
                          'RequestType': u'StepChain',
+                         'SubRequestType': u'',
                          'RulesToClean': {},
                          'TargetStatus': None,
                          'TransferDone': False,

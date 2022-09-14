@@ -24,7 +24,7 @@ from copy import deepcopy
 from Utils.IteratorTools import grouper
 from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
     TRANSFER_RECORD, TRANSFER_COUCH_DOC
-from WMCore.MicroService.Tools.Common import gigaBytes, teraBytes
+from WMCore.MicroService.Tools.Common import gigaBytes, teraBytes, isRelVal
 from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
 from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
@@ -364,7 +364,7 @@ class MSTransferor(MSCore):
                 secLocation = pileupInput[dsetName]['locations']
                 # and a special case for RelVal workflows, which do not define
                 # secondary datasets and their location
-                if wflow.isRelVal():
+                if isRelVal(wflow.data):
                     campSecLocations = wflowPnns
                 else:
                     campSecLocations = campConfig['Secondaries'].get(dsetName, [])
@@ -442,7 +442,7 @@ class MSTransferor(MSCore):
                 # secondary already in place
                 continue
 
-            if wflow.getPURSElist() and not wflow.isRelVal():
+            if wflow.getPURSElist() and not isRelVal(wflow.data):
                 rses = list(wflow.getPURSElist() & self.rseQuotas.getAvailableRSEs())
             else:
                 rses = self._getValidSites(wflow, dataIn)
@@ -642,7 +642,7 @@ class MSTransferor(MSCore):
         self.logger.info("  final list of PSNs to be use: %s", psns)
         pnns = self._getPNNsFromPSNs(psns)
 
-        if wflow.isRelVal():
+        if isRelVal(wflow.data):
             self.logger.info("RelVal workflow '%s' ignores sites out of quota", wflow.getName())
             return list(pnns)
 

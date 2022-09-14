@@ -66,6 +66,15 @@ def getMSLogger(verbose, logger=None):
     return logger
 
 
+def isRelVal(reqDict):
+    """
+    Helper function to evaluate whether the workflow is RelVal or not.
+    :param reqDict: dictionary with the workflow description
+    :return: True if it's a RelVal workflow, otherwise False
+    """
+    return reqDict.get("SubRequestType", "") in ['RelVal', 'HIRelVal']
+
+
 def dbsInfo(datasets, dbsUrl):
     "Provides DBS info about dataset blocks"
     datasetBlocks = {}

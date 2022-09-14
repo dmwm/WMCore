@@ -1,37 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Script to retrieve the request status and evaluate the workflow
 completion, so the ration of input lumis vs output lumis.
 """
-from __future__ import print_function, division
-
 import argparse
 import json
 import os
 import pwd
 import sys
-
-try:
-    # python2
-    import urllib2
-    HTTPError, URLError = urllib2.HTTPError, urllib2.URLError
-    build_opener = urllib2.build_opener
-    HTTPSHandler = urllib2.HTTPSHandler
-    import urllib
-    urlencode = urllib.urlencode
-    import httplib
-    HTTPSConnection = httplib.HTTPSConnection
-except ImportError:
-    # python3
-    import urllib.error
-    HTTPError, URLError = urllib.error.HTTPError, urllib.error.URLError
-    import urllib.request
-    build_opener = urllib.request.build_opener
-    HTTPSHandler = urllib.request.HTTPSHandler
-    import urllib.parse
-    urlencode = urllib.parse.urlencode
-    import http.client
-    HTTPSConnection = http.client.HTTPSConnection
+import ssl
+from urllib.request import HTTPSHandler, build_opener
+from urllib.parse import urlencode
+from urllib.error import HTTPError, URLError
+from http.client import HTTPSConnection
 
 # ID for the User-Agent
 CLIENT_ID = 'workflowCompletion::python/%s.%s' % sys.version_info[:2]
@@ -44,8 +25,12 @@ class HTTPSClientAuthHandler(HTTPSHandler):
 
     def __init__(self, key, cert):
         HTTPSHandler.__init__(self)
-        self.key = key
-        self.cert = cert
+        # Create a default ssl context manager to carry the credentials.
+        # It also loads the default CA certificates
+        self.sslContext = ssl.create_default_context()
+        self.sslContext.load_cert_chain(cert, keyfile=key)
+        # Also load the default CA certificates (apparently not needed)
+        # self.sslContext.load_verify_locations(None, '/etc/grid-security/certificates/')
 
     def https_open(self, req):
         # Rather than pass in a reference to a connection class, we pass in
@@ -54,7 +39,7 @@ class HTTPSClientAuthHandler(HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=290):
-        return HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return HTTPSConnection(host, context=self.sslContext)
 
 
 def getX509():
@@ -84,13 +69,13 @@ def getContent(url, params=None):
         response = opener.open(url, params)
         output = response.read()
     except HTTPError as e:
-        print("The server couldn't fulfill the request at %s" % url)
-        print("Error: {}".format(e))
+        print(f"The server couldn't fulfill the request at {url}")
+        print(f"Error: {e}")
         output = '{}'
         # sys.exit(1)
     except URLError as e:
-        print('Failed to reach server at %s' % url)
-        print('Reason: ', e.reason)
+        print(f'Failed to reach server at {url}')
+        print(f'Reason: {e.reason}')
         sys.exit(2)
     return output
 
@@ -103,7 +88,7 @@ def handleReqMgr(reqName, reqmgrUrl):
     reqmgrOut = json.loads(getContent(urn))['result'][0][reqName]
 
     if reqmgrOut['RequestStatus'] in ['assignment-approved', 'assigned', 'staging', 'staged']:
-        print("Workflow %s in status: %s , skipping!\n" % (reqName, reqmgrOut['RequestStatus']))
+        print(f"Workflow {reqName} in status: {reqmgrOut['RequestStatus']} , skipping!\n")
         return None, None
 
     if 'InputDataset' in reqmgrOut:
@@ -115,8 +100,8 @@ def handleReqMgr(reqName, reqmgrUrl):
     else:
         inputData = None
 
-    print("==> %s\t(status: %s)" % (reqName, reqmgrOut['RequestStatus']))
-    print("InputDataset:\n    %s (total input lumis: %s)" % (inputData, reqmgrOut['TotalInputLumis']))
+    print(f"==> {reqName}\t(status: {reqmgrOut['RequestStatus']})")
+    print(f"InputDataset:\n    {inputData} (total input lumis: {reqmgrOut['TotalInputLumis']})")
     return reqmgrOut['TotalInputLumis'], reqmgrOut['OutputDatasets']
 
 
@@ -131,7 +116,7 @@ def handleDBS(reqmgrOutDsets, cmswebUrl):
 
     dbsOutput = {}
     for dataset in reqmgrOutDsets:
-        fullUrl = dbsUrl + "filesummaries?" + urlencode({'dataset': dataset})
+        fullUrl = dbsUrl + "/filesummaries?" + urlencode({'dataset': dataset})
         data = json.loads(getContent(fullUrl))
         if data:
             dbsOutput[dataset] = data[0]['num_lumi']
@@ -162,7 +147,7 @@ def main():
     if args.workflow:
         listRequests = [args.workflow]
     elif args.inputFile:
-        with open(args.inputFile, 'r') as f:
+        with open(args.inputFile, 'r', encoding="utf8") as f:
             listRequests = [req.rstrip('\n') for req in f.readlines()]
     else:
         parser.error("You must provide either a workflow name or an input file name.")
@@ -181,7 +166,7 @@ def main():
         dbsInfo = handleDBS(reqmgrOutDsets, cmswebUrl)
         print("OutputDatasets:")
         for dset in reqmgrOutDsets:
-            print("    %s (lumis: %s, lumi completion: %s)" % (dset, dbsInfo[dset], dbsInfo[dset] / inputLumis))
+            print(f"    {dset} (lumis: {dbsInfo[dset]}, lumi completion: {dbsInfo[dset] / inputLumis})")
         print("")
 
     sys.exit(0)

@@ -364,7 +364,11 @@ class AccountantWorker(WMConnectionBase):
         dbsFile['task'] = task
         dbsFile['runs'] = jobReportFile['runs']
 
-        dbsFile.setLocation(pnn=list(jobReportFile["locations"])[0], immediateSave=False)
+        if list(jobReportFile["locations"])[0] == "T1_US_FNAL":
+            pnnFixed = "T1_US_FNAL_Disk"
+        else:
+            pnnFixed = list(jobReportFile["locations"])[0]
+        dbsFile.setLocation(pnn=pnnFixed, immediateSave=False)
         self.dbsFilesToCreate.append(dbsFile)
         return
 
@@ -715,12 +719,15 @@ class AccountantWorker(WMConnectionBase):
             lfn = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
             jobLocation = dbsFile.getLocations()[0]
+            if jobLocation == "T1_US_FNAL":
+                jobLocation = "T1_US_FNAL_Disk"
             jobLocations.add(jobLocation)
             dbsFileTuples.append((lfn, dbsFile['size'],
                                   dbsFile['events'], assocID,
                                   dbsFile['status'], workflowID, dbsFile['in_phedex']))
 
             dbsFileLoc.append({'lfn': lfn, 'pnn': jobLocation})
+
             if dbsFile['runs']:
                 runLumiBinds.append({'lfn': lfn, 'runs': dbsFile['runs']})
 
@@ -887,6 +894,8 @@ class AccountantWorker(WMConnectionBase):
         wmbsFile["locations"] = set()
 
         if pnn != None:
+            if pnn == "T1_US_FNAL":
+                pnn = "T1_US_FNAL_Disk"
             wmbsFile.setLocation(pnn=pnn, immediateSave=False)
         wmbsFile['jid'] = jobID
 

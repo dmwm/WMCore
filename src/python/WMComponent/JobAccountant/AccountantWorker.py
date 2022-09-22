@@ -896,6 +896,9 @@ class AccountantWorker(WMConnectionBase):
         if pnn != None:
             if pnn == "T1_US_FNAL":
                 pnn = "T1_US_FNAL_Disk"
+                msg = "Found job with wrong PNN T1_US_FNAL. JobID: %i." % jobID
+                msg += "Swapping with PNN T1_US_FNAL_Disk"
+                logging.warning(msg)
             wmbsFile.setLocation(pnn=pnn, immediateSave=False)
         wmbsFile['jid'] = jobID
 

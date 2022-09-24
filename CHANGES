@@ -1,3 +1,7 @@
+2.1.2.patch1 to 2.1.2.patch2:
+  - Update CMSMonitoring python library version to 0.6.9 (Alan Malta Rodrigues) #11296
+
+
 2.1.2 to 2.1.2.patch1:
   - Update Py3 CMSMonitoring to version 0.6.8 (Alan Malta Rodrigues) #11284
 

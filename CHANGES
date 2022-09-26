@@ -1,3 +1,13 @@
+2.1.2 to 2.1.3.pre1:
+  - Update CMSMonitoring python library version to 0.6.9 (Alan Malta Rodrigues) #11295
+  - Update schematics for WM, MSTransferor and MSMonitor (Alan Malta Rodrigues) #11294
+  - Fix python version for patchComponent.sh (#11272) (Todor Ivanov) #11272
+  - Convert bin/workflowCompletion.py to python3-only; fix url bug (Alan Malta Rodrigues) #11286
+  - Skip alert for RelVals with deletable pileup (Alan Malta Rodrigues) #11283
+  - Update Py3 CMSMonitoring to version 0.6.8 (Alan Malta Rodrigues) #11282
+  - Update WMAgent script example and test campaign names (Alan Malta Rodrigues) #11278
+
+
 2.1.2.pre4 to 2.1.2:
 
 

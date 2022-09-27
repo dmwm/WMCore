@@ -630,9 +630,11 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.CMSSW_Versions'] = classad.quote(encodeUnicodeToBytesConditional(cmsswVersions, condition=PY2))
             requiredArchs = self.scramArchtoRequiredArch(job.get('scramArch'))
             if not requiredArchs:  # only Cleanup jobs should not have ScramArch defined
-                ad['Requirements'] = '(TARGET.Arch =!= Undefined)'
+                ad['My.REQUIRED_ARCH'] = undefined
+                ad['Requirements'] = '(TARGET.Arch =!= REQUIRED_ARCH)'
             else:
-                ad['Requirements'] = 'stringListMember(TARGET.Arch, %s)' % classad.quote(str(requiredArchs))
+                ad['My.REQUIRED_ARCH'] = classad.quote(str(requiredArchs))
+                ad['Requirements'] = 'stringListMember(TARGET.Arch, REQUIRED_ARCH)'
 
             jobParameters.append(ad)    
              

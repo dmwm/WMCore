@@ -86,8 +86,12 @@ class MicroServiceTest(unittest.TestCase):
         # we should explicitly set Accept-Encoding to nil since
         # pycurl_manager sets it by default to gzip, see
         # https://github.com/dmwm/WMCore/blob/master/src/python/WMCore/Services/pycurl_manager.py#L226
-        headers = {'Accept-Encoding': ''}
-        data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        if isinstance(data, bytes):
+            data = gzip.decompress(data)
+            if isinstance(data, bytes):
+                data = data.decode("utf-8")
+            data = json.loads(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
 
@@ -105,8 +109,12 @@ class MicroServiceTest(unittest.TestCase):
         # we should explicitly set Accept-Encoding to nil since
         # pycurl_manager sets it by default to gzip, see
         # https://github.com/dmwm/WMCore/blob/master/src/python/WMCore/Services/pycurl_manager.py#L226
-        headers = {'Accept-Encoding': ''}
-        data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        if isinstance(data, bytes):
+            data = gzip.decompress(data)
+            if isinstance(data, bytes):
+                data = data.decode("utf-8")
+            data = json.loads(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
 
@@ -147,7 +155,7 @@ class MicroServiceTest(unittest.TestCase):
             if isinstance(data, bytes):
                 data = data.decode("utf-8")
             data = json.loads(data)
-        print("### testGetStatus, headers=", headers, "data=", data, type(data))
+        print("### testGetStatusGzip, headers=", headers, "data=", data, type(data))
         # check that result key is present in data
         if 'result' in data:
             self.assertEqual(data['result'][0]['microservice'], self.managerName)
@@ -171,7 +179,7 @@ class MicroServiceTest(unittest.TestCase):
             if isinstance(data, bytes):
                 data = data.decode("utf-8")
             data = json.loads(data)
-        print("### testGetInfo, headers=", headers, "data=", data, type(data))
+        print("### testGetInfoGZip, headers=", headers, "data=", data, type(data))
         # check that result key is present in data
         if 'result' in data:
             self.assertEqual(data['result'][0]['microservice'], self.managerName)

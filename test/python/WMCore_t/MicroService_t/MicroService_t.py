@@ -88,8 +88,13 @@ class MicroServiceTest(unittest.TestCase):
 
         params = {"service": "transferor"}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        self.assertEqual(data['result'][0]['microservice'], self.managerName)
-        self.assertEqual(data['result'][0]['api'], api)
+        if 'result' in data:
+            self.assertEqual(data['result'][0]['microservice'], self.managerName)
+            self.assertEqual(data['result'][0]['api'], api)
+        else:
+            print("### data=", data, "type(data)=", type(data))
+            # we should not be here, let's assert
+            self.assertEqul(True, False)
 
     def testGetInfo(self):
         "Test function for getting state of the MicroService"
@@ -102,8 +107,13 @@ class MicroServiceTest(unittest.TestCase):
 
         params = {"request": "fake_request_name"}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        self.assertEqual(data['result'][0]['microservice'], self.managerName)
-        self.assertEqual(data['result'][0]['api'], api)
+        if 'result' in data:
+            self.assertEqual(data['result'][0]['microservice'], self.managerName)
+            self.assertEqual(data['result'][0]['api'], api)
+        else:
+            print("### data=", data, "type(data)=", type(data))
+            # we should not be here, let's assert
+            self.assertEqul(True, False)
 
     def testGetStatusGzip(self):
         "Test function for getting state of the MicroService"
@@ -125,8 +135,9 @@ class MicroServiceTest(unittest.TestCase):
             self.assertEqual(data['result'][0]['microservice'], self.managerName)
             self.assertEqual(data['result'][0]['api'], api)
         else:
-            print("### result is not present in data")
-            print(data)
+            print("### data=", data, "type(data)=", type(data))
+            # we should not be here, let's assert
+            self.assertEqul(True, False)
 
         params = {"service": "transferor"}
         data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
@@ -142,8 +153,9 @@ class MicroServiceTest(unittest.TestCase):
             self.assertEqual(data['result'][0]['microservice'], self.managerName)
             self.assertEqual(data['result'][0]['api'], api)
         else:
-            print("### result is not present in data")
-            print(data)
+            print("### data=", data, "type(data)=", type(data))
+            # we should not be here, let's assert
+            self.assertEqul(True, False)
 
     def testGetInfoGzip(self):
         "Test function for getting state of the MicroService"

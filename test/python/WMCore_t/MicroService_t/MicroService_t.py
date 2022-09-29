@@ -82,56 +82,38 @@ class MicroServiceTest(unittest.TestCase):
         api = "status"
         url = '%s/%s' % (self.url, api)
         params = {}
-        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        if isinstance(data, bytes):
-            data = data.decode("utf-8")
-            print("### data=", data, "type(data)=", type(data))
-            data = json.loads(data)
-        if 'result' in data:
-            self.assertEqual(data['result'][0]['microservice'], self.managerName)
-            self.assertEqual(data['result'][0]['api'], api)
-        else:
-            print("### data=", data, "type(data)=", type(data))
-            # we should not be here, let's assert
-            self.assertEqul(True, False)
+
+        # we should explicitly set Accept-Encoding to nil since
+        # pycurl_manager sets it by default to gzip, see
+        # https://github.com/dmwm/WMCore/blob/master/src/python/WMCore/Services/pycurl_manager.py#L226
+        headers = {'Accept-Encoding': ''}
+        data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
 
         params = {"service": "transferor"}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        if 'result' in data:
-            self.assertEqual(data['result'][0]['microservice'], self.managerName)
-            self.assertEqual(data['result'][0]['api'], api)
-        else:
-            print("### data=", data, "type(data)=", type(data))
-            # we should not be here, let's assert
-            self.assertEqul(True, False)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
 
     def testGetInfo(self):
         "Test function for getting state of the MicroService"
         api = "status"
         url = '%s/%s' % (self.url, api)
         params = {}
-        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        if isinstance(data, bytes):
-            data = data.decode("utf-8")
-            print("### data=", data, "type(data)=", type(data))
-            data = json.loads(data)
-        if 'result' in data:
-            self.assertEqual(data['result'][0]['microservice'], self.managerName)
-            self.assertEqual(data['result'][0]['api'], api)
-        else:
-            print("### data=", data, "type(data)=", type(data))
-            # we should not be here, let's assert
-            self.assertEqul(True, False)
+
+        # we should explicitly set Accept-Encoding to nil since
+        # pycurl_manager sets it by default to gzip, see
+        # https://github.com/dmwm/WMCore/blob/master/src/python/WMCore/Services/pycurl_manager.py#L226
+        headers = {'Accept-Encoding': ''}
+        data = self.mgr.getdata(url, params=params, headers=headers, encode=True, decode=True)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
 
         params = {"request": "fake_request_name"}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        if 'result' in data:
-            self.assertEqual(data['result'][0]['microservice'], self.managerName)
-            self.assertEqual(data['result'][0]['api'], api)
-        else:
-            print("### data=", data, "type(data)=", type(data))
-            # we should not be here, let's assert
-            self.assertEqul(True, False)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
 
     def testGetStatusGzip(self):
         "Test function for getting state of the MicroService"

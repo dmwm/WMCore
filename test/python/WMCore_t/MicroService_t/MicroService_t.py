@@ -83,6 +83,10 @@ class MicroServiceTest(unittest.TestCase):
         url = '%s/%s' % (self.url, api)
         params = {}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        if isinstance(data, bytes):
+            data = data.decode("utf-8")
+            print("### data=", data, "type(data)=", type(data))
+            data = json.loads(data)
         if 'result' in data:
             self.assertEqual(data['result'][0]['microservice'], self.managerName)
             self.assertEqual(data['result'][0]['api'], api)
@@ -107,6 +111,10 @@ class MicroServiceTest(unittest.TestCase):
         url = '%s/%s' % (self.url, api)
         params = {}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        if isinstance(data, bytes):
+            data = data.decode("utf-8")
+            print("### data=", data, "type(data)=", type(data))
+            data = json.loads(data)
         if 'result' in data:
             self.assertEqual(data['result'][0]['microservice'], self.managerName)
             self.assertEqual(data['result'][0]['api'], api)

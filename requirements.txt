@@ -42,3 +42,4 @@ rucio-clients~=1.25.5         # wmcore,wmagent,global-workqueue,reqmgr2ms
 Sphinx~=5.1.1                 # wmcore,wmagent,wmagent-devtools,reqmgr2,reqmon,acdcserver,global-workqueue,reqmgr2ms
 SQLAlchemy~=1.4.40            # wmcore,wmagent
 PyJWT~=2.4.0                  # wmagent,wmagent-devtools,reqmgr2,reqmon,acdcserver,global-workqueue,reqmgr2ms,wmcore
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability

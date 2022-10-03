@@ -8,6 +8,7 @@ from __future__ import print_function, division
 
 from builtins import str, object
 from past.builtins import basestring
+import socket
 import logging
 try:
     # This module has dependency with python binding for condor package (condor)
@@ -101,6 +102,28 @@ class PyCondorAPI(object):
 
         return success
 
+    def getScheddAdFromCollectors(self, recreateCollector=False):
+        """
+        Get schedd from the collector or flock collector host
+        """
+        scheddAd = None
+        try:
+            if recreateCollector:
+                self.coll = htcondor.Collector()
+            scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
+        except htcondor.HTCondorLocateError:
+            # If we can't find a default schedd in the local collector
+            # try the flock collector (applies to e.g.: HEPCloud schedds)
+            coll = htcondor.Collector(htcondor.param.get('FLOCK_COLLECTOR_HOSTS'), None)
+            scheddAd = coll.locate(htcondor.DaemonTypes.Schedd, socket.gethostname())
+
+        if scheddAd is None:
+            msg = "Unable to get flock collector host(s)"
+            logging.exception(msg)
+            raise Exception(msg)
+
+        return scheddAd
+
     def isScheddOverloaded(self):
         """
         check whether job limit is reached in local schedd.
@@ -109,17 +132,17 @@ class PyCondorAPI(object):
         || ( RecentDaemonCoreDutyCycle > 9.800000000000000E-01 )
         """
         try:
-            scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
+            scheddAd = self.getScheddAdFromCollectors()
             q = self.coll.query(htcondor.AdTypes.Schedd, 'Name == "%s"' % scheddAd['Name'],
                                 projection=['CurbMatchmaking'])[0]
             isOverloaded = q['CurbMatchmaking'].eval()
             return isOverloaded
         except Exception:
             # if there is an error, try to recreate the collector instance
-            logging.info("Recreating Collector instance due to query error...")
-            self.coll = htcondor.Collector()
+            # and get the local schedd Ad again
+            logging.info("Recreating Collector and ScheddAd instance due to query error...")
+            scheddAd = self.getScheddAdFromCollectors(recreateCollector=True)
         try:
-            scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
             q = self.coll.query(htcondor.AdTypes.Schedd, 'Name == "%s"' % scheddAd['Name'],
                                 projection=['CurbMatchmaking'])[0]
             isOverloaded = q['CurbMatchmaking'].eval()

@@ -37,7 +37,7 @@ import platform
 
 from PSetTweaks.WMTweak import readAdValues
 from Utils.PythonVersion import PY3
-from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicodeConditional
+from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicodeConditional, decodeBytesToUnicode
 
 SCRAM_TO_ARCH = {'amd64': 'X86_64', 'aarch64': 'aarch64', 'ppc64le': 'ppc64le'}
 # Scram arch to platform machine values above are unique, so we can reverse the mapping
@@ -418,6 +418,8 @@ class Scram(object):
         self.procWriter(proc, "%s\n" % command)
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()
+        self.stdout = decodeBytesToUnicode(self.stdout)
+        self.stderr = decodeBytesToUnicode(self.stderr)
         logging.info("Subprocess stdout was:\n%s", self.stdout)
         logging.info("Subprocess stderr was:\n%s", self.stderr)
         self.code = proc.returncode

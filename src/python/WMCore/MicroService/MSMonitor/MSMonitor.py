@@ -13,7 +13,7 @@ import time
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import MONITOR_REPORT
-from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.Services.Rucio.Rucio import Rucio
 
 

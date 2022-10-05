@@ -11,7 +11,7 @@ import unittest
 from Utils.PythonVersion import PY3
 
 from WMCore.Agent.Configuration import Configuration
-from WMCore.MicroService.MSManager import MSManager
+from WMCore.MicroService.MSCore.MSManager import MSManager
 
 
 class MSManagerTest(unittest.TestCase):

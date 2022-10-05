@@ -26,7 +26,7 @@ from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getPileupConta
 from WMCore.MicroService.Tools.Common import (elapsedTime, findBlockParents,
                                               findParent, getBlocksByDsetAndRun,
                                               getFileLumisInBlock, getRunsInBlock)
-from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.MSCore.MSCore import MSCore
 
 
 def isNanoWorkflow(reqDict):

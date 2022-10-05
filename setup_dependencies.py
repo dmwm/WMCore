@@ -110,8 +110,43 @@ dependencies = {
                     'WMCore.ReqMgr.DataStructs.RequestStatus',
                     'WMCore.ReqMgr.DataStructs.RequestType'
                     ],
-        'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
+        'systems': ['wmc-rest', 'wmc-database'],
         'statics': [],
+    },
+    'reqmgr2ms-core': {
+        'packages': ['WMCore.MicroService.MSCore', 'WMCore.MicroService.DataStructs',
+                     'WMCore.MicroService.Tools', 'WMCore.MicroService.CherryPyThreads',
+                     'WMCore.MicroService.Service', 'WMCore.MicroService.WebGui',
+                     'Utils', 'WMCore.Services+'],
+        'modules': ['WMCore.Wrappers.__init__',
+                    'WMCore.Wrappers.JsonWrapper.__init__',
+                    'WMCore.Wrappers.JsonWrapper.JSONThunker',
+                    'WMCore.ReqMgr.__init__', 'WMCore.ReqMgr.DataStructs.__init__',
+                    'WMCore.ReqMgr.DataStructs.RequestStatus',
+                    'WMCore.ReqMgr.DataStructs.RequestType'
+                    ],
+        'systems': ['wmc-rest', 'wmc-database'],
+        'statics': [],
+    },
+    'reqmgr2ms-unmerged': {
+        'packages': ['WMCore.MicroService.MSUnmerged'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-output': {
+        'packages': ['WMCore.MicroService.MSOutput'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-transferor': {
+        'packages': ['WMCore.MicroService.MSTransferor'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-monitor': {
+        'packages': ['WMCore.MicroService.MSMonitor'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-rulecleaner': {
+        'packages': ['WMCore.MicroService.MSRuleCleaner'],
+        'systems': ['reqmgr2ms-core'],
     },
     'global-workqueue': {
         'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',

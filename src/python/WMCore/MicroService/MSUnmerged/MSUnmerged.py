@@ -32,7 +32,7 @@ from pymongo.errors  import NotPrimaryError
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
-from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.MSUnmerged.MSUnmergedRSE import MSUnmergedRSE
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer

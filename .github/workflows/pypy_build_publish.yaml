@@ -1,0 +1,18 @@
+# This workflow will build and upload WMCore core services to the production PYPY
+# based on tag releases
+
+on:
+  push:
+    tags:
+      - v2.1.**
+
+jobs:
+  build_and_publish_services:
+    stragegy:
+      matrix:
+        target: [wmagent, wmagent-devtools, wmcore, reqmon, reqmgr2, reqmgr2ms, global-workqueue, acdcserver]
+    uses: ./.github/workflows/pypy_build_publish_template.yaml
+    with:
+      target: ${{ matrix.target }}
+    secrets:
+      token: ${{ secrets.PYPY_PRODUCTION }}

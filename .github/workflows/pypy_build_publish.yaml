@@ -1,10 +1,12 @@
 # This workflow will build and upload WMCore core services to the production PYPY
 # based on tag releases
 
+name: Build and publish WMCore services 
+
 on:
   push:
     tags:
-      - v2.1.**
+      - 2.**
 
 jobs:
   build_and_publish_services:

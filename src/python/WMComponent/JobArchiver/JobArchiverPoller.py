@@ -300,11 +300,14 @@ class JobArchiverPoller(BaseWorkerThread):
         markAction = self.daoFactory(classname="Workflow.MarkInjectedWorkflows")
         result = getAction.execute()
 
+        # Get the drain mode status
+        drainMode = isDrainMode(self.config)
+
         # Check each result to see if it is injected:
         injected = []
         for name in result:
             try:
-                if self.workQueue.getWMBSInjectionStatus(name, isDrainMode(self.config)):
+                if self.workQueue.getWMBSInjectionStatus(name, drainMode):
                     injected.append(name)
             except WorkQueueNoMatchingElements:
                 # workflow not known - free to cleanup

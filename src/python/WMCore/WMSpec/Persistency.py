@@ -15,10 +15,7 @@ from future.moves.urllib.request import urlopen, Request
 
 from builtins import object
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 
 class PersistencyHelper(object):

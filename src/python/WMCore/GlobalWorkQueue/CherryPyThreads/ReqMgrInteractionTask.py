@@ -28,8 +28,8 @@ class ReqMgrInteractionTask(CherryPyPeriodicTask):
         4. record this activity
         """
         tStart = time()
-        self.logger.info("Executing WorkQueue/ReqMgr thread thread")
+        self.logger.info("Executing WorkQueue/ReqMgr thread")
         self.reqMgrInt(self.globalQ)
-        self.logger.info("%s executed in %.3f secs.", self.__class__.__name__, time() - tStart)
+        self.logger.info("%s executed in %.3f secs.\n", self.__class__.__name__, time() - tStart)
 
         return

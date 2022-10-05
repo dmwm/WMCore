@@ -28,7 +28,7 @@ class Create(DBCreator):
             """CREATE TABLE dbsbuffer_dataset (
                  id              INTEGER      AUTO_INCREMENT,
                  path            VARCHAR(500) COLLATE latin1_general_cs NOT NULL,
-                 processing_ver  VARCHAR(255),
+                 processing_ver  INTEGER      NOT NULL,
                  acquisition_era VARCHAR(255),
                  valid_status    VARCHAR(20),
                  global_tag      VARCHAR(255),
@@ -43,15 +43,12 @@ class Create(DBCreator):
                  dataset_id             INTEGER      NOT NULL,
                  site                   VARCHAR(100) NOT NULL,
                  custodial              INTEGER      DEFAULT 0,
-                 auto_approve           INTEGER      DEFAULT 0,
-                 move                   INTEGER      DEFAULT 0,
                  priority               VARCHAR(10)  DEFAULT 'Low',
                  subscribed             INTEGER      DEFAULT 0,
-                 phedex_group           VARCHAR(100),
                  delete_blocks          INTEGER,
-                 dataset_lifetime       INTEGER     DEFAULT 0,
+                 dataset_lifetime       INTEGER      DEFAULT 0 NOT NULL,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_dat_sub UNIQUE (dataset_id, site, custodial, auto_approve, move, priority))"""
+                 CONSTRAINT uq_dbs_dat_sub UNIQUE (dataset_id, site, custodial, priority))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_algo (

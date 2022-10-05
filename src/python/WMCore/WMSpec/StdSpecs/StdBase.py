@@ -14,13 +14,14 @@ import json
 from Utils.PythonVersion import PY3
 from Utils.Utilities import decodeBytesToUnicodeConditional
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
+from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Lexicon import (couchurl, procstring, activity, procversion, primdataset,
                             gpuParameters, lfnBase, identifier, acqname, cmsname,
                             dataset, block, campaign, subRequestType)
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
+from WMCore.Services.Rucio.RucioUtils import RUCIO_RULES_PRIORITY
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import (makeLumiList, checkDBSURL, validateArgumentsCreate)
@@ -160,7 +161,7 @@ class StdBase(object):
         command += "cd %s\n" % scramBaseDirs[0]
         command += "eval `scramv1 runtime -sh`\n"
 
-        if PY3:
+        if isCMSSWSupported(cmsswVersion, "CMSSW_10_3_0"):
             command += """python3 -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
         else:
             command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
@@ -1048,7 +1049,8 @@ class StdBase(object):
                      "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
                      "VoGroup": {"default": "unknown", "attr": "owner_vogroup"},
                      "VoRole": {"default": "unknown", "attr": "owner_vorole"},
-                     "ValidStatus": {"default": "PRODUCTION"},
+                     "ValidStatus": {"default": "PRODUCTION",
+                                     "validate": lambda x: x in ("PRODUCTION", "VALID")},
                      "OverrideCatalog": {"null": True},
                      "RunNumber": {"default": 0, "type": int},
                      "RobustMerge": {"default": True, "type": strToBool},
@@ -1133,16 +1135,8 @@ class StdBase(object):
                                         "validate": lambda x: all([cmsname(y) for y in x])},
                      "NonCustodialSites": {"default": [], "type": makeList, "assign_optional": True,
                                            "validate": lambda x: all([cmsname(y) for y in x])},
-                     "AutoApproveSubscriptionSites": {"default": [], "type": makeList, "assign_optional": True,
-                                                      "validate": lambda x: all([cmsname(y) for y in x])},
-                     "CustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
-                                          "validate": lambda x: x in ["Move", "Replica"]},
-                     "NonCustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
-                                             "validate": lambda x: x in ["Move", "Replica"]},
-                     "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
-                     "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
                      "SubscriptionPriority": {"default": "Low", "assign_optional": True,
-                                              "validate": lambda x: x.lower() in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES},
+                                              "validate": lambda x: x.lower() in RUCIO_RULES_PRIORITY},
                      "DeleteFromSource": {"default": False, "type": strToBool},
                      # merge settings
                      "UnmergedLFNBase": {"assign_optional": True},

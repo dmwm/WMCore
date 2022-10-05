@@ -5,7 +5,7 @@ from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter, convertToServiceCouchDoc
 
 # CMSMonitoring modules
-from CMSMonitoring.StompAMQ import StompAMQ
+from CMSMonitoring.StompAMQ7 import StompAMQ7 as StompAMQ
 
 
 class HeartbeatMonitorBase(CherryPyPeriodicTask):
@@ -76,8 +76,8 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
                                 logger=self.logger)
 
             for doc in docs:
-                singleNotif, _, _ = stompSvc.make_notification(payload=doc, docType=self.docTypeAMQ,
-                                                               ts=ts, dataSubfield="payload")
+                singleNotif, _, _ = stompSvc.make_notification(payload=doc, doc_type=self.docTypeAMQ,
+                                                               ts=ts, data_subfield="payload")
                 notifications.append(singleNotif)
 
             failures = stompSvc.send(notifications)

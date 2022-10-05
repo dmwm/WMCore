@@ -4,10 +4,7 @@ _JobPackage_
 
 Data structure for storing and retreiving multiple job objects.
 """
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 from Utils.PythonVersion import HIGHEST_PICKLE_PROTOCOL
 from WMCore.DataStructs.WMObject import WMObject
 

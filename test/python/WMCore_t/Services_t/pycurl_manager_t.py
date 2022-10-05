@@ -4,10 +4,14 @@ Unit test for pycurl_manager module.
 
 from __future__ import division
 
+import gzip
+import os
 import tempfile
 import unittest
+import traceback
 from Utils.CertTools import getKeyCertFromEnv
-from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader, getdata, cern_sso_cookie
+from WMCore.Services.pycurl_manager import \
+        RequestHandler, ResponseHeader, getdata, cern_sso_cookie, decompress
 
 
 class PyCurlManager(unittest.TestCase):
@@ -24,6 +28,21 @@ class PyCurlManager(unittest.TestCase):
         self.cricheader = 'Date: Tue, 06 Nov 2018 14:50:29 GMT\r\nServer: Apache/2.4.6 (CentOS) OpenSSL/1.0.2k-fips mod_wsgi/3.4 Python/2.7.5 mod_gridsite/2.3.4\r\nVary: Cookie\r\nX-Frame-Options: SAMEORIGIN\r\nSet-Cookie: sessionid=bc1xu8zi5rbbsd5fgjuklb2tk2r3f6tw; expires=Sun, 11-Nov-2018 14:50:29 GMT; httponly; Max-Age=432000; Path=/\r\nContent-Length: 32631\r\nContent-Type: application/json\r\n\r\n'
         self.dbsheader = 'Date: Tue, 06 Nov 2018 14:39:07 GMT\r\nServer: Apache\r\nCMS-Server-Time: D=1503 t=1541515147806112\r\nTransfer-Encoding: chunked\r\nContent-Type: text/html\r\n\r\n'
         self.HTTPheader = 'Date: Tue, 06 Nov 2018 14:50:29 GMT\r\nServer: Apache/2.4.6 (CentOS) OpenSSL/1.0.2k-fips mod_wsgi/3.4 Python/2.7.5 mod_gridsite/2.3.4\r\nVary: Cookie\r\nX-Frame-Options: SAMEORIGIN\r\nSet-Cookie: GRIDHTTP_PASSCODE=2c6da9c96efa2ad0farhda; domain=cms-cric.cern.ch; path=/; secure\r\nContent-Length: 32631\r\nContent-Type: application/json\r\n\r\n'
+
+    def testDecompress(self):
+        """
+        Test decompress function
+        """
+        body = "bla"
+        headers = {}
+        data = decompress(body, headers)
+        self.assertEqual(data, body)
+
+        # gzip body
+        gzipBody = gzip.compress(bytes(body, 'utf-8'))
+        headers = {'Content-Encoding': 'gzip'}
+        data = decompress(gzipBody, headers)
+        self.assertEqual(data, bytes(body, 'utf-8'))
 
     def testMulti(self):
         """
@@ -150,6 +169,33 @@ class PyCurlManager(unittest.TestCase):
         # Kubernetes cluster responds with a different Server header
         serverHeader = res.getHeaderKey("Server")
         self.assertTrue(serverHeader.startswith("nginx/") or serverHeader.startswith("CherryPy/") or serverHeader.startswith("openresty/"))
+
+    def testToken(self):
+        """
+        Test setting up token header
+        """
+        iam_token = "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJ3bGNnLnZlciI6IjEuMCIsInN1YiI6IjZjYTE3YzMyLTU0YWUtNDUzYy04YjQ1LTYyNTFkMjhlOTRhMSIsImF1ZCI6Imh0dHBzOlwvXC93bGNnLmNlcm4uY2hcL2p3dFwvdjFcL2FueSIsIm5iZiI6MTY0NTU1MDExMCwic2NvcGUiOiJhZGRyZXNzIHBob25lIG9wZW5pZCBvZmZsaW5lX2FjY2VzcyBwcm9maWxlIGVkdXBlcnNvbl9zY29wZWRfYWZmaWxpYXRpb24gZWR1cGVyc29uX2VudGl0bGVtZW50IGVtYWlsIHdsY2ciLCJpc3MiOiJodHRwczpcL1wvY21zLWF1dGgud2ViLmNlcm4uY2hcLyIsImV4cCI6MTY0NTU1MzcxMCwiaWF0IjoxNjQ1NTUwMTEwLCJqdGkiOiJkMWE3NzI0MC02Mjk5LTRiM2MtYmY5ZS0yOGNmYzgxY2ZjZDciLCJjbGllbnRfaWQiOiI0N2EwYjZkMC1mMzBlLTQ2OGItYmMwYy01MWVlNmE5Nzg2ODAifQ.Rpw6Mk_QzxtQVcbS-2OeVYGNMzyO08W540Sv3Nda2x3UJmPBRK4lnriRgSzMNTGP4y51rC5exbpf970MpJrjPaWqDhFWC--T6hxPAHhxHUxMTkXF5hUGXMLoNkCN5yR4eBJSAbgrgYJJwBcY5lMdCQ0BH5kQAUL6XRr3kvCrQQ0"
+        os.environ['IAM_TOKEN'] = iam_token
+        url = 'https://cmsweb-testbed.cern.ch'
+        params = {}
+        headers = {}
+        try:
+            # this call requires that our url (cmsweb-testbed) will
+            # accept token based header, therefore we wrap it up in
+            # try/except block to prevent from failing until
+            # token based auth will be in place
+            res = self.mgr.getheader(url, params=params, headers=headers, ckey=self.ckey, cert=self.cert)
+            if isinstance(self.mgr.request_headers, dict):
+                auth_header = self.mgr.request_headers.get('Authorization')
+                self.assertTrue(auth_header != "", True)
+            # the following test should be true only if we have valid token
+            # TODO: so far I don't know how to test this since it requires
+            # to obtain valid token
+            # self.assertTrue(auth_header == 'Bearer {}'.format(iam_token), True)
+        except Exception as exc:
+            # do not use print since it cause E1601 ("print statement used"), see
+            # https://github.com/PyCQA/pylint/issues/437
+            traceback.print_exc()
 
 if __name__ == "__main__":
     unittest.main()

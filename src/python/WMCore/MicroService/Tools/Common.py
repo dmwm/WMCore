@@ -21,7 +21,7 @@ from urllib.parse import quote, unquote
 
 # WMCore modules
 from Utils.IteratorTools import grouper
-from Utils.CertTools import getKeyCertFromEnv
+from Utils.CertTools import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
@@ -34,21 +34,19 @@ STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
 
 
-def isEmptyResults(row):
+def hasHTTPFailed(row):
     """
-    _isEmptyResults_
+    Evaluates whether the HTTP request through PyCurl failed or not.
 
-    Evaluates whether row data contains empty result set
-    :return: bool
+    :param row: dictionary data returned from pycurl_manager module
+    :return: a boolean confirming failure or not
     """
     if 'data' not in row:
-        raise Exception("provided result dict does not contain 'data' key")
-    # if code is not present in row it means it was success (HTTP status code 200)
-    code = int(row.get('code', 200))
-    data = row['data']
-    if (code >= 200 and code < 400) and data in (None, []):
         return True
-    return False
+    if int(row.get('code', 200)) == 200:
+        return False
+    return True
+
 
 def getMSLogger(verbose, logger=None):
     """
@@ -68,6 +66,15 @@ def getMSLogger(verbose, logger=None):
     return logger
 
 
+def isRelVal(reqDict):
+    """
+    Helper function to evaluate whether the workflow is RelVal or not.
+    :param reqDict: dictionary with the workflow description
+    :return: True if it's a RelVal workflow, otherwise False
+    """
+    return reqDict.get("SubRequestType", "") in ['RelVal', 'HIRelVal']
+
+
 def dbsInfo(datasets, dbsUrl):
     "Provides DBS info about dataset blocks"
     datasetBlocks = {}
@@ -82,7 +89,7 @@ def dbsInfo(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
-        if isEmptyResults(row):
+        if hasHTTPFailed(row):
             print("FAILURE: dbsInfo for %s. Error: %s %s" % (dataset, row.get('code'), row.get('error')))
             continue
         rows = json.loads(row['data'])
@@ -251,7 +258,7 @@ def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
 
     for row in data:
         dataset = row['url'].rsplit('=')[-1]
-        if isEmptyResults(row):
+        if hasHTTPFailed(row):
             msg = "Failure in getBlocksByDsetAndRun for %s. Error: %s %s" % (dataset,
                                                                              row.get('code'),
                                                                              row.get('error'))
@@ -280,13 +287,13 @@ def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
 
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
-        if isEmptyResults(row):
+        if hasHTTPFailed(row):
             msg = "Failure in getFileLumisInBlock for block %s. Error: %s %s" % (blockName,
                                                                                  row.get('code'),
                                                                                  row.get('error'))
             raise RuntimeError(msg)
         rows = json.loads(row['data'])
-        rows = aggFileLumis(rows) # adjust to DBS Go server output
+        rows = aggFileLumis(rows)  # adjust to DBS Go server output
         runLumisByBlock.setdefault(blockName, [])
         for item in rows:
             runLumisByBlock[blockName].append(item)
@@ -308,7 +315,7 @@ def findBlockParents(blocks, dbsUrl):
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
         dataset = blockName.split("#")[0]
-        if isEmptyResults(row):
+        if hasHTTPFailed(row):
             print("Failure in findBlockParents for block %s. Error: %s %s" % (blockName,
                                                                               row.get('code'),
                                                                               row.get('error')))
@@ -342,7 +349,7 @@ def getRunsInBlock(blocks, dbsUrl):
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
-        if isEmptyResults(row):
+        if hasHTTPFailed(row):
             msg = "Failure in getRunsInBlock for block %s. Error: %s %s" % (blockName,
                                                                             row.get('code'),
                                                                             row.get('error'))
@@ -387,10 +394,10 @@ def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         data = unquote(row['url'].split('=')[-1])
-        if isEmptyResults(row):
+        if hasHTTPFailed(row):
             print("FAILURE: eventsLumisInfo for %s. Error: %s %s" % (data,
-                                                                    row.get('code'),
-                                                                    row.get('error')))
+                                                                     row.get('code'),
+                                                                     row.get('error')))
             continue
         rows = json.loads(row['data'])
         for item in rows:
@@ -503,18 +510,6 @@ def gigaBytes(size):
     return round(size / (1000 ** 3), 2)
 
 
-def ckey():
-    "Return user CA key either from proxy or userkey.pem"
-    pair = getKeyCertFromEnv()
-    return pair[0]
-
-
-def cert():
-    "Return user CA cert either from proxy or usercert.pem"
-    pair = getKeyCertFromEnv()
-    return pair[1]
-
-
 def elapsedTime(time0, msg='Elapsed time', ndigits=1):
     "Helper function to return elapsed time message"
     msg = "%s: %s sec" % (msg, round(time.time() - time0, ndigits))
@@ -606,7 +601,7 @@ def findParent(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
-        if isEmptyResults(row):
+        if hasHTTPFailed(row):
             print("Failure in findParent for dataset %s. Error: %s %s" % (dataset,
                                                                           row.get('code'),
                                                                           row.get('error')))

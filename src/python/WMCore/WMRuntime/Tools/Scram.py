@@ -33,13 +33,19 @@ import os
 import os.path
 import subprocess
 import sys
+import platform
 
 from PSetTweaks.WMTweak import readAdValues
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicodeConditional
 
 SCRAM_TO_ARCH = {'amd64': 'X86_64', 'aarch64': 'aarch64', 'ppc64le': 'ppc64le'}
-ARCH_TO_OS = {'slc5': ['rhel6'], 'slc6': ['rhel6'], 'slc7': ['rhel7']}
+# Scram arch to platform machine values above are unique, so we can reverse the mapping
+ARCH_TO_SCRAM = {arch:scram for scram, arch in SCRAM_TO_ARCH.items()}
+ARCH_TO_OS = {'slc5': ['rhel6'],
+              'slc6': ['rhel6'],
+              'slc7': ['rhel7'],
+              'el8': ['rhel8'], 'cc8': ['rhel8'], 'cs8': ['rhel8'], 'alma8': ['rhel8']}
 OS_TO_ARCH = {}
 for arch, oses in viewitems(ARCH_TO_OS):
     for osName in oses:
@@ -47,6 +53,17 @@ for arch, oses in viewitems(ARCH_TO_OS):
             OS_TO_ARCH[osName] = []
         OS_TO_ARCH[osName].append(arch)
 
+def getPlatformMachine():
+    """
+    Get the platform machine. Keep it compatible with HTCondor
+    :return: str, platform machine.
+    """
+    machine = platform.machine()
+    # Condor throws X86_64 but machine uses x86_64. Using condor convention
+    if machine == 'x86_64':
+        machine = machine.upper()
+
+    return machine
 
 def getSingleScramArch(scramArch):
     """
@@ -66,7 +83,9 @@ def getSingleScramArch(scramArch):
             for requestedArch in sorted(scramArch, reverse=True):
                 for validArch in validArches:
                     if requestedArch.startswith(validArch):
-                        return requestedArch
+                        # Check target machine matches with a valid scram arch
+                        if ARCH_TO_SCRAM.get(getPlatformMachine()):
+                            return requestedArch
         except KeyError:
             return sorted(scramArch)[-1]  # Give the most recent release if lookup fails
         return None

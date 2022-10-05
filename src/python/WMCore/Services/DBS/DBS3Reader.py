@@ -23,6 +23,8 @@ from retry import retry
 from Utils.IteratorTools import grouper
 from Utils.PythonVersion import PY2
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
+from WMCore.Services.DBS.DBSUtils import dbsListFileParents, dbsListFileLumis, \
+    dbsBlockOrigin, dbsParentFilesGivenParentDataset
 
 
 ### Needed for the pycurl comment, leave it out for now
@@ -37,8 +39,7 @@ def remapDBS3Keys(data, stringify=False, **others):
                'num_block': 'NumberOfBlocks', 'num_lumi': 'NumberOfLumis',
                'event_count': 'NumberOfEvents', 'run_num': 'RunNumber',
                'file_size': 'FileSize', 'block_size': 'BlockSize',
-               'file_count': 'NumberOfFiles', 'open_for_writing': 'OpenForWriting',
-               'logical_file_name': 'LogicalFileName',
+               'file_count': 'NumberOfFiles', 'logical_file_name': 'LogicalFileName',
                'adler32': 'Adler32', 'check_sum': 'Checksum', 'md5': 'Md5',
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
@@ -73,17 +74,28 @@ class DBS3Reader(object):
     General API for reading data from DBS
     """
 
-    def __init__(self, url, logger=None, **contact):
+    def __init__(self, url, logger=None, parallel=None, **contact):
+        """
+        DBS3Reader constructor
+
+        :param url: url of DBS server
+        :param logger: logger to be used by this class
+        :param parallel: optional parameter to specify parallel execution of some APIs
+        You may pass any true value, e.g. True or 1. The parallel APIs are:
+        listDatasetFileDetails, listFileBlockLocation, getParentFilesGivenParentDataset
+        :param contact: optional parameters to pass to DbsApi class
+        """
 
         # instantiate dbs api object
         try:
             self.dbsURL = url.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
             self.dbs = DbsApi(self.dbsURL, **contact)
             self.logger = logger or logging.getLogger(self.__class__.__name__)
+            self.parallel = parallel
         except Exception as ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
     def _getLumiList(self, blockName=None, lfns=None, validFileOnly=1):
         """
@@ -104,7 +116,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.listFileLumiArray(%s)\n" % lfns
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         lumiDict = {}
         for lumisItem in lumiLists:
@@ -129,7 +141,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBS server is not up: %s" % self.dbsURL
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
     def listPrimaryDatasets(self, match='*'):
         """
@@ -144,7 +156,7 @@ class DBS3Reader(object):
         except Exception as ex:
             msg = "Error in DBSReader.listPrimaryDataset(%s)\n" % match
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         result = [x['primary_ds_name'] for x in result]
         return result
@@ -161,7 +173,7 @@ class DBS3Reader(object):
         except dbsClientException as ex:
             msg = "Error in DBSReader.listProcessedDatasets(%s)\n" % primary
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         for dataset in datasets:
             dataset = remapDBS3Keys(dataset, processed_ds_name='Name')
@@ -196,7 +208,7 @@ class DBS3Reader(object):
         except dbsClientException as ex:
             msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
         for x in results:
             runs.extend(x['run_num'])
         return runs
@@ -229,7 +241,7 @@ class DBS3Reader(object):
         except dbsClientException as ex:
             msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         # send runDict format as result, this format is for sync with dbs2 call
         # which has {run_number: num_lumis} but dbs3 call doesn't return num Lumis
@@ -255,7 +267,7 @@ class DBS3Reader(object):
         except dbsClientException as ex:
             msg = "Error in DBSReader.listProcessedDatasets(%s)\n" % primary
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         result = [x['dataset'].split('/')[2] for x in result]
         return result
@@ -308,6 +320,25 @@ class DBS3Reader(object):
             files[f['logical_file_name']]['Lumis'] = {}
             files[f['logical_file_name']]['Parents'] = []
 
+        # parallel execution for listFileParents and listFileLumis APIs
+        if self.parallel:
+            if getParents:
+                block_parents = dbsListFileParents(self.dbsURL, blocks)
+                for blockName, parents in block_parents.items():
+                    for p in parents:
+                        if p['logical_file_name'] in files:  # invalid files are not there if validFileOnly=1
+                            files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
+            if getLumis:
+                block_file_lumis = dbsListFileLumis(self.dbsURL, blocks)
+                for blockName, file_lumis in block_file_lumis.items():
+                    for f in file_lumis:
+                        if f['logical_file_name'] in files:  # invalid files are not there if validFileOnly=1
+                            if f['run_num'] in files[f['logical_file_name']]['Lumis']:
+                                files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])
+                            else:
+                                files[f['logical_file_name']]['Lumis'][f['run_num']] = f['lumi_section_num']
+            return files
+
         # Iterate over the blocks and get parents and lumis
         for blockName in blocks:
             # get the parents
@@ -345,7 +376,7 @@ class DBS3Reader(object):
         except Exception as exc:
             msg = "Error in DBSReader.crossCheck({}) with {} lfns.".format(datasetPath, len(lfns))
             msg += "\nDetails: {}\n".format(formatEx3(exc))
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         return list(setOfAllLfns.intersection(setOfKnownLfns))
@@ -364,7 +395,7 @@ class DBS3Reader(object):
         except Exception as exc:
             msg = "Error in DBSReader.crossCheckMissing({}) with {} lfns.".format(datasetPath, len(lfns))
             msg += "\nDetails: {}\n".format(formatEx3(exc))
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
         setOfAllLfns = set(allLfns)
         setOfKnownLfns = set(lfns)
         knownFiles = setOfAllLfns.intersection(setOfKnownLfns)
@@ -385,7 +416,7 @@ class DBS3Reader(object):
         except Exception as ex:
             msg = "Error in DBSReader.getDBSSummaryInfo(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         if not summary:  # missing data or all files invalid
             return {}
@@ -395,7 +426,7 @@ class DBS3Reader(object):
         result['block'] = block if block else ''
         return result
 
-    def listFileBlocks(self, dataset, onlyClosedBlocks=False, blockName=None):
+    def listFileBlocks(self, dataset, blockName=None):
         """
         _listFileBlocks_
 
@@ -406,39 +437,15 @@ class DBS3Reader(object):
         args = {'dataset': dataset, 'detail': False}
         if blockName:
             args['block_name'] = blockName
-        if onlyClosedBlocks:
             args['detail'] = True
         try:
             blocks = self.dbs.listBlocks(**args)
         except dbsClientException as ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
-        if onlyClosedBlocks:
-            result = [x['block_name'] for x in blocks if str(x['open_for_writing']) != "1"]
-
-        else:
-            result = [x['block_name'] for x in blocks]
-
-        return result
-
-    def listOpenFileBlocks(self, dataset):
-        """
-        _listOpenFileBlocks_
-
-        Retrieve a list of open fileblock names for a dataset
-
-        """
-        self.checkDatasetPath(dataset)
-        try:
-            blocks = self.dbs.listBlocks(dataset=dataset, detail=True)
-        except dbsClientException as ex:
-            msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
-            msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
-
-        result = [x['block_name'] for x in blocks if str(x['open_for_writing']) == "1"]
+        result = [x['block_name'] for x in blocks]
 
         return result
 
@@ -460,7 +467,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.blockExists(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         if len(blocks) == 0:
             return False
@@ -479,7 +486,7 @@ class DBS3Reader(object):
         """
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.listFilesInBlock(%s): No matching data"
-            raise DBSReaderError(msg % fileBlockName)
+            raise DBSReaderError(msg % fileBlockName) from None
 
         try:
             files = self.dbs.listFileArray(block_name=fileBlockName, validFileOnly=validFileOnly, detail=True)
@@ -487,7 +494,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         if lumis:
             lumiDict = self._getLumiList(blockName=fileBlockName, validFileOnly=validFileOnly)
@@ -512,7 +519,7 @@ class DBS3Reader(object):
         """
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.listFilesInBlockWithParents(%s): No matching data"
-            raise DBSReaderError(msg % fileBlockName)
+            raise DBSReaderError(msg % fileBlockName) from None
 
         try:
             # TODO: shoud we get only valid block for this?
@@ -524,7 +531,7 @@ class DBS3Reader(object):
             msg += "DBSReader.listFilesInBlockWithParents(%s)\n" % (
                 fileBlockName,)
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         childByParents = defaultdict(list)
         for f in files:
@@ -538,7 +545,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.listFilesInBlockWithParents(%s)\n There is no parents files" % (
                 fileBlockName)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         parentFilesDetail = []
         # TODO: slicing parentLFNs util DBS api is handling that.
@@ -574,7 +581,7 @@ class DBS3Reader(object):
         """
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.lfnsInBlock(%s): No matching data"
-            raise DBSReaderError(msg % fileBlockName)
+            raise DBSReaderError(msg % fileBlockName) from None
 
         try:
             lfns = self.dbs.listFileArray(block_name=fileBlockName, validFileOnly=1, detail=False)
@@ -583,7 +590,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
     def listFileBlockLocation(self, fileBlockNames):
         """
@@ -606,15 +613,22 @@ class DBS3Reader(object):
 
         blocksInfo = {}
         try:
-            for block in fileBlockNames:
-                blocksInfo.setdefault(block, [])
-                # there should be only one element with a single origin site string ...
-                for blockInfo in self.dbs.listBlockOrigin(block_name=block):
-                    blocksInfo[block].append(blockInfo['origin_site_name'])
+            if self.parallel:
+                data = dbsBlockOrigin(self.dbsURL, fileBlockNames)
+                for block, items in data.items():
+                    blocksInfo.setdefault(block, [])
+                    for blockInfo in items:
+                        blocksInfo[block].append(blockInfo['origin_site_name'])
+            else:
+                for block in fileBlockNames:
+                    blocksInfo.setdefault(block, [])
+                    # there should be only one element with a single origin site string ...
+                    for blockInfo in self.dbs.listBlockOrigin(block_name=block):
+                        blocksInfo[block].append(blockInfo['origin_site_name'])
         except dbsClientException as ex:
             msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         for block in fileBlockNames:
             valid_nodes = set(blocksInfo.get(block, [])) - node_filter
@@ -634,12 +648,10 @@ class DBS3Reader(object):
 
         :return: a dictionary in the format of:
             {"PhEDExNodeNames" : [],
-             "Files" : { LFN : Events },
-             "IsOpen" : True|False}
+             "Files" : { LFN : Events }}
         """
         result = {"PhEDExNodeNames": [],  # FIXME: we better get rid of this line!
-                  "Files": self.listFilesInBlock(fileBlockName),
-                  "IsOpen": self.blockIsOpen(fileBlockName)}
+                  "Files": self.listFilesInBlock(fileBlockName)}
         return result
 
     def getFileBlockWithParents(self, fileBlockName):
@@ -650,18 +662,16 @@ class DBS3Reader(object):
 
         :return: a dictionary in the format of:
             {"PhEDExNodeNames" : [],
-             "Files" : { LFN : Events },
-             "IsOpen" : True|False}
+             "Files" : { LFN : Events }}
         """
         fileBlockName = decodeBytesToUnicode(fileBlockName)
 
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlockWithParents(%s): No matching data"
-            raise DBSReaderError(msg % fileBlockName)
+            raise DBSReaderError(msg % fileBlockName) from None
 
         result = {"PhEDExNodeNames": [],  # FIXME: we better get rid of this line!
-                  "Files": self.listFilesInBlockWithParents(fileBlockName),
-                  "IsOpen": self.blockIsOpen(fileBlockName)}
+                  "Files": self.listFilesInBlockWithParents(fileBlockName)}
         return result
 
     def listBlockParents(self, blockName):
@@ -674,24 +684,6 @@ class DBS3Reader(object):
         blocks = self.dbs.listBlockParents(block_name=blockName)
         result = [block['parent_block_name'] for block in blocks]
         return result
-
-    def blockIsOpen(self, blockName):
-        """
-        _blockIsOpen_
-
-        Return True if named block is open, false if not, or if block
-        doenst exist
-
-        """
-        self.checkBlockName(blockName)
-        blockInstance = self.dbs.listBlocks(block_name=blockName, detail=True)
-        if len(blockInstance) == 0:
-            return False
-        blockInstance = blockInstance[0]
-        isOpen = blockInstance.get('open_for_writing', 1)
-        if isOpen == 0:
-            return False
-        return True
 
     def blockToDatasetPath(self, blockName):
         """
@@ -710,7 +702,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.blockToDatasetPath(%s)\n" % blockName
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         if blocks == []:
             return None
@@ -733,7 +725,7 @@ class DBS3Reader(object):
         except dbsClientException as ex:
             msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
         if not blocksInfo:  # no data location from dbs
             return list(locations)
@@ -750,17 +742,17 @@ class DBS3Reader(object):
         and datasets unknown to DBS. Otherwise None is returned.
         """
         if pathName in ("", None):
-            raise DBSReaderError("Invalid Dataset Path name: => %s <=" % pathName)
+            raise DBSReaderError("Invalid Dataset Path name: => %s <=" % pathName) from None
         else:
             try:
                 result = self.dbs.listDatasets(dataset=pathName, dataset_access_type='*')
                 if len(result) == 0:
-                    raise DBSReaderError("Dataset %s doesn't exist in DBS %s" % (pathName, self.dbsURL))
+                    raise DBSReaderError("Dataset %s doesn't exist in DBS %s" % (pathName, self.dbsURL)) from None
             except (dbsClientException, HTTPError) as ex:
                 msg = "Error in "
                 msg += "DBSReader.checkDatasetPath(%s)\n" % pathName
                 msg += "%s\n" % formatEx3(ex)
-                raise DBSReaderError(msg)
+                raise DBSReaderError(msg) from None
         return
 
     def checkBlockName(self, blockName):
@@ -768,7 +760,7 @@ class DBS3Reader(object):
          _checkBlockName_
         """
         if blockName in ("", "*", None):
-            raise DBSReaderError("Invalid Block name: => %s <=" % blockName)
+            raise DBSReaderError("Invalid Block name: => %s <=" % blockName) from None
 
     def getFileListByDataset(self, dataset, validFileOnly=1, detail=True):
 
@@ -787,7 +779,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.getFileListByDataset(%s)\n" % dataset
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
     def listDatasetParents(self, childDataset):
         """
@@ -800,7 +792,7 @@ class DBS3Reader(object):
             msg = "Error in "
             msg += "DBSReader.listDatasetParents(%s)\n" % childDataset
             msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
+            raise DBSReaderError(msg) from None
 
     # def getListFilesByLumiAndDataset(self, dataset, files):
     #     "Unsing pycurl to get all the child parents pair for given dataset"
@@ -829,6 +821,9 @@ class DBS3Reader(object):
         :return: set of parent files for childLFN
         """
         fInfo = self.dbs.listFileLumiArray(logical_file_name=childLFNs)
+        if self.parallel:
+            return dbsParentFilesGivenParentDataset(self.dbsURL, parentDataset, fInfo)
+
         parentFiles = defaultdict(set)
         for f in fInfo:
             pFileList = self.dbs.listFiles(dataset=parentDataset, run_num=f['run_num'], lumi_list=f['lumi_section_num'])
@@ -958,7 +953,8 @@ class DBS3Reader(object):
                 numFiles = self.findAndInsertMissingParentage(blockName, parentFullInfo, insertFlag=insertFlag)
                 self.logger.debug("%s file parentage added for block %s", numFiles, blockName)
             except Exception as ex:
-                self.logger.exception("Parentage updated failed for block %s", blockName)
+                self.logger.exception(
+                        "Parentage updated failed for block %s with error %s", blockName, str(ex))
                 failedBlocks.append(blockName)
 
         return failedBlocks

@@ -15,10 +15,7 @@ import logging
 import os
 import threading
 import traceback
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from Utils.PythonVersion import PY3
 

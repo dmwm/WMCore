@@ -512,8 +512,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         wmspec = factory.factoryWorkloadConstruction(name, rerecoArgs)
         wmspec.setSpecUrl("/path/to/workload")
         wmspec.setSubscriptionInformation(custodialSites=[],
-                                          nonCustodialSites=[], autoApproveSites=[],
-                                          priority="Low", custodialSubType="Move")
+                                          nonCustodialSites=[],
+                                          priority="Low")
         return wmspec
 
     def createMCWMSpec(self, name='MonteCarloWorkload'):

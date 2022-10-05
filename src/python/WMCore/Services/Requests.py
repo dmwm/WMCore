@@ -7,8 +7,19 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 
 The response from the remote server is cached if expires/etags are set.
+Note that the cache can have two different behaviors:
+1. when WMCORE_CACHE_DIR is defined: it defines one specific path to be used for the
+   cache files. Cache files are never automatically cleaned up and it's up to the user/
+   maintainer to do so. Note that cache directories are named after the base class.
+2. otherwise, the system will use the Operating System temp dir to store the cache files,
+   which uses `/tmp` as default for Linux systems. When using these temporary areas, the
+   cache files are automatically cleaned up when the object using it is destroyed and
+   garbage collected. Cache directories carry a random name.
+
+By default, all of the WMCore central services define the CACHE_DIR (to use /data/srv/state).
 """
 from __future__ import division, print_function
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -51,6 +62,7 @@ except ImportError:
     class ServerNotFoundError(Exception):
         pass
 
+
 def check_server_url(srvurl):
     """Check given url for correctness"""
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
@@ -88,6 +100,8 @@ class Requests(dict):
         urlComponent = sanitizeURL(url)
         if urlComponent['username'] is not None:
             self.addBasicAuth(urlComponent['username'], urlComponent['password'])
+            # CouchDB 3.x requires user/passwd in the source/target of replication docs
+            # More info in: https://github.com/dmwm/WMCore/pull/11001
             url = urlComponent['url']  # remove user, password from url
 
         self.setdefault("host", url)
@@ -216,7 +230,7 @@ class Requests(dict):
             setattr(e, 'status', 503)
             setattr(e, 'reason', 'Service Unavailable')
             setattr(e, 'result', str(ex))
-            raise e
+            raise e from None
         except (socket.error, AttributeError):
             self['logger'].warn("Http request failed, retrying once again..")
             # AttributeError implies initial connection error - need to close
@@ -230,10 +244,10 @@ class Requests(dict):
             try:
                 response, result = conn.request(uri, method=verb, body=data, headers=headers)
             except AttributeError:
-                msg = traceback.format_exc()
+                msg = 'Error contacting: {}: {}'.format(self.getDomainName(), traceback.format_exc())
                 # socket/httplib really screwed up - nuclear option
                 conn.connections = {}
-                raise socket.error('Error contacting: %s: %s' % (self.getDomainName(), msg))
+                raise socket.error(msg) from None
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', data)
@@ -367,6 +381,8 @@ class Requests(dict):
                 break
         else:
             idir = tempfile.mkdtemp(prefix='.wmcore_cache_')
+            # Alan Malta in 29 Mar 2022: this seems to prematurely remove the cache
+            # directory. For details, see: https://github.com/dmwm/WMCore/pull/10915
             self['deleteCacheOnExit'] = TempDirectory(idir)
             return idir
 
@@ -412,13 +428,9 @@ class Requests(dict):
 
     def addBasicAuth(self, username, password):
         """Add basic auth headers to request"""
-        ## TODO: base64.encodestring is deprecated
-        # https://docs.python.org/3.8/library/base64.html#base64.encodestring
-        # change to base64.encodebytes after we drop python2
         username = encodeUnicodeToBytes(username)
         password = encodeUnicodeToBytes(password)
-        encodedauth = base64.encodestring(b'%s:%s' % (
-            username, password)).strip()
+        encodedauth = base64.encodebytes(b'%s:%s' % (username, password)).strip()
         if PY3:
             encodedauth = decodeBytesToUnicode(encodedauth)
         auth_string = "Basic %s" % encodedauth

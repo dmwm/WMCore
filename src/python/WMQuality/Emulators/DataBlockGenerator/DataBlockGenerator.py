@@ -22,22 +22,14 @@ class DataBlockGenerator(object):
             blockName = "%s#%s" % (dataset, i+1)
             size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
 
-            blocks.append(
-                                    {'Name' : blockName,
-                                     'NumberOfEvents' : numOfEvents,
-                                     'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
-                                     'NumberOfLumis' : GlobalParams.numOfLumisPerBlock(),
-                                     'Size' : size,
-                                     'Parents' : (),
-                                     'OpenForWriting' : '1' if self._openForWriting() else '0'}
-                                     )
+            blocks.append({'Name' : blockName,
+                           'NumberOfEvents' : numOfEvents,
+                           'NumberOfFiles' : GlobalParams.numOfFilesPerBlock(),
+                           'NumberOfLumis' : GlobalParams.numOfLumisPerBlock(),
+                           'Size' : size,
+                           'Parents' : ()}
+                           )
         return blocks
-
-    def _openForWriting(self):
-        """Is block open or closed?
-        Should do this on a block by block basis but so far not needed,
-        just make a global state"""
-        return GlobalParams.blocksOpenForWriting()
 
     def getParentBlock(self, block, numberOfParents = 1):
         blocks = []

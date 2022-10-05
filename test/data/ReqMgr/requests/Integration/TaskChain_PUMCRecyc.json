@@ -42,7 +42,7 @@
         "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
         "Memory": 3000, 
         "Multicore": 1, 
-        "PrepID": "TEST-CMSSW_11_2_0_pre8__PDMVRELVALS-100-QCD_Pt_600_800_14-00002", 
+        "PrepID": "TEST-PrepID-TopLevel",
         "ProcessingString": "DEFAULT_ProcStr", 
         "ProcessingVersion": 1, 
         "RequestPriority": 600000, 
@@ -87,7 +87,8 @@
             "MCPileup": "/RelValMinBias_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM", 
             "Memory": 12000, 
             "Multicore": 4, 
-            "ProcessingString": "Task2_WMCore_TEST", 
+            "PrepID": "TEST-PrepID-Task2",
+            "ProcessingString": "Task2_WMCore_TEST",
             "ScramArch": [
                 "slc7_amd64_gcc820"
             ], 

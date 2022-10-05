@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 wmagent-resource-control
 
@@ -64,6 +64,8 @@ def createOptionParser():
                              help="Add all of the CMS sites to resource control.")
     myOptParser.add_argument("--add-one-site", dest="addOneSite",
                              help="Specify site name you want to add")
+    myOptParser.add_argument("--opportunistic", dest="opportunistic", default=False, action="store_true",
+                             help="To be used with addOneSite, specifying to use the same CPU/storage name.")
     myOptParser.add_argument("--site-name", dest="siteName",
                              help="Specify the unique name of the location")
     myOptParser.add_argument("--pending-slots", dest="pendingSlots",
@@ -345,7 +347,11 @@ else:
                  options.pendingSlots, options.runningSlots, state=options.state)
         addPNNs(myResourceControl, pattern=pattern)
     elif options.addOneSite:
-        oneSite = getCMSSiteInfo(options.addOneSite)
+        if options.opportunistic:
+            # it's a dict key'ed by the CPU resource and value is the storage name
+            oneSite = {options.addOneSite: [options.addOneSite]}
+        else:
+            oneSite = getCMSSiteInfo(options.addOneSite)
         addSites(myResourceControl, oneSite, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
     elif options.siteName is None:

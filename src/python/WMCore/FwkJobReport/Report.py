@@ -25,10 +25,7 @@ from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 
 class FwkJobReportException(WMException):
@@ -821,7 +818,7 @@ class Report(object):
         newFile["merged"] = bool(getattr(fileRef, "merged", False))
         newFile["dataset"] = getattr(fileRef, "dataset", {})
         newFile["acquisitionEra"] = getattr(fileRef, 'acquisitionEra', None)
-        newFile["processingVer"] = getattr(fileRef, 'processingVer', None)
+        newFile["processingVer"] = getattr(fileRef, 'processingVer', 0)
         newFile["validStatus"] = getattr(fileRef, 'validStatus', None)
         newFile["globalTag"] = getattr(fileRef, 'globalTag', None)
         newFile["prep_id"] = getattr(fileRef, 'prep_id', None)

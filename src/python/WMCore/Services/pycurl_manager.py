@@ -46,12 +46,13 @@ from future.utils import viewitems
 
 
 # system modules
+import copy
 import json
+import gzip
 import logging
 import os
 import re
 import subprocess
-import sys
 import pycurl
 from io import BytesIO
 import http.client
@@ -59,7 +60,33 @@ from urllib.parse import urlencode
 
 from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 from Utils.PortForward import portForward, PortForward
+from Utils.TokenManager import TokenManager
 
+
+def decompress(body, headers):
+    """
+    Helper function to decompress given body if HTTP headers contains gzip encoding
+    :param body: bytes
+    :param headers: dict
+    :return: decode body
+    """
+    encoding = ""
+    for header, value in headers.items():
+        if header.lower() == 'content-encoding' and 'gzip' in value.lower():
+            encoding = 'gzip'
+            break
+    if encoding != 'gzip':
+        return body
+
+    try:
+        return gzip.decompress(body)
+    except Exception as exc:
+        logger = logging.getLogger()
+        msg = "While processing decompress function with headers: %s, " % headers
+        msg += "we were unable to decompress gzip content. Details: %s. " % str(exc)
+        msg += "Considering response body as uncompressed."
+        logger.exception(msg)
+        return body
 
 class ResponseHeader(object):
     """ResponseHeader parses HTTP response header"""
@@ -139,6 +166,11 @@ class RequestHandler(object):
         self.followlocation = config.get('followlocation', defaultOpts['FOLLOWLOCATION'])
         self.maxredirs = config.get('maxredirs', defaultOpts['MAXREDIRS'])
         self.logger = logger if logger else logging.getLogger()
+        self.tokenLocation = config.get('iam_token_file', '')
+        if self.tokenLocation:
+            self.tmgr = TokenManager(self.tokenLocation)
+        else:
+            self.tmgr = None
 
     def encode_params(self, params, verb, doseq, encode):
         """ Encode request parameters for usage with the 4 verbs.
@@ -178,13 +210,20 @@ class RequestHandler(object):
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        # also accepts encoding/compression algorithms
-        if headers and headers.get("Accept-Encoding"):
-            if isinstance(headers["Accept-Encoding"], basestring):
-                curl.setopt(pycurl.ENCODING, headers["Accept-Encoding"])
+        # If ACCEPT_ENCODING is set to the encoding string, then libcurl
+        # will automatically decode the response object according to the
+        # Content-Enconding received
+        # More info: https://curl.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html
+        thisHeaders = copy.deepcopy(headers)
+        if thisHeaders and thisHeaders.get("Accept-Encoding"):
+            if isinstance(thisHeaders["Accept-Encoding"], basestring):
+                curl.setopt(pycurl.ACCEPT_ENCODING, thisHeaders.pop("Accept-Encoding"))
             else:
                 logging.warning("Wrong data type for header 'Accept-Encoding': %s",
-                                type(headers["Accept-Encoding"]))
+                                type(thisHeaders["Accept-Encoding"]))
+        else:
+            # add gzip encoding by default
+            curl.setopt(pycurl.ACCEPT_ENCODING, 'gzip')
 
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
@@ -213,17 +252,22 @@ class RequestHandler(object):
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 
+        if self.tmgr:
+            token = self.tmgr.getToken()
+            if token:
+                headers['Authorization'] = 'Bearer {}'.format(token)
+
         if verb in ('POST', 'PUT'):
             # only these methods (and PATCH) require this header
-            headers["Content-Length"] = str(len(encoded_data))
+            thisHeaders["Content-Length"] = str(len(encoded_data))
 
         # we must pass url as a string data-type, otherwise pycurl will fail with error
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
         curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
-        if headers:
+        if thisHeaders:
             curl.setopt(pycurl.HTTPHEADER, \
-                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(headers)])
+                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -291,6 +335,7 @@ class RequestHandler(object):
                 data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()
+            data = decompress(data, header.header)
             msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
                   % (url, header.status, header.reason, header.header, data)
             exc = http.client.HTTPException(msg)
@@ -349,8 +394,9 @@ class RequestHandler(object):
                     if ret != pycurl.E_CALL_MULTI_PERFORM:
                         break
             dummyNumq, response, dummyErr = multi.info_read()
-            for dummyCobj in response:
-                data = json.loads(bbuf.getvalue())
+            for _respItem in response:
+                data = decodeBytesToUnicode(bbuf.getvalue())
+                data = json.loads(data)
                 if isinstance(data, dict):
                     data.update(params)
                     yield data
@@ -465,12 +511,8 @@ def getdata(urls, ckey, cert, headers=None, options=None, num_conn=50, cookie=No
         while True:
             num_q, ok_list, err_list = mcurl.info_read()
             for curl in ok_list:
-                if sys.version.startswith('3.'):
-                    hdrs = curl.hbuf.getvalue().decode('utf-8')
-                    data = curl.bbuf.getvalue().decode('utf-8')
-                else:
-                    hdrs = curl.hbuf.getvalue()
-                    data = curl.bbuf.getvalue()
+                hdrs = decodeBytesToUnicode(curl.hbuf.getvalue())
+                data = decompress(decodeBytesToUnicode(curl.bbuf.getvalue()), ResponseHeader(hdrs).getHeader())
                 url = curl.url
                 curl.bbuf.flush()
                 curl.bbuf.close()

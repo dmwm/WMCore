@@ -22,7 +22,6 @@ from WMCore.ThreadPool.ThreadSlave import ThreadSlave
 from WMCore.WMSpec.Makers.Interface.CreateWorkArea import CreateWorkArea
 
 
-#import cPickle
 import os
 import string
 import logging

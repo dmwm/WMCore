@@ -11,6 +11,7 @@ from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 from WMCore.Services.Rucio.Rucio import Rucio
+from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
 
 class MSCore(object):
@@ -21,7 +22,7 @@ class MSCore(object):
 
     def __init__(self, msConfig, **kwargs):
         """
-        Provides setup for MSTransferor and MSMonitor classes
+        Provides a basic setup for all the microservices
 
         :param config: MS service configuration
         :param kwargs: can be used to skip the initialization of specific services, such as:
@@ -47,6 +48,8 @@ class MSCore(object):
                                hostUrl=self.msConfig['rucioUrl'],
                                authUrl=self.msConfig['rucioAuthUrl'],
                                configDict={"logger": self.logger, "user_agent": "wmcore-microservices"})
+        self.alertManagerUrl = self.msConfig.get("alertManagerUrl", None)
+        self.alertManagerApi = AlertManagerAPI(self.alertManagerUrl, logger=self.logger)
 
     def unifiedConfig(self):
         """
@@ -88,3 +91,20 @@ class MSCore(object):
         else:
             reportDict[keyName] = value
         return reportDict
+
+    def sendAlert(self, alertName, severity, summary, description, service, endSecs=1 * 60 * 60):
+        """
+        Sends an alert to Prometheus.
+        :param alertName: string with unique alert name
+        :param severity: string with the alert severity
+        :param summary: string with a short summary of the alert
+        :param description: string with a longer description of the alert
+        :param service: string with the service name generating this alert
+        :param endSecs: integer with an expiration time
+        :return: none
+        """
+        try:
+            self.alertManagerApi.sendAlert(alertName, severity, summary, description,
+                                           service, endSecs=endSecs)
+        except Exception as ex:
+            self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))

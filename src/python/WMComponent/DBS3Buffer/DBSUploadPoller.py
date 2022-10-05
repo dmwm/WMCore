@@ -25,8 +25,10 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 from builtins import range
-from future.utils import viewvalues
+
 from future import standard_library
+from future.utils import viewvalues
+
 standard_library.install_aliases()
 
 import queue
@@ -50,17 +52,22 @@ from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
-def uploadWorker(workInput, results, dbsUrl):
+def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
     """
     _uploadWorker_
 
     Put JSONized blocks in the workInput
     Get confirmation in the output
+
+    :param workInput: work input data
+    :param results: output results dictionary
+    :param dbsUrl: url of DBS server to use
+    :param gzipEncoding: specify if we should use gzipEncoding
     """
 
     # Init DBS Stuff
     logging.debug("Creating dbsAPI with address %s", dbsUrl)
-    dbsApi = DbsApi(url=dbsUrl)
+    dbsApi = DbsApi(url=dbsUrl, useGzip=gzipEncoding)
 
     while True:
 
@@ -81,7 +88,7 @@ def uploadWorker(workInput, results, dbsUrl):
 
         # Do stuff with DBS
         try:
-            logging.debug("About to call insert block with block: %s", block)
+            logging.info("About to call insert block for: %s", name)
             dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
         except Exception as ex:
@@ -92,23 +99,33 @@ def uploadWorker(workInput, results, dbsUrl):
                 logging.warning("Block %s already exists. Marking it as uploaded.", name)
                 logging.debug("Exception: %s", exString)
                 results.put({'name': name, 'success': "uploaded"})
-            elif 'Proxy Error' in exString:
-                # This is probably a successfully insertion that went bad.
-                # Put it on the check list
-                msg = "Got a proxy error for block %s." % name
-                logging.warning(msg)
-                results.put({'name': name, 'success': "check"})
             elif 'Missing data when inserting to dataset_parents' in exString:
                 msg = "Parent dataset is not inserted yet for block %s." % name
                 logging.warning(msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
             else:
-                msg = "Error trying to process block %s through DBS. Error: %s" % (name, exString)
+                reason = parseDBSException(exString)
+                msg = "Error trying to process block %s through DBS. Error: %s" % (name, reason)
                 logging.exception(msg)
                 logging.debug("block info: %s \n", block)
                 results.put({'name': name, 'success': "error", 'error': msg})
 
     return
+
+
+def parseDBSException(exBodyString):
+    """
+    parse DBS Go-based server exception
+    :param exBodyString: exception message body string (not exception).
+    The upstream code extract HTTP body from exception object and pass it here.
+    :return: either (parsed) concise exception message or original body string
+    """
+    try:
+        data = json.loads(exBodyString)
+        # dbs2go always return a list
+        return data[0]['error']['reason']
+    except:
+        return exBodyString
 
 
 def isPassiveError(exceptionObj):
@@ -191,6 +208,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.datasetType = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
         self.primaryDatasetType = getattr(self.config.DBS3Upload, "primaryDatasetType", "mc")
         self.blockCount = 0
+        self.gzipEncoding = getattr(self.config.DBS3Upload, 'gzipEncoding', False)
         self.dbsApi = DbsApi(url=self.dbsUrl)
 
         # List of blocks currently in processing
@@ -233,7 +251,8 @@ class DBSUploadPoller(BaseWorkerThread):
             p = multiprocessing.Process(target=uploadWorker,
                                         args=(self.workInput,
                                               self.workResult,
-                                              self.dbsUrl))
+                                              self.dbsUrl,
+                                              self.gzipEncoding))
             p.start()
             self.pool.append(p)
 
@@ -321,7 +340,7 @@ class DBSUploadPoller(BaseWorkerThread):
         except Exception as ex:
             msg = "Unhandled Exception in DBSUploadPoller! Error: %s" % str(ex)
             logging.exception(msg)
-            raise DBSUploadException(msg)
+            raise DBSUploadException(msg) from None
 
     def updateDatasetParentageCache(self):
         """
@@ -346,7 +365,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.warning(errorMsg)
             else:
                 errorMsg += 'Hit a terminal exception in DBSUploadPoller.'
-                raise DBSUploadException(errorMsg)
+                raise DBSUploadException(errorMsg) from None
             myThread.logdbClient.post("DBS3Upload_parentMap", errorMsg, "warning")
             success = False
         else:
@@ -373,7 +392,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Now load the blocks
         try:
             loadedBlocks = self.dbsUtil.loadBlocks(blocksToLoad)
-            logging.info("Loaded %d blocks.", len(loadedBlocks))
+            logging.info("Loaded %d blocks from the database.", len(loadedBlocks))
         except WMException:
             raise
         except Exception as ex:
@@ -381,7 +400,7 @@ class DBSUploadPoller(BaseWorkerThread):
             msg += str(ex)
             logging.error(msg)
             logging.debug("Blocks to load: %s\n", blocksToLoad)
-            raise DBSUploadException(msg)
+            raise DBSUploadException(msg) from None
 
         for blockInfo in loadedBlocks:
             block = DBSBufferBlock(name=blockInfo['block_name'],
@@ -395,6 +414,9 @@ class DBSUploadPoller(BaseWorkerThread):
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
 
+            # Now we load the dataset information
+            self.setDatasetInfo(block)
+
             # Now we have to load files...
             try:
                 files = self.dbsUtil.loadFilesByBlock(blockname=blockname)
@@ -406,7 +428,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Blocks being loaded: %s\n", blockname)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
 
             # Add the loaded files to the block
             for f in files:
@@ -441,7 +463,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("DatasetPath being loaded: %s\n", datasetpath)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
 
             # Sort the files and blocks by location
             fileDict = sortListByKey(loadedFiles, 'locations')
@@ -554,6 +576,8 @@ class DBSUploadPoller(BaseWorkerThread):
         newBlock = DBSBufferBlock(name=blockname,
                                   location=location,
                                   datasetpath=datasetpath)
+        # Now we load the dataset information
+        self.setDatasetInfo(newBlock)
 
         parent = self.datasetParentageCache.get(datasetpath)
         if parent:
@@ -562,6 +586,24 @@ class DBSUploadPoller(BaseWorkerThread):
 
         self.blockCache[blockname] = newBlock
         return newBlock
+
+    def setDatasetInfo(self, blockObj):
+        """
+        Given a block object, look up its dataset and set the necessary
+        data structure in the object
+        :param blockObj: a DBSBufferBlock object
+        :return: None, the object is updated here
+        """
+        try:
+            dsetInfo = self.dbsUtil.loadDataset(blockObj.getDatasetPath())
+            blockObj.setDataset(datasetName=dsetInfo['path'],
+                                primaryType=self.primaryDatasetType,
+                                datasetType=dsetInfo['valid_status'],
+                                prep_id=dsetInfo['prep_id'])
+        except Exception as ex:
+            msg = f"Unhandled exception while loading/setting dataset for block: {blockObj.getName()}. "
+            msg += f"Details: {str(ex)}"
+            raise DBSUploadException(msg) from None
 
     def inputBlocks(self):
         """
@@ -630,7 +672,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.error(msg)
                 logging.debug("Blocks for DBSBuffer: %s\n", createInDBSBuffer)
                 logging.debug("Blocks for Update: %s\n", updateInDBSBuffer)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
             else:
                 myThread.transaction.commit()
 
@@ -656,7 +698,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Files to Update: %s\n", self.filesToUpdate)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
             else:
                 myThread.transaction.commit()
 
@@ -674,19 +716,12 @@ class DBSUploadPoller(BaseWorkerThread):
                 # What are we doing?
                 logging.debug("Skipping empty block")
                 continue
-            if block.getDataset() is None:
-                # Then we have to fix the dataset
-                dbsFile = block.files[0]
-                block.setDataset(datasetName=dbsFile['datasetPath'],
-                                 primaryType=self.primaryDatasetType,
-                                 datasetType=self.datasetType,
-                                 physicsGroup=dbsFile.get('physicsGroup', None),
-                                 prep_id=dbsFile.get('prep_id', None))
+
             logging.debug("Found block %s in blocks", block.getName())
             block.setPhysicsGroup(group=self.physicsGroup)
 
             encodedBlock = block.convertToDBSBlock()
-            logging.info("About to insert block %s", block.getName())
+            logging.info("Queueing block for insertion: %s", block.getName())
             self.workInput.put({'name': block.getName(), 'block': encodedBlock})
             self.blockCount += 1
             if self.produceCopy:
@@ -787,7 +822,7 @@ class DBSUploadPoller(BaseWorkerThread):
                     msg += str(ex)
                     logging.error(msg)
                     logging.debug("Blocks for Update: %s\n", loadedBlocks)
-                    raise DBSUploadException(msg)
+                    raise DBSUploadException(msg) from None
                 else:
                     myThread.transaction.commit()
 
@@ -851,7 +886,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.exception(msg)
                 logging.debug("Blocks for Update: %s\n", blocksUploaded)
-                raise DBSUploadException(msg)
+                raise DBSUploadException(msg) from None
             else:
                 myThread.transaction.commit()
 

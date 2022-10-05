@@ -185,13 +185,6 @@ class DBSBufferBlock(object):
         elif dbsFile.get('processing_ver', False):
             self.setProcessingVer(dbsFile['processing_ver'])
 
-        # Take care of the dataset
-        self.setDataset(datasetName  = dbsFile['datasetPath'],
-                        primaryType  = primaryDatasetType,
-                        datasetType  = datasetType,
-                        physicsGroup = dbsFile.get('physicsGroup', None),
-                        prep_id = dbsFile.get('prep_id', None))
-
         return
 
     def addFileParent(self, child, parent):
@@ -231,12 +224,14 @@ class DBSBufferBlock(object):
 
         Set the block's processing version.
         """
-        # compatibility statement for old style proc ver (still needed ?)
-        if procVer.count("-") == 1:
-            self.data["processing_era"]["processing_version"] = procVer.split("-v")[1]
-        else:
-            self.data["processing_era"]["processing_version"] = procVer
-
+        pver = procVer or 0
+        try:
+            pver = int(pver)
+        except TypeError:
+            msg = "Provided procVer=%s of type %s cannot be converted to int" \
+                    % (procVer, type(procVer))
+            raise TypeError(msg) from None
+        self.data["processing_era"]["processing_version"] = pver
         self.data["processing_era"]["create_by"] = "WMAgent"
         self.data["processing_era"]["description"] = ""
         return
@@ -292,20 +287,7 @@ class DBSBufferBlock(object):
 
         Lexicon.primaryDatasetType(primaryType)
 
-        if not datasetType in ['VALID', 'PRODUCTION', 'INVALID', 'DEPRECATED', 'DELETED']:
-            msg = "Invalid processedDatasetType %s\n" % datasetType
-            logging.error(msg)
-            raise DBSBufferBlockException(msg)
-
-        try:
-            if datasetName[0] == '/':
-                _, primary, processed, tier = datasetName.split('/')
-            else:
-                primary, processed, tier = datasetName.split('/')
-        except Exception:
-            msg = "Invalid dataset name %s" % datasetName
-            logging.error(msg)
-            raise DBSBufferBlockException(msg)
+        _, primary, processed, tier = datasetName.split('/')
 
         # Do the primary dataset
         self.data['primds']['primary_ds_name'] = primary

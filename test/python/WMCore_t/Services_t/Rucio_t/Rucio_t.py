@@ -4,16 +4,14 @@ Test case for Rucio WMCore Service class
 """
 from __future__ import print_function, division, absolute_import
 
-from builtins import range
-from future.utils import viewitems
-
 import os
+from builtins import range
 
+from future.utils import viewitems
 from nose.plugins.attrib import attr
 from rucio.client import Client as testClient
 
 from Utils.PythonVersion import PY3
-
 from WMCore.Services.Rucio import Rucio
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
@@ -224,7 +222,7 @@ class RucioTest(EmulatedUnitTestCase):
         for item in res:
             self.assertTrue(len(item['replica']) > 0)
 
-        #Setting  deep=True should yield the same results
+        # Setting  deep=True should yield the same results
         res = self.myRucio.getReplicaInfoForBlocks(dataset=DSET, deep=True)
         self.assertTrue(isinstance(res, list))
         self.assertTrue(len(res) >= 1)  # Again, there are 11 replicas
@@ -271,8 +269,8 @@ class RucioTest(EmulatedUnitTestCase):
         resp = self.myRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='gsiftp')
         self.assertEqual(resp[lfn1],
                          "gsiftp://red-gridftp.unl.edu:2811/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/test/rucio/int" + lfn1)
-        #resp = self.myRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='xrootd')
-        #self.assertEqual(resp[lfn1], "davs://xrootd-local.unl.edu:1094/store/test/rucio/int" + lfn1)
+        # resp = self.myRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='xrootd')
+        # self.assertEqual(resp[lfn1], "davs://xrootd-local.unl.edu:1094/store/test/rucio/int" + lfn1)
 
     @attr('integration')
     def testProdGetPFN(self):
@@ -365,22 +363,6 @@ class RucioTest(EmulatedUnitTestCase):
         res = self.myRucio.getRule("eb4448a33f8f4c3e8d162be42e7a2eb1")
         self.assertTrue(res)
 
-    def testMetaDataValidation(self):
-        """
-        Test the `validateMetaData` validation function
-        """
-        for thisProj in Rucio.RUCIO_VALID_PROJECT:
-            response = Rucio.validateMetaData("any_DID_name", dict(project=thisProj), self.myRucio.logger)
-            self.assertTrue(response)
-
-        # test with no "project" meta data at all
-        response = Rucio.validateMetaData("any_DID_name", dict(), self.myRucio.logger)
-        self.assertTrue(response)
-
-        # now an invalid "project" meta data
-        response = Rucio.validateMetaData("any_DID_name", dict(project="mistake"), self.myRucio.logger)
-        self.assertFalse(response)
-
     def testListParentDIDs(self):
         """
         Test `listParentDIDs` method, which lists the parent DIDs
@@ -431,27 +413,6 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertTrue(resp)
         resp = self.myRucio.requiresApproval("T1_IT_CNAF_Tape_Input")
         self.assertFalse(resp)
-
-    def testIsTapeRSE(self):
-        """
-        Test the `isTapeRSE` utilitarian function
-        """
-        self.assertTrue(Rucio.isTapeRSE("T1_US_FNAL_Tape"))
-        self.assertFalse(Rucio.isTapeRSE("T1_US_FNAL_Disk"))
-        self.assertFalse(Rucio.isTapeRSE("T1_US_FNAL_Disk_Test"))
-        self.assertFalse(Rucio.isTapeRSE("T1_US_FNAL_Tape_Test"))
-        self.assertFalse(Rucio.isTapeRSE(""))
-
-    def testDropTapeRSEs(self):
-        """
-        Test the `dropTapeRSEs` utilitarian function
-        """
-        tapeOnly = ["T1_US_FNAL_Tape", "T1_ES_PIC_Tape"]
-        diskOnly = ["T1_US_FNAL_Disk", "T1_US_FNAL_Disk_Test", "T2_CH_CERN"]
-        mixed = ["T1_US_FNAL_Tape", "T1_US_FNAL_Disk", "T1_US_FNAL_Disk_Test", "T1_ES_PIC_Tape"]
-        self.assertItemsEqual(Rucio.dropTapeRSEs(tapeOnly), [])
-        self.assertItemsEqual(Rucio.dropTapeRSEs(diskOnly), diskOnly)
-        self.assertItemsEqual(Rucio.dropTapeRSEs(mixed), ["T1_US_FNAL_Disk", "T1_US_FNAL_Disk_Test"])
 
     @attr('integration')  # jenkins cannot access this rucio account
     def testGetPileupLockedAndAvailable(self):
@@ -509,4 +470,3 @@ class RucioTest(EmulatedUnitTestCase):
         # there are no rules for the blocks, but 6 copies for the container level
         resp = prodRucio.getDataLockedAndAvailable(name=BLOCK2, account="transfer_ops", grouping="DATASET")
         self.assertItemsEqual(resp, [])
-

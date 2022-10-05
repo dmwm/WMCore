@@ -18,7 +18,6 @@ from time import time
 import random
 import re
 import os
-import sys
 import errno
 import stat
 try:
@@ -29,7 +28,7 @@ except ImportError:
     gfal2 = None
 
 from pymongo import IndexModel
-from pymongo.errors  import NotMasterError
+from pymongo.errors  import NotPrimaryError
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
@@ -37,7 +36,6 @@ from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.MSUnmerged.MSUnmergedRSE import MSUnmergedRSE
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-# from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
@@ -100,6 +98,7 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("skipRSEs", [])
         self.msConfig.setdefault("rseExpr", "*")
         self.msConfig.setdefault("enableRealMode", False)
+        self.msConfig.setdefault("enableT0WMStats", False)
         self.msConfig.setdefault("fullRSEToDB", False)
         self.msConfig.setdefault("gfalLogLevel", 'normal')
         self.msConfig.setdefault("dirFilterIncl", [])
@@ -134,14 +133,11 @@ class MSUnmerged(MSCore):
             msg += "set to emulate it. Crashing the service!"
             raise ImportError(msg)
 
-        # TODO: Add 'alertManagerUrl' to msConfig'
-        # self.alertServiceName = "ms-unmerged"
-        # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
-
         # Instantiating the Rucio Consistency Monitor Client
         self.rucioConMon = RucioConMon(self.msConfig['rucioConMon'], logger=self.logger)
 
         self.wmstatsSvc = WMStatsServer(self.msConfig['wmstatsUrl'], logger=self.logger)
+        self.wmstatsSvcT0 = WMStatsServer(self.msConfig['wmstatsUrlT0'], logger=self.logger)
 
         # Building all the Pipelines:
         pName = 'plineUnmerged'
@@ -163,7 +159,7 @@ class MSUnmerged(MSCore):
 
         # Initialization service common data structures:
         self.rseConsStats = {}
-        self.protectedLFNs = []
+        self.protectedLFNs = set()
 
         # The basic /store/unmerged regular expression:
         self.regStoreUnmergedLfn = re.compile("^/store/unmerged/.*$")
@@ -185,12 +181,25 @@ class MSUnmerged(MSCore):
         try:
             self.protectedLFNs = set(self.wmstatsSvc.getProtectedLFNs())
             # self.logger.debug("protectedLFNs: %s", pformat(self.protectedLFNs))
-
             if not self.protectedLFNs:
-                msg = "Could not fetch the protectedLFNs list from WMStatServer. "
+                msg = "Could not fetch the protectedLFNs list from Production WMStatServer. "
                 msg += "Skipping the current run."
                 self.logger.error(msg)
                 return summary
+
+            protectedLFNsT0 = set()
+            if self.msConfig['enableT0WMStats']:
+                msg = "WMStatsServer.getProtectedLFNs for T0 is not yet implemented."
+                raise NotImplementedError(msg)
+                # protectedLFNs = set(self.wmstatsSvcT0.getProtectedLFNs())
+                if not protectedLFNsT0:
+                    msg = "Could not fetch the protectedLFNs list from T0 WMStatServer. "
+                    msg += "Skipping the current run."
+                    self.logger.error(msg)
+                    return summary
+
+            self.protectedLFNs = self.protectedLFNs | protectedLFNsT0
+
         except Exception as ex:
             msg = "Unknown exception while trying to fetch the protectedLFNs list from WMStatServer. Error: {}".format(str(ex))
             self.logger.exception(msg)
@@ -480,8 +489,16 @@ class MSUnmerged(MSCore):
             raise MSUnmergedPlineExit(msg)
 
         isConsDone = self.rseConsStats[rseName]['status'] == 'done'
-        isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
+        if not isConsDone:
+            msg = "RSE: %s has a non-final Rucio ConMon status: %s. " % (rseName, self.rseConsStats[rseName]['status'])
+            msg += "Skipping it in the current run."
+            self.logger.warning(msg)
+            rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
+            self.updateRSETimestamps(rse, start=False, end=True)
+            self.uploadRSEToMongoDB(rse)
+            raise MSUnmergedPlineExit(msg)
 
+        isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
         if not isConsNewer:
             msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. " % rseName
             if 'isClean' in rse and rse['isClean']:
@@ -498,15 +515,6 @@ class MSUnmerged(MSCore):
                 self.logger.info(msg)
                 rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
 
-        if not isConsDone:
-            msg = "RSE: %s In non-final state in Rucio Consistency Monitor. " % rseName
-            msg += "Skipping it in the current run."
-            self.logger.warning(msg)
-            rse['rucioConMonStatus'] = self.rseConsStats[rseName]['status']
-            self.updateRSETimestamps(rse, start=False, end=True)
-            self.uploadRSEToMongoDB(rse)
-            raise MSUnmergedPlineExit(msg)
-
         if isConsNewer and isConsDone:
             # NOTE: If we've got to this point then we have a brand new record for
             #       the RSE in RucioConMOn and we are then about to start a new RSE cleanup
@@ -517,7 +525,7 @@ class MSUnmerged(MSCore):
             self.logger.info(msg)
             try:
                 rse.resetRSE(self.msUnmergedColl, keepTimestamps=True, retryCount=self.msConfig['mongoDBRetryCount'])
-            except NotMasterError:
+            except NotPrimaryError:
                 msg = "Could not reset RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
                 msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
                 msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
@@ -803,7 +811,7 @@ class MSUnmerged(MSCore):
         try:
             self.logger.info("RSE: %s Writing rse data to MongoDB." % rse['name'])
             rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite, retryCount=self.msConfig['mongoDBRetryCount'])
-        except NotMasterError:
+        except NotPrimaryError:
             msg = "Could not write RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
             msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
             msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
@@ -822,21 +830,38 @@ class MSUnmerged(MSCore):
         data = {}
         if kwargs.get('rse'):
             data["query"] = 'rse=%s&detail=%s' % (kwargs['rse'], detail)
-            mongoProjection = {"_id": False,
-                               "name": True,
-                               "pfnPrefix": True,
-                               "rucioConMonStatus": True,
-                               "isClean": True,
-                               "timestamps": True,
-                               "counters": True}
-            if detail:
-                mongoProjection["dirs"]  = True
+            allDocs = (kwargs['rse'].lower() == "all_docs") if isinstance(kwargs['rse'], str) else False
 
-            rseList = kwargs['rse'] if isinstance(kwargs['rse'], list) else [kwargs['rse']]
-            data["rseData"] = []
-            for rseName in rseList:
-                mongoFilter = {'name': rseName}
-                data["rseData"].append(self.msUnmergedColl.find_one(mongoFilter, projection=mongoProjection))
+            if allDocs:
+                mongoProjection = {
+                    "_id": False,
+                    "name": True,
+                    "isClean": True,
+                    "rucioConMonStatus": True,
+                    "counters": {
+                        "gfalErrors": True,
+                        "dirsToDelete": True,
+                        "dirsDeletedSuccess": True,
+                        "dirsDeletedFail": True}}
+                mongoFilter = {}
+                data["rseData"] = list(self.msUnmergedColl.find(mongoFilter, projection=mongoProjection))
+            else:
+                mongoProjection = {
+                    "_id": False,
+                    "name": True,
+                    "isClean": True,
+                    "pfnPrefix": True,
+                    "rucioConMonStatus": True,
+                    "timestamps": True,
+                    "counters": True}
+                if detail:
+                    mongoProjection["dirs"]  = True
+
+                rseList = kwargs['rse'] if isinstance(kwargs['rse'], list) else [kwargs['rse']]
+                data["rseData"] = []
+                for rseName in rseList:
+                    mongoFilter = {'name': rseName}
+                    data["rseData"].append(self.msUnmergedColl.find_one(mongoFilter, projection=mongoProjection))
         return data
 
     # @profile

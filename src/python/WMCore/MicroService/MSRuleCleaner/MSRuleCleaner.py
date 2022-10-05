@@ -28,15 +28,15 @@ from pprint import pformat
 from WMCore.MicroService.DataStructs.DefaultStructs import RULECLEANER_REPORT
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
 from WMCore.MicroService.MSCore import MSCore
-from WMCore.MicroService.Tools.Common import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 from WMCore.ReqMgr.DataStructs import RequestStatus
-from Utils.Pipeline import Pipeline, Functor
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.MicroService.Tools.Common import findParent
+from WMCore.MicroService.Tools.Common import findParent, isRelVal
+from Utils.Pipeline import Pipeline, Functor
+from Utils.CertTools import ckey, cert
 
 
 class MSRuleCleanerResolveParentError(WMException):
@@ -86,6 +86,9 @@ class MSRuleCleaner(MSCore):
         self.msConfig.setdefault("rucioMStrAccount", "wmcore_transferor")
         self.msConfig.setdefault('enableRealMode', False)
 
+        self.currThread = None
+        self.currThreadIdent = None
+
         self.mode = "RealMode" if self.msConfig['enableRealMode'] else "DryRunMode"
         self.curlMgr = RequestHandler()
         self.targetStatusRegex = re.compile(r'.*archived')
@@ -93,6 +96,10 @@ class MSRuleCleaner(MSCore):
                            self.msConfig["logDBReporter"],
                            logger=self.logger)
         self.wmstatsSvc = WMStatsServer(self.msConfig['wmstatsUrl'], logger=self.logger)
+        # service name used to route alerts via AlertManager
+        self.alertServiceName = "ms-rulecleaner"
+        # 2 days of expiration time
+        self.alertExpiration = self.msConfig.get("alertExpireSecs", 2 * 24 * 60 * 60)
 
         # Building all the Pipelines:
         pName = 'plineMSTrCont'
@@ -560,7 +567,7 @@ class MSRuleCleaner(MSCore):
         except Exception as ex:
             msg = "General Exception while trying status transition to: %s " % wflow['TargetStatus']
             msg += "for workflow: %s : %s" % (wflow['RequestName'], str(ex))
-            raise MSRuleCleanerArchivalError(msg)
+            raise MSRuleCleanerArchivalError(msg) from None
         return wflow
 
     def getMSOutputTransferInfo(self, wflow):
@@ -672,10 +679,17 @@ class MSRuleCleaner(MSCore):
                     self.logger.info(msg, dataCont, wflow['RequestName'])
                     continue
                 if gran == 'container':
-                    for rule in self.rucio.listDataRules(dataCont, account=rucioAcct):
-                        wflow['RulesToClean'][currPline].append(rule['id'])
-                        msg = "Found %s container-level rule to be deleted for container %s"
-                        self.logger.info(msg, rule['id'], dataCont)
+                    ruleIds = [rule['id'] for rule in self.rucio.listDataRules(dataCont, account=rucioAcct)]
+                    if ruleIds and dataType in ("MCPileup", "DataPileup"):
+                        msg = "Pileup container %s has the following container-level rules to be removed: %s."
+                        msg += " However, this component is no longer removing pileup rules."
+                        self.logger.info(msg, dataCont, ruleIds)
+                        if not isRelVal(wflow):
+                            self.alertDeletablePU(wflow['RequestName'], dataCont, ruleIds)
+                    elif ruleIds:
+                        wflow['RulesToClean'][currPline].extend(ruleIds)
+                        msg = "Container %s has the following container-level rules to be removed: %s"
+                        self.logger.info(msg, dataCont, ruleIds)
                 elif gran == 'block':
                     try:
                         blocks = self.rucio.getBlocksInContainer(dataCont)
@@ -732,3 +746,22 @@ class MSRuleCleaner(MSCore):
             requests = result[0]
         self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
         return requests
+
+    def alertDeletablePU(self, workflowName, containerName, ruleList):
+        """
+        Send alert notifying that there is a pileup dataset eligible for rule removal
+        :param workflowName: string with the workflow name
+        :param containerName: string with the container name
+        :param ruleList: list of strings with the rule ids
+        :return: none
+        """
+        alertName = "{}: PU eligible for deletion: {}".format(self.alertServiceName, containerName)
+        alertSeverity = "high"
+        alertSummary = "[MSRuleCleaner] Found pileup container no longer locked and available for rule deletion."
+        alertDescription = "Workflow: {} has the following pileup container ".format(workflowName)
+        alertDescription += "\n{}\n no longer in the global locks. ".format(containerName)
+        alertDescription += "These rules\n{}\nare eligible for deletion.".format(ruleList)
+        # alert to expiry in 2 days
+        self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                       service=self.alertServiceName, endSecs=self.alertExpiration)
+        self.logger.critical(alertDescription)

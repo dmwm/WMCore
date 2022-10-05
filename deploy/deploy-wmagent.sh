@@ -24,13 +24,15 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.5.7.patch1 -d HG2201e -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.5.7.patch1 -d HG2201e -t testbed-vocms001 -p "10853" -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 2.1.2 -d HG2209d -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 2.1.2-b954b0745339a347ea28afd5b5767db4 -d HG2209d -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
 ### Usage:
 
 IAM=`whoami`
 HOSTNAME=`hostname -f`
 MY_IP=`host $HOSTNAME | awk '{print $4}'`
+HPC_PEND_JOBS=2000
+HPC_RUNN_JOBS=3000
 
 BASE_DIR=/data/srv
 DEPLOY_DIR=$BASE_DIR/wmagent
@@ -129,7 +131,7 @@ check_certs()
     echo -e "\n  ... nope, trying to copy them from another node, you might be prompted for the cmst1 password."
     set -e
     if [[ "$IAM" == cmst1 ]]; then
-      scp cmst1@vocms0250:/data/certs/* /data/certs/
+      scp cmst1@vocms0255:/data/certs/* /data/certs/
     else
       scp cmsdataops@cmsgwms-submit3:/data/certs/* /data/certs/
     fi
@@ -283,7 +285,7 @@ echo "Done!" && echo
 # XXX: update the PR number below, if needed :-)
 echo -e "\n*** Applying database schema patches ***"
 cd $CURRENT_DIR
-#  wget -nv https://github.com/dmwm/WMCore/pull/10263.patch -O - | patch -d apps/${RPM_NAME}/ -p 1
+#  curl https://patch-diff.githubusercontent.com/raw/dmwm/WMCore/pull/11001.patch | patch -d apps/${RPM_NAME}/ -p 1
 cd -
 echo "Done!" && echo
 
@@ -292,7 +294,7 @@ echo -e "\n*** Applying agent patches ***"
 if [ "x$PATCHES" != "x" ]; then
   cd $CURRENT_DIR
   for pr in $PATCHES; do
-    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/${RPM_NAME}/lib/python*/site-packages/ -p 3
+    curl https://patch-diff.githubusercontent.com/raw/dmwm/WMCore/pull/$pr.patch | patch -d apps/${RPM_NAME}/lib/python*/site-packages/ -p 3
   done
 cd -
 fi
@@ -356,13 +358,6 @@ elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   sed -i "s+config.RucioInjector.metaDIDProject = 'Production'+config.RucioInjector.metaDIDProject = 'Test'+" $MANAGE_DIR/config.py
 fi
 
-if [[ "$HOSTNAME" == *fnal.gov ]]; then
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
-else
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
-fi
-echo "Done!" && echo
-
 ### Populating resource-control
 echo "*** Populating resource-control ***"
 cd $MANAGE_DIR
@@ -373,6 +368,21 @@ if [[ "$TEAMNAME" == relval* || "$TEAMNAME" == *testbed* ]]; then
 else
   echo "Adding ALL sites to resource-control..."
   ./manage execute-agent wmagent-resource-control --add-all-sites --plugin=SimpleCondorPlugin --pending-slots=50 --running-slots=50 --down
+fi
+echo "Done!" && echo
+
+echo "*** Setting up US opportunistic resources ***"
+if [[ "$HOSTNAME" == *fnal.gov ]]; then
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
+  for resourceName in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil,T3_US_Lancium,T3_ES_PIC_BSC};
+  do
+    ./manage execute-agent wmagent-resource-control --plugin=SimpleCondorPlugin --opportunistic \
+      --pending-slots=$HPC_PEND_JOBS --running-slots=$HPC_RUNN_JOBS --add-one-site $resourceName
+  done
+else
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
+  ./manage execute-agent wmagent-resource-control --plugin=SimpleCondorPlugin --opportunistic \
+    --pending-slots=$HPC_PEND_JOBS --running-slots=$HPC_RUNN_JOBS --add-one-site T3_ES_PIC_BSC
 fi
 echo "Done!" && echo
 

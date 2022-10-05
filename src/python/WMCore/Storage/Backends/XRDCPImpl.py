@@ -10,6 +10,7 @@ Generic, will/should work with any site.
 from __future__ import print_function
 
 import argparse
+import logging
 import os
 
 from WMCore.Storage.Registry import registerStageOutImpl
@@ -43,6 +44,21 @@ class XRDCPImpl(StageOutImpl):
         """
         return
 
+    def _checkXRDUtilsExist(self):
+        """
+        Verifies whether xrdcp and xrdfs utils exist in the job path.
+
+        :return: True if both exist, otherwise False
+        """
+        foundXrdcp, foundXrdfs = False, False
+        for path in os.environ["PATH"].split(os.pathsep):
+            if os.access(os.path.join(path, "xrdcp"), os.X_OK):
+                foundXrdcp = True
+            if os.access(os.path.join(path, "xrdfs"), os.X_OK):
+                foundXrdfs = True
+
+        return foundXrdcp & foundXrdfs
+
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
@@ -60,7 +76,6 @@ class XRDCPImpl(StageOutImpl):
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--wma-cerncastor', action='store_true')
-        parser.add_argument('--wma-old', action='store_true')
         parser.add_argument('--wma-disablewriterecovery', action='store_true')
         parser.add_argument('--wma-preload')
         args, unknown = parser.parse_known_args(options.split())
@@ -82,46 +97,23 @@ class XRDCPImpl(StageOutImpl):
 
         useChecksum = (checksums is not None and 'adler32' in checksums and not self.stageIn)
 
-        xrdcpExec = "xrdcp"
-        if args.wma_old:
-            xrdcpExec = "xrdcp-old"
-
-        # check if xrdcp(-old) and xrdfs are in path
-        # fallback to xrootd 4.0.4 from COMP externals if not
-        xrootdInPath = False
-        if any(os.access(os.path.join(path, xrdcpExec), os.X_OK) for path in os.environ["PATH"].split(os.pathsep)):
-            if any(os.access(os.path.join(path, "xrdfs"), os.X_OK) for path in os.environ["PATH"].split(os.pathsep)):
-                xrootdInPath = True
-
-        if not xrootdInPath:
-            # COMP software can be in many place, check all of them
-            cmsSoftDir = os.environ.get("VO_CMS_SW_DIR", None)
-            if not cmsSoftDir:
-                cmsSoftDir = os.environ.get("OSG_APP", None)
-                if cmsSoftDir:
-                    cmsSoftDir = os.path.join(cmsSoftDir, "cmssoft/cms")
-                else:
-                    cmsSoftDir = os.environ.get("CVMFS", None)
-
-            if cmsSoftDir:
-
-                initFiles = []
-                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/xrootd/4.0.4-comp/etc/profile.d/init.sh"))
-                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/libevent/2.0.22/etc/profile.d/init.sh"))
-                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/gcc/4.9.3/etc/profile.d/init.sh"))
-
-                if all(os.path.isfile(initFile) for initFile in initFiles):
-                    for initFile in initFiles:
-                        copyCommand += "source %s\n" % initFile
+        # If not, check whether OSG cvmfs repo is available.
+        # This likely only works on RHEL7 x86-64 (and compatible) OS, but this
+        # represents most of our resources and it's a fallback mechanism anyways
+        if not self._checkXRDUtilsExist():
+            logging.warning("Failed to find XRootD in the path. Trying fallback to OSG CVMFS...")
+            initFile = "/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/current/el7-x86_64/setup.sh"
+            if os.path.isfile(initFile):
+                copyCommand += "source %s\n" % initFile
 
         if args.wma_disablewriterecovery:
             copyCommand += "env XRD_WRITERECOVERY=0 "
 
         if args.wma_preload:
-            xrdcpCmd = "%s %s" % (args.wma_preload, xrdcpExec)
+            xrdcpCmd = "%s xrdcp" % args.wma_preload
             self.xrdfsCmd = "%s xrdfs" % args.wma_preload
         else:
-            xrdcpCmd = xrdcpExec
+            xrdcpCmd = "xrdcp"
             self.xrdfsCmd = "xrdfs"
 
         copyCommand += "%s --force --nopbar " % xrdcpCmd

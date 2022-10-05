@@ -214,17 +214,11 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running", "Done"])), "running-open")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running", "Done", "CancelRequested"])))
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running", "Done", "CancelRequested", "Canceled"])))
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running", "Done"])), "running-open")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running", "Done", "CancelRequested"])))
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running", "Done", "CancelRequested", "Canceled"])))
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Running"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Running", "Done"])), "running-open")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Acquired", "Running", "Done", "CancelRequested"])))
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Acquired", "Running", "Done", "CancelRequested", "Canceled"])))
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Done"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Running", "Done", "Canceled"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Done"])), "running-open")
@@ -234,12 +228,10 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # workflows completely acquired by the agents
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running"])), "running-closed")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done"])), "running-closed")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Running", "Done", "CancelRequested"])))
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Running", "Done", "CancelRequested", "Canceled"])))
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done", "Canceled"])), "running-closed")
 
         # workflows completed/aborted/force-completed, thus existent elements
-        #  but no more active workqueue elements in the system
+        # but no more active workqueue elements in the system
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done"])), "completed")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Canceled"])), "completed")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done", "Canceled"])), "completed")
@@ -256,9 +248,26 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done", "Failed"])), "completed")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Canceled", "Failed"])), "completed")
 
-        # workflows in a temporary state, nothing to do with them yet
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Done", "CancelRequested"])))
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["CancelRequested"])))
+        # workflows that have been aborted but still have workqueue elements around
+        self.assertEqual("running-open", convertWQElementsStatusToWFStatus(
+                set(["Available", "Negotiating", "Acquired", "Running", "Done", "CancelRequested"])))
+        self.assertEqual("running-open", convertWQElementsStatusToWFStatus(
+                set(["Available", "Negotiating", "Acquired", "Running", "Done", "CancelRequested", "Canceled"])))
+        self.assertEqual("running-open", convertWQElementsStatusToWFStatus(
+                set(["Negotiating", "Acquired", "Running", "Done", "CancelRequested"])))
+        self.assertEqual("running-open", convertWQElementsStatusToWFStatus(
+                set(["Negotiating", "Acquired", "Running", "Done", "CancelRequested", "Canceled"])))
+        self.assertEqual("running-open", convertWQElementsStatusToWFStatus(
+                set(["Acquired", "Running", "Done", "CancelRequested"])))
+        self.assertEqual("running-open", convertWQElementsStatusToWFStatus(
+                set(["Acquired", "Running", "Done", "CancelRequested", "Canceled"])))
+        self.assertEqual("running-closed", convertWQElementsStatusToWFStatus(
+                set(["Running", "Done", "CancelRequested"])))
+        self.assertEqual("running-closed", convertWQElementsStatusToWFStatus(
+                set(["Running", "Done", "CancelRequested", "Canceled"])))
+        self.assertEqual("canceled", convertWQElementsStatusToWFStatus(
+                set(["Done", "CancelRequested"])))
+        self.assertEqual("canceled", convertWQElementsStatusToWFStatus(set(["CancelRequested"])))
 
     def test2ConvertWQElementsStatusToWFStatus(self):
         """
@@ -271,7 +280,7 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running"])), "running-closed")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done"])), "completed")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["CancelRequested"])))
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["CancelRequested"])), "canceled")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Canceled"])), "completed")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Failed"])), "failed")
 
@@ -291,9 +300,9 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done"])), 'running-closed')
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Failed"])), "running-closed")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done", "Failed"])), "completed")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Done", "CancelRequested"])))
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done", "CancelRequested"])), "canceled")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done", "Canceled"])), "completed")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["CancelRequested", "Canceled"])))
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["CancelRequested", "Canceled"])), "canceled")
 
         # triple WQE with standard state transition
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired"])), "running-open")
@@ -316,7 +325,7 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Running", "Failed"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Done", "Failed"])), "running-open")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done", "Failed"])), "running-closed")
-        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["CancelRequested", "Done", "Failed"])))
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["CancelRequested", "Done", "Failed"])), "canceled")
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Canceled", "Done", "Failed"])), "completed")
 
 

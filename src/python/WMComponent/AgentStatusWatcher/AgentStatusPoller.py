@@ -26,7 +26,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteS
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 # CMSMonitoring modules
-from CMSMonitoring.StompAMQ import StompAMQ
+from CMSMonitoring.StompAMQ7 import StompAMQ7 as StompAMQ
 
 
 class AgentStatusPoller(BaseWorkerThread):
@@ -72,6 +72,14 @@ class AgentStatusPoller(BaseWorkerThread):
             self.workqueueDS = WorkQueueDS(localWQUrl)
 
     def setUpCouchDBReplication(self):
+        """
+        This method will delete the current replication documents and
+        fresh new ones will be created.
+        :return: None
+        """
+        # delete old replicator docs before setting up fresh ones
+        resp = self.localCouchMonitor.deleteReplicatorDocs()
+        logging.info("Deleted old replication documents and the response was: %s", resp)
 
         self.replicatorDocs = []
         # set up common replication code
@@ -93,19 +101,16 @@ class AgentStatusPoller(BaseWorkerThread):
             localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
             self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL,
                                         'filter': wqfilter, 'query_params': query_params})
-            self.replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL,
+            self.replicatorDocs.append({'source': localQInboxURL, 'target': parentQURL,
                                         'filter': wqfilter, 'query_params': query_params})
 
-        # delete old replicator docs before setting up
-        self.localCouchMonitor.deleteReplicatorDocs()
-
+        logging.info("Going to create %d new replication documents", len(self.replicatorDocs))
         for rp in self.replicatorDocs:
-            self.localCouchMonitor.couchServer.replicate(
-                rp['source'], rp['target'], filter=rp['filter'],
-                query_params=rp.get('query_params', False),
-                continuous=True)
-        # First cicle need to be skipped since document is not updated that fast
-        self.skipReplicationCheck = True
+            resp = self.localCouchMonitor.couchServer.replicate(rp['source'], rp['target'],
+                                                                continuous=True,
+                                                                filter=rp['filter'],
+                                                                query_params=rp.get('query_params', False))
+            logging.info(".. response for the replication document creation was: %s", resp)
 
     def setup(self, parameters):
         """
@@ -169,22 +174,16 @@ class AgentStatusPoller(BaseWorkerThread):
 
         return results
 
-    def collectCouchDBInfo(self):
-
+    def checkCouchStatus(self):
+        """
+        This method checks whether CouchDB is running properly and it also
+        verifies whether all the replication tasks are progressing as expected
+        :return: a dictionary with the status for CouchServer
+        """
         couchInfo = {'name': 'CouchServer', 'status': 'ok', 'error_message': ""}
 
-        if self.skipReplicationCheck:
-            # skipping the check this round set if False so it can be checked next round.
-            self.skipReplicationCheck = False
-            return couchInfo
-
-        for rp in self.replicatorDocs:
-            cInfo = self.localCouchMonitor.checkCouchServerStatus(rp['source'],
-                                                                  rp['target'], checkUpdateSeq=False)
-            if cInfo['status'] != 'ok':
-                couchInfo['status'] = 'error'
-                couchInfo['error_message'] = cInfo['error_message']
-
+        cInfo = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
+        couchInfo.update(cInfo)
         return couchInfo
 
     def collectAgentInfo(self):
@@ -211,7 +210,7 @@ class AgentStatusPoller(BaseWorkerThread):
         else:
             agentInfo['drain_mode'] = False
 
-        couchInfo = self.collectCouchDBInfo()
+        couchInfo = self.checkCouchStatus()
         if couchInfo['status'] != 'ok':
             agentInfo['down_components'].append(couchInfo['name'])
             agentInfo['status'] = couchInfo['status']
@@ -571,8 +570,8 @@ class AgentStatusPoller(BaseWorkerThread):
                                 logger=logging)
 
             for doc in docs:
-                singleNotif, _, _ = stompSvc.make_notification(payload=doc, docType=docType,
-                                                               ts=timeS, dataSubfield="payload")
+                singleNotif, _, _ = stompSvc.make_notification(payload=doc, doc_type=docType,
+                                                               ts=timeS, data_subfield="payload")
                 notifications.append(singleNotif)
 
             failures = stompSvc.send(notifications)

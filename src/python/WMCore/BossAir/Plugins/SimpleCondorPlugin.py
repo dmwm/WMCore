@@ -3,8 +3,6 @@
 _SimpleCondorPlugin_
 
 """
-from __future__ import division, print_function
-
 import logging
 import os
 import os.path
@@ -16,8 +14,6 @@ import htcondor
 
 from Utils import FileTools
 from Utils.IteratorTools import grouper
-from Utils.PythonVersion import PY2
-from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
@@ -508,7 +504,7 @@ class SimpleCondorPlugin(BasePlugin):
         for job in jobList:
             ad = {}
 
-            ad['initial_Dir'] = encodeUnicodeToBytesConditional(job['cache_dir'], condition=PY2)
+            ad['initial_Dir'] = job['cache_dir']
             ad['transfer_input_files'] = "%s,%s/%s,%s" % (job['sandbox'], job['packageDir'],
                                                    'JobPackage.pkl', self.unpacker)
             ad['Arguments'] = "%s %i %s" % (os.path.basename(job['sandbox']), job['id'], job["retry_count"])
@@ -529,22 +525,22 @@ class SimpleCondorPlugin(BasePlugin):
             sites = ','.join(sorted(job.get('potentialSites')))
             ad['My.ExtDESIRED_Sites'] = classad.quote(str(sites))
             ad['My.CMS_JobRetryCount'] = str(job['retry_count'])
-            ad['My.WMAgent_RequestName'] = classad.quote(encodeUnicodeToBytesConditional(job['request_name'], condition=PY2))
+            ad['My.WMAgent_RequestName'] = classad.quote(job['request_name'])
             match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['request_name'])
             if match:
                 ad['My.CMSGroups'] = classad.quote(match.groups()[0])
             else:
                 ad['My.CMSGroups'] = undefined
             ad['My.WMAgent_JobID'] = str(job['jobid'])
-            ad['My.WMAgent_SubTaskName'] = classad.quote(encodeUnicodeToBytesConditional(job['task_name'], condition=PY2))
-            ad['My.CMS_JobType'] = classad.quote(encodeUnicodeToBytesConditional(job['task_type'], condition=PY2))
+            ad['My.WMAgent_SubTaskName'] = classad.quote(job['task_name'])
+            ad['My.CMS_JobType'] = classad.quote(job['task_type'])
             ad['My.CMS_Type'] = classad.quote(activityToType(job['activity']))
             ad['My.CMS_RequestType'] = classad.quote(job['requestType'])
 
             # Handling for AWS, cloud and opportunistic resources
             ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
             if job.get('inputDataset'):
-                ad['My.DESIRED_CMSDataset'] = classad.quote(encodeUnicodeToBytesConditional(job['inputDataset'], condition=PY2))
+                ad['My.DESIRED_CMSDataset'] = classad.quote(job['inputDataset'])
             else:
                 ad['My.DESIRED_CMSDataset'] = undefined
             if job.get('inputDatasetLocations'):
@@ -625,14 +621,16 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.PostJobPrio2'] = str(int(-1 * job['task_id']))
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
-            ad['My.REQUIRED_OS'] = classad.quote(encodeUnicodeToBytesConditional(requiredOSes, condition=PY2))
+            ad['My.REQUIRED_OS'] = classad.quote(requiredOSes)
             cmsswVersions = ','.join(job.get('swVersion'))
-            ad['My.CMSSW_Versions'] = classad.quote(encodeUnicodeToBytesConditional(cmsswVersions, condition=PY2))
-            requiredArch = self.scramArchtoRequiredArch(job.get('scramArch'))
-            if not requiredArch:  # only Cleanup jobs should not have ScramArch defined
-                ad['Requirements'] = '(TARGET.Arch =!= Undefined)'
+            ad['My.CMSSW_Versions'] = classad.quote(cmsswVersions)
+            requiredArchs = self.scramArchtoRequiredArch(job.get('scramArch'))
+            if not requiredArchs:  # only Cleanup jobs should not have ScramArch defined
+                ad['My.REQUIRED_ARCH'] = undefined
+                ad['Requirements'] = '(TARGET.Arch =!= REQUIRED_ARCH)'
             else:
-                ad['Requirements'] = '(TARGET.Arch =?= "{}")'.format(requiredArch)
+                ad['My.REQUIRED_ARCH'] = classad.quote(str(requiredArchs))
+                ad['Requirements'] = 'stringListMember(TARGET.Arch, REQUIRED_ARCH)'
 
             jobParameters.append(ad)    
              

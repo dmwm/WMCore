@@ -1,3 +1,231 @@
+2.1.2 to 2.1.3.pre1:
+  - Update CMSMonitoring python library version to 0.6.9 (Alan Malta Rodrigues) #11295
+  - Update schematics for WM, MSTransferor and MSMonitor (Alan Malta Rodrigues) #11294
+  - Fix python version for patchComponent.sh (#11272) (Todor Ivanov) #11272
+  - Convert bin/workflowCompletion.py to python3-only; fix url bug (Alan Malta Rodrigues) #11286
+  - Skip alert for RelVals with deletable pileup (Alan Malta Rodrigues) #11283
+  - Update Py3 CMSMonitoring to version 0.6.8 (Alan Malta Rodrigues) #11282
+  - Update WMAgent script example and test campaign names (Alan Malta Rodrigues) #11278
+
+
+2.1.2.pre4 to 2.1.2:
+
+
+2.1.2.pre3 to 2.1.2.pre4:
+  - Remove extra request parameter checks for [Non]CustodialSubType && AutoApproveSubscriptionSites. (Todor Ivanov) #11270
+  - Cast SQLAlchemy RMKeyView object to list (Alan Malta Rodrigues) #11268
+
+
+2.1.2.pre2 to 2.1.2.pre3:
+  - Create alert for pileup containers eligible for rule deletion (Alan Malta Rodrigues) #11264
+  - New version of DBS3Client 4.0.10 (Valentin Kuznetsov) #11261
+
+
+2.1.2.pre1 to 2.1.2.pre2:
+  - Dropping PhEDEx UnitTest (Jhonatan Amado) #11181
+  - Dropping PhEDEx args (Jhonatan Amado) #11181
+
+
+2.1.1 to 2.1.2.pre1:
+  - Update WMCore dependencies (Valentin Kuznetsov) #11258
+  - Remove threadlocal parameter for SQLAlchemy as it is deprecated in new release (Valentin Kuznetsov) #11257
+  - Fix strToBool validate function to fail on integer values (Alan Malta Rodrigues) #11251
+  - Validate StdBase ValidStatus parameter for DBS output data (Alan Malta Rodrigues) #11237
+  - Update CMSMonitoring python library to 0.6.7 (Alan Malta Rodrigues) #11255
+  - Combines block records in single dict that includes all associated wfs (#11245) (Germán Felipe Giraldo Villa) #11245
+
+
+2.1.1.pre3 to 2.1.1:
+
+
+2.1.1.pre2 to 2.1.1.pre3:
+  - MS: Implement new object for Nano input data placement (Alan Malta Rodrigues) #11219
+  - Update DBS mock calls and data with MINIAODSIM (Alan Malta Rodrigues) #11219
+  - Set start policy to Dataset for workflows processing MINIAODSIM dataset (Alan Malta Rodrigues) #11219
+  - Allow list of multiple architectures (khurtado) #11228
+
+
+2.1.1.pre1 to 2.1.1.pre2:
+  - Adopt ReqMgr2 authorization based on the request status (Alan Malta Rodrigues) #11223
+
+
+2.1.0 to 2.1.1.pre1:
+  - Update CMSMonitoring version in the requirements file to 0.6.5 (Alan Malta Rodrigues) #11229
+  - Implement support for gzipped stream for RucioConMon (Valentin Kuznetsov) #11142
+  - Add ExecuteDAO script. (Todor Ivanov) #11174
+  - Move some Rucio utils over to RucioUtils module (Alan Malta Rodrigues) #11218
+
+
+2.1.0.pre5 to 2.1.0:
+
+
+2.1.0.pre4 to 2.1.0.pre5:
+  - Updated stomp.py package version from 4.1.21 to 7.0.0
+
+
+2.1.0.pre3 to 2.1.0.pre4:
+  - Load credentials when saving spec file in local workqueue (Alan Malta Rodrigues) #11204
+  - Update CMSMonitoring module version to use StompAMQ7 with latest stomp.py (mrceyhun) #11189
+
+
+2.1.0.pre2 to 2.1.0.pre3:
+  - Create filter function to drop deleted documents (Alan Malta Rodrigues) #11196
+
+
+2.1.0.pre1 to 2.1.0.pre2:
+  - Update deployment scripts for 2.0.4 and test campaigns in central couch (Alan Malta Rodrigues) #11177
+  - Consistent return data type for closing workqueue elements (Alan Malta Rodrigues) #11193
+  - remove all the CMS authz logic from the CouchDB validate functions (Alan Malta Rodrigues) #11191
+  - Comment out Proxy Error mocking (Valentin Kuznetsov) #11176
+  - Give enough time for replication to complete in unit tests (Alan Malta Rodrigues) #11185
+  - Provide uniform way to handle DBS server errors (Valentin Kuznetsov) #11176
+
+
+2.0.4 to 2.1.0.pre1:
+  - Bundle of fixes required for migration to CouchDB 3.x #11001
+  - Ensure dataset_lifetime bind is defined for DBS3Buffer/NewSubscription (Alan Malta Rodrigues) #11179
+
+
+2.0.4.pre4 to 2.0.4:
+  - Add extra protection for T0 to prevent archival of workflows having blocks not yet deleted. (Todor Ivanov) #11169
+
+
+2.0.4.pre3 to 2.0.4.pre4:
+  - New CouchDB 3.x APIs for tracking replications; fix replication check in AgentStatusPoller (Alan Malta Rodrigues) #11039
+
+
+2.0.4.pre2 to 2.0.4.pre3:
+  - Check if key exists when deleting standalone documents in Couch (Alan Malta Rodrigues) #11165
+  - Avoid raising exception when ReqMgr2 request is not found (Alan Malta Rodrigues) #11159
+  - Remove CouchDB JobDump/highestJobID view (Alan Malta Rodrigues) #11161
+  - fix: requirements.txt to reduce vulnerabilities (snyk-bot) #11155
+  - Split Deletable Blocks checks in two stages. (Todor Ivanov) #11127
+  - Remove CouchDB all_or_nothing option for bulk API (Alan Malta Rodrigues) #11011
+
+
+2.0.4.pre1 to 2.0.4.pre2:
+  - [MSTransferor] Define grouping=ALL for workflows with parents (Alan Malta Rodrigues) #11153
+
+
+2.0.3 to 2.0.4.pre1:
+  - Reorganization and classification of workflows and policies (Alan Malta Rodrigues) #11143
+  - [MSTransferor] Create rule for each pileup location (Alan Malta Rodrigues) #11143
+  - Fix logic to check for empty results in MS/Common (Alan Malta Rodrigues) #11148
+
+
+2.0.3.pre7 to 2.0.3:
+
+
+2.0.3.pre6 to 2.0.3.pre7:
+  - [MSTransferor] Lock the whole input container for growing workflows (Alan Malta Rodrigues) #11141
+  - unit tests for RelValPolicy (Alan Malta Rodrigues) #11139
+  - Apply different rule lifetime for RelVal pre-release samples (Alan Malta Rodrigues) #11139
+  - Add support for IAM token (Valentin Kuznetsov) #10939
+  - update a couple of json templates with OpenRunningTimeout (Alan Malta Rodrigues) #11135
+  - fix where OpenRunningTimeout is retrieved in the workqueue element (Alan Malta Rodrigues) #11135
+  - Add support to OpenRunningTimeout for TaskChain/StepChain (Alan Malta Rodrigues) #11135
+
+
+2.0.3.pre5 to 2.0.3.pre6:
+  - Add buildAllDep option && Fix package verstion estimation for ParseSpecCmsswdist. (Todor Ivanov) #11132
+  - Bring dbs3-client version to 4.0.8 (Alan Malta Rodrigues) #11138
+  - speed up listDatasetFileDetails API (Valentin Kuznetsov) #11099
+  - Remove profile scope (Valentin Kuznetsov) #11134
+
+
+2.0.3.pre4 to 2.0.3.pre5:
+  - fix unit tests (Alan Malta Rodrigues) #11119
+  - Properly handle OpenRunningTimeout in WorkQueue (Alan Malta Rodrigues) #11119
+  - Switch from pep8 to pycodestyle (Erik Gough) #11128
+  - first draft of iam-token script (Valentin Kuznetsov) #11093
+  - Add T3_US_Lancium. (Todor Ivanov) #11126
+
+
+2.0.3.pre3 to 2.0.3.pre4:
+  - Enforce dataset_lifetime column to be integer and not null (Alan Malta Rodrigues) #11115
+  - Remove block open logic from DBS3Reader and WorkQueue (Alan Malta Rodrigues) #11123
+
+
+2.0.3.pre2 to 2.0.3.pre3:
+  - change fallback for missing system xrootd-client (Dirk Hufnagel) #11117
+  - Update ReqMgr2 CP thread to properly deal with aborted/force-complete workflows (Alan Malta Rodrigues) #11113
+  - Create script to cancel GQEs (Alan Malta Rodrigues) #11113
+  - Remove support for Unpacking user tarballs. No longer used by CRAB. (khurtado) #11114
+  - Minor test json template updates (Alan Malta Rodrigues) #10864
+  - Check CMSSW version before getting sim-datatier map (germanfgv) #11110
+
+
+2.0.3.pre1 to 2.0.3.pre2:
+  - move ckey/cert functions to Utils.CertTools (Valentin Kuznetsov) #11101
+  - Add bin and dependencies to wmcore PyPI package (Erik Gough) #11103
+  - Remove cPickle support (Erik Gough) #11096
+  - Update wmagent deploy script to add opportunistic resources one by one (Alan Malta Rodrigues) #11097
+  - Support adding diskless resources into the database (Alan Malta Rodrigues) #11097
+  - Remove no longer needed code in the StatusChangeTasks ReqMgr2 thread (Alan Malta Rodrigues) #11095
+  - Bump WMAgent deployment example to the latest stable version (Alan Malta Rodrigues) #11091
+  - Remove PFNs from a final document we send to WMArchive (Valentin Kuznetsov) #10998
+
+
+2.0.2 to 2.0.3.pre1:
+  - Enhance logic to map ScramArch to OS (Alan Malta Rodrigues) #11088
+  - When ScramArch is empty str/list/None, return any as required_os (Alan Malta Rodrigues) #11083
+  - If job requires rhel8 container, use slc7 python libraries (Alan Malta Rodrigues) #11077
+  - Assign the correct activity for Tape_Test RSEs (Jhonatan Amado) #11067
+
+
+2.0.2.pre4 to 2.0.2:
+
+
+2.0.2.pre3 to 2.0.2.pre4:
+  - Missed one set_opts use for PyCurl multirequest (Alan Malta Rodrigues) #11070
+
+
+2.0.2.pre2 to 2.0.2.pre3:
+  - Use Content-Encoding to automatically decode body in RequestHandler (Alan Malta Rodrigues) #11069
+  - Add usage of gzip encoding (Valentin Kuznetsov) #11056
+
+
+2.0.2.pre1 to 2.0.2.pre2:
+  - Add el8 flavor to the list of rhel8 container jobs (Alan Malta Rodrigues) #11062
+  - No longer delete cache directory on exit (Alan Malta Rodrigues) #10915
+  - MSTransferor: do not bypass Pileup rules in INJECT/REPLICATIN state (Alan Malta Rodrigues) #11061
+  - Add support to EL8 jobs (Alan Malta Rodrigues) #11060
+  - FIx default value for processing version (Valentin Kuznetsov) #11059
+  - Download script and insert US opportunistic resources during deployment (Alan Malta Rodrigues) #11047
+
+
+2.0.1 to 2.0.2.pre1:
+  - Better logging for DBS block insertion in DBS3Upload (Alan Malta Rodrigues) #11058
+  - Document the use of docstrings and best practices in the project (Alan Malta Rodrigues) #11052
+  - Define gzip encoding by default in the headers; properly decompress it (Valentin Kuznetsov) #11041
+  - Fetch protectedLFNs for T0 (Todor Ivanov) #11050
+  - Prevent excessive calls for agent config via ReqMgrAux (Erik Gough) #11033
+  - Adjust processing version to be integer (Valentin Kuznetsov) #11043
+  - [CouchDB] Do not sanitize couch url at the component layer (Alan Malta Rodrigues) #11045
+
+
+2.0.1.pre6 to 2.0.1:
+
+
+2.0.1.pre5 to 2.0.1.pre6:
+  - MSTransferor: fix positional and kwargs passed to sendAlert API (Alan Malta Rodrigues) #11032
+  - Reorder RSE's status and record age checks from RucioConMon. (Todor Ivanov) #11029
+  - Fix MSTransferor typo calling getName method (Alan Malta Rodrigues) #11031
+  - Enhancements to the GH issues and PRs workflows (Alan Malta Rodrigues) #11021
+
+
+2.0.1.pre4 to 2.0.1.pre5:
+  - unit tests and pylint (Alan Malta Rodrigues) #11024
+  - MSOutput: read RelVal output data policy from configuration (Alan Malta Rodrigues) #11024
+  - Add rse=ALL_DOCS to the MSUnmerged info REST API. (Todor Ivanov) #11025
+  - Allow MongoDB to be instantiated without mongomock library (Alan Malta Rodrigues) #11023
+  - Swap NotMasterError with NotPrimaryError. (Todor Ivanov) #11016
+
+
+2.0.1.pre3 to 2.0.1.pre4:
+  - Make MSOutput Disk expression configurable (Alan Malta Rodrigues) #11018
+
+
 2.0.1.pre2 to 2.0.1.pre3:
   - Add mockMongoDB to MSUnmerged and MongoDB Class init options (Todor Ivanov) #11007
   - Explicitly create proxies with 2048 bits (Alan Malta Rodrigues) #11008

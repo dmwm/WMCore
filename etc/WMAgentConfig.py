@@ -91,6 +91,8 @@ config.General.logdb_name = logDBName
 config.General.central_logdb_url = "need to get from secrets file"
 config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.General.centralWMStatsURL = "Central WMStats URL"
+# ReqMgrAux disk cache duration (in hours), set to 5 minutes: 5 / 60 = 0.083
+config.General.ReqMgrAuxCacheDuration = 0.083
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
@@ -152,6 +154,9 @@ config.DBS3Upload.pollInterval = 100
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file
+# set DbsApi requests to use gzip enconding, thus sending compressed data
+# please change to True when new DBSWriter Go server will be in place
+config.DBS3Upload.gzipEncoding = False
 
 config.section_("DBSInterface")
 config.DBSInterface.DBSUrl = globalDBSUrl

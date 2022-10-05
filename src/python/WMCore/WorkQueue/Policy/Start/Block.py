@@ -59,7 +59,7 @@ class Block(StartPolicyInterface):
                                  NumberOfFiles=int(block['NumberOfFiles']),
                                  NumberOfEvents=int(block['NumberOfEvents']),
                                  Jobs=estimateJobs,
-                                 OpenForNewData=True if str(block.get('OpenForWriting')) == '1' else False,
+                                 OpenForNewData=False,
                                  NoInputUpdate=self.initialTask.getTrustSitelists().get('trustlists'),
                                  NoPileupUpdate=self.initialTask.getTrustSitelists().get('trustPUlists')
                                 )
@@ -102,7 +102,7 @@ class Block(StartPolicyInterface):
                 blocks.append(str(data))
             else:
                 Lexicon.dataset(data)  # check dataset name
-                for block in dbs.listFileBlocks(data, onlyClosedBlocks=True):
+                for block in dbs.listFileBlocks(data):
                     blocks.append(str(block))
 
         for blockName in blocks:
@@ -231,15 +231,13 @@ class Block(StartPolicyInterface):
 
     def modifyPolicyForWorkAddition(self, inboxElement):
         """
-            A block blacklist modifier will be created,
-            this policy object will split excluding the blocks in both the spec
-            blacklist and the blacklist modified
+        A block blacklist modifier will be created,
+        this policy object will split excluding the blocks in both the spec
+        blacklist and the blacklist modified
         """
         # Get the already processed input blocks from the inbox element
-        existingBlocks = inboxElement.get('ProcessedInputs', [])
-        self.blockBlackListModifier = existingBlocks
+        self.blockBlackListModifier = inboxElement.get('ProcessedInputs', [])
         self.blockBlackListModifier.extend(inboxElement.get('RejectedInputs', []))
-        return
 
     def newDataAvailable(self, task, inbound):
         """
@@ -248,14 +246,13 @@ class Block(StartPolicyInterface):
         """
         self.initialTask = task
         dbs = self.dbs()
-        openBlocks = dbs.listOpenFileBlocks(task.getInputDatasetPath())
-        if openBlocks:
-            return True
-        return False
+        allBlocks = dbs.listFileBlocks(task.getInputDatasetPath())
+        newBlocks = set(allBlocks) - set(self.rejectedWork) - set(self.badWork)
+        return bool(newBlocks)
 
     @staticmethod
     def supportsWorkAddition():
         """
-            Block start policy supports continuous addition of work
+        Block start policy supports continuous addition of work
         """
         return True

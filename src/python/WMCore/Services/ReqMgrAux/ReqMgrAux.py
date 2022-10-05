@@ -35,7 +35,7 @@ class ReqMgrAux(Service):
         # This is only for the unittest: never set it true unless it is unittest
         self._noStale = False
 
-    def _getResult(self, callname, clearCache=True, args=None, verb="GET",
+    def _getResult(self, callname, clearCache=False, args=None, verb="GET",
                    encoder=json.loads, decoder=json.loads, contentType=None):
         """
         _getResult_

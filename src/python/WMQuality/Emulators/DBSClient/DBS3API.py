@@ -21,11 +21,16 @@ class DbsApi(object):
     Replacement DbsApi implementing the required
     functions for the DBS3 upload poller.
     """
-    def __init__(self, url):
+    def __init__(self, url, **kwds):
         """
         _init_
 
         Store the url where this dbs is "located"
+
+        :param url: url of the DBS server
+        :param kwds: optional DBSApi keyword arguments which are irrelevant
+        for mocking but should be presented nevertheless for compatibility with
+        actual DBSApi class
         """
         self.dbsPath = url
 
@@ -49,9 +54,11 @@ class DbsApi(object):
             currentInfo.append(blockDump)
             json.dump(currentInfo, outFileHandle)
 
-        randomNumber = random()
-        if randomNumber < 0.2:
-            raise Exception("Proxy Error, this is a mock proxy error.")
+        # VK: once we introduced parseDBSException function we do not need to simulate Proxy Error
+        # see https://github.com/dmwm/WMCore/pull/11176#issuecomment-1158758332
+        # randomNumber = random()
+        # if randomNumber < 0.2:
+        #     raise Exception("Proxy Error, this is a mock proxy error.")
 
         return
 

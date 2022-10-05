@@ -26,10 +26,16 @@ class UpdateDataset(DBFormatter):
               WHERE id = :id
            """
     def execute(self, datasetId,
-                processingVer = None, acquisitionEra = None,
+                processingVer = 0, acquisitionEra = None,
                 validStatus = None, globalTag = None,
                 parent = None, prep_id = None,
                 conn = None, transaction = False):
+
+        # to be backward compatible with various places in WMCore codebase which
+        # assign processingVer to None default value. In DBS and WMCore databases
+        # the processsing version should be integer data type
+        if processingVer is None:
+            processingVer = 0
 
         bindVars = {"procVer" : processingVer,
                     "acqEra" : acquisitionEra,

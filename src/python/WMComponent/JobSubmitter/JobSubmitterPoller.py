@@ -17,10 +17,7 @@ import threading
 import json
 import time
 from collections import defaultdict, Counter
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
@@ -137,7 +134,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             # only set up this when reqmgr is used (not Tier0)
             self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
             self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
-            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
+            cacheduration = getattr(self.config.General, "ReqMgrAuxCacheDuration", 5 / 60)  # 5 minutes
+            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL, httpDict={'cacheduration': cacheduration})
         else:
             # Tier0 Case - just for the clarity (This private variable shouldn't be used
             self.abortedAndForceCompleteWorkflowCache = None

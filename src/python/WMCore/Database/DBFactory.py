@@ -12,7 +12,6 @@ class DBFactory(object):
     # class variable
     _engineMap = {}
     _defaultEngineParams = {"convert_unicode" : True,
-                            "strategy": "threadlocal",
                             "pool_recycle": 7200}
 
     def __init__(self, logger, dburl=None, options={}):

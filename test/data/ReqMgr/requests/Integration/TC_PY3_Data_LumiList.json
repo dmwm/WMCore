@@ -28,9 +28,9 @@
         "CMSSWVersion": "CMSSW_11_3_0_pre2_PY3", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
-            "CheckList": "TaskChain python3 workflow; TaskChain data with 2 tasks; TaskChain with LumiList",
+            "CheckList": "TaskChain python3 workflow; TaskChain data with 2 tasks; TaskChain with LumiList; TC with growing dataset",
             "WorkFlowDesc": ["TaskChain python3 workflow, with real data and 2 tasks, LumiList with 1 run and 50 lumis;",
-                             "Task1 with 2LpJ, task2 with 1LpJ; 8 CPU, diff RAM"]
+                             "Task1 with 2LpJ, task2 with 1LpJ; 8 CPU, diff RAM; keep WorkQueue inbox open for 2h"]
         }, 
         "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
@@ -42,7 +42,8 @@
         "GlobalTag": "103X_dataRun2_HLT_relval_v10", 
         "IncludeParents": false, 
         "Memory": 3000, 
-        "Multicore": 1, 
+        "Multicore": 1,
+        "OpenRunningTimeout": 7200,
         "PrepID": "TEST-CMSSW_11_3_0_pre2_PY3__Data_PY3_TESTbyCA-RunDoubleMuon2018D-00001", 
         "ProcessingString": "DEFAULT_ProcStr", 
         "ProcessingVersion": 1, 

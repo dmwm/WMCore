@@ -217,7 +217,7 @@ def isWMComponentRunning(wmcomponent):
         return False, 0
         
     daemon = Details(daemonXml)
-    if daemon.isAlive():
+    if daemon.is_alive():
         return True, int(daemon['ProcessID'])
     else:
         return False, 0

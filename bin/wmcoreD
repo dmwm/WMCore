@@ -229,7 +229,7 @@ def startup(configFile):
         daemonXML = os.path.join( compDir, "Daemon.xml")
         if os.path.exists(daemonXML):
             daemon = Details(daemonXML)
-            if not daemon.isAlive():         
+            if not daemon.is_alive():
                 print("Error: Component %s Did not start properly..." % component)
                 print("Check component log to see why")
                 sys.exit(1)
@@ -268,7 +268,7 @@ def shutdown(configFile):
             print("Unable to shut it down")
         else:
             daemon = Details(daemonXml)
-            if not daemon.isAlive():
+            if not daemon.is_alive():
                 print("Component %s with process id %s is not running" % (
                     component, daemon['ProcessID'],
                     ))
@@ -326,7 +326,7 @@ def status(configFile):
             print("Component:%s Not Running" % component)
             continue
         daemon = Details(daemonXml)
-        if not daemon.isAlive():
+        if not daemon.is_alive():
             print("Component:%s Not Running" % component)
         else:
             print("Component:%s Running:%s" % (component, daemon['ProcessID']))

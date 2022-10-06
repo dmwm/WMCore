@@ -146,7 +146,7 @@ class WorkerThreadManager(object):
                 for slavename in self.slavelist:
                     found = False
                     for threadobj in threadlist:
-                        if hasattr(threadobj, 'name') and (slavename == threadobj.name) and (threadobj.isAlive()):
+                        if hasattr(threadobj, 'name') and (slavename == threadobj.name) and (threadobj.is_alive()):
                             found = True
                     if found is False:
                         # the slave we wanted wasn't running

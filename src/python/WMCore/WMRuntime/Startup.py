@@ -47,6 +47,6 @@ if __name__ == '__main__':
     logging.info("Shutting down monitor")
     os.fchmod(1, 0o664)
     os.fchmod(2, 0o664)
-    if monitor.isAlive():
+    if monitor.is_alive():
         monitor.shutdown()
     sys.exit(finalReport.getExitCode())

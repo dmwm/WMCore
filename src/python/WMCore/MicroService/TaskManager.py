@@ -201,6 +201,10 @@ class TaskManager(object):
         """Check worker queue if given pid of the process is still running"""
         return pid in self.pids
 
+    def isAlive(self, pid):
+        """Deprecated. See is_alive"""
+        return self.is_alive(pid)
+
     def clear(self, tasks):
         """
         Clear all tasks in a queue. It allows current jobs to run, but will

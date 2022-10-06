@@ -73,9 +73,9 @@ class Details(dict):
                     value = childNode.getAttribute("Value")
                     self[name] = int(value)
 
-    def isAlive(self):
+    def is_alive(self):
         """
-        _isAlive_
+        _is_alive_
 
         Is the process still running?
         """
@@ -85,6 +85,12 @@ class Details(dict):
         if rc != 0:
             return False
         return True
+
+    def isAlive(self):
+        """
+        Deprecated. See is_alive()
+        """
+        return self.isAlive()
 
     def kill(self, signal=15):
         """
@@ -109,7 +115,7 @@ class Details(dict):
         os.killpg(self['ProcessGroupID'], signal)
         for dummycount in range(0, 3):
             time.sleep(1)
-            if not self.isAlive():
+            if not self.is_alive():
                 self.removeAndBackupDaemonFile()
                 return
             continue

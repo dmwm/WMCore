@@ -471,7 +471,7 @@ if __name__ == "__main__":
     if opts.status:
         daemon = Details('%s/Daemon.xml' % workdir)
 
-        if not daemon.isAlive():
+        if not daemon.is_alive():
             print("Component:%s Not Running" % component)
         else:
             print("Component:%s Running:%s" % (component, daemon['ProcessID']))

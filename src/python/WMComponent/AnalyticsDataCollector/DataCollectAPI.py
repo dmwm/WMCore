@@ -257,7 +257,7 @@ class WMAgentDBData(object):
                 downFlag = True
             else:
                 daemon = Details(daemonXml)
-                if not daemon.isAlive():
+                if not daemon.is_alive():
                     downFlag = True
             if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'

@@ -76,7 +76,7 @@ def miniStartup(thisDir=os.getcwd()):
     task.completeTask(jobLocation=os.path.join(thisDir, 'WMTaskSpace'),
                       reportName="Report.0.pkl")
 
-    if monitor.isAlive():
+    if monitor.is_alive():
         monitor.shutdown()
 
     return

@@ -101,7 +101,7 @@ class HarnessTest(unittest.TestCase):
         time.sleep(2)
         daemonFile = os.path.join(config.TestComponent.componentDir, "Daemon.xml")
         details = Details(daemonFile)
-        print('Is component alive: ' + str(details.isAlive()))
+        print('Is component alive: ' + str(details.is_alive()))
         time.sleep(2)
         details.killWithPrejudice()
         print('Daemon killed')
@@ -123,7 +123,7 @@ class HarnessTest(unittest.TestCase):
         time.sleep(2)
         daemonFile = os.path.join(config.TestComponent.componentDir, "Daemon.xml")
         details = Details(daemonFile)
-        print('Is component alive: ' + str(details.isAlive()))
+        print('Is component alive: ' + str(details.is_alive()))
 
         # create msgService to send stop message.
         myThread = threading.currentThread()
@@ -142,7 +142,7 @@ class HarnessTest(unittest.TestCase):
 
         msgService.finish()
 
-        while details.isAlive():
+        while details.is_alive():
             print('Component has not received stop message')
             time.sleep(2)
         print('Daemon shutdown gracefully')

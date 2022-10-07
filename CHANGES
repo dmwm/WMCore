@@ -1,3 +1,10 @@
+2.1.3 to 2.1.4.pre1:
+  - Enable compression of block data injected into DBSServer (Alan Malta Rodrigues) #11325
+  - Split microservices into separate packages (Erik Gough) #11324
+  - use is_alive with thread objs (isAlive deprecated) (Benjamin Tovar) #11323
+  - Scram.py - decode Popen stdout and stderr (Dario Mapelli) #11321
+
+
 2.1.3.pre1 to 2.1.3:
   - Convert module to python3-only (Alan Malta Rodrigues) #11298
   - Create job classad for REQUIRED_ARCH (Alan Malta Rodrigues) #11298

@@ -18,7 +18,7 @@ from retry import retry
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
-from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.Tools.Common import gigaBytes
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.DBS.DBS3Reader import getDataTiers

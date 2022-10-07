@@ -27,7 +27,7 @@ from pprint import pformat
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import RULECLEANER_REPORT
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
-from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 from WMCore.ReqMgr.DataStructs import RequestStatus

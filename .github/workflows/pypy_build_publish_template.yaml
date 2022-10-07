@@ -1,0 +1,38 @@
+# Reusable workflow to setup a specific WMCore component for pip
+
+on:
+  workflow_call:
+    inputs:
+      wmcore_component:
+        required: true
+        type: string
+    secrets:
+      pypy_token:
+        required: true
+
+jobs:
+  build_and_publish_from_template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup python 3.8
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+      - name: Upgrade pip3
+        run: |
+          python3 -m pip install --upgrade pip
+      - name: Update the setup script template with package name
+        run: |
+          sed "s/PACKAGE_TO_BUILD/${{ inputs.wmcore_component }}/" setup_template.py > setup.py
+      - name: Create requirements file
+        run: |
+          cp requirements.txt requirements.wmcore.txt
+          awk "/(${{ inputs.wmcore_component }}$)|(${{ inputs.wmcore_component }},)/ {print \$1}" requirements.wmcore.txt > requirements.txt
+      - name: Build sdist
+        run: python setup.py clean sdist
+      - name: Publish component
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.pypy_token }}

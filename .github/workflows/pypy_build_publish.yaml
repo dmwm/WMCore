@@ -6,7 +6,7 @@ name: Build and publish WMCore services
 on:
   push:
     tags:
-      - 2.**
+      - '!JENKINS*'
 
 jobs:
   build_and_publish_services:

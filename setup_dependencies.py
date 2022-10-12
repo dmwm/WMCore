@@ -235,7 +235,7 @@ dependencies = {
         'statics': ['src/couchapps/ACDC+',
                     'src/couchapps/GroupUser+']
     },
-    't0': {
+    't0-agent': {
         'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
                      'WMCore.JobStateMachine', 'WMComponent+',
                      'WMCore.ThreadPool', 'WMCore.WorkerThreads',

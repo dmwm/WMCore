@@ -162,13 +162,82 @@ class PyCurlManager(unittest.TestCase):
         """
         params = {}
         headers = {}
-        url = 'https://cmsweb.cern.ch/reqmgr2/data/info'
+        url = 'https://cmsweb-testbed.cern.ch/reqmgr2/data/info'
         res = self.mgr.getheader(url, params=params, headers=headers, ckey=self.ckey, cert=self.cert)
         self.assertEqual(res.getReason(), "OK")
         self.assertTrue(len(res.getHeader()) > 10)
         # Kubernetes cluster responds with a different Server header
         serverHeader = res.getHeaderKey("Server")
         self.assertTrue(serverHeader.startswith("nginx/") or serverHeader.startswith("CherryPy/") or serverHeader.startswith("openresty/"))
+
+    def testHeadGzip(self):
+        """
+        Test a HEAD request incorrectly asking for gzip body
+        """
+        params = {}
+        headers = {'Accept-Encoding': 'gzip'}
+        url = 'https://cmsweb-testbed.cern.ch/reqmgr2/data/info'
+        res = self.mgr.getdata(url, params=params, headers=headers, verb="HEAD",
+                               ckey=self.ckey, cert=self.cert)
+        self.assertEqual(res, "", "There is no body in HEAD requests")
+
+        res = self.mgr.getheader(url, params=params, headers=headers, verb="HEAD",
+                                 ckey=self.ckey, cert=self.cert)
+        self.assertEqual(res.getReason(), "OK")
+        self.assertEqual(res.getHeaderKey("Content-Encoding"), "gzip")
+        # Kubernetes cluster responds with a different Server header
+        serverHeader = res.getHeaderKey("Server")
+        self.assertTrue(serverHeader.startswith("nginx/") or serverHeader.startswith("CherryPy/") or serverHeader.startswith("openresty/"))
+
+    def testHeadUnsupportedAPI(self):
+        """
+        Test HEAD http request to an wrong endpoint (unsupported API),
+        either with and without encoding compression (gzip)
+        """
+        params = {}
+        url = 'https://cmsweb-testbed.cern.ch/reqmgr2/data/wrong_endpoint'
+        for headers in [{}, {'Accept-Encoding': 'gzip'}]:
+            try:
+                res = self.mgr.getdata(url, params=params, headers=headers, verb="HEAD",
+                                       ckey=self.ckey, cert=self.cert)
+            except Exception as exc:
+                self.assertTrue("404 Not Found" in str(exc))
+            else:
+                self.assertTrue("404 Not Found" in res)
+
+            try:
+                res = self.mgr.getheader(url, params=params, headers=headers, verb="HEAD",
+                                         ckey=self.ckey, cert=self.cert)
+            except Exception as exc:
+                self.assertTrue("404 Not Found" in str(exc))
+            else:
+                self.assertEqual(res.getReason(), "Not Found")
+                self.assertEqual(res.getHeaderKey("X-Error-Detail"), "API not supported")
+                self.assertIsNone(res.getHeaderKey("Content-Encoding"))
+
+    def testGetUnsupportedAPI(self):
+        """
+        Test GET http request to an wrong endpoint (unsupported API),
+        either with and without encoding compression (gzip)
+        """
+        params = {}
+        url = 'https://cmsweb-testbed.cern.ch/reqmgr2/data/wrong_endpoint'
+        for headers in [{}, {'Accept-Encoding': 'gzip'}]:
+            try:
+                res = self.mgr.getdata(url, params=params, headers=headers, ckey=self.ckey, cert=self.cert)
+            except Exception as exc:
+                self.assertTrue("404 Not Found" in str(exc))
+            else:
+                self.assertTrue("404 Not Found" in res)
+
+            try:
+                res = self.mgr.getheader(url, params=params, headers=headers, ckey=self.ckey, cert=self.cert)
+            except Exception as exc:
+                self.assertTrue("404 Not Found" in str(exc))
+            else:
+                self.assertEqual(res.getReason(), "Not Found")
+                self.assertEqual(res.getHeaderKey("X-Error-Detail"), "API not supported")
+                self.assertIsNone(res.getHeaderKey("Content-Encoding"))
 
     def testToken(self):
         """

@@ -70,6 +70,7 @@ def decompress(body, headers):
     :param headers: dict
     :return: decode body
     """
+    print(f"AMR header content {headers}")
     encoding = ""
     for header, value in headers.items():
         if header.lower() == 'content-encoding' and 'gzip' in value.lower():
@@ -79,6 +80,7 @@ def decompress(body, headers):
         return body
 
     try:
+        print("AMR decompressing body")
         return gzip.decompress(body)
     except Exception as exc:
         logger = logging.getLogger()
@@ -204,6 +206,7 @@ class RequestHandler(object):
         """Set options for given curl object, params should be a dictionary"""
         if not (isinstance(params, (dict, basestring)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
+        headers = headers or {}  # if it's None, then make it a dict
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
@@ -215,15 +218,15 @@ class RequestHandler(object):
         # Content-Enconding received
         # More info: https://curl.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html
         thisHeaders = copy.deepcopy(headers)
-        if thisHeaders and thisHeaders.get("Accept-Encoding"):
-            if isinstance(thisHeaders["Accept-Encoding"], basestring):
-                curl.setopt(pycurl.ACCEPT_ENCODING, thisHeaders.pop("Accept-Encoding"))
-            else:
-                logging.warning("Wrong data type for header 'Accept-Encoding': %s",
-                                type(thisHeaders["Accept-Encoding"]))
-        else:
-            # add gzip encoding by default
-            curl.setopt(pycurl.ACCEPT_ENCODING, 'gzip')
+        #if thisHeaders and thisHeaders.get("Accept-Encoding"):
+        #    if isinstance(thisHeaders["Accept-Encoding"], basestring):
+        #        curl.setopt(pycurl.ACCEPT_ENCODING, thisHeaders.pop("Accept-Encoding"))
+        #    else:
+        #        logging.warning("Wrong data type for header 'Accept-Encoding': %s",
+        ##                        type(thisHeaders["Accept-Encoding"]))
+        #else:
+        #    # add gzip encoding by default
+        #    curl.setopt(pycurl.ACCEPT_ENCODING, 'gzip')
 
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
@@ -265,9 +268,11 @@ class RequestHandler(object):
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
         curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
-        if thisHeaders:
-            curl.setopt(pycurl.HTTPHEADER, \
-                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
+        # this ensures that any service using this module and not requesting any
+        # specific encoding, will fallback to gzip content
+        thisHeaders.setdefault("Accept-Encoding", "gzip")
+        curl.setopt(pycurl.HTTPHEADER, [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
+
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -283,7 +288,7 @@ class RequestHandler(object):
             curl.setopt(pycurl.SSLKEY, ckey)
         if cert:
             curl.setopt(pycurl.SSLCERT, cert)
-        if verbose:
+        if True:  # if verbose:
             curl.setopt(pycurl.VERBOSE, True)
             curl.setopt(pycurl.DEBUGFUNCTION, self.debug)
         return bbuf, hbuf
@@ -328,14 +333,14 @@ class RequestHandler(object):
         if verbose:
             print(verb, url, params, headers)
         header = self.parse_header(hbuf.getvalue())
+        data = bbuf.getvalue()
+        data = decompress(data, header.header)
         if header.status < 300:
             if verb == 'HEAD':
                 data = ''
             else:
-                data = self.parse_body(bbuf.getvalue(), decode)
+                data = self.parse_body(data, decode)
         else:
-            data = bbuf.getvalue()
-            data = decompress(data, header.header)
             msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
                   % (url, header.status, header.reason, header.header, data)
             exc = http.client.HTTPException(msg)

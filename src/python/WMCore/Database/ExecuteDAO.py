@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Script to create a dedicated DAOFactory and execute a single DAO.
@@ -111,7 +111,7 @@ class ExecuteDAO():
     A generic class to create the DAO Factory and execute the DAO module.
     """
     def __init__(self, logger=None, configFile=None,
-                 connectUrl=None, dialect=None, socket=None,
+                 connectUrl=None, socket=None,
                  package=None, daoModule=None):
         """
         __init__
@@ -120,7 +120,6 @@ class ExecuteDAO():
         :param package: The Package from which the DAO factory to be initialised.
         :param configFile: Path to WMAgent configuration file.
         :param connectUrl: Database connection URL (overwrites the connectUrl param from configFile if both present)
-        :param dialect: Database connection URL (overwrites the dialect param from configFile if both present)
         :param socket: Database connection URL (overwrites the socket param from configFile if both present)
         :param module: The DAO module to be executed.
         """
@@ -147,9 +146,6 @@ class ExecuteDAO():
         if connectUrl is not None:
             config.CoreDatabase.connectUrl = connectUrl
 
-        if dialect is not None:
-            config.CoreDatabase.dialect = dialect
-
         if socket is not None:
             config.CoreDatabase.socket = socket
 
@@ -160,16 +156,22 @@ class ExecuteDAO():
             config.CoreDatabase.dialect = getBackendFromDbURL(os.getenv("DATABASE"))
             config.CoreDatabase.socket = os.getenv("DBSOCK", None)
 
+        # always try to determine the dialect from the URL
+        if getattr(config.CoreDatabase, "connectUrl", None):
+            config.CoreDatabase.dialect = getBackendFromDbURL(config.CoreDatabase.connectUrl)
+
+        # finally if no socket is provided, set it to None and let WMInit to create it.
+        config.CoreDatabase.socket = getattr(config.CoreDatabase, "socket", None)
+
         # check if all database connection parameters are provided:
         if not all([getattr(config.CoreDatabase, "connectUrl", None),
-                    getattr(config.CoreDatabase, "dialect", None),
-                    getattr(config.CoreDatabase, "socket", None)]):
+                    getattr(config.CoreDatabase, "dialect", None)]):
             raise RuntimeError("You must set proper DATABASE parameters: connectUrl, dialect, socket!")
 
         # Connecting to database:
         self.init.setDatabaseConnection(config.CoreDatabase.connectUrl,
                                         config.CoreDatabase.dialect,
-                                        config.CoreDatabase.socket)
+                                        socketLoc=config.CoreDatabase.socket)
 
         self.dbi = myThread.dbi
         self.package = package

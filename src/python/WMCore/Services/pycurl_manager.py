@@ -274,6 +274,8 @@ class RequestHandler(object):
         # specific encoding, will fallback to gzip content
         thisHeaders.setdefault("Accept-Encoding", "gzip")
         curl.setopt(pycurl.HTTPHEADER, [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
+        alan = [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)]
+        print(f"AMR setting request headers: {alan}")
 
         bbuf = BytesIO()
         hbuf = BytesIO()

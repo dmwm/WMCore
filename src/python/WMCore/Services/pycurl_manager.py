@@ -70,18 +70,20 @@ def decompress(body, headers):
     :param headers: dict
     :return: decode body
     """
-    print(f"AMR header content {headers}")
+    print(f"AMR header content {headers} and body {body}")
     encoding = ""
     for header, value in headers.items():
         if header.lower() == 'content-encoding' and 'gzip' in value.lower():
             encoding = 'gzip'
             break
     if encoding != 'gzip':
+        print(f"AMR untouched body {body}")
         return body
 
     try:
-        print("AMR decompressing body")
-        return gzip.decompress(body)
+        data = gzip.decompress(body)
+        print(f"AMR decompress body {data}")
+        return data
     except Exception as exc:
         logger = logging.getLogger()
         msg = "While processing decompress function with headers: %s, " % headers

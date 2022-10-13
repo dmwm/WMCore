@@ -43,28 +43,28 @@ jobs:
     - name: Build reqmgr2ms-rulecleaner image
       run: |
         curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/reqmgr2ms-rulecleaner/Dockerfile
-        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.rulecleaners.tag}},g" Dockerfile
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
         cat Dockerfile
         docker build . --tag registry.cern.ch/cmsweb/reqmgr2ms-rulecleaner
 
     - name: Build reqmgr2ms-transferor image
       run: |
         curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/reqmgr2ms-transferor/Dockerfile
-        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.transferors.tag}},g" Dockerfile
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
         cat Dockerfile
         docker build . --tag registry.cern.ch/cmsweb/reqmgr2ms-transferor
 
     - name: Build reqmgr2ms-monitor image
       run: |
         curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/reqmgr2ms-monitor/Dockerfile
-        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.monitors.tag}},g" Dockerfile
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
         cat Dockerfile
         docker build . --tag registry.cern.ch/cmsweb/reqmgr2ms-monitor
 
     - name: Build reqmgr2ms-unmerged image
       run: |
         curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/reqmgr2ms-unmerged/Dockerfile
-        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.unmergeds.tag}},g" Dockerfile
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
         cat Dockerfile
         docker build . --tag registry.cern.ch/cmsweb/reqmgr2ms-unmerged
 

@@ -208,27 +208,14 @@ class RequestHandler(object):
         """Set options for given curl object, params should be a dictionary"""
         if not (isinstance(params, (dict, basestring)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
-        headers = headers or {}  # if it's None, then make it a dict
+        # do not modify the original header object
+        headers = headers or {}
+        thisHeaders = copy.deepcopy(headers)
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
-
-        # If ACCEPT_ENCODING is set to the encoding string, then libcurl
-        # will automatically decode the response object according to the
-        # Content-Enconding received
-        # More info: https://curl.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html
-        thisHeaders = copy.deepcopy(headers)
-        #if thisHeaders and thisHeaders.get("Accept-Encoding"):
-        #    if isinstance(thisHeaders["Accept-Encoding"], basestring):
-        #        curl.setopt(pycurl.ACCEPT_ENCODING, thisHeaders.pop("Accept-Encoding"))
-        #    else:
-        #        logging.warning("Wrong data type for header 'Accept-Encoding': %s",
-        ##                        type(thisHeaders["Accept-Encoding"]))
-        #else:
-        #    # add gzip encoding by default
-        #    curl.setopt(pycurl.ACCEPT_ENCODING, 'gzip')
 
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
@@ -260,7 +247,7 @@ class RequestHandler(object):
         if self.tmgr:
             token = self.tmgr.getToken()
             if token:
-                headers['Authorization'] = 'Bearer {}'.format(token)
+                thisHeaders['Authorization'] = 'Bearer {}'.format(token)
 
         if verb in ('POST', 'PUT'):
             # only these methods (and PATCH) require this header
@@ -270,12 +257,18 @@ class RequestHandler(object):
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
         curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
+
         # this ensures that any service using this module and not requesting any
         # specific encoding, will fallback to gzip content
         thisHeaders.setdefault("Accept-Encoding", "gzip")
         curl.setopt(pycurl.HTTPHEADER, [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
         alan = [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)]
         print(f"AMR setting request headers: {alan}")
+        # If ACCEPT_ENCODING is set to the encoding string, then libcurl
+        # will automatically decode the response object according to the
+        # Content-Enconding received
+        # More info: https://curl.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html
+        curl.setopt(pycurl.ACCEPT_ENCODING, encodeUnicodeToBytes(thisHeaders["Accept-Encoding"]))
 
         bbuf = BytesIO()
         hbuf = BytesIO()

@@ -26,12 +26,26 @@ jobs:
         cat Dockerfile
         docker build . --tag registry.cern.ch/cmsweb/wmagent
 
+    - name: Build workqueue image
+      run: |
+        curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/workqueue/Dockerfile
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
+        cat Dockerfile
+        docker build . --tag registry.cern.ch/cmsweb/workqueue
+
     - name: Build reqmon image
       run: |
         curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/reqmon/Dockerfile
         sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
         cat Dockerfile
         docker build . --tag registry.cern.ch/cmsweb/reqmon
+
+    - name: Build t0_reqmon image
+      run: |
+        curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/t0_reqmon/Dockerfile
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
+        cat Dockerfile
+        docker build . --tag registry.cern.ch/cmsweb/t0_reqmon
 
     - name: Build reqmgr2ms-output image
       run: |

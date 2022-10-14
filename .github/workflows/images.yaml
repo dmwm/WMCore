@@ -47,6 +47,13 @@ jobs:
         cat Dockerfile
         docker build . --tag registry.cern.ch/cmsweb/t0_reqmon
 
+    - name: Build reqmgr2 image
+      run: |
+        curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/reqmgr2/Dockerfile
+        sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
+        cat Dockerfile
+        docker build . --tag registry.cern.ch/cmsweb/reqmgr2
+
     - name: Build reqmgr2ms-output image
       run: |
         curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/reqmgr2ms-output/Dockerfile

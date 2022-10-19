@@ -204,26 +204,14 @@ class RequestHandler(object):
         """Set options for given curl object, params should be a dictionary"""
         if not (isinstance(params, (dict, basestring)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
+        #  ensure the original headers object remains unchanged
+        headers = headers or {}  # if it's None, then make it a dict
+        thisHeaders = copy.deepcopy(headers)
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
-
-        # If ACCEPT_ENCODING is set to the encoding string, then libcurl
-        # will automatically decode the response object according to the
-        # Content-Enconding received
-        # More info: https://curl.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html
-        thisHeaders = copy.deepcopy(headers)
-        if thisHeaders and thisHeaders.get("Accept-Encoding"):
-            if isinstance(thisHeaders["Accept-Encoding"], basestring):
-                curl.setopt(pycurl.ACCEPT_ENCODING, thisHeaders.pop("Accept-Encoding"))
-            else:
-                logging.warning("Wrong data type for header 'Accept-Encoding': %s",
-                                type(thisHeaders["Accept-Encoding"]))
-        else:
-            # add gzip encoding by default
-            curl.setopt(pycurl.ACCEPT_ENCODING, 'gzip')
 
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
@@ -255,19 +243,21 @@ class RequestHandler(object):
         if self.tmgr:
             token = self.tmgr.getToken()
             if token:
-                headers['Authorization'] = 'Bearer {}'.format(token)
+                thisHeaders['Authorization'] = 'Bearer {}'.format(token)
 
         if verb in ('POST', 'PUT'):
             # only these methods (and PATCH) require this header
             thisHeaders["Content-Length"] = str(len(encoded_data))
 
-        # we must pass url as a string data-type, otherwise pycurl will fail with error
+        # we must pass url as a bytes data-type, otherwise pycurl will fail with error
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
         curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
-        if thisHeaders:
-            curl.setopt(pycurl.HTTPHEADER, \
-                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
+        # In order to enable service intercommunication with compressed HTTP body,
+        # we need to enable this header here, in case it has not been provided by upstream.
+        thisHeaders.setdefault("Accept-Encoding", "gzip")
+        curl.setopt(pycurl.HTTPHEADER, [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
+
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -328,14 +318,14 @@ class RequestHandler(object):
         if verbose:
             print(verb, url, params, headers)
         header = self.parse_header(hbuf.getvalue())
+        data = bbuf.getvalue()
+        data = decompress(data, header.header)
         if header.status < 300:
             if verb == 'HEAD':
                 data = ''
             else:
-                data = self.parse_body(bbuf.getvalue(), decode)
+                data = self.parse_body(data, decode)
         else:
-            data = bbuf.getvalue()
-            data = decompress(data, header.header)
             msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
                   % (url, header.status, header.reason, header.header, data)
             exc = http.client.HTTPException(msg)

@@ -36,7 +36,8 @@ _RX_CENSOR = re.compile(r"(identified by) \S+", re.I)
 _COMPRESSIBLE = ['text/html', 'text/html; charset=utf-8',
                  'text/plain', 'text/plain; charset=utf-8',
                  'text/css', 'text/css; charset=utf-8',
-                 'text/javascript', 'text/javascript; charset=utf-8']
+                 'text/javascript', 'text/javascript; charset=utf-8',
+                 'application/json']
 
 #: Type alias for arguments passed to REST validation methods, consisting
 #: of `args`, the additional path arguments, and `kwargs`, the query
@@ -649,7 +650,7 @@ class MiniRESTApi(object):
         self.etag_limit = 8 * 1024 * 1024
         self.compression_level = 9
         self.compression_chunk = 64 * 1024
-        self.compression = ['deflate']
+        self.compression = ['deflate', 'gzip']
         self.formats = [('application/json', JSONFormat()),
                         ('application/xml', XMLFormat(self.app.appname))]
         self.methods = {}

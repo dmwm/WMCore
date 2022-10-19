@@ -1,6 +1,8 @@
 from __future__ import print_function
 
+import gzip
 from builtins import str, bytes, object
+
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 from future.utils import viewitems
@@ -486,10 +488,23 @@ def _stream_compress_deflate(reply, compress_level, max_chunk):
     if npending:
         yield z.compress(encodeUnicodeToBytes("".join(pending))) + z.flush(zlib.Z_FINISH)
 
+
+def _stream_compress_gzip(reply, compress_level, *args):
+    """Streaming compressor for the 'gzip' method. Generates output that
+    is guaranteed to expand at the exact same chunk boundaries as original
+    reply stream."""
+    data = []
+    for chunk in reply:
+        data.append(chunk)
+    if data:
+        yield gzip.compress(encodeUnicodeToBytes("".join(data)), compress_level)
+
+
 # : Stream compression methods.
 _stream_compressor = {
   'identity': _stream_compress_identity,
-  'deflate': _stream_compress_deflate
+  'deflate': _stream_compress_deflate,
+  'gzip': _stream_compress_gzip
 }
 
 def stream_compress(reply, available, compress_level, max_chunk):

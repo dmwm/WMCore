@@ -1,3 +1,10 @@
+2.1.4.pre3 to 2.1.4.pre4:
+  - Set the database dialect from the database URL && Make socket parameter optional. (Todor Ivanov) #11348
+  - Disable automatic data decompression in libcurl - ACCEPT_ENCODING (Alan Malta Rodrigues) #11343
+  - Add support to gzip response at the REST layer (Alan Malta Rodrigues) #11343
+  - Exclude GH actions to match with tags starting with JENKINS (Kenyi Hurtado) #11337
+
+
 2.1.4.pre2 to 2.1.4.pre3:
   - Update dbs3-client version from 4.0.10 to 4.0.11 (Alan Malta Rodrigues) #11334
   - add WebDav way to say "permission denied" to gfal_copy add webdav Insufficient Storage StageOut error (Stefano Belforte) #11328

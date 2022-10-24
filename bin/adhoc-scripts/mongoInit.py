@@ -14,7 +14,7 @@ import argparse
 
 from WMCore.Database.MongoDB import MongoDB
 
-from WMCore.Configuration import Configuration, loadConfigurationFile
+from WMCore.Configuration import loadConfigurationFile
 
 if __name__ == '__main__':
 

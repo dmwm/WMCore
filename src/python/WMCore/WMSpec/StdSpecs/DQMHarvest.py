@@ -48,12 +48,16 @@ class DQMHarvestWorkloadFactory(DataProcessing):
 
         Standard DataProcessing schema validation.
         """
+        import cherrypy
+        cherrypy.log("AMR calling DQMHarvest.validateSchema")
         DataProcessing.validateSchema(self, schema)
 
+        cherrypy.log("AMR calling DQMHarvest.validateConfigCacheExists")
         self.validateConfigCacheExists(configID=schema["DQMConfigCacheID"],
                                        configCacheUrl=schema['ConfigCacheUrl'],
                                        couchDBName=schema["CouchDBName"],
                                        getOutputModules=False)
+        cherrypy.log("AMR done with DQMHarvest.validateConfigCacheExists")
 
     @staticmethod
     def getWorkloadCreateArgs():

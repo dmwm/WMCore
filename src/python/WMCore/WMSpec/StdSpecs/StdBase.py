@@ -10,6 +10,7 @@ from builtins import range, object
 
 import logging
 import json
+import cherrypy
 
 from Utils.PythonVersion import PY3
 from Utils.Utilities import decodeBytesToUnicodeConditional
@@ -902,10 +903,14 @@ class StdBase(object):
         if arguments.get('RequestType') == 'Resubmission':
             self.validateSchema(schema=arguments)
         else:
+            cherrypy.log("AMR calling masterValidation")
             self.masterValidation(schema=arguments)
+            cherrypy.log("AMR calling validateSchema")
             self.validateSchema(schema=arguments)
 
+        cherrypy.log("AMR calling StdBase.__call__")
         workload = self.__call__(workloadName=workloadName, arguments=arguments)
+        cherrypy.log("AMR calling StdBase.validateWorkload")
         self.validateWorkload(workload)
 
         return workload
@@ -952,13 +957,18 @@ class StdBase(object):
         if configID == '' or configID == ' ':
             self.raiseValidationException(msg="ConfigCacheID is invalid and cannot be loaded")
 
+        cherrypy.log("AMR in validateConfigCacheExists self.config_cache is: %s" % self.config_cache)
         if (configCacheUrl, couchDBName) in self.config_cache:
             configCache = self.config_cache[(configCacheUrl, couchDBName)]
         else:
+            cherrypy.log("AMR in validateConfigCacheExists creating a ConfigCache object")
+            cherrypy.log("AMR for configCacheUrl %s, couchDBName %s, getOutputModules %s" % (configCacheUrl, couchDBName, getOutputModules))
             configCache = ConfigCache(dbURL=configCacheUrl, couchDBName=couchDBName, detail=getOutputModules)
+            cherrypy.log("AMR in validateConfigCacheExists loading configCache: %s" % configCache)
             self.config_cache[(configCacheUrl, couchDBName)] = configCache
 
         try:
+            cherrypy.log("AMR in validateConfigCacheExists validate call")
             # if detail option is set return outputModules
             return configCache.validate(configID)
         except ConfigCacheException as ex:

@@ -11,6 +11,7 @@ import urllib.request, urllib.parse, urllib.error
 from builtins import str
 from future.utils import with_metaclass
 from future.utils import viewkeys, viewvalues
+import cherrypy
 
 import hashlib
 import logging
@@ -98,10 +99,13 @@ class ConfigCache(WMObject):
         self.dburl = dbURL
         self.detail = detail
         try:
+            cherrypy.log("AMR connecting to CouchServer with usePYCurl: %s" % usePYCurl)
             self.couchdb = CouchServer(self.dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
             if self.dbname not in self.couchdb.listDatabases():
+                cherrypy.log("AMR creating database %s" % self.dbname)
                 self.createDatabase()
 
+            cherrypy.log("AMR connecting to database %s" % self.dbname)
             self.database = self.couchdb.connectDatabase(self.dbname)
         except Exception as ex:
             msg = "Error connecting to couch: %s\n" % str(ex)
@@ -145,9 +149,13 @@ class ConfigCache(WMObject):
         _connectUserGroup_
 
         """
+        cherrypy.log("AMR setting group name to %s" % groupname)
         self.group = Group(name=groupname)
+        cherrypy.log("AMR setting couchdb for dburl %s and dbname %s" % (self.dburl, self.dbname))
         self.group.setCouch(self.dburl, self.dbname)
+        cherrypy.log("AMR connecting to group backend")
         self.group.connect()
+        cherrypy.log("AMR making user for username %s" % username)
         self.owner = makeUser(groupname, username,
                               couchUrl=self.dburl,
                               couchDatabase=self.dbname)
@@ -272,13 +280,17 @@ class ConfigCache(WMObject):
         Load a document from the server given its couchID
         """
         try:
+            cherrypy.log("AMR getting document id %s" % configID)
             self.document = self.database.document(id=configID)
             if 'owner' in self.document:
+                cherrypy.log("AMR connectUserGroup")
                 self.connectUserGroup(groupname=self.document['owner'].get('group', None),
                                       username=self.document['owner'].get('user', None))
             if '_attachments' in self.document:
+                cherrypy.log("AMR loadAttachment")
                 # Then we need to load the attachments
                 for key in viewkeys(self.document['_attachments']):
+                    cherrypy.log("AMR loading attachment for key %s" % key)
                     self.loadAttachment(name=key)
         except CouchNotFoundError as ex:
             msg = "Document with id %s not found in couch\n" % (configID)
@@ -538,11 +550,12 @@ class ConfigCache(WMObject):
         return self.document.__str__()
 
     def validate(self, configID):
-
         try:
             # TODO: need to change to DataCache
             # self.loadDocument(configID = configID)
+            cherrypy.log("AMR loading ConfigCache for ID: %s" % configID)
             self.loadByID(configID=configID)
+            cherrypy.log("AMR ConfigCache loaded")
         except Exception as ex:
             raise ConfigCacheException("Failure to load ConfigCache while validating workload: %s" % str(ex))
 

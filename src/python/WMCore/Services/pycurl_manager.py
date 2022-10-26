@@ -44,7 +44,7 @@ from builtins import str, range, object
 from past.builtins import basestring
 from future.utils import viewitems
 
-
+import cherrypy
 # system modules
 import copy
 import json
@@ -257,7 +257,7 @@ class RequestHandler(object):
         # we need to enable this header here, in case it has not been provided by upstream.
         thisHeaders.setdefault("Accept-Encoding", "gzip")
         curl.setopt(pycurl.HTTPHEADER, [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
-
+        cherrypy.log("AMR url %s, thisHeaders %s" % (url, thisHeaders))
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -311,6 +311,8 @@ class RequestHandler(object):
                 verbose=0, ckey=None, cert=None, capath=None,
                 doseq=True, encode=False, decode=False, cainfo=None, cookie=None):
         """Fetch data for given set of parameters"""
+        cherrypy.log("AMR url: %s, params: %s, headers: %s, verb: %s" % (url, params, headers, verb))
+        cherrypy.log("  AMR doseq: %s, encode: %s, decode: %s, cookie: %s" % (doseq, encode, decode, cookie))
         curl = pycurl.Curl()
         bbuf, hbuf = self.set_opts(curl, url, params, headers, ckey, cert, capath,
                                    verbose, verb, doseq, encode, cainfo, cookie)
@@ -318,6 +320,7 @@ class RequestHandler(object):
         if verbose:
             print(verb, url, params, headers)
         header = self.parse_header(hbuf.getvalue())
+        cherrypy.log("AMR response headers: %s" % (header.header))
         data = bbuf.getvalue()
         data = decompress(data, header.header)
         if header.status < 300:

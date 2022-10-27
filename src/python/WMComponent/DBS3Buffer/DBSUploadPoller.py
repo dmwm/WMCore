@@ -128,31 +128,6 @@ def parseDBSException(exBodyString):
         return exBodyString
 
 
-def isPassiveError(exceptionObj):
-    """
-    This function will parse the exception object and report whether
-    the error message corresponds to a soft or hard error (hard errors
-    are supposed to let the component crash).
-    :param exceptionObj: any exception object
-    :return: True if it's a soft error, False otherwise
-    """
-    passException = True
-    passiveErrorMsg = ['Service Unavailable', 'Service Temporarily Unavailable',
-                       'Proxy Error', 'Error reading from remote server',
-                       'Connection refused', 'timed out', 'Could not resolve',
-                       'OpenSSL SSL_connect: SSL_ERROR_SYSCALL']
-
-    excReason = getattr(exceptionObj, 'reason', '')
-    for passiveMsg in passiveErrorMsg:
-        if passiveMsg in excReason:
-            break
-        elif passiveMsg in str(exceptionObj):
-            break
-    else:
-        passException = False
-    return passException
-
-
 class DBSUploadException(WMException):
     """
     Holds the exception info for
@@ -357,17 +332,12 @@ class DBSUploadPoller(BaseWorkerThread):
         try:
             self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
         except Exception as ex:
+            success = False
             excReason = getattr(ex, 'reason', '')
             errorMsg = 'Failed to fetch parentage map from WMStats, skipping this cycle. '
-            errorMsg += 'Exception: {}. Reason: {}. Error: {}. '.format(type(ex).__name__,
-                                                                        excReason, str(ex))
-            if isPassiveError(ex):
-                logging.warning(errorMsg)
-            else:
-                errorMsg += 'Hit a terminal exception in DBSUploadPoller.'
-                raise DBSUploadException(errorMsg) from None
+            errorMsg += 'Reason: {}. Error: {}. '.format(excReason, str(ex))
+            logging.error(errorMsg)
             myThread.logdbClient.post("DBS3Upload_parentMap", errorMsg, "warning")
-            success = False
         else:
             myThread.logdbClient.delete("DBS3Upload_parentMap", "warning", this_thread=True)
 

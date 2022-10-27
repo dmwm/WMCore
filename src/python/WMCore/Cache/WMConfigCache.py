@@ -101,9 +101,6 @@ class ConfigCache(WMObject):
         try:
             cherrypy.log("AMR connecting to CouchServer with usePYCurl: %s" % usePYCurl)
             self.couchdb = CouchServer(self.dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
-            if self.dbname not in self.couchdb.listDatabases():
-                cherrypy.log("AMR creating database %s" % self.dbname)
-                self.createDatabase()
 
             cherrypy.log("AMR connecting to database %s" % self.dbname)
             self.database = self.couchdb.connectDatabase(self.dbname)

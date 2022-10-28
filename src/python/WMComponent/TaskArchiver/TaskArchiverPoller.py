@@ -95,10 +95,12 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         if not self.useReqMgrForCompletionCheck:
             # sets the local monitor summary couch db
+            self.tier0CompletedState = "completed"
             self.requestLocalCouchDB = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL,
                                                        couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
             self.centralCouchDBWriter = self.requestLocalCouchDB
         else:
+            self.tier0CompletedState = None
             self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
 
             self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
@@ -235,8 +237,9 @@ class TaskArchiverPoller(BaseWorkerThread):
 
                     # Tier-0 case, the agent has to mark it completed
                     if not self.useReqMgrForCompletionCheck:
-                        self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
-                        logging.info("status updated to completed %s", workflow)
+                        resp = self.requestLocalCouchDB.updateRequestStatus(workflow, self.tier0CompletedState)
+                        logging.info("Workflow %s updated to status '%s'. Response: %s",
+                                     workflow, self.tier0CompletedState, resp)
 
                     completedWorkflowsDAO.execute([workflow])
 

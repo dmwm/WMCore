@@ -1,3 +1,9 @@
+2.1.4.pre4 to 2.1.4.pre5:
+  - Fix T0 updaterequest update function to avoid same status transition (Alan Malta Rodrigues) #11353
+  - Change filter pattern (Kenyi Hurtado) #11355
+  - Trap DBS3Upload exceptions when fetching child/parent info from wmstats (Alan Malta Rodrigues) #11352
+
+
 2.1.4.pre3 to 2.1.4.pre4:
   - Set the database dialect from the database URL && Make socket parameter optional. (Todor Ivanov) #11348
   - Disable automatic data decompression in libcurl - ACCEPT_ENCODING (Alan Malta Rodrigues) #11343

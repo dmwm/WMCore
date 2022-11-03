@@ -1,3 +1,7 @@
+2.1.4.pre6 to 2.1.4.pre7:
+  - MSOutput: use AlertManagerAPI from MSCore (#11357) (Alan Malta Rodrigues) 
+
+
 2.1.4.pre5 to 2.1.4.pre6:
   - Pylint fixes. (Todor Ivanov) #11280
   - Switch MSOutput to use MongoDBAAS. (Todor Ivanov) #11280

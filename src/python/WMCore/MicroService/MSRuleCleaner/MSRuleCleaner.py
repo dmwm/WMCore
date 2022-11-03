@@ -590,12 +590,14 @@ class MSRuleCleaner(MSCore):
             msg += "Error: %s"
             self.logger.exception(msg, wflow['RequestName'], str(ex))
 
-        # Set Transfer status - information fetched from MSOutput only
-        if transferInfo is not None and transferInfo['TransferStatus'] == 'done':
+        if transferInfo is None:
+            msg = f"Workflow {wflow['RequestName']} is still missing the output transfer document."
+            self.logger.warning(msg)
+        elif transferInfo['TransferStatus'] == 'done':
+            # Set Transfer status - information fetched from MSOutput only
             wflow['TransferDone'] = True
-
-        # Set Tape rules status - information fetched from Rucio (tape rule ids from MSOutput)
-        if transferInfo is not None and transferInfo['OutputMap']:
+        elif transferInfo['OutputMap']:
+            # Set Tape rules status - information fetched from Rucio (tape rule ids from MSOutput)
             tapeRulesStatusList = []
             # For setting 'TransferTape' = True we require either no tape rules for the
             # workflow have been created or all existing tape rules to be in status 'OK',

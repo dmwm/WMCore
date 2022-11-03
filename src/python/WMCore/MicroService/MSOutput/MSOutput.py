@@ -698,16 +698,8 @@ class MSOutput(MSCore):
 
         # if there were containers not found in Rucio, create an email alert
         if notFoundDIDs:
-            # send alert via AlertManager API
-            alertName = "ms-output: output containers not found for workflow: {}".format(msOutDoc["RequestName"])
-            alertSeverity = "high"
-            alertSummary = "[MSOutput] Workflow '{}' has output datasets unknown to Rucio".format(msOutDoc["RequestName"])
-            alertDescription = "Dataset(s): {} cannot be found in Rucio. ".format(notFoundDIDs)
-            alertDescription += "Thus, we are skipping these datasets from the final output "
-            alertDescription += "data placement, such that this workflow can get archived."
-            self.logger.warning(alertDescription)
-            if self.msConfig["sendNotification"]:
-                self.alertManagerAPI.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            # log and send alert via AlertManager API
+            self.alertDIDNotFound(msOutDoc["RequestName"], notFoundDIDs)
 
         try:
             msOutDoc.updateDoc({"OutputMap": updatedOutputMap}, throw=True)
@@ -758,16 +750,8 @@ class MSOutput(MSCore):
                 msg += "under campaign: {}. Letting it pass though...".format(dataItem['Campaign'])
                 self.logger.warning(msg)
                 return True
-            # send alert via AlertManager API
-            alertName = "ms-output: Campaign not found: {}".format(dataItem['Campaign'])
-            alertSeverity = "high"
-            alertSummary = "[MSOutput] Campaign '{}' not found in central CouchDB".format(dataItem['Campaign'])
-            alertDescription = "Dataset: {} cannot have an output transfer rule ".format(dataItem['Dataset'])
-            alertDescription += "because its campaign: {} cannot be found in central CouchDB.".format(dataItem['Campaign'])
-            alertDescription += " In order to get output data placement working, add it ASAP please."
-            self.logger.critical(alertDescription)
-            if self.msConfig["sendNotification"]:
-                self.alertManagerAPI.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            # log and send alert via AlertManager API
+            self.alertCampaignNotFound(dataItem['Campaign'], dataItem['Dataset'])
             raise
 
         if dataTier in self.uConfig['tiers_to_DDM']['value']:
@@ -775,16 +759,8 @@ class MSOutput(MSCore):
         elif dataTier in self.uConfig['tiers_no_DDM']['value']:
             return False
         else:
-            # send alert via AlertManager API
-            alertName = "ms-output: Datatier not found: {}".format(dataTier)
-            alertSeverity = "high"
-            alertSummary = "[MSOutput] Datatier not found in the Unified configuration: {}".format(dataTier)
-            alertDescription = "Dataset: {} contains a datatier: {}".format(dataItem['Dataset'], dataTier)
-            alertDescription += " not yet inserted into Unified configuration. "
-            alertDescription += "Please add it ASAP. Letting it pass for now..."
-            self.logger.critical(alertDescription)
-            if self.msConfig["sendNotification"] and not isRelVal:
-                self.alertManagerAPI.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            # log and send alert via AlertManager API
+            self.alertDatatierNotFound(dataTier, dataItem['Dataset'], isRelVal)
             return True
 
     def _getDataVolumeForTape(self, workflow):
@@ -989,3 +965,56 @@ class MSOutput(MSCore):
         of the document
         """
         return doc.clear()
+
+    def alertDIDNotFound(self, wflowName, containerList):
+        """
+        Send an alert to Prometheus for output containers not found within
+        a given workflow.
+        :param wflowName: string with the workflow name
+        :param containerList: list of container names
+        :return: none
+        """
+        alertName = "ms-output: output containers not found for workflow: {}".format(wflowName)
+        alertSeverity = "high"
+        alertSummary = "[MSOutput] Workflow '{}' has output datasets unknown to Rucio".format(wflowName)
+        alertDescription = "Dataset(s): {} cannot be found in Rucio. ".format(containerList)
+        alertDescription += "Thus, we are skipping these datasets from the final output "
+        alertDescription += "data placement, such that this workflow can get archived."
+        self.logger.warning(alertDescription)
+        if self.msConfig["sendNotification"]:
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+
+    def alertCampaignNotFound(self, campaignName, containerName):
+        """
+        Send an alert to Prometheus for campaign not found in the database.
+        :param campaignName: string with the campaign name
+        :param containerName: string with the container name
+        :return: none
+        """
+        alertName = "ms-output: Campaign not found: {}".format(campaignName)
+        alertSeverity = "high"
+        alertSummary = "[MSOutput] Campaign '{}' not found in central CouchDB".format(campaignName)
+        alertDescription = "Dataset: {} cannot have an output transfer rule ".format(containerName)
+        alertDescription += "because its campaign: {} cannot be found in central CouchDB.".format(campaignName)
+        alertDescription += " In order to get output data placement working, add it ASAP please."
+        self.logger.critical(alertDescription)
+        if self.msConfig["sendNotification"]:
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+
+    def alertDatatierNotFound(self, datatierName, containerName, isRelVal):
+        """
+        Send an alert to Prometheus for datatier not found in the configuration.
+        :param datatierName: string with the datatier name
+        :param containerName: string with the container name
+        :param isRelVal: boolean whether it's a RelVal workflow or not
+        :return: none
+        """
+        alertName = "ms-output: Datatier not found: {}".format(datatierName)
+        alertSeverity = "high"
+        alertSummary = "[MSOutput] Datatier not found in the Unified configuration: {}".format(datatierName)
+        alertDescription = "Dataset: {} contains a datatier: {}".format(containerName, datatierName)
+        alertDescription += " not yet inserted into Unified configuration. "
+        alertDescription += "Please add it ASAP. Letting it pass for now..."
+        self.logger.critical(alertDescription)
+        if self.msConfig["sendNotification"] and not isRelVal:
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)

@@ -106,26 +106,31 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("emulateGfal2", False)
         self.msConfig.setdefault("filesToDeleteSliceSize", 100)
 
-        self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
-        self.msConfig.setdefault("mongoDBPort", 27017)
-        self.msConfig.setdefault("mongoDB", 'msUnmergedDB')
         self.msConfig.setdefault("mongoDBRetryCount", 3)
-        self.msConfig.setdefault("mongoDBReplicaset", None)
+        self.msConfig.setdefault("mongoDBReplicaSet", None)
+        self.msConfig.setdefault("mongoDBPort", None)
         self.msConfig.setdefault("mockMongoDB", False)
 
         msUnmergedIndex = IndexModel('name', unique=True)
+
+        # NOTE: A full set of valid database connection parameters can be found at:
+        #       https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
         msUnmergedDBConfig = {
             'database': self.msConfig['mongoDB'],
-            'server': self.msConfig['mongoDBUrl'],
+            'server': self.msConfig['mongoDBServer'],
             'port': self.msConfig['mongoDBPort'],
-            'replicaset': self.msConfig['mongoDBReplicaset'],
+            'replicaSet': self.msConfig['mongoDBReplicaSet'],
+            'username': self.msConfig['mongoDBUser'],
+            'password': self.msConfig['mongoDBPassword'],
+            'connect': True,
+            'directConnection': False,
             'logger': self.logger,
             'create': True,
             'mockMongoDB': self.msConfig['mockMongoDB'],
             'collections': [('msUnmergedColl', msUnmergedIndex)]}
 
-        mongoClt = MongoDB(**msUnmergedDBConfig)
-        self.msUnmergedDB = getattr(mongoClt, self.msConfig['mongoDB'])
+        mongoDB = MongoDB(**msUnmergedDBConfig)
+        self.msUnmergedDB = getattr(mongoDB, self.msConfig['mongoDB'])
         self.msUnmergedColl = self.msUnmergedDB['msUnmergedColl']
 
         if self.msConfig['emulateGfal2'] is False and gfal2 is None:

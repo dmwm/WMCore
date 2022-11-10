@@ -221,18 +221,18 @@ class MongoDB(object):
                 try:
                     # self._dbCreate(getattr(self, db))
                     self._dbCreate(db)
-                except Exception as ex:
-                    msg = "Could not create MongoDB databases: %s\n%s\n" % (db, str(ex))
+                except Exception as exc:
+                    msg = "Could not create MongoDB databases: %s\n%s\n" % (db, str(exc))
                     msg += "Giving up Now."
                     self.logger.error(msg)
-                    raise ex
+                    raise exc
                 try:
                     self._dbTest(db)
-                except Exception as ex:
-                    msg = "Second failure while testing %s\n%s\n" % (db, str(ex))
+                except Exception as exc:
+                    msg = "Second failure while testing %s\n%s\n" % (db, str(exc))
                     msg += "Giving up Now."
                     self.logger.error(msg)
-                    raise ex
+                    raise exc
                 msg = "Database %s successfully created" % db
                 self.logger.error(msg)
         except Exception as ex:

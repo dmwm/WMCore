@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 2.1.2 -d HG2209d -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 2.1.2-b954b0745339a347ea28afd5b5767db4 -d HG2209d -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 2.1.4 -d HG2211g -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 2.1.4-b954b0745339a347ea28afd5b5767db4 -d HG2211g -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
 ### Usage:
 
 IAM=`whoami`

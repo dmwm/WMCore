@@ -310,7 +310,7 @@ class ConfigCache(WMObject):
 
         Load an attachment from the database and put it somewhere useful
         """
-
+        logging.info("AMR loading attachment for docID: %s and name: %s", self.document["_id"], name)
         attach = self.database.getAttachment(self.document["_id"], name)
 
         if not overwrite:

@@ -8,11 +8,7 @@ from __future__ import division, print_function
 from future.utils import viewitems
 
 import unittest
-import time
-import random
 import cherrypy
-import gzip
-import json
 from WMCore_t.MicroService_t import TestConfig
 from WMCore.MicroService.Service.RestApiHub import RestApiHub
 from WMCore.MicroService.Tools.Common import cert, ckey
@@ -91,13 +87,11 @@ class MicroServiceTest(unittest.TestCase):
         url = '%s/%s' % (self.url, api)
         params = {}
         data = self.mgr.getdata(url, params=params, headers=self.noEncHeader, encode=True, decode=True)
-        data = gzipDecompress(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
 
         params = {"service": "transferor"}
         data = self.mgr.getdata(url, params=params, headers=self.noEncHeader, encode=True, decode=True)
-        data = gzipDecompress(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
 
@@ -121,13 +115,11 @@ class MicroServiceTest(unittest.TestCase):
         url = '%s/%s' % (self.url, api)
         params = {}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        data = gzipDecompress(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
 
         params = {"request": "fake_request_name"}
         data = self.mgr.getdata(url, params=params, encode=True, decode=True)
-        data = gzipDecompress(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
 
@@ -139,13 +131,11 @@ class MicroServiceTest(unittest.TestCase):
         # headers = {'Content-Type': 'application/json', 'Accept-Encoding': 'gzip'}
         data = self.mgr.getdata(url, params=params, headers=self.gzipEncHeader, encode=True, decode=True)
         # data = self.mgr.getdata(url, params=params, encode=True, decode=False)
-        # data = gzipDecompress(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
 
         params = {"request": "fake_request_name"}
         data = self.mgr.getdata(url, params=params, headers=self.gzipEncHeader, encode=True, decode=True)
-        # data = gzipDecompress(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
         cherrypy.engine.exit()

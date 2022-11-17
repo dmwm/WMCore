@@ -106,26 +106,31 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("emulateGfal2", False)
         self.msConfig.setdefault("filesToDeleteSliceSize", 100)
 
-        self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
-        self.msConfig.setdefault("mongoDBPort", 27017)
-        self.msConfig.setdefault("mongoDB", 'msUnmergedDB')
         self.msConfig.setdefault("mongoDBRetryCount", 3)
-        self.msConfig.setdefault("mongoDBReplicaset", None)
+        self.msConfig.setdefault("mongoDBReplicaSet", None)
+        self.msConfig.setdefault("mongoDBPort", None)
         self.msConfig.setdefault("mockMongoDB", False)
 
         msUnmergedIndex = IndexModel('name', unique=True)
+
+        # NOTE: A full set of valid database connection parameters can be found at:
+        #       https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
         msUnmergedDBConfig = {
             'database': self.msConfig['mongoDB'],
-            'server': self.msConfig['mongoDBUrl'],
+            'server': self.msConfig['mongoDBServer'],
             'port': self.msConfig['mongoDBPort'],
-            'replicaset': self.msConfig['mongoDBReplicaset'],
+            'replicaSet': self.msConfig['mongoDBReplicaSet'],
+            'username': self.msConfig['mongoDBUser'],
+            'password': self.msConfig['mongoDBPassword'],
+            'connect': True,
+            'directConnection': False,
             'logger': self.logger,
             'create': True,
             'mockMongoDB': self.msConfig['mockMongoDB'],
             'collections': [('msUnmergedColl', msUnmergedIndex)]}
 
-        mongoClt = MongoDB(**msUnmergedDBConfig)
-        self.msUnmergedDB = getattr(mongoClt, self.msConfig['mongoDB'])
+        mongoDB = MongoDB(**msUnmergedDBConfig)
+        self.msUnmergedDB = getattr(mongoDB, self.msConfig['mongoDB'])
         self.msUnmergedColl = self.msUnmergedDB['msUnmergedColl']
 
         if self.msConfig['emulateGfal2'] is False and gfal2 is None:
@@ -192,11 +197,11 @@ class MSUnmerged(MSCore):
                 msg = "WMStatsServer.getProtectedLFNs for T0 is not yet implemented."
                 raise NotImplementedError(msg)
                 # protectedLFNs = set(self.wmstatsSvcT0.getProtectedLFNs())
-                if not protectedLFNsT0:
-                    msg = "Could not fetch the protectedLFNs list from T0 WMStatServer. "
-                    msg += "Skipping the current run."
-                    self.logger.error(msg)
-                    return summary
+                # if not protectedLFNsT0:
+                #     msg = "Could not fetch the protectedLFNs list from T0 WMStatServer. "
+                #     msg += "Skipping the current run."
+                #     self.logger.error(msg)
+                #     return summary
 
             self.protectedLFNs = self.protectedLFNs | protectedLFNsT0
 
@@ -311,7 +316,7 @@ class MSUnmerged(MSCore):
             msg = "RSE: %s, Failed to create gfal2 Context object. " % rse['name']
             msg += "Skipping it in the current run."
             self.logger.exception(msg)
-            raise MSUnmergedPlineExit(msg)
+            raise MSUnmergedPlineExit(msg) from ex
 
         filesToDeleteCurrRSE = 0
 
@@ -529,7 +534,7 @@ class MSUnmerged(MSCore):
                 msg = "Could not reset RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
                 msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
                 msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
-                raise MSUnmergedPlineExit(msg)
+                raise MSUnmergedPlineExit(msg) from None
 
         # Before returning the RSE update Consistency StatTime:
         rse['timestamps']['rseConsStatTime'] = self.rseConsStats[rseName]['end_time']
@@ -798,7 +803,7 @@ class MSUnmerged(MSCore):
         :param rse: The RSE object to work on
         :return:    rse
         """
-        self.logger.info("RSE: %s Reading rse data from MongoDB." % rse['name'])
+        self.logger.info("RSE: %s Reading rse data from MongoDB.", rse['name'])
         rse.readRSEFromMongoDB(self.msUnmergedColl)
         return rse
 
@@ -809,13 +814,13 @@ class MSUnmerged(MSCore):
         :return:    rse
         """
         try:
-            self.logger.info("RSE: %s Writing rse data to MongoDB." % rse['name'])
+            self.logger.info("RSE: %s Writing rse data to MongoDB.", rse['name'])
             rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite, retryCount=self.msConfig['mongoDBRetryCount'])
         except NotPrimaryError:
             msg = "Could not write RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
             msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
             msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
-            raise MSUnmergedPlineExit(msg)
+            raise MSUnmergedPlineExit(msg) from None
         return rse
 
     def getStatsFromMongoDB(self, detail=False, **kwargs):

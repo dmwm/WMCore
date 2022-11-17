@@ -11,6 +11,7 @@ Usage:
 import sys
 import logging
 import argparse
+from pprint import pformat
 
 from WMCore.Database.MongoDB import MongoDB
 
@@ -40,22 +41,33 @@ if __name__ == '__main__':
     msConfig = config.section_('views').section_('data').dictionary_()
 
     msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
-    msConfig.setdefault("mongoDBPort", 27017)
+    msConfig.setdefault("mongoDBPort", None)
     msConfig.setdefault("mongoDB", 'mongoDBNull')
     msConfig.setdefault("mongoDBRetryCount", 3)
-    msConfig.setdefault("mongoDBReplicaset", None)
+    msConfig.setdefault("mongoDBReplicaSet", None)
     msConfig.setdefault("mockMongoDB", False)
     msConfig.setdefault("collection", None)
 
+    # NOTE: A full set of valid database connection parameters can be found at:
+    #       https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
     mongoDBConfig = {
         'database': msConfig['mongoDB'],
-        'server': msConfig['mongoDBUrl'],
+        'server': msConfig['mongoDBServer'],
+        'replicaSet': msConfig['mongoDBReplicaSet'],
         'port': msConfig['mongoDBPort'],
-        'replicaset': msConfig['mongoDBReplicaset'],
+        'username': msConfig['mongoDBUser'],
+        'password': msConfig['mongoDBPassword'],
+        'connect': True,
+        'directConnection': False,
         'logger': logger,
         'create': False,
         'mockMongoDB': msConfig['mockMongoDB']}
 
-    mongoClt = MongoDB(**mongoDBConfig)
-    mongoDB = getattr(mongoClt, msConfig['mongoDB'])
-    mongoColl = mongoDB[msConfig['collection']] if msConfig['collection'] else None
+    # NOTE: We need to blur `username' and `password' keys before printing the configuration:
+    msg = "Connecting to MongoDB using the following mongoDBConfig:\n%s"
+    logger.info(msg, pformat({**mongoDBConfig, **{'username': '****', 'password': '****'}}))
+
+    mongoDB = MongoDB(**mongoDBConfig)
+    currDB = getattr(mongoDB, msConfig['mongoDB'])
+    mongoClt = mongoDB.client
+    mongoColl = currDB[msConfig['collection']] if msConfig['collection'] else None

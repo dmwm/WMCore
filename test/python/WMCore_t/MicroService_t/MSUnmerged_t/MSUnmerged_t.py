@@ -33,9 +33,9 @@ class RucioConMonEmul(object):
 
         self.rseUnmergedDumpFile = getTestFile('data/WMCore/MicroService/MSUnmerged/rseUnmergedDump.json')
         self.rseConsStatsDumpFile = getTestFile('data/WMCore/MicroService/MSUnmerged/rseConsStatsDump.json')
-        with open(self.rseUnmergedDumpFile) as fd:
+        with open(self.rseUnmergedDumpFile, encoding="utf-8") as fd:
             self.rseUnmergedDump = json.load(fd)
-        with open(self.rseConsStatsDumpFile) as fd:
+        with open(self.rseConsStatsDumpFile, encoding="utf-8") as fd:
             self.rseConsStatsDump = json.load(fd)
 
     def getRSEStats(self):
@@ -89,7 +89,7 @@ class WMStatsServerEmul(object):
         super(WMStatsServerEmul, self).__init__()
 
         self.protectedLFNsDumpFile = getTestFile('data/WMCore/MicroService/MSUnmerged/protectedLFNsDump.json')
-        with open(self.protectedLFNsDumpFile) as fd:
+        with open(self.protectedLFNsDumpFile, encoding="utf-8") as fd:
             self.protectedLFNsDump = json.load(fd)
 
     def getProtectedLFNs(self):
@@ -128,7 +128,11 @@ class MSUnmergedTest(unittest.TestCase):
                          'dirFilterIncl': [],
                          'dirFilterExcl': [],
                          'emulateGfal2': True,
-                         'mockMongoDB': True}
+                         'mockMongoDB': True,
+                         'mongoDB': 'msUnmergedDBUnit',
+                         'mongoDBServer': 'mongodb://localhost',
+                         'mongoDBUser': None,
+                         'mongoDBPassword': None}
 
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}

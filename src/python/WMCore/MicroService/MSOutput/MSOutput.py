@@ -117,23 +117,31 @@ class MSOutput(MSCore):
         self.psn2pnnMap = {}
 
         self.msConfig.setdefault("mongoDBRetryCount", 3)
-        self.msConfig.setdefault("mongoDBReplicaset", None)
+        self.msConfig.setdefault("mongoDBReplicaSet", None)
+        self.msConfig.setdefault("mongoDBPort", None)
         self.msConfig.setdefault("mockMongoDB", False)
 
         msOutIndex = IndexModel('RequestName', unique=True)
+
+        # NOTE: A full set of valid database connection parameters can be found at:
+        #       https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
         msOutDBConfig = {
             'database': self.msConfig['mongoDB'],
-            'server': self.msConfig['mongoDBUrl'],
+            'server': self.msConfig['mongoDBServer'],
+            'replicaSet': self.msConfig['mongoDBReplicaSet'],
             'port': self.msConfig['mongoDBPort'],
+            'username': self.msConfig['mongoDBUser'],
+            'password': self.msConfig['mongoDBPassword'],
+            'connect': True,
+            'directConnection': False,
             'logger': self.logger,
             'create': True,
-            'replicaset': self.msConfig['mongoDBReplicaset'],
             'collections': [
                 ('msOutRelValColl', msOutIndex),
                 ('msOutNonRelValColl', msOutIndex)]}
 
-        mongoClt = MongoDB(**msOutDBConfig)
-        self.msOutDB = getattr(mongoClt, self.msConfig['mongoDB'])
+        mongoDB = MongoDB(**msOutDBConfig)
+        self.msOutDB = getattr(mongoDB, self.msConfig['mongoDB'])
         self.msOutRelValColl = self.msOutDB['msOutRelValColl']
         self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
         self.currThread = None

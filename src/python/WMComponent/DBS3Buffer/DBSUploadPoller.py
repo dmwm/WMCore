@@ -40,6 +40,7 @@ import threading
 import time
 
 from dbs.apis.dbsClient import DbsApi
+from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 
 from Utils.Timers import timeFunction
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
@@ -48,6 +49,7 @@ from WMCore.Algorithms.MiscAlgos import sortListByKey
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
+from WMCore.Services.DBS.DBSErrors import DBSError
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -91,25 +93,39 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             logging.info("About to call insert block for: %s", name)
             dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
-        except Exception as ex:
-            exString = str(getattr(ex, "body", ex))
-            if 'Block %s already exists' % name in exString:
+        except HTTPError as ex:
+            # when we will have new dbs3-client and fine granularity DBS Go server
+            # error codes then we should remove if/elif/else and replace it with
+            # DBSError(ex.body), e.g.
+            # dbsError = DBSError(ex.body)
+            # reason = dbsError.getReason()
+            # srvCode = dbsError.getServverCode()
+            # results.put({'name': name, 'success': 'error', 'error': reason, 'server_code': srvCode})
+
+            # legacy code which deal with DBS python server exceptions
+            dbsError = DBSError(ex.body)
+            reason = dbsError.getReason()
+            if 'Block %s already exists' % name in reason:
                 # Then this is probably a duplicate
                 # Ignore this for now
                 logging.warning("Block %s already exists. Marking it as uploaded.", name)
-                logging.debug("Exception: %s", exString)
+                logging.debug("Exception: %s", reason)
                 results.put({'name': name, 'success': "uploaded"})
-            elif 'Missing data when inserting to dataset_parents' in exString:
+            # python server error produces Missing message, while
+            # Go based server produces unable to find dataset_id message
+            elif 'Missing data when inserting to dataset_parents' in reason or \
+                'unable to find dataset_id' in reason:
                 msg = "Parent dataset is not inserted yet for block %s." % name
                 logging.warning(msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
             else:
-                reason = parseDBSException(exString)
-                msg = "Error trying to process block %s through DBS. Error: %s" % (name, reason)
-                logging.exception(msg)
-                logging.debug("block info: %s \n", block)
+                msg = f"Error trying to process block {name} through DBS. Reason: {reason}"
+                logging.error(msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
-
+        except Exception as ex:
+            msg = f"Hit a general exception while inserting block {name. Error: {str(ex}}"
+            logging.exception(msg)
+            results.put({'name': name, 'success': "error", 'error': msg})
     return
 
 

@@ -1,3 +1,9 @@
+2.1.4 to 2.1.5rc1:
+  - Switch mongo client to connect to a fully defined replicaset. (Todor Ivanov) #11360
+  - Provide DBSError class to handle DBS Go-server errors (Valentin Kuznetsov) #11173
+  - Bump WMAgent deployment example/tag to 2.1.4 (Alan Malta Rodrigues) #11362
+
+
 2.1.4.pre7 to 2.1.4:
 
 

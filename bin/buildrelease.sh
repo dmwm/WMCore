@@ -31,8 +31,8 @@ if [ -z $TAG ]; then
 fi
 
 # Check whether this git branch is allowed to be tagged
-if ! echo ${GITBRANCH} | egrep -iq 'master|_wmagent|_crab|_cmsweb|_dbs' ; then
-  echo "ABORTING - Can only release from master / _crab / _dbs / _wmagent / _cmsweb branches: ${GITBRANCH}"
+if ! echo ${GITBRANCH} | egrep -iq 'master|_wmagent|_crab|_cmsweb' ; then
+  echo "ABORTING - Can only release from master / _crab / _wmagent / _cmsweb branches: ${GITBRANCH}"
   exit 4
 fi
 
@@ -56,7 +56,7 @@ echo "Updating version string ..."
 perl -p -i -e "s{__version__ =.*}{__version__ = '$TAG'}g" src/python/WMCore/__init__.py
 
 echo "Generating CHANGES file"
-LASTCOMMITLINE=$(git log -n1 --oneline -E --grep="^[0-9]+\.[0-9]+\.[0-9]+\.*(pre|patch)*[0-9]*$")
+LASTCOMMITLINE=$(git log -n1 --oneline -E --grep="^[0-9]+\.[0-9]+\.[0-9]+\.*(rc|patch)*[0-9]*$")
 LASTCOMMIT=$(echo ${LASTCOMMITLINE} | awk '{print $1}')
 LASTVERSION=$(echo ${LASTCOMMITLINE} | awk '{print $2}')
 

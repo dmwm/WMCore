@@ -94,32 +94,23 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
         except HTTPError as ex:
-            # when we will have new dbs3-client and fine granularity DBS Go server
-            # error codes then we should remove if/elif/else and replace it with
-            # DBSError(ex.body), e.g.
-            # dbsError = DBSError(ex.body)
-            # reason = dbsError.getReason()
-            # srvCode = dbsError.getServverCode()
-            # results.put({'name': name, 'success': 'error', 'error': reason, 'server_code': srvCode})
-
-            # legacy code which deal with DBS python server exceptions
+            # DBS Go server errors are defined here:
+            # https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
             dbsError = DBSError(ex.body)
             reason = dbsError.getReason()
-            if 'Block %s already exists' % name in reason:
-                # Then this is probably a duplicate
-                # Ignore this for now
+            message = dbsError.getMessage()
+            srvCode = dbsError.getServerCode()
+            msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
+            if srvCode == 128:
+                # block already exist
                 logging.warning("Block %s already exists. Marking it as uploaded.", name)
-                logging.debug("Exception: %s", reason)
                 results.put({'name': name, 'success': "uploaded"})
-            # python server error produces Missing message, while
-            # Go based server produces unable to find dataset_id message
-            elif 'Missing data when inserting to dataset_parents' in reason or \
-                'unable to find dataset_id' in reason:
-                msg = "Parent dataset is not inserted yet for block %s." % name
-                logging.warning(msg)
+            elif srvCode in [132, 133, 134, 135, 136, 137, 138, 139, 140]:
+                # racing conditions
+                logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
             else:
-                msg = f"Error trying to process block {name} through DBS. Reason: {reason}"
+                msg = f"Error trying to process block {name} through DBS. Details: {msg}"
                 logging.error(msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:

@@ -519,11 +519,14 @@ class MSRuleCleaner(MSCore):
         """
         archDelayExpired = False
         currentTime = int(time.time())
-        threshold = self.msConfig['archiveDelayHours'] * 3600
+        archiveThreshold = self.msConfig['archiveDelayHours'] * 3600
+        alarmThreshold = self.msConfig['archiveAlarmHours'] * 3600
         try:
             lastTransitionTime = wflow['RequestTransition'][-1]['UpdateTime']
-            if lastTransitionTime and (currentTime - lastTransitionTime) > threshold:
+            if lastTransitionTime and (currentTime - lastTransitionTime) > archiveThreshold:
                 archDelayExpired = True
+            if lastTransitionTime and (currentTime - lastTransitionTime) > alarmThreshold:
+                self.alertStaleWflow(wflow, lastTransitionTime)
         except KeyError:
             self.logger.debug("Could not find status transition history for %s", wflow['RequestName'])
         return archDelayExpired
@@ -763,6 +766,24 @@ class MSRuleCleaner(MSCore):
         alertDescription = "Workflow: {} has the following pileup container ".format(workflowName)
         alertDescription += "\n{}\n no longer in the global locks. ".format(containerName)
         alertDescription += "These rules\n{}\nare eligible for deletion.".format(ruleList)
+        # alert to expiry in 2 days
+        self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                       service=self.alertServiceName, endSecs=self.alertExpiration)
+        self.logger.critical(alertDescription)
+
+    def alertStaleWflow(self, wflow, lastTransitionTime):
+        """
+        Send alert notifying that a workflow has not been archived for more than a configurable amount of time.
+        :param wflow: A MSRuleCleaner workflow description
+        :param lastTransitionTime: Last transition time in seconds since start of epoch
+        :return: none
+        """
+        alertName = "{}: Not archived workflow: {}".format(self.alertServiceName, wflow['RequestName'])
+        alertSeverity = "high"
+        alertDescription = "[MSRuleCleaner] Found a workflow not archived since {}.".format(time.ctime(lastTransitionTime))
+        alertDescription += "Workflow: {} has the following representation in MSRuleCleaner".format(wflow['RequestName'])
+        alertDescription += "\n{}\n".format(pformat(wflow))
+        alertSummary = "[MSRuleCleaner] Found a workflow not archived since {}.".format(time.ctime(lastTransitionTime))
         # alert to expiry in 2 days
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                        service=self.alertServiceName, endSecs=self.alertExpiration)

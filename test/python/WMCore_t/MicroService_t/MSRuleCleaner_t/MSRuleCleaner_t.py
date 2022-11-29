@@ -46,6 +46,7 @@ class MSRuleCleanerTest(unittest.TestCase):
                          "logDBUrl": "https://cmsweb-testbed.cern.ch/couchdb/wmstats_logdb",
                          'logDBReporter': 'reqmgr2ms_ruleCleaner',
                          'archiveDelayHours': 8,
+                         'archiveAlarmHours': 30 * 24,
                          'enableRealMode': False}
 
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),

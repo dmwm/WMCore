@@ -6,7 +6,7 @@ import inspect
 import os
 import re
 import signal
-import string
+from string import ascii_letters as letters
 import time
 from collections import namedtuple
 from functools import wraps
@@ -18,6 +18,7 @@ from cherrypy.lib import cpstats
 from WMCore.REST.Error import *
 from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
+from Utils.CPMetrics import promMetrics
 
 from Utils.Utilities import encodeUnicodeToBytes
 
@@ -363,9 +364,18 @@ class RESTFrontPage(object):
 
     @expose
     def stats(self):
-        "Return CherryPy stats dict about underlying service activities"
+        """
+        Return CherryPy stats dict about underlying service activities
+        """
         return cpstats.StatsPage().data()
 
+    @expose
+    def metrics(self):
+        """
+        Return CherryPy stats following the prometheus metrics structure
+        """
+        metrics = promMetrics(cpstats.StatsPage().data(), self.app.appname)
+        return encodeUnicodeToBytes(metrics)
 
 
 ######################################################################
@@ -704,8 +714,18 @@ class MiniRESTApi(object):
 
     @expose
     def stats(self):
-        "Return CherryPy stats dict about underlying service activities"
+        """
+        Return CherryPy stats dict about underlying service activities
+        """
         return cpstats.StatsPage().data()
+
+    @expose
+    def metrics(self):
+        """
+        Return CherryPy stats following the prometheus metrics structure
+        """
+        metrics = promMetrics(cpstats.StatsPage().data(), self.app.appname)
+        return encodeUnicodeToBytes(metrics)
 
     @expose
     def default(self, *args, **kwargs):
@@ -752,7 +772,7 @@ class MiniRESTApi(object):
         # Make sure the request method is something we actually support.
         if request.method not in self.methods:
             response.headers['Allow'] = " ".join(sorted(self.methods.keys()))
-            raise UnsupportedMethod()
+            raise UnsupportedMethod() from None
 
         # If this isn't a GET/HEAD request, prevent use of query string to
         # avoid cross-site request attacks and evil silent form submissions.

@@ -195,6 +195,9 @@ def promMetrics(data, exporter):
     """
     Provide cherrypy stats prometheus metrics for given exporter name.
     """
+    # exporter name should not contain dashes, see
+    # https://its.cern.ch/jira/browse/CMSMONIT-514
+    exporter = exporter.replace("-", "_")
     metrics = flattenStats(data)
     if isinstance(metrics, str):
         metrics = json.loads(metrics)

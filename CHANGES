@@ -1,3 +1,11 @@
+2.1.5rc2 to 2.1.5rc3:
+  - Remove obsolate estimate_ttc parameter to Rucio client calls. (Todor Ivanov) #11383
+  - Add new GH Action workflows to build WMCore images (Valentin Kuznetsov) #11377
+  - Replace dash in exporter name (Valentin Kuznetsov) #11381
+  - Add new module to convert cp stats into prometheus format suited for monitoring (Valentin Kuznetsov) #9940
+  - Update buildrelease.sh to consider release-candidate tags (Alan Malta Rodrigues) #11370
+
+
 2.1.5rc1 to 2.1.5rc2:
   - Update rucio-clients version from 1.25.5 to 1.29.10 (Alan Malta Rodrigues) #11368
 

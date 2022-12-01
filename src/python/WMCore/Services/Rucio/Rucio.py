@@ -642,18 +642,17 @@ class Rucio(object):
             self.logger.error("Exception listing parent DIDs for data: %s. Error: %s", name, str(ex))
         return list(res)
 
-    def getRule(self, ruleId, estimatedTtc=False):
+    def getRule(self, ruleId):
         """
         _getRule_
 
         Retrieve rule information for a given rule id
         :param ruleId: string with the rule id
-        :param estimatedTtc: bool, if rule_info should return ttc information
         :return: a dictionary with the rule data (or empty if no rule can be found)
         """
         res = {}
         try:
-            res = self.cli.get_replication_rule(ruleId, estimate_ttc=estimatedTtc)
+            res = self.cli.get_replication_rule(ruleId)
         except RuleNotFound:
             self.logger.error("Cannot find any information for rule id: %s", ruleId)
         except Exception as ex:

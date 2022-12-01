@@ -1,0 +1,51 @@
+# This workflow will build and upload WMCore core services to the production PyPI
+# based on tag releases, see build_and_publish_services job. Then, the second
+# named build_images, will build appropriate docker images using CMSKubernetes
+# Dockefiles and upload them to CERN registry.
+#
+# The build_and_publish_services job relies on pypi_build_template.yaml
+# The build_images relies on docker_images_template.yaml template
+# Each job use matrics target (as input list to iterate) and setup
+# wmcore_component which is used by corresponding template to perform
+# set of actions. We also define here necessary secrets used by given template.
+
+on:
+  # this section fires workflow on a specific tag which matches some pattern
+  push:
+    tags:
+      - '*.*.*'
+  # this section forces manual builds
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'WMCore services'
+
+jobs:
+  # first job performs build and upload of packages to PyPI
+  build_and_publish_services:
+    name: Build_and_upload_to_pypi
+    strategy:
+      matrix:
+        target: [wmagent, wmagent-devtools, wmcore, reqmon, reqmgr2, global-workqueue, acdcserver, reqmgr2ms-unmerged,
+                 reqmgr2ms-output, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
+    uses: ./.github/workflows/pypi_build_publish_template.yaml
+    with:
+      wmcore_component: ${{ matrix.target }}
+    secrets:
+      pypy_token: ${{ secrets.PYPY_PRODUCTION }}
+
+  # second job, depends on build_and_publish_services, builds and upload
+  # docker images to CERN registry
+  build_images:
+    name: Build_images
+    needs: [build_and_publish_services]
+    strategy:
+      matrix:
+        target: [wmagent, reqmon, reqmgr2, reqmgr2ms-unmerged, global-workqueue,
+                 reqmgr2ms-output, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
+    uses: ./.github/workflows/docker_images_template.yaml
+    with:
+      wmcore_component: ${{ matrix.target }}
+    secrets:
+      CERN_LOGIN: ${{ secrets.CERN_LOGIN }}
+      CERN_TOKEN: ${{ secrets.CERN_TOKEN }}

@@ -1,3 +1,7 @@
+2.1.5rc5 to 2.1.5rc6:
+  - Adding sleep of 5min to the docker build images (Alan Malta Rodrigues) 
+
+
 2.1.5rc4 to 2.1.5rc5:
   - Update CERN credentials in the GH docker template (Alan Malta Rodrigues) 
   - Update CERN credentials to lower case (Alan Malta Rodrigues) 

@@ -28,6 +28,8 @@ jobs:
           curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/${{inputs.wmcore_component}}/Dockerfile
           sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
           cat Dockerfile
+          echo "Sleeping 5min to ensure that PyPi packages are available..."
+          sleep 300
           docker build --tag registry.cern.ch/cmsweb/${{inputs.wmcore_component}}:${{steps.get-ref.outputs.tag}} .
 
       - name: Images

@@ -1,3 +1,8 @@
+2.1.5rc4 to 2.1.5rc5:
+  - Update CERN credentials in the GH docker template (Alan Malta Rodrigues) 
+  - Update CERN credentials to lower case (Alan Malta Rodrigues) 
+
+
 2.1.5rc3 to 2.1.5rc4:
   - Add checks for StatusAdvanceTimeout expiration and send alarms. (Todor Ivanov) #11299
   - MSRuleCleaner: properly evaluate tape transfers (Alan Malta Rodrigues) #11384

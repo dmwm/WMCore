@@ -47,5 +47,5 @@ jobs:
     with:
       wmcore_component: ${{ matrix.target }}
     secrets:
-      CERN_LOGIN: ${{ secrets.CERN_LOGIN }}
-      CERN_TOKEN: ${{ secrets.CERN_TOKEN }}
+      cern_user: ${{ secrets.CERN_LOGIN }}
+      cern_token: ${{ secrets.CERN_TOKEN }}

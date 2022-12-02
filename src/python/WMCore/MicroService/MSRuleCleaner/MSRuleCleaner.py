@@ -632,15 +632,18 @@ class MSRuleCleaner(MSCore):
         if transferInfo is None:
             msg = f"Workflow {wflow['RequestName']} is still missing the output transfer document."
             self.logger.warning(msg)
+        elif transferInfo['TransferStatus'] == 'pending':
+            msg = f"Workflow {wflow['RequestName']} is still pending the output data placement."
+            self.logger.warning(msg)
         elif transferInfo['TransferStatus'] == 'done':
             # Set Transfer status - information fetched from MSOutput only
             wflow['TransferDone'] = True
-        elif transferInfo['OutputMap']:
+
             # Set Tape rules status - information fetched from Rucio (tape rule ids from MSOutput)
-            tapeRulesStatusList = []
             # For setting 'TransferTape' = True we require either no tape rules for the
             # workflow have been created or all existing tape rules to be in status 'OK',
             # so every empty TapeRuleID we consider as completed.
+            tapeRulesStatusList = []
             for mapRecord in transferInfo['OutputMap']:
                 if not mapRecord['TapeRuleID']:
                     continue

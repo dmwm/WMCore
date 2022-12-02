@@ -1,3 +1,8 @@
+2.1.5rc3 to 2.1.5rc4:
+  - Add checks for StatusAdvanceTimeout expiration and send alarms. (Todor Ivanov) #11299
+  - MSRuleCleaner: properly evaluate tape transfers (Alan Malta Rodrigues) #11384
+
+
 2.1.5rc2 to 2.1.5rc3:
   - Remove obsolate estimate_ttc parameter to Rucio client calls. (Todor Ivanov) #11383
   - Add new GH Action workflows to build WMCore images (Valentin Kuznetsov) #11377

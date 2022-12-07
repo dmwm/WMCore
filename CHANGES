@@ -1,3 +1,7 @@
+2.1.5rc6 to 2.1.5rc7:
+  - Add try/except block for fetching PartialCopy parameter from camapign configuration. (Todor Ivanov) #11387
+
+
 2.1.5rc5 to 2.1.5rc6:
   - Adding sleep of 5min to the docker build images (Alan Malta Rodrigues) 
 

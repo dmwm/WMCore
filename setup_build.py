@@ -20,9 +20,11 @@ def walk_dep_tree(system):
     statics that the system depends on.
 
     system is a dict containing:
-        {'packages': ['Package'],
-         'systems':['foo'],
-         'statics': ['bar']}
+        {'bin': ['bin_script_A'],
+         'packages': ['package_name_A'],
+         'modules': ['module_name_A'],
+         'systems':['system_name_A'],
+         'statics': ['non_python_statics_A']}
     """
     packages = set()
     statics = set()
@@ -153,13 +155,12 @@ def things_to_build(command, pypi=False):
 
     # and the corresponding source directories and files
     package_src_dirs = []
-    module_src_files = []
     for package in dependency_tree['packages']:
         # Need to recurse packages
         recurse = package.endswith('+')
         print(package, recurse)
         package = package.rstrip('+')
-        src_path = '%s/src/python/%s' % (get_path_to_wmcore_root(), package.replace('.','/'))
+        src_path = '%s/src/python/%s' % (get_path_to_wmcore_root(), package.replace('.', '/'))
         package_src_dirs.extend(list_packages([src_path], recurse))
     return package_src_dirs, dependency_tree['modules']
 

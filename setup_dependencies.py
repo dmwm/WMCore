@@ -1,8 +1,20 @@
 #!/usr/bin/env python
 """
-Manage dependancies by declaring systems here.
-A system can depend on packages or other systems.
-If a package ends with a + include all subpackages.
+This data structure is consumed by the setup_build.py script, in order to add
+the required packages to each of the WMCore systems.
+
+It contains the name of the systems that can be built out of the WMCore
+repository, and their list of dependencies, which can be:
+ * bin: list with the name of executable scripts available in the root bin/ area
+ * packages: list with the name of a WMCore python packages (i.e. a directory
+   containing an __init__.py file)
+     * note that if it's suffixed with the '+' sign, subpackages will also be
+     recursively searched and added to the final system
+ * modules: list with the name of specific modules (a .py file) to be added.
+ * statics: list with the name of files classified as statics, e.g. css, templates,
+   javascript, etc.
+ * systems: list with WMCore system aliases (i.e., like a meta-package that can
+   be used by multiple WMCore systems).
 """
 dependencies = {
     'wmc-rest': {
@@ -129,23 +141,23 @@ dependencies = {
         'statics': [],
     },
     'reqmgr2ms-unmerged': {
-        'packages': ['WMCore.MicroService.MSUnmerged'],
+        'packages': ['WMCore.MicroService.MSUnmerged+'],
         'systems': ['reqmgr2ms-core'],
     },
     'reqmgr2ms-output': {
-        'packages': ['WMCore.MicroService.MSOutput'],
+        'packages': ['WMCore.MicroService.MSOutput+'],
         'systems': ['reqmgr2ms-core'],
     },
     'reqmgr2ms-transferor': {
-        'packages': ['WMCore.MicroService.MSTransferor'],
+        'packages': ['WMCore.MicroService.MSTransferor+'],
         'systems': ['reqmgr2ms-core'],
     },
     'reqmgr2ms-monitor': {
-        'packages': ['WMCore.MicroService.MSMonitor'],
+        'packages': ['WMCore.MicroService.MSMonitor+'],
         'systems': ['reqmgr2ms-core'],
     },
     'reqmgr2ms-rulecleaner': {
-        'packages': ['WMCore.MicroService.MSRuleCleaner'],
+        'packages': ['WMCore.MicroService.MSRuleCleaner+'],
         'systems': ['reqmgr2ms-core'],
     },
     'global-workqueue': {

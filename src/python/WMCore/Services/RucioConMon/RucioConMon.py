@@ -100,7 +100,7 @@ class RucioConMon(Service):
         update timestamps for all RSEs known to CMS Rucio
         :return: A dictionary
         """
-        uri = "/WM/stats"
+        uri = "stats"
         rseStats = self._getResult(uri, callname='stats')
         return rseStats
 
@@ -118,11 +118,11 @@ class RucioConMon(Service):
         #       reading/streaming from file. This will prevent any set arithmetic
         #       in the future.
         if not zipped:
-            uri = "WM/files?rse=%s&format=json" % rseName
+            uri = "files?rse=%s&format=json" % rseName
             rseUnmerged = self._getResult(uri, callname=rseName)
             return rseUnmerged
         else:
-            uri = "WM/files?rse=%s&format=raw" % rseName
+            uri = "files?rse=%s&format=raw" % rseName
             callname = '{}.zipped'.format(rseName)
             rseUnmerged = self._getResultZipped(uri,  callname=callname, clearCache=True)
             return rseUnmerged

@@ -1,3 +1,7 @@
+2.1.6rc1 to 2.1.6rc2:
+  - Given a block name in DBS3Upload config, dump its info as json (Alan Malta Rodrigues) #11361
+
+
 2.1.5 to 2.1.6rc1:
   - Add all the subpackages for each microservice (Alan Malta Rodrigues) #11392
   - Change RucioConMon APIs' prefix. (Todor Ivanov) #11389

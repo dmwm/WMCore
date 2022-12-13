@@ -1135,6 +1135,8 @@ class WorkQueue(WorkQueueBase):
 
                     if not continuous:
                         # Update to Acquired when it's the first processing of inbound work
+                        if not self.params.get("UnittestFlag", False):
+                            self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
                         self.backend.updateInboxElements(inbound.id, Status='Acquired')
 
                     # store the inputs in the global queue inbox workflow element

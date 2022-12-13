@@ -213,7 +213,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         self.filesToUpdate = []
 
-        self.produceCopy = getattr(self.config.DBS3Upload, 'dumpBlock', False)
+        self.dumpBlockJsonFor = getattr(self.config.DBS3Upload, 'dumpBlockJsonFor', "")
 
         self.copyPath = os.path.join(getattr(self.config.DBS3Upload, 'componentDir', '/data/srv/'),
                                      'dbsuploader_block.json')
@@ -710,7 +710,8 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.info("Queueing block for insertion: %s", block.getName())
             self.workInput.put({'name': block.getName(), 'block': encodedBlock})
             self.blockCount += 1
-            if self.produceCopy:
+            if self.dumpBlockJsonFor and (self.dumpBlockJsonFor == block.getName()):
+                logging.info("Dumping '%s' information into %s", block.getName(), self.copyPath)
                 with open(self.copyPath, 'w') as jo:
                     json.dump(encodedBlock, jo, indent=2)
             self.queuedBlocks.append(block.getName())

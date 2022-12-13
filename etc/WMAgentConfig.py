@@ -153,7 +153,8 @@ config.DBS3Upload.pollInterval = 100
 # "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
-config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file
+# provided a block name, this will dump all the block info in a json file
+config.DBS3Upload.dumpBlockJsonFor = ""
 # set DbsApi requests to use gzip enconding, thus sending compressed data
 config.DBS3Upload.gzipEncoding = True
 

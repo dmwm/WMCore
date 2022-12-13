@@ -1,3 +1,7 @@
+2.1.5 to 2.1.5.1:
+  - Change RucioConMon APIs' prefix. (Todor Ivanov) #11393
+
+
 2.1.5rc7 to 2.1.5:
 
 

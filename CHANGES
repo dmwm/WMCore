@@ -1,3 +1,9 @@
+2.1.5 to 2.1.6rc1:
+  - Add all the subpackages for each microservice (Alan Malta Rodrigues) #11392
+  - Change RucioConMon APIs' prefix. (Todor Ivanov) #11389
+  - Change metadata field in the Grafana SSB query (Alan Malta Rodrigues) #11379
+
+
 2.1.5rc7 to 2.1.5:
 
 

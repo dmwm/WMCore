@@ -118,9 +118,21 @@ class Requests(dict):
             cache_dir = (self.cachePath(idict.get('cachepath'), idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
+
+        # Try to resolve the key/cert pair path in the constructor:
+        # NOTE: Calling self.getKeyCert() assures that if the pair is already provided by
+        #       the caller (e.g. the higher level Service class) through the `idict' argument
+        #       during construction time, no additional os.environ calls would be made.
+        #       If the pair is not provided anywhere: not by the higher level class
+        #       nor from the environment, Exception will be raised early during construction
+        #       time rather than later during an internel method call.
         self.setdefault("cert", None)
         self.setdefault("key", None)
+        self['key'], self['cert'] = self.getKeyCert()
+
         self.setdefault('capath', None)
+        self['capath'] = self.getCAPath()
+
         self.setdefault("timeout", 300)
         self.setdefault("logger", logging)
 

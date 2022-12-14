@@ -41,7 +41,7 @@ jobs:
     needs: [build_and_publish_services]
     strategy:
       matrix:
-        target: [wmagent, reqmon, reqmgr2, reqmgr2ms-unmerged, global-workqueue,
+        target: [wmagent, reqmon, t0_reqmon, reqmgr2, reqmgr2ms-unmerged, global-workqueue,
                  reqmgr2ms-output, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
     uses: ./.github/workflows/docker_images_template.yaml
     with:

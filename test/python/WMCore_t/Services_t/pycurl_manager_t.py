@@ -266,5 +266,28 @@ class PyCurlManager(unittest.TestCase):
             # https://github.com/PyCQA/pylint/issues/437
             traceback.print_exc()
 
+    def testHTTPResponse(self):
+        """
+        Test a HTTP response parsing for different HTTP protocols
+        """
+        # parse HTTP/1.1 responses
+        response = b'HTTP/1.1 200 OK\r\ncache-control: max-age=300\r\ncontent-length: 123\r\n\r\n'
+        obj = ResponseHeader(response)
+        self.assertEqual(obj.status, 200)
+
+        response = b'HTTP/1.1 400 Not Found\r\ncache-control: max-age=300\r\ncontent-length: 123\r\n\r\n'
+        obj = ResponseHeader(response)
+        self.assertEqual(obj.status, 400)
+
+        # parse HTTP/2 responses
+        response = b'HTTP/2 200 OK\r\ncache-control: max-age=300\r\ncontent-length: 123\r\n\r\n'
+        obj = ResponseHeader(response)
+        self.assertEqual(obj.status, 200)
+
+        response = b'HTTP/2 400 Not Found\r\ncache-control: max-age=300\r\ncontent-length: 123\r\n\r\n'
+        obj = ResponseHeader(response)
+        self.assertEqual(obj.status, 400)
+
+
 if __name__ == "__main__":
     unittest.main()

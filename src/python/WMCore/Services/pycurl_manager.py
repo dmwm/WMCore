@@ -63,6 +63,27 @@ from Utils.PortForward import portForward, PortForward
 from Utils.TokenManager import TokenManager
 
 
+def getException(url, params, headers, header, data):
+    """
+    Return HTTP exception for a given set of parameters:
+    :param url: string
+    :param params: dict
+    :param headers: dict
+    :param header: ResponseHeader
+    :param data: HTTP body
+    """
+    msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
+          % (url, header.status, header.reason, header.header, data)
+    exc = http.client.HTTPException(msg)
+    setattr(exc, 'req_data', params)
+    setattr(exc, 'req_headers', headers)
+    setattr(exc, 'url', url)
+    setattr(exc, 'result', data)
+    setattr(exc, 'status', header.status)
+    setattr(exc, 'reason', header.reason)
+    setattr(exc, 'headers', header.header)
+    return exc
+
 def decompress(body, headers):
     """
     Helper function to decompress given body if HTTP headers contains gzip encoding
@@ -326,16 +347,7 @@ class RequestHandler(object):
             else:
                 data = self.parse_body(data, decode)
         else:
-            msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
-                  % (url, header.status, header.reason, header.header, data)
-            exc = http.client.HTTPException(msg)
-            setattr(exc, 'req_data', params)
-            setattr(exc, 'req_headers', headers)
-            setattr(exc, 'url', url)
-            setattr(exc, 'result', data)
-            setattr(exc, 'status', header.status)
-            setattr(exc, 'reason', header.reason)
-            setattr(exc, 'headers', header.header)
+            exc = getException(url, params, headers, header, data)
             bbuf.flush()
             hbuf.flush()
             raise exc
@@ -361,15 +373,16 @@ class RequestHandler(object):
         return header
 
     @portForward(8443)
-    def multirequest(self, url, parray, headers=None,
-                     ckey=None, cert=None, verbose=None, cookie=None):
+    def multirequest(self, url, parray, headers=None, verb='GET',
+                     ckey=None, cert=None, verbose=None, cookie=None,
+                     encode=False, decode=False):
         """Fetch data for given set of parameters"""
         multi = pycurl.CurlMulti()
         for params in parray:
             curl = pycurl.Curl()
             bbuf, hbuf = \
                 self.set_opts(curl, url, params, headers, ckey=ckey, cert=cert,
-                              verbose=verbose, cookie=cookie)
+                              verbose=verbose, cookie=cookie, encode=encode)
             multi.add_handle(curl)
             while True:
                 ret, num_handles = multi.perform()
@@ -385,8 +398,20 @@ class RequestHandler(object):
                         break
             dummyNumq, response, dummyErr = multi.info_read()
             for _respItem in response:
-                data = decodeBytesToUnicode(bbuf.getvalue())
-                data = json.loads(data)
+                header = self.parse_header(hbuf.getvalue())
+                data = bbuf.getvalue()
+                data = decompress(data, header.header)
+                data = decodeBytesToUnicode(data)
+                if header.status < 300:
+                    if verb == 'HEAD':
+                        data = ''
+                    else:
+                        data = self.parse_body(data, decode)
+                else:
+                    exc = getException(url, params, headers, header, data)
+                    bbuf.flush()
+                    hbuf.flush()
+                    raise exc
                 if isinstance(data, dict):
                     data.update(params)
                     yield data

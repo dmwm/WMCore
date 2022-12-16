@@ -288,6 +288,29 @@ class PyCurlManager(unittest.TestCase):
         obj = ResponseHeader(response)
         self.assertEqual(obj.status, 400)
 
+    def testMultirequest(self):
+        """
+        Test multirequest function
+        """
+        tfile = tempfile.NamedTemporaryFile()
+        url = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/filelumis"
+        blocks = [
+            '/LQToDEle_M-4000_single_TuneCP2_13TeV-madgraph-pythia8/RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v1/MINIAODSIM#471e5596-af04-4423-a850-5ef9091f154f',
+            '/LQToDEle_M-4000_single_TuneCP2_13TeV-madgraph-pythia8/RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v1/MINIAODSIM#6eb03689-167a-472f-8b09-f4bfadad6a8a',
+            '/LQToDEle_M-4000_single_TuneCP2_13TeV-madgraph-pythia8/RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v1/MINIAODSIM#b8cdec8f-b664-49a6-ab2d-bb2a89893581',
+            '/LQToDEle_M-4000_single_TuneCP2_13TeV-madgraph-pythia8/RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v1/MINIAODSIM#ff78bb73-0e8c-41cb-9e51-381cfbdf15e2'
+        ]
+        cern_sso_cookie(url, tfile.name, self.cert, self.ckey)
+        parray = [{'block_name':b} for b in blocks]
+        headers = {'Accept': 'application/json'}
+        cookie = {url: tfile.name}
+        mgr = RequestHandler()
+        data = mgr.multirequest(url, parray, headers=headers, ckey=self.ckey, cert=self.cert, cookie=cookie, encode=True, decode=True)
+        pairs = set()
+        for row in data:
+            pair = (row['lumi_section_num'], row['run_num'])
+            pairs.add(pair)
+        self.assertTrue(len(pairs), 100)
 
 if __name__ == "__main__":
     unittest.main()

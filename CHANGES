@@ -1,3 +1,9 @@
+2.1.6rc2 to 2.1.6rc3:
+  - Add unit test for parsing HTTP header (Valentin Kuznetsov) #11400
+  - Fix regexp pattern to match HTTP/1.1 and HTTP/2 (Valentin Kuznetsov) #11400
+  - Build docker image for t0_reqmon (Alan Malta Rodrigues) #11395
+
+
 2.1.6rc1 to 2.1.6rc2:
   - Given a block name in DBS3Upload config, dump its info as json (Alan Malta Rodrigues) #11361
 

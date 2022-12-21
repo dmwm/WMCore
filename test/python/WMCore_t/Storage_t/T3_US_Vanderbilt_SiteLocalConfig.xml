@@ -3,6 +3,11 @@
     <event-data>
       <catalog url="trivialcatalog_file://gpfs1/grid/grid-app/cmssoft/cms/SITECONF/local/PhEDEx/storage.xml?protocol=direct"/>
     </event-data>
+    
+    <stage-out>
+     <method volume="DUMMY" protocol="WebDAV" command="gfal2"/>
+    </stage-out>
+
     <local-stage-out>
       <command value="srmv2" />
       <option value="-debug" />

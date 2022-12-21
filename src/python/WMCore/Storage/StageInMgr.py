@@ -14,13 +14,15 @@ from future.utils import viewitems
 
 import os
 
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig,stageOutStr
 
 #do we want seperate exceptions - for the moment no
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.Registry import retrieveStageOutImpl
+from WMCore.Storage.StageOutMgr import searchRFC
 
+from WMCore.Storage.RucioFileCatalog import storageJsonPath,readRFC
 
 class StageInSuccess(Exception):
     """
@@ -45,14 +47,12 @@ class StageInMgr(object):
         self.overrideConf = overrideParams
         if overrideParams != {}:
             self.override = True
-
-        self.fallbacks = []
-        #  //
-        # // Try an get the TFC for the site
-        #//
-        self.tfc = None
-
-
+        
+        #for testing only
+        self.bypassImpl = False 
+        
+        #pairs of stageOut and Rucio file catalog
+        self.stageOuts_rfcs = [] 
 
         self.numberOfRetries = 3
         self.retryPauseTime = 600
@@ -78,43 +78,51 @@ class StageInMgr(object):
 
         """
 
-        implName = self.siteCfg.localStageOut.get("command", None)
-        if implName == None:
-            msg = "Unable to retrieve local stage out command\n"
-            msg += "From site config file.\n"
-            msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
-        msg = "Local Stage Out Implementation to be used is:"
-        msg += "%s\n" % implName
+        self.stageOuts = self.siteCfg.stageOuts
 
-        pnn = self.siteCfg.localStageOut.get("phedex-node", None)
-        if pnn == None:
-            msg = "Unable to retrieve local stage out phedex-node\n"
-            msg += "From site config file.\n"
-            msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
-        msg += "Local Stage Out PNN to be used is %s\n" % pnn
-        catalog = self.siteCfg.localStageOut.get("catalog", None)
-        if catalog == None:
-            msg = "Unable to retrieve local stage out catalog\n"
-            msg += "From site config file.\n"
-            msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
-        msg += "Local Stage Out Catalog to be used is %s\n" % catalog
+        msg = "\nThere are %s stage out definitions." % len(self.stageOuts)
+        for stageOut in self.stageOuts:
+            for k in ['phedex-node','command','storageSite','volume','protocol']:
+                v = stageOut.get(k)
+                if v is None:
+                    amsg = ""
+                    amsg+= "Unable to retrieve "+k+" of this stageOut: \n"
+                    amsg+= stageOutStr(stageOut) + "\n"
+                    amsg+= "From site config file.\n"
+                    amsg+= "Continue to the next stageOut.\n"
+                    print(amsg)
+                    msg += amsg
+                    continue
 
-        try:
-            self.tfc = self.siteCfg.trivialFileCatalog()
-            msg += "Trivial File Catalog has been loaded:\n"
-            msg += str(self.tfc)
-        except Exception as ex:
-            msg = "Unable to load Trivial File Catalog:\n"
-            msg += "Local stage out will not be attempted\n"
-            msg += str(ex)
-            raise StageOutInitError( msg )
+            storageSite = stageOut.get("storageSite")
+            volume = stageOut.get("volume")
+            protocol = stageOut.get("protocol")
+            command = stageOut.get("command")
+            pnn = stageOut.get("phedex-node")
+            
+            msg += "\nStage out to : %s using: %s" % (pnn, command)
+            
+            try:
+                aPath = storageJsonPath(self.siteCfg.siteName,self.siteCfg.subSiteName,storageSite)
+                rfc = readRFC(aPath,storageSite,volume,protocol)
+                self.stageOuts_rfcs.append((stageOut,rfc))
+                msg += "\nRucio File Catalog has been loaded:"
+                msg += "\n"+str(rfc)
+            except Exception as ex:
+                amsg = "\nUnable to load Rucio File Catalog. This stage out will not be attempted:\n"
+                amsg += '\t'+stageOutStr(stageOut) + '\n'
+                amsg += str(ex)
+                msg += amsg
+                print(amsg)
+                continue
+        
+        #no Rucio file catalog is initialized
+        if not self.stageOuts_rfcs:
+            raise StageOutInitError(msg)
 
         print(msg)
-        return
 
+        return
 
     def initialiseOverride(self):
         """
@@ -123,8 +131,7 @@ class StageInMgr(object):
         Extract and verify that the Override parameters are all present
 
         """
-        overrideConf = self.overrideConf
-        overrideParams = {
+        overrideConf = {
             "command" : None,
             "option" : None,
             "phedex-node" : None,
@@ -132,26 +139,28 @@ class StageInMgr(object):
             }
 
         try:
-            overrideParams['command'] = overrideConf['command']
-            overrideParams['phedex-node'] = overrideConf['phedex-node']
-            overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
+            overrideConf['command'] = self.overrideConf['command']
+            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
+            overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"
-            msg += str(overrideConf)
+            msg += str(self.overrideConf) + "\n"
+            msg += str(ex)
             raise StageOutInitError(msg)
-        if 'option' in overrideConf:
+        if 'option' in self.overrideConf and self.overrideConf['option'] is not None:
             if len(overrideConf['option']) > 0:
-                overrideParams['option'] = overrideConf['option']
+                overrideConf['option'] = self.overrideConf['option']
             else:
-                overrideParams['option'] = ""
+                overrideConf['option'] = ""
+        
+        self.overrideConf = overrideConf
 
         msg = "=======StageIn Override Initialised:================\n"
-        for key, val in viewitems(overrideParams):
+        for key, val in viewitems(self.overrideConf):
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
         print(msg)
-        self.fallbacks = []
-        self.fallbacks.append(overrideParams)
+        
         return
 
 
@@ -162,39 +171,39 @@ class StageInMgr(object):
         Use call to invoke transfers
 
         """
-
-
         try:
             print("==>Working on file: %s" % fileToStage['LFN'])
-
             lfn = fileToStage['LFN']
-
             #  //
             # // No override => use local-stage-out from site conf
             #//  invoke for all files and check failures/successes
             if not self.override:
-                print("===> Attempting Local Stage In.")
+                print("===> Attempting Local Stage In")
+                for stageOut_rfc in self.stageOuts_rfcs:
+                    try:
+                        pfn = self.stageIn(lfn, stageOut_rfc)
+                        fileToStage['PFN'] = pfn
+                        raise StageInSuccess
+                    except StageOutFailure as ex:
+                        msg = "===> Local Stage Out Failure for file:\n"
+                        msg += "======>  %s\n" % fileToStage['LFN']
+                        msg += "======>  using this stageOut %s\n" % str(stageOut_rfc[0])
+                        msg += str(ex)
+                        msg += "\n Continue to the next stage-out"
+                        print(msg)
+                        continue
+            else:
+                print("===> Attempting stage outs from override")
                 try:
-                    pfn = self.localStageIn(lfn)
+                    pfn = self.stageIn(lfn)
                     fileToStage['PFN'] = pfn
                     raise StageInSuccess
                 except StageOutFailure as ex:
                     msg = "===> Local Stage Out Failure for file:\n"
-                    msg += "======>  %s\n" % fileToStage['LFN']
+                    msg += "======>  %s using override\n" % fileToStage['LFN']
                     msg += str(ex)
                     print(msg)
-            #  //
-            # // Still here => override start using the fallback stage outs
-            #//  If override is set, then that will be the only fallback available
-            print("===> Attempting %s Override Stage Outs" % len(self.fallbacks))
-            for fallback in self.fallbacks:
-                try:
-                    pfn = self.localStageIn(lfn, fallback)
-                    fileToStage['PFN'] = pfn
-                    raise StageInSuccess
-                except StageOutFailure as ex:
-                    continue
-
+                    
         except StageInSuccess:
             msg = "===> Stage In Successful:\n"
             msg += "====> LFN: %s\n" % fileToStage['LFN']
@@ -204,91 +213,51 @@ class StageInMgr(object):
         msg = "Unable to stage out file:\n"
         msg += fileToStage['LFN']
         raise StageOutFailure(msg, **fileToStage)
-
-
-    def localStageIn(self, lfn, override = None):
+    
+    def stageIn(self, lfn, stageOut_rfc=None):
         """
-        _localStageOut_
+        _stageIn_
 
-        Given the lfn and local stage out params, invoke the local stage in
-        i.e. stage in lfn to pfn
-
-        if override is used the follwoing params should be defined:
+        Given the lfn and a pair of stage out and corresponding Rucio file catalog, stageOut_rfc, or override configuration invoke the stage in
+        If use override configuration self.overrideConf should contain:
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
         phedex-node - the Name of the PNN to which the file is being xferred
-
         """
         localPfn = os.path.join(os.getcwd(), os.path.basename(lfn))
-
-        if override:
-            pnn = override['phedex-node']
-            command = override['command']
-            options = override['option']
-            pfn = "%s%s" % (override['lfn-prefix'], lfn)
+        if self.override:
+            pnn = self.overrideConf['phedex-node']
+            command = self.overrideConf['command']
+            options = self.overrideConf['option']
+            pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
             protocol = command
         else:
-            pnn = self.siteCfg.localStageOut['phedex-node']
-            command = self.siteCfg.localStageOut['command']
-            options = self.siteCfg.localStageOut.get('option', None)
-            pfn = self.searchTFC(lfn)
-            protocol = self.tfc.preferredProtocol
+            pnn = stageOut_rfc[0]['phedex-node']
+            command = stageOut_rfc[0]['command']
+            options = stageOut_rfc[0]['option']
+            pfn = searchRFC(stageOut_rfc[1],lfn)
+            protocol = stageOut_rfc[1].preferredProtocol
 
         if pfn == None:
             msg = "Unable to match lfn to pfn: \n  %s" % lfn
-            raise StageOutFailure(msg, LFN = lfn, TFC = str(self.tfc))
-
+            raise StageOutFailure(msg, LFN=lfn, StageOut=stageOutStr(stageOut_rfc[0]))
         try:
-            impl = retrieveStageOutImpl(command, stagein=True)
+            impl = retrieveStageOutImpl(command,stagein=True)
         except Exception as ex:
             msg = "Unable to retrieve impl for local stage in:\n"
-            msg += "Error retrieving StageOutImpl for command named: %s\n" % (
-                command,)
-            raise StageOutFailure(msg, Command = command,
-                                  LFN = lfn, ExceptionDetail = str(ex))
+            msg += "Error retrieving StageOutImpl for command named: %s\n" % (command,)
+            raise StageOutFailure(msg, Command=command,
+                                  LFN=lfn, ExceptionDetail=str(ex))
         impl.numRetries = self.numberOfRetries
         impl.retryPause = self.retryPauseTime
 
         try:
-            impl(protocol, pfn, localPfn, options)
+            if not self.bypassImpl:
+                impl(protocol, pfn, localPfn, options)
         except Exception as ex:
-            msg = "Failure for local stage in:\n"
+            msg = "Failure for stage in:\n"
             msg += str(ex)
-            raise StageOutFailure(msg, Command = command, Protocol = protocol,
-                                  LFN = lfn, InputPFN = localPfn,
-                                  TargetPFN = pfn)
-
-        return localPfn
-
-
-    def searchTFC(self, lfn):
-        """
-        _searchTFC_
-
-        Search the Trivial File Catalog for the lfn provided,
-        if a match is made, return the matched PFN
-
-        """
-        if self.tfc == None:
-            msg = "Trivial File Catalog not available to match LFN:\n"
-            msg += lfn
-            print(msg)
-            return None
-        if self.tfc.preferredProtocol == None:
-            msg = "Trivial File Catalog does not have a preferred protocol\n"
-            msg += "which prevents local stage out for:\n"
-            msg += lfn
-            print(msg)
-            return None
-
-        pfn = self.tfc.matchLFN(self.tfc.preferredProtocol, lfn)
-        if pfn == None:
-            msg = "Unable to map LFN to PFN:\n"
-            msg += "LFN: %s\n" % lfn
-            return None
-
-        msg = "LFN to PFN match made:\n"
-        msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
-        print(msg)
-        return pfn
+            raise StageOutFailure(msg, Command=command, Protocol=protocol,
+                                  LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
+        return localPfn 

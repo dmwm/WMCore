@@ -73,6 +73,8 @@ class SiteLocalConfig(object):
     def __init__(self, siteConfigXML):
         self.siteConfigFile = siteConfigXML
         self.siteName = None
+        #HERE
+        self.subSiteName = None
         self.eventData = {}
 
         self.frontierProxies = []
@@ -80,11 +82,13 @@ class SiteLocalConfig(object):
 
         self.localStageOut = {}
         self.fallbackStageOut = []
+        self.stageOuts = []
 
         self.read()
         return
 
-    def trivialFileCatalog(self):
+    #HERE
+    def trivialFileCatalog(self,preferStageOut=0,useTFC=False):
         """
         _trivialFileCatalog_
 
@@ -92,12 +96,24 @@ class SiteLocalConfig(object):
 
         """
         tfcUrl = self.localStageOut.get('catalog', None)
-        if tfcUrl is None:
-            return None
+        if useTFC and tfcUrl is None:
+          return None
+        #empty stageOut
+        if not useTFC and len(self.stageOuts)==0:
+          return None
+
         try:
+          if useTFC:  
             tfcFile = tfcFilename(tfcUrl)
             tfcProto = tfcProtocol(tfcUrl)
             tfcInstance = readTFC(tfcFile)
+            tfcInstance.preferredProtocol = tfcProto
+          else:
+            #use the first stage out
+            storage_att = {'site':self.siteName,'subSite':self.subSiteName,'storageSite':self.stageOuts[0].get('site',None),'protocol':self.stageOuts[0].get('protocol',None)}
+            tfcFile = tfcFilename(str(),storage_att,False)  #HERE: construct this from site, subsite, SITECONFIG
+            tfcProto = tfcProtocol(str(),storage_att,False)
+            tfcInstance = readTFC(tfcFile,storage_att,False)
             tfcInstance.preferredProtocol = tfcProto
         except Exception as ex:
             msg = "Unable to load TrivialFileCatalog:\n"
@@ -162,11 +178,18 @@ class SiteLocalConfig(object):
             msg += "information in:\n"
             msg += self.siteConfigFile
             raise SiteConfigError(msg)
+        if 'stageOut' not in nodeResult:
+            msg = "Error:Unable to find any stage-out"
+            msg += "information in:\n"
+            msg += self.siteConfigFile
+            raise SiteConfigError(msg)
 
         self.siteName             = nodeResult.get('siteName', None)
+        self.subsiteName          = nodeResult.get('siteName', None)
         self.eventData['catalog'] = nodeResult.get('catalog', None)
         self.localStageOut        = nodeResult.get('localStageOut', [])
         self.fallbackStageOut     = nodeResult.get('fallbackStageOut', [])
+        self.stageOut        = nodeResult.get('stageOut', [])
         self.frontierServers      = nodeResult.get('frontierServers', [])
         self.frontierProxies      = nodeResult.get('frontierProxies', [])
         return
@@ -195,6 +218,7 @@ def nodeReader(node):
     processSiteInfo = {
         'event-data': processEventData(),
         'local-stage-out': processLocalStageOut(),
+        'stage-out': processStageOut(),
         'calib-data': processCalibData(),
         'fallback-stage-out': processFallbackStageOut()
         }
@@ -232,6 +256,8 @@ def processSite(targets):
         #Get the name first
         report['siteName'] = node.attrs.get('name', None)
         for subnode in node.children:
+            #HERE
+            if subnode.name == 'subsite': report['subSiteName'] = subnode.attrs.get('name',None)
             if subnode.name == 'event-data':
                 targets['event-data'].send((report, subnode))
             elif subnode.name == 'calib-data':
@@ -240,6 +266,9 @@ def processSite(targets):
                 targets['local-stage-out'].send((report, subnode))
             elif subnode.name == 'fallback-stage-out':
                 targets['fallback-stage-out'].send((report, subnode))
+            #HERE
+            elif subnode.name == 'stage-out':
+                targets['stage-out'].send((report, subnode))
 
 
 
@@ -272,6 +301,35 @@ def processLocalStageOut():
             elif subnode.name == 'catalog':
                 localReport[subnode.name] = subnode.attrs.get('url', None)
         report['localStageOut'] = localReport
+
+#HERE
+#<stage-out>
+#     <method volume="CERN_EOS_T0" protocol="XRootD" command="xrdcp" option="--wma-diablewriterecovery"/>
+#</stage-out>
+@coroutine
+def processStageOut():
+    """
+    Find the stage-out directory
+
+    """
+    print("Calling processStageOut")
+    while True:
+        print("Inside while loop")
+        report, node = (yield)
+        #print("stageOut, report: ", report)
+        #print("stageOut, node: ", node)
+        localReport = []
+        for subnode in node.children:
+          tmp = {}
+          tmp['site'] = subnode.attrs.get('site', None)
+          tmp['volume'] = subnode.attrs.get('volume', None)
+          tmp['protocol'] = subnode.attrs.get('protocol', None)
+          tmp['command'] = subnode.attrs.get('command', None)
+          tmp['option'] = subnode.attrs.get('option', None)
+          localReport.append(tmp)
+        print('Local report stage-out: ',localReport)
+        report['stageOut'] = localReport
+
 
 @coroutine
 def processFallbackStageOut():

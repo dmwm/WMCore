@@ -13,7 +13,7 @@ import tempfile
 
 from WMCore.WMBase import getTestBase
 
-from WMCore.Storage.TrivialFileCatalog import readTFC, TrivialFileCatalog
+from WMCore.Storage.TrivialFileCatalog import loadTFC,readTFC,tfcFilename,TrivialFileCatalog
 
 
 class TrivialFileCatalogTest(unittest.TestCase):
@@ -53,6 +53,21 @@ class TrivialFileCatalogTest(unittest.TestCase):
                 self.assertEqual(x['protocol'] in ['direct', 'dcap', 'srm', 'srmv2'],
                                  True, 'Could not find protocol %s' % (x['protocol']))
                 self.assertEqual(x['chain'], None, 'Invalid chain %s' % (x['chain']))
+
+    def testRucioFileCatalog(self):
+        """
+        Run some simple tests on reading a RucioFileCatalog
+
+        """
+        storage_att={'site':'T1_US_FNAL','subSite':'T1_US_FNAL','storageSite':'T1_US_FNAL',\
+            'volume':'FNAL_dCache_EOS','protocol':'XRootD'}
+        tfcFilename_var = tfcFilename(str(),storage_att,False)
+        if not os.path.exists(tfcFilename_var):
+            raise Exception("No RucioFileCatalog found! %s"% tfcFilename1)
+        tfcInstance = readTFC(tfcFilename_var,storage_att,False)
+        tfcInstance = loadTFC(str(),storage_att,False)
+        
+
 
 
     def testRoundTrip(self):

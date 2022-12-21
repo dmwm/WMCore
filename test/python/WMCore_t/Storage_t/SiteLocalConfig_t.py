@@ -29,9 +29,10 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         Verify that the FNAL site config file is parsed correctly.
         """
+        #HERE
         fnalConfigFileName = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
-                                          "T1_US_FNAL_SiteLocalConfig.xml")
+                                          "T1_US_FNAL_SiteLocalConfig_working.xml")
 
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
 
@@ -73,6 +74,7 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         assert mySiteConfig.fallbackStageOut == [], \
                "Error: Fallback config is incorrect."
+        assert False
         return
 
     def testVanderbiltSiteLocalConfig(self):

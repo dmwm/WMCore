@@ -32,9 +32,14 @@ class SiteLocalConfigTest(unittest.TestCase):
         #HERE
         fnalConfigFileName = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
-                                          "T1_US_FNAL_SiteLocalConfig_working.xml")
+                                          "T1_US_FNAL_SiteLocalConfig.xml")
 
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
+        #switch between old TFC and new Rucio data catalog
+        mySiteConfig.useTFC = False 
+        if not mySiteConfig.useTFC:
+          os.environ["SITECONFIG_PATH"] = "/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL"
+        mySiteConfig.read()
 
         assert mySiteConfig.siteName == "T1_US_FNAL", "Error: Wrong site name."
         assert len(list(mySiteConfig.eventData)) == 1, "Error: Wrong number of event data keys."
@@ -67,14 +72,20 @@ class SiteLocalConfigTest(unittest.TestCase):
         assert len(goldenProxies) == 0, \
                 "Error: Missing proxy servers."
 
-        assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
+        if mySiteConfig.useTFC:
+          assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
                "Error: Wrong stage out command."
-        assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
+          assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
+               "Error: TFC catalog is not correct."
+        else:
+          assert mySiteConfig.localStageOut["command"] == "xrdcp", \
+               "Error: Wrong stage out command."
+          assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL/storage.json?protocol=XRootD", \
                "Error: TFC catalog is not correct."
 
         assert mySiteConfig.fallbackStageOut == [], \
                "Error: Fallback config is incorrect."
-        assert False
+        #assert False
         return
 
     def testVanderbiltSiteLocalConfig(self):

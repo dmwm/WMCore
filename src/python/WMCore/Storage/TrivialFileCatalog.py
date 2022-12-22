@@ -210,14 +210,15 @@ def tfcFilename(contactString,storageAttr={},useTFC=True):
       storageSite = storageAttr['storageSite']
       #get site config
       siteconfig_path = os.getenv('SITECONFIG_PATH',None)
+      #print(siteconfig_path)
       if not siteconfig_path:
         raise RuntimeError('SITECONFIG_PATH is not defined')
       subPath = ''
       #not a cross site use local path given in SITECONFIG_PATH
       if site == storageSite:
         #it is a site (no defined subSite), use local path given in SITECONFIG_PATH
-        if subSite == '':
-          subPath = siteconfig_path;
+        if subSite == None:
+          subPath = siteconfig_path
         #it is a subsite, move one level up
         else:
           subPath = siteconfig_path + '/..'
@@ -272,7 +273,7 @@ def readTFC(filename,storageAttr={},useTFC=True):
       #return tfcInstance
     else:
       try:
-        print('Filename: ',filename)
+        #print('Filename: ',filename)
         json_file = open(filename)
         js_elements = json.load(json_file)
       except Exception as ex:
@@ -312,7 +313,16 @@ def readTFC(filename,storageAttr={},useTFC=True):
     
     return tfcInstance
 
-
+def rseName(storageAttr):
+  rse = None
+  print(storageAttr)
+  storageJsonName = tfcFilename(None,storageAttr,False)
+  json_file=open(storageJsonName)
+  js_elements = json.load(json_file)
+  for js_element in js_elements:
+    if js_element['site'] == storageAttr['site'] and js_element['volume'] == storageAttr['volume']:
+      rse = js_element['rse']
+  return rse
 
 def loadTFC(contactString,storageAttr={},useTFC=True):
     """

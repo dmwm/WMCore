@@ -13,7 +13,6 @@ import tempfile
 
 from WMQuality.TestInit import TestInit
 from Utils.TemporaryEnvironment import tmpEnv
-from Utils.PythonVersion import PY3
 from WMCore.WMRuntime.Tools.Scram import (Scram, OS_TO_ARCH, ARCH_TO_OS, getSingleScramArch,
                                           isCMSSWSupported, isEnforceGUIDInFileNameSupported)
 
@@ -24,8 +23,6 @@ class Scram_t(unittest.TestCase):
         self.testInit.setLogging()
         self.testDir = self.testInit.generateWorkDir()
         self.oldCwd = os.getcwd()
-        if PY3:
-            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         self.testInit.delWorkDir()
@@ -105,13 +102,13 @@ class Scram_t(unittest.TestCase):
         self.assertEqual(s.lastExecuted, comm)
 
     def testArchMap(self):
-        self.assertItemsEqual(OS_TO_ARCH['rhel6'], ['slc5', 'slc6'])
-        self.assertItemsEqual(OS_TO_ARCH['rhel7'], ['slc7'])
-        self.assertItemsEqual(OS_TO_ARCH['rhel8'], ['el8', 'cc8', 'cs8', 'alma8'])
-        self.assertItemsEqual(ARCH_TO_OS['slc6'], ['rhel6'])
+        self.assertCountEqual(OS_TO_ARCH['rhel6'], ['slc5', 'slc6'])
+        self.assertCountEqual(OS_TO_ARCH['rhel7'], ['slc7'])
+        self.assertCountEqual(OS_TO_ARCH['rhel8'], ['el8', 'cc8', 'cs8', 'alma8'])
+        self.assertCountEqual(ARCH_TO_OS['slc6'], ['rhel6'])
         self.assertEqual(len(ARCH_TO_OS), 7)
-        self.assertItemsEqual(ARCH_TO_OS['slc7'], ['rhel7'])
-        self.assertItemsEqual(ARCH_TO_OS['slc7'], ['rhel7'])
+        self.assertCountEqual(ARCH_TO_OS['slc7'], ['rhel7'])
+        self.assertCountEqual(ARCH_TO_OS['slc7'], ['rhel7'])
 
     def testScramArchParsing(self):
         """

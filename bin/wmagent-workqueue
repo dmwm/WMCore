@@ -4,7 +4,6 @@ wmagent-workqueue
 
 Utility script for manipulating workqueue.
 """
-from __future__ import print_function
 
 import os
 import sys

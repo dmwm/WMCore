@@ -3,7 +3,6 @@
 Commands for initializing the proper database tables
 or cleaning the database.
 """
-from __future__ import print_function
 
 from builtins import input
 

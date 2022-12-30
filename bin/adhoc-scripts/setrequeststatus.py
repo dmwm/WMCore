@@ -2,10 +2,7 @@
 """
 This script can be used to update the status of a request in ReqMgr2.
 """
-from __future__ import print_function, division
 
-from future import standard_library
-standard_library.install_aliases()
 import http.client
 import json
 import os

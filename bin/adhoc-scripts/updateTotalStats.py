@@ -109,7 +109,7 @@ def main():
     msDbg = MSDbg(msConfig, logger=logger)
 
     badWfList = []
-    reqList = msDbg.getRequestRecords(reqStatus).values()
+    reqList = list(msDbg.getRequestRecords(reqStatus).values())
 
     allReqTypes = {req['RequestType'] for req in reqList}
     logger.info("All possible request types: \n%s", pformat(allReqTypes))
@@ -120,7 +120,7 @@ def main():
 
     for wflow in reqList:
         # First  check if the current workflwo suffers the issue:
-        if not keySetToCheck < wflow.keys():
+        if not keySetToCheck < list(wflow.keys()):
             # Create a `tmp` key to fill in all the information we'll need in the follwoing steps.
             wflow['tmp'] = {}
 

@@ -4,7 +4,6 @@
 Generates components, handlers and threadpools from 
 a specification. It sets up the skeleton for development.
 """
-from __future__ import print_function
 
 __revision__ = "$Id: wmcore-new-flow,v 1.1 2009/01/14 12:31:22 fvlingen Exp $"
 __version__ = "$Revision: 1.1 $"

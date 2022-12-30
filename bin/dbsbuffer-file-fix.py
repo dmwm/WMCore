@@ -1,15 +1,10 @@
 """
 """
-from __future__ import print_function
-
-from future.utils import listvalues
 
 import logging
 import os
-import sys
 import threading
 
-from WMCore.Database.CMSCouch import Database
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMInit import connectToDB
 
@@ -38,7 +33,7 @@ def fixDBSmissingFileAssoc():
     print("trimed %s lenth" % len(result))
     insertSQL = """INSERT INTO dbsbuffer_file_location (filename, location)
                VALUES (:fileid, :seid)"""
-    done = formatter.dbi.processData(insertSQL, listvalues(result))
+    done = formatter.dbi.processData(insertSQL, list(result.values()))
     print("inserted %s" % done)
 
 if __name__ == '__main__':

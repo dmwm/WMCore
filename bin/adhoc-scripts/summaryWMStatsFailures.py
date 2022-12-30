@@ -4,12 +4,7 @@ This script queries the WMStats server and creates a summary of success, failure
 type of failures, files skipped per agent; as well as an overview of failures
 per task
 """
-from __future__ import print_function, division
 
-from future.utils import viewitems
-
-from future import standard_library
-standard_library.install_aliases()
 import http.client
 import json
 import os
@@ -47,7 +42,7 @@ def main():
         print("  Skipped files: %s" % pformat(data[agent]['skipped']))
         print("  Overall agent status:\t\t %s" % data[agent]['status'])
 
-        for task, values in viewitems(data[agent]['tasks']):
+        for task, values in data[agent]['tasks'].items():
             if values['jobtype'] not in ['Production', 'Processing', 'Merge', 'Harvest']:
                 # print("Skipping task type %s, for %s" % (values['jobtype'], task))
                 continue

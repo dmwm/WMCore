@@ -7,8 +7,6 @@ directory. This command retrieves all of them and merges them
 together into one big configuration file that operators can then
 edit.
 """
-from __future__ import print_function
-
 __revision__ = "$Id: wmcore-new-config,v 1.5 2010/01/22 22:08:32 sryu Exp $"
 __version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"

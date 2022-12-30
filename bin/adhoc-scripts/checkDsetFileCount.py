@@ -4,13 +4,11 @@ Script meant to fetch the number of blocks and files for a given dataset,
 using both DBS and Rucio services. It prints any inconsistency among
 those two.
 """
-from __future__ import print_function, division
+
 
 import logging
 import sys
 from collections import Counter
-
-from future.utils import viewkeys, viewvalues
 
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 from WMCore.Services.Rucio.Rucio import Rucio
@@ -95,20 +93,20 @@ def main():
     dbsOutput, dbsFilesCounter = getFromDBS(datasetName, logger)
 
     logger.info("*** Dataset: %s", datasetName)
-    logger.info("Rucio file count : %s", sum(viewvalues(rucioOutput)))
+    logger.info("Rucio file count : %s", sum(rucioOutput.values()))
     logger.info("DBS file count   : %s", dbsFilesCounter['valid'] + dbsFilesCounter['invalid'])
     logger.info(" - valid files   : %s", dbsFilesCounter['valid'])
     logger.info(" - invalid files : %s", dbsFilesCounter['invalid'])
-    logger.info("Blocks in Rucio but not in DBS: %s", set(viewkeys(rucioOutput)) - set(viewkeys(dbsOutput)))
-    logger.info("Blocks in DBS but not in Rucio: %s", set(viewkeys(dbsOutput)) - set(viewkeys(rucioOutput)))
+    logger.info("Blocks in Rucio but not in DBS: %s", set(rucioOutput.keys()) - set(dbsOutput.keys()))
+    logger.info("Blocks in DBS but not in Rucio: %s", set(dbsOutput.keys()) - set(rucioOutput.keys()))
 
     for blockname in rucioOutput:
         if blockname not in dbsOutput:
             logger.error("This block does not exist in DBS: %s", blockname)
             continue
-        if rucioOutput[blockname] != sum(viewvalues(dbsOutput[blockname])):
+        if rucioOutput[blockname] != sum(dbsOutput[blockname].values()):
             logger.warning("Block with file mismatch: %s", blockname)
-            logger.warning("\tRucio: %s\t\tDBS: %s", rucioOutput[blockname], sum(viewvalues(dbsOutput[blockname])))
+            logger.warning("\tRucio: %s\t\tDBS: %s", rucioOutput[blockname], sum(dbsOutput[blockname].values()))
 
 
 if __name__ == "__main__":

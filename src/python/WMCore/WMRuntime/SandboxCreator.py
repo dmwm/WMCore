@@ -7,12 +7,7 @@
 
 from builtins import map, object
 
-from future import standard_library
-
-from Utils.PythonVersion import PY2
 from Utils.Utilities import encodeUnicodeToBytes
-
-standard_library.install_aliases()
 
 import logging
 import os

@@ -8,7 +8,7 @@ Just a FYI, there are basically 3 important directories:
  2. the job space area, where the sandbox and the runtime log is created
  3. the task space area, where the steps and cmsRun logs are
 """
-from __future__ import print_function
+
 
 import logging
 import os

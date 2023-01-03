@@ -4,7 +4,7 @@ _SetupCMSSWPset_
 Create a CMSSW PSet suitable for running a WMAgent job.
 
 """
-from __future__ import print_function
+
 from builtins import next, object
 
 import json
@@ -14,9 +14,8 @@ import pickle
 import socket
 
 from PSetTweaks.PSetTweak import PSetTweak
-from PSetTweaks.WMTweak import  makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
-from Utils.PythonVersion import PY3
-from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytesConditional
+from PSetTweaks.WMTweak import makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
@@ -488,8 +487,7 @@ class SetupCMSSWPset(ScriptInterface):
             os.path.join(self.stepSpace.location, self.configPickle))
 
         if hasattr(self.step.data.application.configuration, "pickledarguments"):
-            pklArgs = encodeUnicodeToBytesConditional(self.step.data.application.configuration.pickledarguments,
-                                                      condition=PY3)
+            pklArgs = encodeUnicodeToBytes(self.step.data.application.configuration.pickledarguments)
             args = pickle.loads(pklArgs)
             datasetName = args.get('datasetName', None)
         if datasetName:
@@ -684,8 +682,7 @@ class SetupCMSSWPset(ScriptInterface):
         if scenario is not None and scenario != "":
             self.logger.info("Setting up job scenario/process")
             if getattr(self.step.data.application.configuration, "pickledarguments", None) is not None:
-                pklArgs = encodeUnicodeToBytesConditional(self.step.data.application.configuration.pickledarguments,
-                                                          condition=PY3)
+                pklArgs = encodeUnicodeToBytes(self.step.data.application.configuration.pickledarguments)
                 funcArgs = pickle.loads(pklArgs)
             else:
                 funcArgs = {}

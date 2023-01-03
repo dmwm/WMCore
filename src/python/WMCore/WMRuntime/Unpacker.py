@@ -18,7 +18,7 @@ This will then do the following:
 - set everything up so that you can just add the job dir to the pythonpath and then call the runtime startup for the WMCore/WMRuntime stuff
 
 """
-from __future__ import print_function
+
 
 import getopt
 import logging
@@ -134,7 +134,7 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
 if __name__ == '__main__':
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "", options.keys())
+        opts, args = getopt.getopt(sys.argv[1:], "", list(options.keys()))
     except getopt.GetoptError as ex:
         msg = "Error processing commandline args:\n"
         msg += str(ex)

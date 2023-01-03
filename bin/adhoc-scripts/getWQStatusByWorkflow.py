@@ -12,7 +12,7 @@ and prints a summary of them
 NOTE: you need to source the agent environment:
 source apps/wmagent/etc/profile.d/init.sh
 """
-from __future__ import print_function, division
+
 
 import os
 import sys

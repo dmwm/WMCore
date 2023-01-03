@@ -12,10 +12,9 @@ It will:
  4. assign workflows during creation time (also based on the parameters
  provided in command line)
 """
-from __future__ import print_function
+
 
 from builtins import range, str as newstr, bytes as newbytes
-from future.utils import viewitems
 
 import sys
 import os
@@ -145,7 +144,7 @@ def handleAssignment(args, fname, jsonData):
         # always overwrite it as provided in the command line and task/step name
         if 'ProcessingString' in assignDict and isinstance(assignDict['ProcessingString'], dict):
             assignRequest['ProcessingString'] = assignDict['ProcessingString']
-            for task, _ in viewitems(assignRequest['ProcessingString']):
+            for task, _ in assignRequest['ProcessingString'].items():
                 assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
 
         # also reuse values as provided in the request schema at creation level

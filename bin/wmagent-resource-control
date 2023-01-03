@@ -4,9 +4,6 @@ wmagent-resource-control
 
 Utility script for manipulating resource control.
 """
-from __future__ import print_function
-
-from future.utils import viewitems
 
 import os
 import sys
@@ -189,7 +186,7 @@ def printThresholds(resourceControl, desiredSiteName):
         print("%s - %d running, %d pending, %d running slots total, %d pending slots total%s:" % (
             siteName, runningJobs, pendingJobs, runningSlots, pendingSlots, stateMsg))
 
-        for task, thres in viewitems(siteThresholds['thresholds']):
+        for task, thres in siteThresholds['thresholds'].items():
             print("  %s - %d running, %d pending, %d max running, %d max pending, priority %s" %
                   (task, thres["task_running_jobs"], thres['task_pending_jobs'], thres["max_slots"],
                    thres["pending_slots"], str(thres.get("priority", 1))))

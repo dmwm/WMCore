@@ -4,7 +4,6 @@ _inject-to-config-cache_
 
 Add a config and it's meta data to the config cache.
 """
-from __future__ import print_function
 
 import os
 import sys

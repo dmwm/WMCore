@@ -4,9 +4,9 @@ Script for killing a workflow: delete from LQ, delete in WMBS and set cancelled 
 This has to be executed in each agent the workflow is running in (Agent Level)
 
 """
-from __future__ import print_function
 from builtins import str
-import os, sys
+import os
+import sys
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WMInit import connectToDB

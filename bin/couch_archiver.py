@@ -4,7 +4,7 @@ _couch_archiver_
 
 Replicate an agent's jobdump to another couch machine.
 """
-from __future__ import print_function
+
 
 import os
 import sys

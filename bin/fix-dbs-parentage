@@ -41,8 +41,6 @@ $manage execute-agent fix-dbs-parentage -p --insert -d /SingleMuon/Run2016D-03Fe
 
 """
 
-from __future__ import print_function, division
-
 from builtins import input
 import time
 import datetime

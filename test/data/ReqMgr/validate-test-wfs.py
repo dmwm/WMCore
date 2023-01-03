@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
-from future.utils import viewitems
-
 import argparse
 import getpass
 import json
@@ -11,38 +8,17 @@ import sys
 from collections import OrderedDict
 from textwrap import TextWrapper
 
-try:
-    # python2
-    import urllib2
-    HTTPError = urllib2.HTTPError
-    URLError = urllib2.URLError
-    build_opener = urllib2.build_opener
-    HTTPSHandler = urllib2.HTTPSHandler
-    import urllib
-    urlencode = urllib.urlencode
-    quote_plus = urllib.quote_plus
-    import httplib
-    HTTPSConnection = httplib.HTTPSConnection
-except:
-    # python3
-    import urllib.error
-    HTTPError = urllib.error.HTTPError, 
-    URLError = urllib.error.URLError
-    import urllib.request
-    build_opener = urllib.request.build_opener
-    HTTPSHandler = urllib.request.HTTPSHandler
-    import urllib.parse
-    urlencode = urllib.parse.urlencode
-    quote_plus = urllib.parse.quote_plus
-    import http.client
-    HTTPSConnection = http.client.HTTPSConnection
+from urllib.error import HTTPError, URLError
+from urllib.request import build_opener, HTTPSHandler
+from urllib.parse import urlencode, quote_plus
+from http.client import HTTPSConnection
 
 # table parameters
 SEPARATELINE = "|" + "-" * 51 + "|"
 SPLITLINE = "|" + "*" * 51 + "|"
 
 # ID for the User-Agent
-CLIENT_ID = 'validate-test-wfs/1.2::python/%s.%s' % sys.version_info[:2]
+CLIENT_ID = 'validate-test-wfs/1.3::python/%s.%s' % sys.version_info[:2]
 
 # Cached DQMGui data
 cachedDqmgui = None
@@ -121,7 +97,7 @@ def getRucioToken(rucioUrl):
                 "http://cms-rucio.cern.ch": "https://cms-rucio-auth.cern.ch"}
 
     rucioAuth = None
-    for hostUrl, authUrl in viewitems(mapHosts):
+    for hostUrl, authUrl in mapHosts.items():
         if hostUrl == rucioUrl:
             rucioAuth = authUrl
             rucioAcct = getpass.getuser()
@@ -359,7 +335,7 @@ def compareSpecial(d1, d2, key=None):
 
         if key == 'PNN':
             for dset in d2:
-                for block, value in viewitems(d2[dset]):
+                for block, value in d2[dset].items():
                     if isinstance(value, dict):
                         if d1[dset][block][key] != d2[dset][block][key]:
                             return outcome
@@ -403,7 +379,7 @@ def twClosure(replace_whitespace=False,
             if reCall:
                 output += '\n'
             ind += '    '
-            for key, value in viewitems(obj):
+            for key, value in obj.items():
                 output += "%s%s: %s" % (ind,
                                         ''.join(twr.wrap(key)),
                                         twEnclosed(value, ind, reCall=True))

@@ -1,3 +1,13 @@
+2.1.6rc3 to 2.1.6rc4:
+  - Convert test/data/ReqMgr scripts to python3-only (Alan Malta Rodrigues) #11419
+  - Convert bin/ scripts to python3-only (Alan Malta Rodrigues) #11419
+  - Remove python2 compatibility for WMRuntime package (Alan Malta Rodrigues) #11420
+  - Fix multirequest API to encode input parameters and properly handle gziped content (Valentin Kuznetsov) #11404
+  - Add generic msDebugger && Fetch all wflows with missing TotaInput* parameters. (Todor Ivanov) #11366
+  - Add crt/key path resolution during service creation for RucioConMon. (Todor Ivanov) #11398
+  - Rename t0 package for pypi (to t0-agent) (Kenyi Hurtado) #11345
+
+
 2.1.6rc2 to 2.1.6rc3:
   - Add unit test for parsing HTTP header (Valentin Kuznetsov) #11400
   - Fix regexp pattern to match HTTP/1.1 and HTTP/2 (Valentin Kuznetsov) #11400

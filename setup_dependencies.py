@@ -148,6 +148,10 @@ dependencies = {
         'packages': ['WMCore.MicroService.MSOutput+'],
         'systems': ['reqmgr2ms-core'],
     },
+    'reqmgr2ms-pileup': {
+        'packages': ['WMCore.MicroService.MSPileup+'],
+        'systems': ['reqmgr2ms-core'],
+    },
     'reqmgr2ms-transferor': {
         'packages': ['WMCore.MicroService.MSTransferor+'],
         'systems': ['reqmgr2ms-core'],

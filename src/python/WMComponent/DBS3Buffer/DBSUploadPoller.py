@@ -114,7 +114,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
                 logging.error(msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:
-            msg = f"Hit a general exception while inserting block {name. Error: {str(ex}}"
+            msg = f"Hit a general exception while inserting block {name}. Error: {str(ex)}"
             logging.exception(msg)
             results.put({'name': name, 'success': "error", 'error': msg})
     return

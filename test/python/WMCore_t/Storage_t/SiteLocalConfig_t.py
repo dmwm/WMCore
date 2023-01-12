@@ -29,16 +29,15 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         Verify that the FNAL site config file is parsed correctly.
         """
-        #HERE
         fnalConfigFileName = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_US_FNAL_SiteLocalConfig.xml")
 
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
         #switch between old TFC and new Rucio data catalog
-        mySiteConfig.useTFC = False 
-        if not mySiteConfig.useTFC:
-          os.environ["SITECONFIG_PATH"] = "/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL"
+        mySiteConfig.useTFC = False #need to set SITECONFIG_PATH when this is False 
+        #if not mySiteConfig.useTFC:
+        #  os.environ["SITECONFIG_PATH"] = "/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL"
         mySiteConfig.read()
 
         assert mySiteConfig.siteName == "T1_US_FNAL", "Error: Wrong site name."
@@ -77,14 +76,17 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Wrong stage out command."
           assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
                "Error: TFC catalog is not correct."
+          assert mySiteConfig.fallbackStageOut == [], \
+               "Error: Fallback config is incorrect."
         else:
           assert mySiteConfig.localStageOut["command"] == "xrdcp", \
                "Error: Wrong stage out command."
-          assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL/storage.json?protocol=XRootD", \
+          assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL/storage.json?protocol=XRootD&volume=FNAL_dCache_EOS", \
                "Error: TFC catalog is not correct."
-
-        assert mySiteConfig.fallbackStageOut == [], \
+          assert mySiteConfig.fallbackStageOut, \
                "Error: Fallback config is incorrect."
+          #mySiteConfig.trivialFileCatalog()
+
         #assert False
         return
 

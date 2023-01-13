@@ -34,10 +34,8 @@ class SiteLocalConfigTest(unittest.TestCase):
                                           "WMCore_t/Storage_t",
                                           "T1_US_FNAL_SiteLocalConfig.xml")
         #fnalConfigFileName = '/cvmfs/cms.cern.ch/SITECONF/T1_DE_KIT/KIT-HOREKA/JobConfig/site-local-config.xml'
-        mySiteConfig = SiteLocalConfig(fnalConfigFileName)
-        #switch between old TFC and new Rucio data catalog
-        mySiteConfig.useTFC = False#need to set SITECONFIG_PATH when this is False 
-        mySiteConfig.read()
+        #switch between old TFC and new Rucio data catalog by changing the last parameter, need to set SITECONFIG_PATH when this is False 
+        mySiteConfig = SiteLocalConfig(fnalConfigFileName,False)
         #print(mySiteConfig.localStageOut)
         #print(mySiteConfig.fallbackStageOut)
         #tfcInstance = mySiteConfig.trivialFileCatalog()

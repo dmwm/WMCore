@@ -70,8 +70,8 @@ class SiteLocalConfig(object):
     Readonly API object for getting info out of the SiteLocalConfig file
 
     """
-    def __init__(self, siteConfigXML):
-        self.useTFC = False #switch to use old TFC or new Rucio
+    def __init__(self, siteConfigXML, useTFC=True):
+        self.useTFC = useTFC #switch to use old TFC or new Rucio
         self.siteConfigFile = siteConfigXML
         self.siteName = None
         self.subSiteName = None

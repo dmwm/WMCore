@@ -13,7 +13,7 @@ import tempfile
 
 from WMCore.WMBase import getTestBase
 
-from WMCore.Storage.TrivialFileCatalog import loadTFC,readTFC,tfcFilename,TrivialFileCatalog
+from WMCore.Storage.TrivialFileCatalog import getCatalog, loadTFC,readTFC,tfcFilename,TrivialFileCatalog
 
 
 class TrivialFileCatalogTest(unittest.TestCase):
@@ -56,19 +56,29 @@ class TrivialFileCatalogTest(unittest.TestCase):
 
     def testRucioFileCatalog(self):
         """
-        Run some simple tests on reading a RucioFileCatalog
+        Run some simple tests on reading a Rucio FileCatalog
 
         """
-        storage_att={'site':'T1_US_FNAL','subSite':'T1_US_FNAL','storageSite':'T1_US_FNAL',\
+        storage_att={'site':'T1_US_FNAL','subSite':None,'storageSite':'T1_US_FNAL',\
             'volume':'FNAL_dCache_EOS','protocol':'XRootD'}
-        tfcFilename_var = tfcFilename(str(),storage_att,False)
+        catalog = getCatalog(storage_att)
+        tfcFilename_var = tfcFilename(catalog)
         if not os.path.exists(tfcFilename_var):
-            raise Exception("No RucioFileCatalog found! %s"% tfcFilename1)
+            raise Exception("No RucioFileCatalog found! %s"% tfcFilename_var)
         tfcInstance = readTFC(tfcFilename_var,storage_att,False)
-        tfcInstance = loadTFC(str(),storage_att,False)
-        
-
-
+        self.assertEqual(type(tfcInstance), type(TrivialFileCatalog()))
+        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
+            for x in tfcInstance[mapping]:
+                self.assertEqual('path-match-expr' in x, True)
+                self.assertEqual('path-match' in x, True)
+                self.assertEqual('protocol' in x, True)
+                self.assertEqual('result' in x, True)
+                self.assertEqual('chain' in x, True)
+                self.assertEqual(x['protocol'] in ['XRootD','direct', 'dcap', 'srm', 'srmv2'],
+                                 True, 'Could not find protocol %s' % (x['protocol']))
+                self.assertEqual(x['chain'], None, 'Invalid chain %s' % (x['chain']))
+        tfcInstance = loadTFC(catalog,storage_att,False)
+        #assert False
 
     def testRoundTrip(self):
         """

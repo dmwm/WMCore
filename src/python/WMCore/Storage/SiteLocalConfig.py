@@ -14,7 +14,7 @@ import os
 import logging
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
-from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC, rseName, lfnPrefix
+from WMCore.Storage.TrivialFileCatalog import getCatalog, tfcFilename, tfcProtocol, readTFC, rseName, lfnPrefix
 
 
 def loadSiteLocalConfig():
@@ -287,11 +287,12 @@ def processLocalStageOut():
             #now construct an url as used in trivial file catalog
             subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
             aStorageSite = subnode.attrs.get('site', None)
-            if aStorageSite == None: aStorageSite = report['siteName']
+            if aStorageSite is None: aStorageSite = report['siteName']
             aProtocol = subnode.attrs.get('protocol', None)
             aVolume = subnode.attrs.get('volume', None)
             storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol} 
-            localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storage_att,False)+'?protocol='+aProtocol+'&volume='+aVolume
+            #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storage_att,False)+'?protocol='+aProtocol+'&volume='+aVolume
+            localReport['catalog'] = getCatalog(storage_att)
             localReport['command'] = subnode.attrs.get('command', None)
             localReport['option'] = subnode.attrs.get('option', None)
             localReport['phedex-node'] = rseName(storage_att)
@@ -346,7 +347,7 @@ def processFallbackStageOut():
           for subnode in node.children[1:]:
             subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
             aStorageSite = subnode.attrs.get('site', None)
-            if aStorageSite == None: aStorageSite = report['siteName']
+            if aStorageSite is None: aStorageSite = report['siteName']
             aProtocol = subnode.attrs.get('protocol', None)
             aVolume = subnode.attrs.get('volume', None)
             storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol}

@@ -59,6 +59,16 @@ OUTPUT_REPORT = dict(thread_id="",
                      num_datasets_subscribed=0,
                      num_data_requests=0)
 
+# summary metrics for the MSPileup thread
+# (also available through the `info` REST API)
+PILEUP_REPORT = dict(thread_id="",
+                     start_time=0,
+                     end_time=0,
+                     execution_time=0,
+                     error="",
+                     total_num_pileups=0,
+                     total_num_rules=0)
+
 # summary metrics for the MSRuleCleaner thread
 # (also available through the `info` REST API)
 RULECLEANER_REPORT = dict(thread_id="",

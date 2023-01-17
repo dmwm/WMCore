@@ -59,6 +59,7 @@ class MSPileupData():
         self.msConfig.setdefault("mongoDBReplicaSet", None)
         self.msConfig.setdefault("mongoDBPort", None)
         self.msConfig.setdefault("mockMongoDB", False)
+        self.validRSEs = self.msConfig.get('validRSEs', [])
 
         # A full set of valid database connection parameters can be found at:
         # https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
@@ -90,7 +91,7 @@ class MSPileupData():
         """
         # first, create MSPileupObj which will be validated against its schema
         try:
-            obj = MSPileupObj(pdict)
+            obj = MSPileupObj(pdict, validRSEs=self.validRSEs)
             doc = obj.getPileupData()
         except Exception as exp:
             msg = f"Failed to create MSPileupObj, {exp}"

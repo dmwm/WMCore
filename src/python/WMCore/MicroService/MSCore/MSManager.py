@@ -77,6 +77,18 @@ class MSManager(object):
         self.statusOutput = {}
         self.statusRuleCleaner = {}
         self.statusUnmerged = {}
+        self.statusPileup = {}
+
+        # initialize pileup module
+        if 'pileup' in self.services:
+            from WMCore.MicroService.MSPileup.MSPileup import MSPileup
+            self.msPileup = MSPileup(self.msConfig, logger=self.logger)
+            thname = 'MSPileup'
+            self.pileupThread = start_new_thread(thname, daemonOpt,
+                                                 (self.pileup,
+                                                  self.msConfig['interval'],
+                                                  self.logger))
+            self.logger.info("### Running %s thread %s", thname, self.pileupThread.running())
 
         # initialize transferor module
         if 'transferor' in self.services:
@@ -165,6 +177,18 @@ class MSManager(object):
 
         self.msConfig['reqmgrCacheUrl'] = self.msConfig['reqmgr2Url'].replace('reqmgr2',
                                                                               'couchdb/reqmgr_workload_cache')
+
+    def pileup(self, *args, **kwargs):
+        """
+        MSManager pileup function.
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the pileup thread...")
+        res = self.msPileup.status()
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total pileup execution time: %.2f secs", res['execution_time'])
+        self.statusPileup = res
 
     def transferor(self, reqStatus):
         """
@@ -268,6 +292,10 @@ class MSManager(object):
         if 'monitor' in self.services and hasattr(self, 'monitThread'):
             self.monitThread.stop()
             status = self.monitThread.running()
+        # stop MSPileup thread
+        if 'pileup' in self.services and hasattr(self, 'pileupThread'):
+            self.pileupThread.stop()  # stop checkStatus thread
+            status = self.pileupThread.running()
         # stop MSTransferor thread
         if 'transferor' in self.services and hasattr(self, 'transfThread'):
             self.transfThread.stop()  # stop checkStatus thread
@@ -298,7 +326,7 @@ class MSManager(object):
             rse: string with the name of the RSE (e.g 'T2_DE_DESY')
         :return: data transfer information for this request
         """
-        if 'ruleCleaner' in self.services or 'unmerged' in self.services:
+        if 'ruleCleaner' in self.services or 'unmerged' in self.services or 'pileup' in self.services:
             data = {}
         else:
             data = {"request": reqName, "transferDoc": None}
@@ -322,9 +350,56 @@ class MSManager(object):
                 data = self.msUnmerged.getStatsFromMongoDB(detail=detail, rse=kwargs['rse'])
         return data
 
-    def delete(self, request):
-        "Delete request in backend"
-        pass
+    def get(self, **kwds):
+        """
+        Fetch data in backend, HTTP GET request
+        :param args: input parameters
+        :param kwds: positional arguments
+        :return: list of results
+        """
+        if 'pileup' in self.services:
+            return self.msPileup.getPileup(**kwds)
+        return []
+
+    def post(self, doc):
+        """
+        Either create or fetch data from backend, HTTP POST request
+
+        :param doc: input JSON doc for HTTP POST request
+        :return: list of results
+        """
+        if 'pileup' in self.services:
+            res = []
+            if 'pileupName' in doc:
+                # this is create POST request
+                res = self.msPileup.create(doc)
+            if 'query' in doc:
+                # this is POST request to get data for a given JSON query
+                res = self.msPileup.queryDatabase(doc)
+            return res
+        return []
+
+    def update(self, doc):
+        """
+        Update resource in backend, HTTP PUT request
+
+        :param doc: input JSON doc for HTTP PUT request
+        :return: list of results
+        """
+        if 'pileup' in self.services:
+            return self.msPileup.updatePileup(doc)
+        return []
+
+    def delete(self, spec):
+        """
+        Delete resource in backend, HTTP DELETE request
+
+        :param doc: input JSON spec for HTTP DELETE request
+        :return: list of results
+        """
+        if 'pileup' in self.services:
+            return self.msPileup.deletePileup(spec)
+        return []
 
     def status(self, detail, **kwargs):
         """
@@ -341,6 +416,8 @@ class MSManager(object):
         data = {"status": "OK"}
         if detail and 'transferor' in self.services:
             data.update(self.statusTrans)
+        elif detail and 'pileup' in self.services:
+            data.update(self.statusPileup)
         elif detail and 'monitor' in self.services:
             data.update(self.statusMon)
         elif detail and 'output' in self.services:

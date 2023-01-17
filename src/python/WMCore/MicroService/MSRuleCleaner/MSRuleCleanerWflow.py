@@ -148,7 +148,7 @@ class MSRuleCleanerWflow(dict):
         # NOTE: Those are fields defined as strings in the original workflow
         #       representation, but may turn into lists during the recursive
         #       search and we will use them as lists for the rest of the code.
-        for key in ['DataPileup', 'MCPileup', 'ParentDataset']:
+        for key in ['ParentDataset']:
             if not isinstance(myDoc[key], list):
                 if myDoc[key] is None:
                     myDoc[key] = []
@@ -191,8 +191,6 @@ class MSRuleCleanerWflow(dict):
             'ForceArchive': False,
             'RequestTransition': [],
             'IncludeParents': False
-            'DataPileup': [],
-            'MCPileup': [],
             'InputDataset': None,
             'ParentDataset': []
             }
@@ -217,8 +215,6 @@ class MSRuleCleanerWflow(dict):
             ('ForceArchive', False, bool),
             ('RequestTransition', [], list),
             ('IncludeParents', False, bool),
-            ('DataPileup', None, (bytes, str)),
-            ('MCPileup', None, (bytes, str)),
             ('InputDataset', None, (bytes, str)),
             ('ParentDataset', None, (bytes, str))]
 

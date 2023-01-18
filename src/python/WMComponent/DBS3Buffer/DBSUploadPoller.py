@@ -104,7 +104,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             if srvCode == 128:
                 # block already exist
                 logging.warning("Block %s already exists. Marking it as uploaded.", name)
-                results.put({'name': name, 'success': "uploaded"})
+                results.put({'name': name, 'success': "check"})
             elif srvCode in [132, 133, 134, 135, 136, 137, 138, 139, 140]:
                 # racing conditions
                 logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
@@ -114,7 +114,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
                 logging.error(msg)
                 results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:
-            msg = f"Hit a general exception while inserting block {name. Error: {str(ex}}"
+            msg = f"Hit a general exception while inserting block {name}. Error: {str(ex)}"
             logging.exception(msg)
             results.put({'name': name, 'success': "error", 'error': msg})
     return
@@ -766,11 +766,6 @@ class DBSUploadPoller(BaseWorkerThread):
             elif result["success"] == "check":
                 block = result["name"]
                 self.blocksToCheck.append(block)
-            else:
-                logging.error("Error found in multiprocess during process of block %s", result.get('name'))
-                logging.error(result['error'])
-                # Continue to the next block
-                # Block will remain in pending status until it is transferred
 
         if loadedBlocks:
             try:

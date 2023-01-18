@@ -14,10 +14,11 @@ import threading
 # ORA-01033: ORACLE initialization or shutdown in progress
 # (cx_Oracle.InterfaceError) not connected  # same as ORA-03114, in the new SQLAlchemy
 # (cx_Oracle.DatabaseError) ORA-25408: can not safely replay call
+# (cx_Oracle.DatabaseError) ORA-25401: can not continue fetches
 # and those two MySQL exceptions
 DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135", "ORA-12545", "ORA-00060", "ORA-01033",
                            "MySQL server has gone away", "Lock wait timeout exceeded",
-                           "(cx_Oracle.InterfaceError) not connected", "ORA-25408"]
+                           "(cx_Oracle.InterfaceError) not connected", "ORA-25408", "ORA-25401"]
 
 
 def db_exception_handler(f):

@@ -461,6 +461,7 @@ class AccountantWorker(WMConnectionBase):
             outputModules = set([])
             for fwjrFile in fileList:
                 outputModules.add(fwjrFile['outputModule'] + fwjrFile['dataset'].get('dataTier', ''))
+
             if set(outputMap) == outputModules:
                 pass
             elif jobType == "LogCollect" and not outputMap and outputModules == {'LogCollect'}:
@@ -474,37 +475,41 @@ class AccountantWorker(WMConnectionBase):
             elif jobType == "Express" and set(outputMap).difference(outputModules) == {'write_RAWRAW'}:
                 pass
             else:
-                failJob = True
+                # any job that is not multi-step and Processing/Production must FAIL!
                 if jobType in ["Processing", "Production"]:
-                    cmsRunSteps = 0
-                    for step in fwkJobReport.listSteps():
-                        if step.startswith("cmsRun"):
-                            cmsRunSteps += 1
-                    if cmsRunSteps > 1:
-                        failJob = False
-
-                if failJob:
-                    jobSuccess = False
-                    logging.error("Job %d , list of expected outputModules does not match job report, failing job",
-                                  jobID)
-                    logging.debug("Job %d , expected outputModules %s", jobID, sorted(outputMap.keys()))
-                    logging.debug("Job %d , fwjr outputModules %s", jobID, sorted(outputModules))
-                    fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
+                    cmsRunSteps = sum([1 for step in fwkJobReport.listSteps() if step.startswith("cmsRun")])
+                    if cmsRunSteps == 1:
+                        jobSuccess = False
+                    else:
+                        msg = f"Job {jobID} accepted for multi-step CMSSW, even though "
+                        msg += "the expected outputModules does not match content of the FWJR."
+                        logging.warning(msg)
                 else:
-                    logging.warning(
-                        "Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job",
-                        jobID)
-            # Make sure every file has a valid location
-            # see https://github.com/dmwm/WMCore/issues/9353
-            for fwjrFile in fileList:
-                # T0 has analysis file without any location, see:
-                # https://github.com/dmwm/WMCore/issues/9497
-                if not fwjrFile.get("locations") and fwjrFile.get("lfn", "").endswith(".root"):
-                    logging.warning("The following file doesn't have any location: %s", fwjrFile)
                     jobSuccess = False
-                    break
+
+                if jobSuccess is False:
+                    sortedOutputMap = sorted(outputMap.keys())
+                    errMsg = f"Job {jobID}, expected output modules: {sortedOutputMap}, "
+                    errMsg += f"but has FWJR output modules: {sorted(outputModules)}"
+                    logging.error(errMsg)
+                    # override file list by the logArch1 output only
+                    fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
         else:
             fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
+
+        # Make sure every file has a valid location
+        # see https://github.com/dmwm/WMCore/issues/9353
+        newList = []
+        for fwjrFile in fileList:
+            # T0 has analysis file without any location, see:
+            # https://github.com/dmwm/WMCore/issues/9497
+            if not fwjrFile.get("locations") and fwjrFile.get("lfn", "").endswith(".root"):
+                logging.warning("The following file does not have any location: %s", fwjrFile)
+                jobSuccess = False
+            else:
+                newList.append(fwjrFile)
+        # save the new list free of ill files (without any location)
+        fileList = newList
 
         if jobSuccess:
             logging.info("Job %d , handle successful job", jobID)

@@ -1,7 +1,8 @@
 #!/bin/sh
 
-### This script downloads a CMSWEB deployment tag and then use the Deploy script
-### with the arguments provided in the command line to deploy WMAgent in a VOBox.
+### This script clones the CMSWEB deployment repository - master/HEAD branch - and
+### then uses the Deploy script with the arguments provided in the command line to
+### deploy WMAgent in a VOBox.
 ###
 ### It deploys the agent, apply all the required patches populate the
 ### resource-control database, apply final tweaks to the configuration and
@@ -16,16 +17,15 @@
 ###
 ### Usage: deploy-wmagent.sh -h
 ### Usage:               -w <wma_version>  WMAgent version (tag) available in the WMCore repository
-### Usage:               -d <deployment_tag>   CMSWEB deployment tag used for the WMAgent deployment
 ### Usage:               -t <team_name>    Team name in which the agent should be connected to
 ### Usage:               -s <scram_arch>   The RPM architecture (defaults to slc5_amd64_gcc461)
 ### Usage:               -r <repository>   Comp repository to look for the RPMs (defaults to comp=comp)
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
-### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 2.1.4 -d HG2211g -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 2.1.4-b954b0745339a347ea28afd5b5767db4 -d HG2211g -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
+### Usage: deploy-wmagent.sh -w <wma_version> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
+### Usage: Example: sh deploy-wmagent.sh -w 2.1.6.1 -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 2.1.4-b954b0745339a347ea28afd5b5767db4 -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
 ### Usage:
 
 IAM=`whoami`
@@ -41,6 +41,7 @@ ADMIN_DIR=/data/admin/wmagent
 ENV_FILE=/data/admin/wmagent/env.sh
 CERTS_DIR=/data/certs/
 OP_EMAIL=cms-comp-ops-workflow-team@cern.ch
+DEPLOY_TAG=master
 
 # These values may be overwritten by the arguments provided in the command line
 WMA_ARCH=slc7_amd64_gcc630
@@ -184,7 +185,6 @@ for arg; do
   case $arg in
     -h) help ;;
     -w) WMA_TAG=$2; shift; shift ;;
-    -d) DEPLOY_TAG=$2; shift; shift ;;
     -t) TEAMNAME=$2; shift; shift ;;
     -s) WMA_ARCH=$2; shift; shift ;;
     -r) REPO=$2; shift; shift ;;
@@ -194,7 +194,7 @@ for arg; do
   esac
 done
 
-if [[ -z $WMA_TAG ]] || [[ -z $DEPLOY_TAG ]] || [[ -z $TEAMNAME ]]; then
+if [[ -z $WMA_TAG ]] || [[ -z $TEAMNAME ]]; then
   usage
   exit 2
 fi
@@ -243,7 +243,6 @@ fi && echo
 echo "Starting new agent deployment with the following data:"
 echo " - WMAgent version : $WMA_TAG"
 echo " - RPM Name        : $RPM_NAME"
-echo " - CMSWEB tag      : $DEPLOY_TAG"
 echo " - Team name       : $TEAMNAME"
 echo " - WMAgent Arch    : $WMA_ARCH"
 echo " - Repository      : $REPO"
@@ -257,9 +256,9 @@ cd $BASE_DIR
 rm -rf deployment deployment.zip deployment-${DEPLOY_TAG};
 
 set -e 
-wget -nv -O deployment.zip --no-check-certificate https://github.com/dmwm/deployment/archive/$DEPLOY_TAG.zip
+wget -nv -O deployment.zip --no-check-certificate https://github.com/dmwm/deployment/archive/refs/heads/${DEPLOY_TAG}.zip
 unzip -q deployment.zip
-cd deployment-$DEPLOY_TAG
+cd deployment-${DEPLOY_TAG}
 set +e 
 
 echo -e "\n*** Removing the current crontab ***"

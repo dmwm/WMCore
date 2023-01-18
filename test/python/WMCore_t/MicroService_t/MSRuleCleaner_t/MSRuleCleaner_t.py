@@ -95,14 +95,12 @@ class MSRuleCleanerTest(unittest.TestCase):
         wflow = MSRuleCleanerWflow(self.taskChainReq)
         self.msRuleCleaner.plineAgentBlock.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineAgentBlock': True},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': False,
                          'InputDataset': '/JetHT/Run2012C-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'MCPileup': [],
                          'OutputDatasets': [
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
@@ -139,14 +137,12 @@ class MSRuleCleanerTest(unittest.TestCase):
         wflow = MSRuleCleanerWflow(self.taskChainReq)
         self.msRuleCleaner.plineAgentCont.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineAgentCont': True},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': False,
                          'InputDataset': '/JetHT/Run2012C-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'MCPileup': [],
                          'OutputDatasets': [
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
@@ -183,14 +179,12 @@ class MSRuleCleanerTest(unittest.TestCase):
         wflow = MSRuleCleanerWflow(self.taskChainReq)
         self.msRuleCleaner.plineMSTrBlock.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineMSTrBlock': True},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': False,
                          'InputDataset': '/JetHT/Run2012C-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'MCPileup': [],
                          'OutputDatasets': [
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
@@ -229,14 +223,12 @@ class MSRuleCleanerTest(unittest.TestCase):
         wflow = MSRuleCleanerWflow(self.taskChainReq)
         self.msRuleCleaner.plineMSTrCont.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineMSTrCont': True},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': False,
                          'InputDataset': '/JetHT/Run2012C-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'MCPileup': [],
                          'OutputDatasets': [
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
@@ -286,14 +278,12 @@ class MSRuleCleanerTest(unittest.TestCase):
         with self.assertRaises(MSRuleCleanerArchivalSkip):
             self.msRuleCleaner.plineArchive.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineAgentBlock': True, 'plineAgentCont': True},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': False,
                          'InputDataset': '/JetHT/Run2012C-v1/RAW',
                          'IsArchivalDelayExpired': True,
                          'IsClean': True,
                          'IsLogDBClean': True,
-                         'MCPileup': [],
                          'OutputDatasets': [
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                              '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',

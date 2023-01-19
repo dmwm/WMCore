@@ -29,7 +29,7 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         Verify that the FNAL site config file is parsed correctly.
         """
-
+        os.environ['SITECONFIG_PATH'] = '/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL'
         fnalConfigFileName = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_US_FNAL_SiteLocalConfig.xml")

@@ -57,8 +57,8 @@ class TrivialFileCatalogTest(unittest.TestCase):
     def testRucioFileCatalog(self):
         """
         Run some simple tests on reading a Rucio FileCatalog
-
         """
+        os.environ['SITECONFIG_PATH'] = '/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL'
         storage_att={'site':'T1_US_FNAL','subSite':None,'storageSite':'T1_US_FNAL',\
             'volume':'FNAL_dCache_EOS','protocol':'XRootD'}
         catalog = getCatalog(storage_att)

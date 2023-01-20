@@ -76,20 +76,20 @@ class SiteLocalConfigTest(unittest.TestCase):
                 "Error: Missing proxy servers."
 
         if mySiteConfig.useTFC:
-          assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
-               "Error: Wrong stage out command."
-          assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
-               "Error: TFC catalog is not correct."
-          assert mySiteConfig.fallbackStageOut == [], \
-               "Error: Fallback config is incorrect."
+            assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
+                "Error: Wrong stage out command."
+            assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
+                "Error: TFC catalog is not correct."
+            assert mySiteConfig.fallbackStageOut == [], \
+                "Error: Fallback config is incorrect."
         else:
-          assert mySiteConfig.localStageOut["command"] == "xrdcp", \
-               "Error: Wrong stage out command."
-          assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL/storage.json?protocol=XRootD&volume=FNAL_dCache_EOS", \
-               "Error: TFC catalog is not correct."
-          assert mySiteConfig.fallbackStageOut, \
-               "Error: Fallback config is incorrect."
-          mySiteConfig.trivialFileCatalog()
+            assert mySiteConfig.localStageOut["command"] == "xrdcp", \
+                "Error: Wrong stage out command."
+            assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL/storage.json?protocol=XRootD&volume=FNAL_dCache_EOS", \
+                "Error: TFC catalog is not correct."
+            assert mySiteConfig.fallbackStageOut, \
+                "Error: Fallback config is incorrect."
+            mySiteConfig.trivialFileCatalog()
           
         #assert False
         return

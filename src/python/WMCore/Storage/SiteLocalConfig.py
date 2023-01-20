@@ -95,20 +95,21 @@ class SiteLocalConfig(object):
         """
         tfcUrl = self.localStageOut.get('catalog', None)
         if tfcUrl is None:
-          return None
+            return None
         try:
-          tfcFile = tfcFilename(tfcUrl)
-          tfcProto = tfcProtocol(tfcUrl,self.useTFC)
-          if self.useTFC:  
-            tfcInstance = readTFC(tfcFile)
-          else:
-            aVolume = tfcUrl.split('?')[1].split('&')[1].replace('volume=','') 
-            storage_att = {'site':self.siteName,'subSite':self.subSiteName,'storageSite':self.localStageOut.get('storageSite',None),'volume':aVolume,'protocol':tfcProto}
-            tfcInstance = readTFC(tfcFile,storage_att,self.useTFC)
-          tfcInstance.preferredProtocol = tfcProto
+            tfcFile = tfcFilename(tfcUrl)
+            tfcProto = tfcProtocol(tfcUrl,self.useTFC)
+            if self.useTFC:  
+                tfcInstance = readTFC(tfcFile)
+            else:
+                aVolume = tfcUrl.split('?')[1].split('&')[1].replace('volume=','') 
+                storage_att = {'site':self.siteName,'subSite':self.subSiteName,'storageSite':self.localStageOut.get('storageSite',None),'volume':aVolume,'protocol':tfcProto}
+                tfcInstance = readTFC(tfcFile,storage_att,self.useTFC)
+            tfcInstance.preferredProtocol = tfcProto
         except Exception as ex:
             msg = "Unable to load TrivialFileCatalog:\n"
             msg += "URL = %s\n" % tfcUrl
+            msg += str(ex)
             raise SiteConfigError(msg)
         return tfcInstance
 
@@ -277,27 +278,27 @@ def processLocalStageOut():
         report, node, useTFC = (yield)
         localReport = {}
         if useTFC:
-          for subnode in node.children:
-            if subnode.name in ['phedex-node', 'command', 'option']:
-                localReport[subnode.name] = subnode.attrs.get('value', None)
-            elif subnode.name == 'catalog':
-                localReport[subnode.name] = subnode.attrs.get('url', None)
+            for subnode in node.children:
+                if subnode.name in ['phedex-node', 'command', 'option']:
+                    localReport[subnode.name] = subnode.attrs.get('value', None)
+                elif subnode.name == 'catalog':
+                    localReport[subnode.name] = subnode.attrs.get('url', None)
         else:
           for subnode in node.children:
-            #now construct an url as used in trivial file catalog
-            subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
-            aStorageSite = subnode.attrs.get('site', None)
-            if aStorageSite is None: aStorageSite = report['siteName']
-            aProtocol = subnode.attrs.get('protocol', None)
-            aVolume = subnode.attrs.get('volume', None)
-            storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol} 
-            #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storage_att,False)+'?protocol='+aProtocol+'&volume='+aVolume
-            localReport['catalog'] = getCatalog(storage_att)
-            localReport['command'] = subnode.attrs.get('command', None)
-            localReport['option'] = subnode.attrs.get('option', None)
-            localReport['phedex-node'] = rseName(storage_att)
-            localReport['storageSite'] = aStorageSite
-            break #only take the first stageOut, others are in fallbacks
+                #now construct an url as used in trivial file catalog
+                subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
+                aStorageSite = subnode.attrs.get('site', None)
+                if aStorageSite is None: aStorageSite = report['siteName']
+                aProtocol = subnode.attrs.get('protocol', None)
+                aVolume = subnode.attrs.get('volume', None)
+                storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol} 
+                #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storage_att,False)+'?protocol='+aProtocol+'&volume='+aVolume
+                localReport['catalog'] = getCatalog(storage_att)
+                localReport['command'] = subnode.attrs.get('command', None)
+                localReport['option'] = subnode.attrs.get('option', None)
+                localReport['phedex-node'] = rseName(storage_att)
+                localReport['storageSite'] = aStorageSite
+                break #only take the first stageOut, others are in fallbacks
         
         report['localStageOut'] = localReport
 
@@ -316,13 +317,13 @@ def processStageOut():
         report, node = (yield)
         localReport = []
         for subnode in node.children:
-          tmp = {}
-          tmp['site'] = subnode.attrs.get('site', None)
-          tmp['volume'] = subnode.attrs.get('volume', None)
-          tmp['protocol'] = subnode.attrs.get('protocol', None)
-          tmp['command'] = subnode.attrs.get('command', None)
-          tmp['option'] = subnode.attrs.get('option', None)
-          localReport.append(tmp)
+              tmp = {}
+              tmp['site'] = subnode.attrs.get('site', None)
+              tmp['volume'] = subnode.attrs.get('volume', None)
+              tmp['protocol'] = subnode.attrs.get('protocol', None)
+              tmp['command'] = subnode.attrs.get('command', None)
+              tmp['option'] = subnode.attrs.get('option', None)
+              localReport.append(tmp)
         report['stageOut'] = localReport
 
 
@@ -336,29 +337,29 @@ def processFallbackStageOut():
     while True:
         report, node, useTFC = (yield)
         if useTFC:
-          localReport = {}
-          for subnode in node.children:
-            if subnode.name in ['phedex-node', 'command', 'option', 'lfn-prefix']:
-                localReport[subnode.name] = subnode.attrs.get('value', None)
-          report['fallbackStageOut'] = [localReport]
+            localReport = {}
+            for subnode in node.children:
+                if subnode.name in ['phedex-node', 'command', 'option', 'lfn-prefix']:
+                    localReport[subnode.name] = subnode.attrs.get('value', None)
+            report['fallbackStageOut'] = [localReport]
         else:
-          #fallback stageOut starts from the second method
-          report['fallbackStageOut'] = []
-          for subnode in node.children[1:]:
-            subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
-            aStorageSite = subnode.attrs.get('site', None)
-            if aStorageSite is None: aStorageSite = report['siteName']
-            aProtocol = subnode.attrs.get('protocol', None)
-            aVolume = subnode.attrs.get('volume', None)
-            storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol}
-            lfnPrefixes = lfnPrefix(storage_att)
-            for pre in lfnPrefixes:
-              localReport = {}
-              localReport['command'] = subnode.attrs.get('command', None)
-              localReport['option'] = subnode.attrs.get('option', None)
-              localReport['phedex-node'] = rseName(storage_att)
-              localReport['lfn-prefix'] = pre
-              report['fallbackStageOut'].append(localReport)
+            #fallback stageOut starts from the second method
+            report['fallbackStageOut'] = []
+            for subnode in node.children[1:]:
+                subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
+                aStorageSite = subnode.attrs.get('site', None)
+                if aStorageSite is None: aStorageSite = report['siteName']
+                aProtocol = subnode.attrs.get('protocol', None)
+                aVolume = subnode.attrs.get('volume', None)
+                storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol}
+                lfnPrefixes = lfnPrefix(storage_att)
+                for pre in lfnPrefixes:
+                    localReport = {}
+                    localReport['command'] = subnode.attrs.get('command', None)
+                    localReport['option'] = subnode.attrs.get('option', None)
+                    localReport['phedex-node'] = rseName(storage_att)
+                    localReport['lfn-prefix'] = pre
+                    report['fallbackStageOut'].append(localReport)
 
 @coroutine
 def processCalibData():

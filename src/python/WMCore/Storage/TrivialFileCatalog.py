@@ -186,40 +186,40 @@ def tfcProtocol(contactString,useTFC=True):
     args = urlsplit(contactString)[3]
     value = args.replace("protocol=", '')
     if not useTFC:
-      value = value.split('&')[0]
+        value = value.split('&')[0]
     return value
 
 #construct a catalog from storage attribute  
 def getCatalog(storageAttr):
-  site = storageAttr['site']
-  subSite = storageAttr['subSite']
-  storageSite = storageAttr['storageSite']
-  #get site config
-  siteconfig_path = os.getenv('SITECONFIG_PATH',None)
-  if not siteconfig_path:
-    raise RuntimeError('SITECONFIG_PATH is not defined')
-  subPath = ''
-  #not a cross site, use local path given in SITECONFIG_PATH
-  if site == storageSite:
-    #it is a site (no defined subSite), use local path given in SITECONFIG_PATH
-    if subSite is None:
-      subPath = siteconfig_path
-    #it is a subsite, move one level up
+    site = storageAttr['site']
+    subSite = storageAttr['subSite']
+    storageSite = storageAttr['storageSite']
+    #get site config
+    siteconfig_path = os.getenv('SITECONFIG_PATH',None)
+    if not siteconfig_path:
+        raise RuntimeError('SITECONFIG_PATH is not defined')
+    subPath = ''
+    #not a cross site, use local path given in SITECONFIG_PATH
+    if site == storageSite:
+        #it is a site (no defined subSite), use local path given in SITECONFIG_PATH
+        if subSite is None:
+            subPath = siteconfig_path
+        #it is a subsite, move one level up
+        else:
+            subPath = siteconfig_path + '/..'
+    #cross site
     else:
-      subPath = siteconfig_path + '/..'
-  #cross site
-  else:
-    #it is a site (no defined subSite), move one level up
-    if subSite is None:
-      subPath = siteconfig_path + '/../' + storageSite;
-    #it is a subsite, move two levels up
-    else:
-      subPath = siteconfig_path + '/../../' + storageSite;
-  value = subPath + '/storage.json'
-  value = os.path.realpath(value) #resolve symbolic links
-  path = os.path.normpath(value) #does this resolve relative and symbolic path?
-  catalog = 'trivialcatalog_file:'+path+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']
-  return catalog
+        #it is a site (no defined subSite), move one level up
+        if subSite is None:
+            subPath = siteconfig_path + '/../' + storageSite;
+        #it is a subsite, move two levels up
+        else:
+            subPath = siteconfig_path + '/../../' + storageSite;
+    value = subPath + '/storage.json'
+    value = os.path.realpath(value) #resolve symbolic links
+    path = os.path.normpath(value) #does this resolve relative and symbolic path?
+    catalog = 'trivialcatalog_file:'+path+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']
+    return catalog
 
 
 #TFC file name can be constructed using either contractString or storage attributes
@@ -235,7 +235,7 @@ def tfcFilename(contactString):
     path = os.path.normpath(value) #does this resolve relative and symbolic path?
     return path
 
-def readTFC(filename,storageAttr={},useTFC=True):
+def readTFC(filename,storageAttr=None,useTFC=True):
     """
     _readTFC_
 
@@ -245,122 +245,121 @@ def readTFC(filename,storageAttr={},useTFC=True):
     """
     tfcInstance = TrivialFileCatalog()
     if useTFC:
-      if not os.path.exists(filename):
-        #msg = "TrivialFileCatalog not found: %s" % filename
-        msg = "FileCatalog not found: %s" % filename
-        raise RuntimeError(msg)
-      try:
-          node = xmlFileToNode(filename)
-      except Exception as ex:
-          msg = "Error reading TrivialFileCatalog: %s\n" % filename
-          msg += str(ex)
-          raise RuntimeError(msg)
+        if not os.path.exists(filename):
+            #msg = "TrivialFileCatalog not found: %s" % filename
+            msg = "FileCatalog not found: %s" % filename
+            raise RuntimeError(msg)
+        try:
+            node = xmlFileToNode(filename)
+        except Exception as ex:
+            msg = "Error reading TrivialFileCatalog: %s\n" % filename
+            msg += str(ex)
+            raise RuntimeError(msg)
 
-      parsedResult = nodeReader(node)
+        parsedResult = nodeReader(node)
 
       #tfcInstance = TrivialFileCatalog()
-      for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
-          for entry in parsedResult[mapping]:
-              protocol = entry.get("protocol", None)
-              match = entry.get("path-match", None)
-              result = entry.get("result", None)
-              chain = entry.get("chain", None)
-              if True in (protocol, match == None):
-                  continue
-              tfcInstance.addMapping(str(protocol), str(match), str(result), chain, mapping)
+        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
+            for entry in parsedResult[mapping]:
+                protocol = entry.get("protocol", None)
+                match = entry.get("path-match", None)
+                result = entry.get("result", None)
+                chain = entry.get("chain", None)
+                if True in (protocol, match == None):
+                    continue
+                tfcInstance.addMapping(str(protocol), str(match), str(result), chain, mapping)
       #return tfcInstance
     else:
-      try:
-        json_file = open(filename)
-        js_elements = json.load(json_file)
-      except Exception as ex:
-        msg = "Error reading FileCatalog: %\n" % filename
-        msg += str(ex)
-        raise RuntimeError(msg)
-      #now loop over elements, select the right one and fill lfn-to-pfn
-      for js_element in js_elements:
-        if js_element['site'] == storageAttr['site'] and js_element['volume'] == storageAttr['volume']: 
-          #now loop over protocols
-          for proc in js_element['protocols']:
-            #check found match
-            if proc['protocol'] == storageAttr['protocol']:
-              chain = proc['chain'] if 'chain' in proc.keys() else None
-              #check if prefix is in protocol block
-              if 'prefix' in proc.keys():
-                #lfn-to-pfn
-                match = '(.*)' #match all
-                result = proc['prefix']+'/$1'
-                tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                #pfn-to-lfn
-                match = proc['prefix']+'/(.*)'
-                result = '/$1'
-                tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
-              #here is rules  
-              else:
-                #loop over rules
-                for rule in proc['rules']:
-                  match = rule['lfn']
-                  result = rule['pfn']
-                  tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                  #pfn-to-lfn: not sure about this!!!
-                  match = rule['pfn'].replace('$1','(.*)')
-                  result = rule['lfn'].replace('/+','/').replace('^/','/')
-                  #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
-                  result = re.sub('\(.*\)','$1',result)
-                  tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
+        try:
+            jsonFile = open(filename,encoding="utf-8")
+            jsElements = json.load(jsonFile)
+        except Exception as ex:
+            msg = "Error reading FileCatalog: %s\n" % filename
+            msg += str(ex)
+            raise RuntimeError(msg)
+        #now loop over elements, select the right one and fill lfn-to-pfn
+        for jsElement in jsElements:
+            if jsElement['site'] == storageAttr['site'] and jsElement['volume'] == storageAttr['volume']: 
+                #now loop over protocols
+                for proc in jsElement['protocols']:
+                    #check found match
+                    if proc['protocol'] == storageAttr['protocol']:
+                        chain = proc['chain'] if 'chain' in proc.keys() else None
+                        #check if prefix is in protocol block
+                        if 'prefix' in proc.keys():
+                            #lfn-to-pfn
+                            match = '(.*)' #match all
+                            result = proc['prefix']+'/$1'
+                            tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
+                            #pfn-to-lfn
+                            match = proc['prefix']+'/(.*)'
+                            result = '/$1'
+                            tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
+                        #here is rules  
+                        else:
+                            #loop over rules
+                            for rule in proc['rules']:
+                                match = rule['lfn']
+                                result = rule['pfn']
+                                tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
+                                #pfn-to-lfn: not sure about this!!!
+                                match = rule['pfn'].replace('$1','(.*)')
+                                result = rule['lfn'].replace('/+','/').replace('^/','/')
+                                #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
+                                result = re.sub('\(.*\)','$1',result)
+                                tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
     
     return tfcInstance
 
 def rseName(storageAttr):
-  rse = None
-  catalog = getCatalog(storageAttr)
-  storageJsonName = tfcFilename(catalog)
-  try:
-    json_file=open(storageJsonName)
-    js_elements = json.load(json_file)
-  except Exception as ex:
-    msg = "TrivialFileCatalog.py:rseName() Error reading FileCatalog: %\n" % storageJsonName 
-    msg += str(ex)
-    raise RuntimeError(msg)
-  for js_element in js_elements:
-    if js_element['site'] == storageAttr['storageSite'] and js_element['volume'] == storageAttr['volume']:
-      rse = js_element['rse']
-      break
-  return rse
+    rse = None
+    catalog = getCatalog(storageAttr)
+    storageJsonName = tfcFilename(catalog)
+    try:
+        jsonFile=open(storageJsonName,encoding="utf-8")
+        jsElements = json.load(jsonFile)
+    except Exception as ex:
+        msg = "TrivialFileCatalog.py:rseName() Error reading FileCatalog: %s\n" % storageJsonName 
+        msg += str(ex)
+        raise RuntimeError(msg)
+    for jsElement in jsElements:
+        if jsElement['site'] == storageAttr['storageSite'] and jsElement['volume'] == storageAttr['volume']:
+            rse = jsElement['rse']
+            break
+    return rse
 
 def lfnPrefix(storageAttr):
-  lfnPrefix = None
-  catalog = getCatalog(storageAttr)
-  #now get lfn prefix
-  storageJsonName = tfcFilename(catalog)
-  try:
-    json_file = open(storageJsonName)
-    js_elements = json.load(json_file)
-  except Exception as ex:
-    msg = "TrivialFileCatalog.py:lfnPrefix() Error reading FileCatalog: %\n" % storageJsonName 
-    msg += str(ex)
-    raise RuntimeError(msg)
-  #now loop over elements, select the right one and fill lfn-to-pfn
-  lfnPrefix = []
-  for js_element in js_elements:
-    if js_element['site'] == storageAttr['storageSite'] and js_element['volume'] == storageAttr['volume']: 
-      #now loop over protocols
-      for proc in js_element['protocols']:
-        #check found match
-        if proc['protocol'] == storageAttr['protocol']:
-          #check if prefix in protocol block
-          if 'prefix' in proc.keys():
-            lfnPrefix.append(proc['prefix'])
-          #here is rules
-          else:
-            #loop over rules and keep all of them
-            for rule in proc['rules']:
-              lfnPrefix.append(rule['pfn'].replace('/$1','').replace('$1',''))
-          break #protocol found, do not need to proceed
-      break
-  return lfnPrefix
+    catalog = getCatalog(storageAttr)
+    #now get lfn prefix
+    storageJsonName = tfcFilename(catalog)
+    try:
+        jsonFile = open(storageJsonName,encoding="utf-8")
+        jsElements = json.load(jsonFile)
+    except Exception as ex:
+        msg = "TrivialFileCatalog.py:lfnPrefix() Error reading FileCatalog: %s\n" % storageJsonName 
+        msg += str(ex)
+        raise RuntimeError(msg)
+    #now loop over elements, select the right one and fill lfn-to-pfn
+    lfnPrefixCol = []
+    for jsElement in jsElements:
+        if jsElement['site'] == storageAttr['storageSite'] and jsElement['volume'] == storageAttr['volume']: 
+            #now loop over protocols
+            for proc in jsElement['protocols']:
+                #check found match
+                if proc['protocol'] == storageAttr['protocol']:
+                    #check if prefix in protocol block
+                    if 'prefix' in proc.keys():
+                        lfnPrefixCol.append(proc['prefix'])
+                    #here is rules
+                    else:
+                        #loop over rules and keep all of them
+                        for rule in proc['rules']:
+                            lfnPrefixCol.append(rule['pfn'].replace('/$1','').replace('$1',''))
+                    break #protocol found, do not need to proceed
+            break
+    return lfnPrefixCol
 
-def loadTFC(contactString,storageAttr={},useTFC=True):
+def loadTFC(contactString,storageAttr=None,useTFC=True):
     """
     _loadTFC_
 

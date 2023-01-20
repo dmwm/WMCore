@@ -13,7 +13,7 @@ import tempfile
 
 from WMCore.WMBase import getTestBase
 
-from WMCore.Storage.TrivialFileCatalog import getCatalog, loadTFC,readTFC,tfcFilename,TrivialFileCatalog
+from WMCore.Storage.TrivialFileCatalog import getCatalog,loadTFC,readTFC,tfcFilename,TrivialFileCatalog
 
 
 class TrivialFileCatalogTest(unittest.TestCase):
@@ -30,15 +30,15 @@ class TrivialFileCatalogTest(unittest.TestCase):
         Run some simple tests on reading a trivialFileCatalog
 
         """
-        tfcFilename = os.path.join(getTestBase(),
+        tfcFilenameVar = os.path.join(getTestBase(),
                                    "WMCore_t/Storage_t",
                                    "T1_US_FNAL_TrivialFileCatalog.xml")
 
-        if not os.path.exists(tfcFilename):
+        if not os.path.exists(tfcFilenameVar):
             raise Exception("No TrivialFileCatalog found!")
 
 
-        tfcInstance = readTFC(tfcFilename)
+        tfcInstance = readTFC(tfcFilenameVar)
 
         self.assertEqual(type(tfcInstance), type(TrivialFileCatalog()))
 
@@ -62,10 +62,10 @@ class TrivialFileCatalogTest(unittest.TestCase):
         storage_att={'site':'T1_US_FNAL','subSite':None,'storageSite':'T1_US_FNAL',\
             'volume':'FNAL_dCache_EOS','protocol':'XRootD'}
         catalog = getCatalog(storage_att)
-        tfcFilename_var = tfcFilename(catalog)
-        if not os.path.exists(tfcFilename_var):
-            raise Exception("No RucioFileCatalog found! %s"% tfcFilename_var)
-        tfcInstance = readTFC(tfcFilename_var,storage_att,False)
+        tfcFilenameVar = tfcFilename(catalog)
+        if not os.path.exists(tfcFilenameVar):
+            raise Exception("No RucioFileCatalog found! %s"% tfcFilenameVar)
+        tfcInstance = readTFC(tfcFilenameVar,storage_att,False)
         self.assertEqual(type(tfcInstance), type(TrivialFileCatalog()))
         for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
             for x in tfcInstance[mapping]:

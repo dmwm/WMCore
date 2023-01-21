@@ -35,7 +35,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                                           "T1_US_FNAL_SiteLocalConfig.xml")
         #fnalConfigFileName = '/cvmfs/cms.cern.ch/SITECONF/T1_DE_KIT/KIT-HOREKA/JobConfig/site-local-config.xml'
         #switch between old TFC and new Rucio data catalog by changing the last parameter, need to set SITECONFIG_PATH when this is False 
-        mySiteConfig = SiteLocalConfig(fnalConfigFileName,False)
+        mySiteConfig = SiteLocalConfig(fnalConfigFileName)
         #print(mySiteConfig.localStageOut)
         #print(mySiteConfig.fallbackStageOut)
         #tfcInstance = mySiteConfig.trivialFileCatalog()
@@ -103,8 +103,8 @@ class SiteLocalConfigTest(unittest.TestCase):
         vandyConfigFileName = os.path.join(getTestBase(),
                                            "WMCore_t/Storage_t",
                                            "T3_US_Vanderbilt_SiteLocalConfig.xml")
-
-        mySiteConfig = SiteLocalConfig(vandyConfigFileName)
+        #still using legacy trivial catalog
+        mySiteConfig = SiteLocalConfig(vandyConfigFileName,True)
 
         assert mySiteConfig.siteName == "T3_US_Vanderbilt", \
                "Error: Wrong site name."
@@ -163,7 +163,8 @@ class SiteLocalConfigTest(unittest.TestCase):
                                            "T3_US_Vanderbilt_SiteLocalConfig.xml")
         os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = vandyConfigFileName
 
-        mySiteConfig = loadSiteLocalConfig()
+        #still using legacy trivial catalog
+        mySiteConfig = loadSiteLocalConfig(True)
         self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt",
                          "Error: Wrong site name.")
 
@@ -183,7 +184,8 @@ class SiteLocalConfigTest(unittest.TestCase):
             if d[0] == "T":
                 os.environ['WMAGENT_SITE_CONFIG_OVERRIDE'] ='/cvmfs/cms.cern.ch/SITECONF/%s/JobConfig/site-local-config.xml' % (d)
                 try:
-                    slc = loadSiteLocalConfig()
+                    #still using legacy trivial catalog
+                    slc = loadSiteLocalConfig(True)
                 except SiteConfigError as e:
                     print(e.args[0])
                 phedexNode = slc.localStageOut.get("phedex-node")

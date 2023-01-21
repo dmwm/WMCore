@@ -17,7 +17,7 @@ from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
 from WMCore.Storage.TrivialFileCatalog import getCatalog, tfcFilename, tfcProtocol, readTFC, rseName, lfnPrefix
 
 
-def loadSiteLocalConfig():
+def loadSiteLocalConfig(useTFC=False):
     """
     _loadSiteLocalConfig_
 
@@ -33,7 +33,7 @@ def loadSiteLocalConfig():
             m = ("Using site-local-config.xml override due to set %s env. variable, "
                  "loading: '%s'" % (overVarName, overridePath))
             logging.log(logging.DEBUG, m)
-            config = SiteLocalConfig(overridePath)
+            config = SiteLocalConfig(overridePath,useTFC)
             return config
         else:
             msg = "%s env. var. provided but not pointing to an existing file, ignoring." % overVarName
@@ -51,7 +51,7 @@ def loadSiteLocalConfig():
         msg += actualPath
         raise SiteConfigError(msg)
 
-    config = SiteLocalConfig(actualPath)
+    config = SiteLocalConfig(actualPath,useTFC)
     return config
 
 
@@ -70,7 +70,7 @@ class SiteLocalConfig(object):
     Readonly API object for getting info out of the SiteLocalConfig file
 
     """
-    def __init__(self, siteConfigXML, useTFC=True):
+    def __init__(self, siteConfigXML, useTFC=False):
         self.useTFC = useTFC #switch to use old TFC or new Rucio
         self.siteConfigFile = siteConfigXML
         self.siteName = None
@@ -165,8 +165,11 @@ class SiteLocalConfig(object):
             msg += self.siteConfigFile
             raise SiteConfigError(msg)
         if 'localStageOut' not in nodeResult:
-            msg = "Error:Unable to find any local-stage-out"
-            msg += "information in:\n"
+            if self.useTFC:
+                msg = "Error:Unable to find any local-stage-out"
+            else:
+                msg = "Error:Unable to find any stage-out"
+            msg += " information in:\n"
             msg += self.siteConfigFile
             raise SiteConfigError(msg)
 

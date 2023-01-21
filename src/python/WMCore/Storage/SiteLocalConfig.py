@@ -284,7 +284,7 @@ def processLocalStageOut():
                 elif subnode.name == 'catalog':
                     localReport[subnode.name] = subnode.attrs.get('url', None)
         else:
-          for subnode in node.children:
+            for subnode in node.children:
                 #now construct an url as used in trivial file catalog
                 subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
                 aStorageSite = subnode.attrs.get('site', None)
@@ -317,13 +317,13 @@ def processStageOut():
         report, node = (yield)
         localReport = []
         for subnode in node.children:
-              tmp = {}
-              tmp['site'] = subnode.attrs.get('site', None)
-              tmp['volume'] = subnode.attrs.get('volume', None)
-              tmp['protocol'] = subnode.attrs.get('protocol', None)
-              tmp['command'] = subnode.attrs.get('command', None)
-              tmp['option'] = subnode.attrs.get('option', None)
-              localReport.append(tmp)
+            tmp = {}
+            tmp['site'] = subnode.attrs.get('site', None)
+            tmp['volume'] = subnode.attrs.get('volume', None)
+            tmp['protocol'] = subnode.attrs.get('protocol', None)
+            tmp['command'] = subnode.attrs.get('command', None)
+            tmp['option'] = subnode.attrs.get('option', None)
+            localReport.append(tmp)
         report['stageOut'] = localReport
 
 

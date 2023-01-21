@@ -211,10 +211,10 @@ def getCatalog(storageAttr):
     else:
         #it is a site (no defined subSite), move one level up
         if subSite is None:
-            subPath = siteconfig_path + '/../' + storageSite;
+            subPath = siteconfig_path + '/../' + storageSite
         #it is a subsite, move two levels up
         else:
-            subPath = siteconfig_path + '/../../' + storageSite;
+            subPath = siteconfig_path + '/../../' + storageSite
     value = subPath + '/storage.json'
     value = os.path.realpath(value) #resolve symbolic links
     path = os.path.normpath(value) #does this resolve relative and symbolic path?

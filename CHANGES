@@ -1,3 +1,12 @@
+2.1.6 to 2.1.7rc1:
+  - Update WMAgent deploy script to use deployment HEAD/master (Alan Malta Rodrigues) #11448
+  - Add ORA-25401 to the list of handled exceptions in DBExceptionHandler. (Todor Ivanov) #11447
+  - Ensure JobAccountant does not insert files without any location (Alan Malta Rodrigues) #11433
+  - Do not duplicate error messages in DBS3Upload (Alan Malta Rodrigues) #11442
+  - Add reqmgr2ms-pileup (Valentin Kuznetsov) #11430
+  - Fix broken syntax for the f-string in DBSUploadPoller (Alan Malta Rodrigues) #11437
+
+
 2.1.6rc6 to 2.1.6:
 
 

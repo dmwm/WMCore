@@ -7,7 +7,39 @@ from __future__ import print_function, division, absolute_import
 
 from builtins import object
 import time
+import calendar
 from datetime import tzinfo, timedelta
+
+
+def gmtimeSeconds():
+    """
+    Return GMT time in seconds
+    """
+    return int(time.mktime(time.gmtime()))
+
+
+def encodeTimestamp(secs):
+    """
+    Encode second since epoch to a string GMT timezone representation
+    :param secs: input timestamp value (either int or float) in seconds since epoch
+
+    :return: time string in GMT timezone representation
+    """
+    if not isinstance(secs, (int, float)):
+        raise Exception("Wrong input, should be seconds since epoch either int or float value")
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(int(secs)))
+
+
+def decodeTimestamp(timeString):
+    """
+    Decode timestamps in provided document
+    :param timeString: timestamp string represention in GMT timezone, see encodeTimestamp
+
+    :return: seconds since ecouch in GMT timezone
+    """
+    if not isinstance(timeString, str):
+        raise Exception("Wrong input, should be time string in GMT timezone representation")
+    return calendar.timegm(time.strptime(timeString, "%Y-%m-%dT%H:%M:%SZ"))
 
 
 def timeFunction(func):

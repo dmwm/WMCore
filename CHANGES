@@ -1,3 +1,8 @@
+2.1.7rc1 to 2.1.7rc2:
+  - MSPileup service data management layer (Valentin Kuznetsov) #11438
+  - Fix file open issue (Valentin Kuznetsov) #11431
+
+
 2.1.6 to 2.1.7rc1:
   - Update WMAgent deploy script to use deployment HEAD/master (Alan Malta Rodrigues) #11448
   - Add ORA-25401 to the list of handled exceptions in DBExceptionHandler. (Todor Ivanov) #11447

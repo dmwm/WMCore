@@ -403,7 +403,7 @@ class RESTDaemon(RESTMain):
                                 bufsize=0, close_fds=True, shell=False)
                 logger = subproc.stdin
             elif isinstance(self.logfile, str):
-                logger = open(self.logfile, "a+", 0)
+                logger = open(self.logfile, "a+b", 0)
             else:
                 raise TypeError("'logfile' must be a string or array")
             os.dup2(logger.fileno(), sys.stdout.fileno())

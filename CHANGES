@@ -1,3 +1,7 @@
+2.1.6.1 to 2.1.6.2:
+  - Corrected GQ -> LQ data acquisition in slices (Alan Malta Rodrigues) #11460
+
+
 2.1.6 to 2.1.6.1:
   - Do not duplicate error messages in DBS3Upload (Alan Malta Rodrigues) #11445
   - Fix broken syntax for the f-string in DBSUploadPoller (Alan Malta Rodrigues) #11445

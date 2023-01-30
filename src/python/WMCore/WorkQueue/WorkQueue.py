@@ -119,6 +119,8 @@ class WorkQueue(WorkQueueBase):
 
         self.params.setdefault('QueueDepth', 1)  # when less than this locally
         self.params.setdefault('WorkPerCycle', 100)
+        self.params.setdefault('RowsPerSlice', 2500)
+        self.params.setdefault('MaxRowsPerCycle', 50000)
         self.params.setdefault('LocationRefreshInterval', 600)
         self.params.setdefault('FullLocationRefreshInterval', 7200)
         self.params.setdefault('TrackLocationOrSubscription', 'location')
@@ -310,13 +312,16 @@ class WorkQueue(WorkQueueBase):
         """
         excludeWorkflows = excludeWorkflows or []
         results = []
-        numElems = self.params['WorkPerCycle']
         if not self.backend.isAvailable():
             self.logger.warning('Backend busy or down: skipping fetching of work')
             return results
 
+        # TODO AMR: perhaps numElems limit should be removed for LQ -> WMBS acquisition
         matches, _ = self.backend.availableWork(jobSlots, siteJobCounts,
-                                                excludeWorkflows=excludeWorkflows, numElems=numElems)
+                                                excludeWorkflows=excludeWorkflows,
+                                                numElems=self.params['WorkPerCycle'],
+                                                rowsPerSlice=self.params['RowsPerSlice'],
+                                                maxRows=self.params['MaxRowsPerCycle'])
 
         self.logger.info('Got %i elements matching the constraints', len(matches))
         if not matches:
@@ -825,9 +830,11 @@ class WorkQueue(WorkQueueBase):
         return (resources, jobCounts)
 
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
-        numElems = self.params['WorkPerCycle']
         self.logger.info("Going to fetch work from the parent queue: %s", self.parent_queue.queueUrl)
-        work, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
+        work, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'],
+                                                  numElems=self.params['WorkPerCycle'],
+                                                  rowsPerSlice=self.params['RowsPerSlice'],
+                                                  maxRows=self.params['MaxRowsPerCycle'])
         if not work:
             self._printLog('No available work in parent queue.', printFlag, "warning")
         return work

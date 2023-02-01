@@ -1,6 +1,3 @@
-2.1.6rc5 to 2.1.6rc6:
-
-
 2.1.6rc4 to 2.1.6rc5:
   - Switch to use DBSError reason/srvCode instead of if/else exception block (Valentin Kuznetsov) #11375
 

@@ -1,3 +1,10 @@
+2.1.7rc2 to 2.1.7rc3:
+  - Use setswitchinterval instead of setcheckinterval (Valentin Kuznetsov) #11432
+  - MSPileup service HTTP APIs (Valentin Kuznetsov) #11443
+  - Open REST-based file in append mode, update deactivated (Alan Malta Rodrigues) #11463
+  - Corrected GQ -> LQ data acquisition in slices (Alan Malta Rodrigues) #11457
+
+
 2.1.7rc1 to 2.1.7rc2:
   - MSPileup service data management layer (Valentin Kuznetsov) #11438
   - Fix file open issue (Valentin Kuznetsov) #11431

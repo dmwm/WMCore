@@ -217,9 +217,11 @@ class RESTMain(object):
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
         _thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
-        if sys.version_info.major == 3 and sys.version_info.minor == 8:
-            # the setcheckinterval does not exist in 3.10
-            sys.setcheckinterval(getattr(self.srvconfig, 'sys_check_interval', 10000))
+        # read sys_check_interval from server config which sets in instructions
+        # as we previously used sys.setcheckinterval
+        interval = getattr(self.srvconfig, 'sys_check_interval', 10000)
+        # set check interval in seconds for sys.setswitchinterval
+        sys.setswitchinterval(interval/1000)
         self.silent = getattr(self.srvconfig, 'silent', False)
 
         # Apply any override options from app config file.

@@ -25,7 +25,8 @@ class RestApiHub(RESTApi):
         """
         :arg app: reference to application object; passed to all entities.
         :arg config: reference to configuration; passed to all entities.
-        :arg str mount: API URL mount point; passed to all entities."""
+        :arg str mount: is definition coming from configuration file to mount the app in REST server
+        """
 
         RESTApi.__init__(self, app, config, mount)
 
@@ -34,3 +35,8 @@ class RestApiHub(RESTApi):
 
         self._add({"status": Data(app, self, config, mount),
                    "info": Data(app, self, config, mount)})
+
+        # the mount point should match service configuration, e.g. in MSPileup we define
+        # mount point as /ms-pileup/data, e.g. http://.../ms-pileup/data
+        if 'ms-pileup' in mount:
+            self._add({"pileup": Data(app, self, config, mount)})

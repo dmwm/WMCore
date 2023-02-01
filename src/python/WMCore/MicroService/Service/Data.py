@@ -12,6 +12,25 @@ curl http://localhost:8822/microservice/data/status
 curl http://localhost:8822/microservice/data
 # post data to MicroService
 curl -X POST -H "Content-type: application/json" -d '{"request":{"spec":"spec"}}' http://localhost:8822/microservice/data
+
+# MSPileup get APIs
+# spec.json will contains spec query to delete MSPileup document, e.g.
+# {"pileupName": "bla-bla-bla"} or {"campaignName":"campaign"}
+curl -X POST -H "Content-type: application/json" -d@./spec.json http://lhost:port/ms-pileup/data
+
+or we will use dedicated end-point, e.g. data
+curl -X GET http://lhost:port/ms-pileup/data?pileupName=bla-bla-bla
+curl -X GET http://lhost:port/ms-pileup/data?campaign=campaign
+
+# MSPileup create APIs
+# doc.json contains new MSPileup document
+curl -X POST -H "Content-type: application/json" -d@./doc.json http://lhost:port/ms-pileup/data
+
+# MSPileup update API
+curl -X PUT -H "Content-type: application/json" -d '{"pileupName":"bla"}' http://localhost:8822/microservice/data
+
+# MSPileup delete API
+curl -X DELETE -H "Content-type: application/json" -d '{"pileupName":"bla"}' http://localhost:8822/microservice/data
 """
 # futures
 from __future__ import print_function, division
@@ -33,6 +52,7 @@ from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 # from WMCore.REST.Validation import validate_rx, validate_str
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
+from WMCore.MicroService.MSPileup.MSPileup import mspileupError
 
 
 def results(res):
@@ -40,6 +60,7 @@ def results(res):
     if not isinstance(res, list):
         return [res]
     return res
+
 
 class Data(with_metaclass(Singleton, RESTEntity, object)):
     """
@@ -52,6 +73,7 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
         RESTEntity.__init__(self, app, api, config, mount)
         self.config = config
         arr = config.manager.split('.')
+        self.mount = mount
         try:
             cname = arr[-1]
             module = importlib.import_module('.'.join(arr[:-1]))
@@ -89,12 +111,28 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
                'microservice_version': WMCore.__version__,  # FIXME: extract it from another place
                'microservice': self.mgr.__class__.__name__}
 
-        if kwds.get('API') == "status":
+        api = kwds.get('API')
+
+        if api == "status":
             detail = True if kwds.pop("detail", True) in (True, "true", "True", "TRUE") else False
             res.update(self.mgr.status(detail, **kwds))
-        elif kwds.get('API') == "info":
+            yield res
+        elif api == "info":
             res.update(self.mgr.info(kwds.pop("request", None), **kwds))
-        return results(res)
+            yield res
+        elif 'ms-pileup' in self.mount:
+            # this section of the GET API is only relevant for MSPileup service
+            # the self.mount point should match service configuration, e.g. in MSPileup we define
+            # mount point as /ms-pileup/data, e.g. http://.../ms-pileup/data
+            try:
+                for doc in self.mgr.get(**kwds):
+                    mspileupError(doc)
+                    yield doc
+            except cherrypy.HTTPError:
+                raise
+            except:
+                msg = 'Unable to GET request, error=%s' % traceback.format_exc()
+                raise cherrypy.HTTPError(status=500, message=msg) from None
 
     @restcall(formats=[('application/json', JSONFormat())])
     @tools.expires(secs=-1)
@@ -110,12 +148,69 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
         result = {'status': 'Not supported, %s' % msg, 'request': None}
         try:
             data = json.load(cherrypy.request.body)
-            if 'request' in data:
+            if 'ms-pileup' in self.mount:
+                # this section of POST API is only relevant for MSPileup service
+                for doc in self.mgr.post(data):
+                    mspileupError(doc)
+                    yield doc
+            elif 'request' in data:
+                # all other MS services
                 reqName = data['request']
                 result = self.mgr.info(reqName)
-            return results(result)
+                for doc in results(result):
+                    yield doc
         except cherrypy.HTTPError:
             raise
         except:
             msg = 'Unable to POST request, error=%s' % traceback.format_exc()
-            raise cherrypy.HTTPError(status=500, message=msg)
+            raise cherrypy.HTTPError(status=500, message=msg) from None
+
+    @restcall(formats=[('application/json', JSONFormat())])
+    @tools.expires(secs=-1)
+    def put(self):
+        """
+        Implement PUT HTTP method of MicroService API.
+        """
+        try:
+            if 'ms-pileup' in self.mount:
+                # this section of PUT API is only relevant for MSPileup service
+                data = json.load(cherrypy.request.body)
+                for doc in self.mgr.update(data):
+                    mspileupError(doc)
+                    yield doc
+        except cherrypy.HTTPError:
+            raise
+        except:
+            msg = 'Unable to PUT request, error=%s' % traceback.format_exc()
+            raise cherrypy.HTTPError(status=500, message=msg) from None
+
+    @restcall(formats=[('application/json', JSONFormat())])
+    @tools.expires(secs=-1)
+    def delete(self):
+        """
+        Implement DELETE HTTP method of MicroService API.
+        """
+        if 'ms-pileup' not in self.mount:
+            return # not implemented for other MS services
+
+        # DELETE API is only relevant for MSPileup service
+        spec = {}
+        try:
+            spec = json.load(cherrypy.request.body)
+        except:
+            msg = 'Unable to DELETE request, error=%s' % traceback.format_exc()
+            raise cherrypy.HTTPError(status=400, message=msg) from None
+        # so far allow only pileupName in input spec
+        if 'pileupName' not in spec:
+            msg = "wrong spec, please provide pileupName"
+            raise cherrypy.HTTPError(status=400, message=msg) from None
+        try:
+            if 'pileupName' in spec and len(spec.keys()) == 1:
+                for doc in self.mgr.delete(spec):
+                    mspileupError(doc)
+                    yield doc
+        except cherrypy.HTTPError:
+            raise
+        except:
+            msg = 'Unable to DELETE request, error=%s' % traceback.format_exc()
+            raise cherrypy.HTTPError(status=500, message=msg) from None

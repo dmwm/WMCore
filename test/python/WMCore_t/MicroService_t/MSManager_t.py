@@ -46,6 +46,17 @@ class MSManagerTest(unittest.TestCase):
         data.enableDataTransfer = True
         self.mgr_trans = MSManager(data)
 
+        # to create MSPileup we need MongoDB settings
+        data.services = ['pileup']
+        data.mongoDB = 'msPileupDB'
+        data.mongoDBCollection = 'msPileupDBCollection'
+        data.mongoDBServer = 'mongodb://localhost'
+        data.mongoDBReplicaSet = ''
+        data.mongoDBUser = None
+        data.mongoDBPassword = None
+        data.mockMongoDB = True
+        self.mgr_pileup = MSManager(data)
+
         if PY3:
             self.assertItemsEqual = self.assertCountEqual
 
@@ -63,6 +74,16 @@ class MSManagerTest(unittest.TestCase):
         self.assertEqual(hasattr(self.mgr, 'transfThread'), False)
         self.assertEqual(hasattr(self.mgr, 'msMonitor'), False)
         self.assertEqual(hasattr(self.mgr, 'monitThread'), False)
+        self.assertEqual(hasattr(self.mgr, 'pileupThread'), False)
+
+        # check self.mgr_pileup object attributes
+        self.assertEqual('pileup' in self.mgr_pileup.services, True)
+        self.assertEqual('transferor' in self.mgr_pileup.services, False)
+        self.assertEqual(hasattr(self.mgr_pileup, 'msTransferor'), False)
+        self.assertEqual(hasattr(self.mgr_pileup, 'transfThread'), False)
+        self.assertEqual(hasattr(self.mgr_pileup, 'msMonitor'), False)
+        self.assertEqual(hasattr(self.mgr_pileup, 'monitThread'), False)
+        self.assertEqual(hasattr(self.mgr_pileup, 'pileupThread'), True)
 
         # check self.mgr_trans object attributes
         self.assertEqual('monitor' in self.mgr_trans.services, False)
@@ -71,6 +92,7 @@ class MSManagerTest(unittest.TestCase):
         self.assertEqual(hasattr(self.mgr_trans, 'transfThread'), True)
         self.assertEqual(hasattr(self.mgr_trans, 'msMonitor'), False)
         self.assertEqual(hasattr(self.mgr_trans, 'monitThread'), False)
+        self.assertEqual(hasattr(self.mgr_trans, 'pileupThread'), False)
 
         # check self.mgr_monit object attributes
         self.assertEqual('monitor' in self.mgr_monit.services, True)
@@ -79,6 +101,7 @@ class MSManagerTest(unittest.TestCase):
         self.assertEqual(hasattr(self.mgr_monit, 'transfThread'), False)
         self.assertEqual(hasattr(self.mgr_monit, 'msMonitor'), True)
         self.assertEqual(hasattr(self.mgr_monit, 'monitThread'), True)
+        self.assertEqual(hasattr(self.mgr_monit, 'pileupThread'), False)
 
         # test a few configuration parameters as well
         self.assertEqual(self.mgr_trans.msConfig.get("limitRequestsPerCycle"), 50)

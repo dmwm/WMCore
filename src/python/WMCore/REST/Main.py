@@ -407,7 +407,9 @@ class RESTDaemon(RESTMain):
                                 bufsize=0, close_fds=True, shell=False)
                 logger = subproc.stdin
             elif isinstance(self.logfile, str):
-                logger = open(self.logfile, "a+")
+                # if a unix pipe is set as the logfile, it must be opened to append to the end of the file
+                # if file/pipe does not exist, create it
+                logger = open(self.logfile, "a")
             else:
                 raise TypeError("'logfile' must be a string or array")
             os.dup2(logger.fileno(), sys.stdout.fileno())

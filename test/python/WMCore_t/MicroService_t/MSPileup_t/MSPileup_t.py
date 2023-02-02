@@ -9,7 +9,7 @@ import cherrypy
 import unittest
 
 # WMCore modules
-from WMCore.MicroService.MSPileup.MSPileup import MSPileup, mspileupError
+from WMCore.MicroService.MSPileup.MSPileup import MSPileup
 from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj
 
 
@@ -94,15 +94,6 @@ class MSPileupTest(unittest.TestCase):
         # delete doc
         res = self.mgr.deletePileup(spec)
         self.assertEqual(len(res), 0)
-
-    def testMSPileupError(self):
-        "test mspileupError function"
-        doc = {'error': 'mspileup error', 'code': 123, 'message': 'msg'}
-        with self.assertRaises(cherrypy.HTTPError):
-            mspileupError(doc)
-        success = {}
-        res = mspileupError(success)
-        self.assertEqual(res, None)
 
 
 if __name__ == '__main__':

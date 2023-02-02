@@ -40,7 +40,10 @@ class SimpleTest(webtest.WebCase):
 
     def test_basic_fail(self):
         self.getPage("/test")
-        self.assertStatus("403 Forbidden")
+        # we changed behaviour of REST server to bypass authz checks when RemoteAddr is localhost
+        # see src/python/WMCore/REST/Auth.py, therefore this test should be ok
+        # self.assertStatus("403 Forbidden")
+        self.assertStatus("200 OK")
 
     def test_basic_success(self):
         self.getPage("/test", headers = self.h)

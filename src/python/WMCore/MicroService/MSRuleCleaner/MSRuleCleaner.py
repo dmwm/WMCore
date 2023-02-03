@@ -625,6 +625,7 @@ class MSRuleCleaner(MSCore):
             data = json.loads(res)['result'][0]
             transferInfo = data['transferDoc']
         except Exception as ex:
+            transferInfo = None
             msg = "General exception while fetching TransferInfo from MSOutput for %s. "
             msg += "Error: %s"
             self.logger.exception(msg, wflow['RequestName'], str(ex))

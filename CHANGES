@@ -1,3 +1,8 @@
+2.1.7rc3 to 2.1.7rc4:
+  - MSRuleCleaner: initialize transferInfo local var (Alan Malta Rodrigues) #11470
+  - Fix bad import for mspileupError (Alan Malta Rodrigues) #11468
+
+
 2.1.7rc2 to 2.1.7rc3:
   - Use setswitchinterval instead of setcheckinterval (Valentin Kuznetsov) #11432
   - MSPileup service HTTP APIs (Valentin Kuznetsov) #11443

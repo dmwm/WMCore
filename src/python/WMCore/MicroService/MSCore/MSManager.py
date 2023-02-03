@@ -372,7 +372,7 @@ class MSManager(object):
             res = []
             if 'pileupName' in doc:
                 # this is create POST request
-                res = self.msPileup.create(doc)
+                res = self.msPileup.createPileup(doc)
             if 'query' in doc:
                 # this is POST request to get data for a given JSON query
                 res = self.msPileup.queryDatabase(doc)

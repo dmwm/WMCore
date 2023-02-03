@@ -17,18 +17,6 @@ from WMCore.MicroService.DataStructs.DefaultStructs import PILEUP_REPORT
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
 
 
-def mspileupError(doc):
-    """
-    Check MSPileup record for error
-    :return: None or raise cherrypy.HTTPError
-    """
-    if 'error' in doc:
-        msg = doc['message']
-        code = doc['code']
-        msg = f'MSPileupError: {msg}, code: {code}'
-        raise cherrypy.HTTPError(400, msg) from None
-
-
 class MSPileup(MSCore):
     """
     MSPileup provides whole logic behind the pileup WMCore module.

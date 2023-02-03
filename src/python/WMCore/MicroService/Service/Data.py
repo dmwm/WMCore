@@ -52,7 +52,6 @@ from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 # from WMCore.REST.Validation import validate_rx, validate_str
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
-from WMCore.MicroService.MSPileup.MSPileup import mspileupError
 
 
 def results(res):
@@ -60,6 +59,18 @@ def results(res):
     if not isinstance(res, list):
         return [res]
     return res
+
+
+def mspileupError(doc):
+    """
+    Check MSPileup record for error
+    :return: None or raise cherrypy.HTTPError
+    """
+    if 'error' in doc:
+        msg = doc['message']
+        code = doc['code']
+        msg = f'MSPileupError: {msg}, code: {code}'
+        raise cherrypy.HTTPError(400, msg) from None
 
 
 class Data(with_metaclass(Singleton, RESTEntity, object)):

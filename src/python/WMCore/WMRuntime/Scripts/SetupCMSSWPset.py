@@ -4,7 +4,6 @@ _SetupCMSSWPset_
 Create a CMSSW PSet suitable for running a WMAgent job.
 
 """
-
 from builtins import next, object
 
 import json
@@ -17,7 +16,6 @@ from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.WMTweak import makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
 from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
-from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from WMCore.WMRuntime.Tools.Scram import Scram
 
@@ -333,32 +331,19 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _handleChainedProcessing_
 
-        In order to handle chained processing it's necessary to feed
-        output of one step/task (nomenclature ambiguous) to another.
-        This method creates particular mapping in a working Trivial
-        File Catalog (TFC).
+        When a job has multiple cmsRun steps, we need to tweak the
+        subsequent PSet configuration such that it reads file in
+        from the local disk (job sandbox).
         """
         self.logger.info("Handling chained processing job")
-        # first, create an instance of TrivialFileCatalog to override
-        tfc = TrivialFileCatalog()
+
         # check the jobs input files
-        inputFile = ("../%s/%s.root" % (self.step.data.input.inputStepName,
-                                        self.step.data.input.inputOutputModule))
-        tfc.addMapping("direct", inputFile, inputFile, mapping_type="lfn-to-pfn")
-        tfc.addMapping("direct", inputFile, inputFile, mapping_type="pfn-to-lfn")
+        inputFile = ("file:../%s/%s.root" % (self.step.data.input.inputStepName,
+                                             self.step.data.input.inputOutputModule))
 
         self.tweak.addParameter('process.source.fileNames', "customTypeCms.untracked.vstring(%s)" % [inputFile])
         self.tweak.addParameter("process.maxEvents", "customTypeCms.untracked.PSet(input=cms.untracked.int32(-1))")
-
-        tfcName = "override_catalog.xml"
-        tfcPath = os.path.join(os.getcwd(), tfcName)
-        self.logger.info("Creating override TFC and saving into '%s'", tfcPath)
-        tfcStr = tfc.getXML()
-        with open(tfcPath, 'w') as tfcFile:
-            tfcFile.write(tfcStr)
-
-        self.step.data.application.overrideCatalog = "trivialcatalog_file:" + tfcPath + "?protocol=direct"
-
+        self.logger.info("Chained PSet tweaked with maxEvents: -1, and fileNames: %s", inputFile)
         return
 
     def handlePileup(self):

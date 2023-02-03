@@ -116,6 +116,7 @@ class LogCollect(Executor):
 
         # setup Scram needed to run edmCopyUtil
         if useEdmCopyUtil:
+            logging.info("Creating software area for %s under %s", cmsswVersion, scramArch)
             scram = Scram(
                     command=scramCommand,
                     version=cmsswVersion,

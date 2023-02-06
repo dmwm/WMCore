@@ -13,9 +13,10 @@ from pymongo import IndexModel, errors
 
 # WMCore modules
 from WMCore.Database.MongoDB import MongoDB
-from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj
+from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj, schema
 from WMCore.MicroService.MSPileup.MSPileupError import MSPileupUniqueConstrainError, \
-    MSPileupDatabaseError, MSPileupNoKeyFoundError, MSPileupDuplicateDocumentError
+    MSPileupDatabaseError, MSPileupNoKeyFoundError, MSPileupDuplicateDocumentError, \
+    MSPileupSchemaError, MSPileupGenericError
 from WMCore.MicroService.Tools.Common import getMSLogger
 from Utils.Timers import gmtimeSeconds
 
@@ -154,6 +155,31 @@ class MSPileupData():
             return [err.error()]
         return []
 
+    def sanitizeQuery(self, spec, projection=None):
+        """
+        Perform MSPileup query validation
+
+        :param spec: input MongoDB query (JSON spec)
+        :param projection: MongoDB projection,
+        see https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html
+        :return: list, either empty one in case of no errors or list with error dictionary
+        """
+        # check that given spec is dictionary object
+        if not isinstance(spec, dict):
+            msg = f"Failed to sanitize MSPileup query, given spec {spec} is not JSON dictionary"
+            err = MSPileupGenericError(spec, msg)
+            return [err.error()]
+
+        # check that keys of our spec dictionary belong to MSPileup schema
+        docSchema = schema()
+        for key in spec.keys():
+            if key not in docSchema.keys():
+                msg = f"Failed to sanitize MSPileup query, invalid key {key}"
+                err = MSPileupSchemaError(spec, msg)
+                self.logger.error(err)
+                return [err.error()]
+        return []
+
     def getPileup(self, spec, projection=None):
         """
         Fetch MSPileup data from persistent storage for a given spec (JSON query)
@@ -164,6 +190,16 @@ class MSPileupData():
         :return: list of documents fetched from database
         """
         results = []
+
+        # remove API key from the spec as it defines pileup API
+        if isinstance(spec, dict) and 'API' in spec:
+            spec.pop('API')
+
+        self.logger.info("Getting pileup with spec: %s, projection: %s", spec, projection)
+        err = self.sanitizeQuery(spec, projection)
+        if len(err) != 0:
+            self.logger.error("Get pileup query didn't pass the validation. Error %s", err)
+            return results
 
         for doc in self.dbColl.find(spec, projection):
             doc = stripKeys(doc, ['_id'])

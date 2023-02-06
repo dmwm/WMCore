@@ -749,6 +749,8 @@ class MiniRESTApi(object):
             return self._call(RESTArgs(list(args), kwargs))
         except HTTPRedirect:
             raise
+        except cherrypy.HTTPError:
+            raise
         except Exception as e:
             report_rest_error(e, format_exc(), True)
         finally:

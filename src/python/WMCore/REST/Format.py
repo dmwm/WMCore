@@ -247,12 +247,15 @@ class JSONFormat(RESTFormat):
                 etag.update(preamble)
                 yield preamble
 
+            obj = None
             try:
                 for obj in stream:
                     chunk = comma + json.dumps(obj) + "\n"
                     etag.update(chunk)
                     yield chunk
                     comma = ","
+            except cherrypy.HTTPError:
+                raise
             except GeneratorExit:
                 etag.invalidate()
                 trailer = None
@@ -267,6 +270,8 @@ class JSONFormat(RESTFormat):
                     yield trailer
 
             cherrypy.response.headers["X-REST-Status"] = 100
+        except cherrypy.HTTPError:
+            raise
         except RESTError as e:
             etag.invalidate()
             report_rest_error(e, format_exc(), False)

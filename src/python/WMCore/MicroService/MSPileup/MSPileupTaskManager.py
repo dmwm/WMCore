@@ -20,6 +20,7 @@ from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.DataStructs.DefaultStructs import PILEUP_REPORT
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
 from WMCore.MicroService.MSPileup.MSPileupTasks import MSPileupTasks
+from WMCore.MicroService.MSPileup.MSPileupMonitoring import MSPileupMonitoring
 
 
 class MSPileupTaskManager(MSCore):
@@ -37,7 +38,8 @@ class MSPileupTaskManager(MSCore):
         dryRun = msConfig.get('dryRun', False)
         self.rucioClient = self.rucio  # set in MSCore init
         self.dataManager = MSPileupData(msConfig)
-        self.mgr = MSPileupTasks(self.dataManager, self.logger,
+        self.monitManager = MSPileupMonitoring(msConfig)
+        self.mgr = MSPileupTasks(self.dataManager, self.monitManager, self.logger,
                                  self.rucioAccount, self.rucioClient, dryRun)
 
     def status(self):
@@ -61,3 +63,4 @@ class MSPileupTaskManager(MSCore):
         self.mgr.activeTask(marginSpace=self.marginSpace)
         self.mgr.inactiveTask()
         self.mgr.cleanupTask(self.cleanupDaysThreshold)
+        self.mgr.cmsMonitTask()

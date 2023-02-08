@@ -169,14 +169,8 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         fixedPSet = self.loadProcessFromPSet(setupScript.stepSpace.location)
 
         # test if the overriden TFC is right
-        print("DEBUG override: {0}".format(setupScript.step.data.application.overrideCatalog))
-        self.assertTrue(hasattr(setupScript.step.data.application, "overrideCatalog"),
-                        "Error: overriden TFC was not set")
-        tfc = loadTFC(setupScript.step.data.application.overrideCatalog)
-        inputFile = "../my_first_step/my_input_module.root"
-        self.assertEqual(tfc.matchPFN("direct", inputFile), inputFile)
-        self.assertEqual(tfc.matchLFN("direct", inputFile), inputFile)
-        self.assertTrue(hasattr(fixedPSet.source, 'fileNames'))
+        self.assertFalse(hasattr(setupScript.step.data.application, "overrideCatalog"),
+                        "We no longer override the TFC, instead only make a PSet tweak!")
 
 
     def testPileupSetup(self):

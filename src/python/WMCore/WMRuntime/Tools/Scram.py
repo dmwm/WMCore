@@ -385,8 +385,12 @@ class Scram(object):
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n' % os.environ['VO_CMS_SW_DIR'])
         if os.environ.get('OSG_APP', None) is not None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n' % os.environ['OSG_APP'])
+        # In general, CMSSW releases <= 12_6_0 will use CMS_PATH, while anything beyond that
+        # requires the SITECONFIG_PATH variable to properly load storage.xml/json file.
         if os.environ.get('CMS_PATH', None) is not None:
             self.procWriter(proc, 'export CMS_PATH=%s\n' % os.environ['CMS_PATH'])
+        if os.environ.get('SITECONFIG_PATH', None) is not None:
+            self.procWriter(proc, 'export SITECONFIG_PATH=%s\n' % os.environ['SITECONFIG_PATH'])
         if os.environ.get('_CONDOR_JOB_AD'):
             self.procWriter(proc, 'export _CONDOR_JOB_AD=%s\n' % os.environ['_CONDOR_JOB_AD'])
         if os.environ.get('_CONDOR_MACHINE_AD'):

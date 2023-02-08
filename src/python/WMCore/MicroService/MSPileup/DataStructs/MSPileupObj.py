@@ -89,7 +89,7 @@ class MSPileupObj(object):
         msg = ""
         if not pdict:
             pdict = self.data
-        docSchema = self.schema()
+        docSchema = schema()
         if set(pdict) != set(docSchema):
             pkeys = set(pdict.keys())
             skeys = set(docSchema.keys())
@@ -146,28 +146,29 @@ class MSPileupObj(object):
                 return False
         return True
 
-    def schema(self):
-        """
-        Return the data schema for a record in MongoDB.
-        It's a dictionary where:
-        - key is schema attribute name
-        - a value is a tuple of (default value, expected data type)
 
-        :return: a dictionary
-        """
-        doc = {'pileupName': ('', str),
-               'pileupType': ('', str),
-               'insertTime': (0, int),
-               'lastUpdateTime': (0, int),
-               'expectedRSEs': ([], list),
-               'currentRSEs': ([], list),
-               'fullReplicas': (0, int),
-               'campaigns': ([], list),
-               'containerFraction': (1.0, float),
-               'replicationGrouping': ('', str),
-               'activatedOn': (0, int),
-               'deactivatedOn': (0, int),
-               'active': (False, bool),
-               'pileupSize': (0, int),
-               'ruleList': ([], list)}
-        return doc
+def schema():
+    """
+    Return the data schema for a record in MongoDB.
+    It's a dictionary where:
+    - key is schema attribute name
+    - a value is a tuple of (default value, expected data type)
+
+    :return: a dictionary
+    """
+    doc = {'pileupName': ('', str),
+           'pileupType': ('', str),
+           'insertTime': (0, int),
+           'lastUpdateTime': (0, int),
+           'expectedRSEs': ([], list),
+           'currentRSEs': ([], list),
+           'fullReplicas': (0, int),
+           'campaigns': ([], list),
+           'containerFraction': (1.0, float),
+           'replicationGrouping': ('', str),
+           'activatedOn': (0, int),
+           'deactivatedOn': (0, int),
+           'active': (False, bool),
+           'pileupSize': (0, int),
+           'ruleList': ([], list)}
+    return doc

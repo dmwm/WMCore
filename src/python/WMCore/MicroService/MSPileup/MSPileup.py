@@ -7,9 +7,6 @@ Description: MSPileup provides logic behind the pileup WMCore module.
 # system modules
 from threading import current_thread
 
-# 3rd party modules
-import cherrypy
-
 # WMCore modules
 from WMCore.REST.Auth import authz_match
 from WMCore.MicroService.MSCore.MSCore import MSCore
@@ -55,9 +52,9 @@ class MSPileup(MSCore):
         :return: results of MSPileup data layer (list of dicts)
         """
         spec = {}  # (get all full docs) retrieve a list with the full documentation of all the pileups
-        if 'spec' in kwargs:
+        if 'query' in kwargs:
             # use specific spec (JSON query)
-            spec = kwargs['spec']
+            spec = kwargs['query']
         elif 'pileupName' in kwargs:
             # get docs for given pileupName
             spec = {'pileupName': kwargs['pileupName']}
@@ -76,13 +73,21 @@ class MSPileup(MSCore):
 
         return results
 
-    def queryDatabase(self, spec, projection=None):
+    def queryDatabase(self, query, projection=None):
         """
         MSPileup query database API querying the data in underlying data layer.
 
-        :param spec: provide query JSON spec to MSPileup data layer
+        :param query: provide query JSON spec to MSPileup data layer
         :return: results of MSPileup data layer (list of dicts)
         """
+        spec = {}  # (get all full docs) retrieve a list with the full documentation of all the pileups
+        if 'query' in query:
+            # use specific spec (JSON query)
+            spec = query['query']
+        # check if filters are present and use it as projection fields
+        projection = {}
+        for key in query.get('filters', []):
+            projection[key] = 1
         return self.mgr.getPileup(spec, projection)
 
     def createPileup(self, pdict):

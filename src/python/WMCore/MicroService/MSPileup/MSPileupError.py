@@ -18,6 +18,7 @@ MSPILEUP_DUPLICATE_ERROR = 3
 MSPILEUP_NOTFOUND_ERROR = 4
 MSPILEUP_DATABASE_ERROR = 5
 MSPILEUP_UNIQUE_ERROR = 6
+MSPILEUP_SCHEMA_ERROR = 7
 
 
 class MSPileupError(WMException):
@@ -74,6 +75,15 @@ class MSPileupGenericError(MSPileupError):
     def __init__(self, data, msg=""):
         super().__init__(data, msg)
         self.assign(msg="generic error", code=MSPILEUP_GENERIC_ERROR)
+
+
+class MSPileupSchemaError(MSPileupError):
+    """
+    Schema MSPileup exception
+    """
+    def __init__(self, data, msg=""):
+        super().__init__(data, msg)
+        self.assign(msg="schema error", code=MSPILEUP_SCHEMA_ERROR)
 
 
 class MSPileupInvalidDataError(MSPileupError):

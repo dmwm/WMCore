@@ -10,6 +10,7 @@ import unittest
 
 # WMCore modules
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys
+from WMCore.MicroService.MSPileup.MSPileupError import MSPILEUP_SCHEMA_ERROR
 from Utils.Timers import encodeTimestamp, decodeTimestamp
 
 
@@ -119,6 +120,26 @@ class MSPileupTest(unittest.TestCase):
         self.assertEqual(len(out), 0)
         results = self.mgr.getPileup(spec)
         self.assertEqual(len(results), 0)
+
+    def testMSPileupQuery(self):
+        "test MSPileup query API"
+        pname = '/skldjflksdjf/skldfjslkdjf/PREMIX'
+        spec = {"pileupName": pname}
+        res = self.mgr.getPileup(spec)
+        self.assertEqual(len(res), 0)
+
+        spec = {"bla": 1}
+        res = self.mgr.sanitizeQuery(spec)
+        # validate should return list of single dictionary
+        # [{'data': {'bla': 1}, 'message': 'schema error', 'code': 7, 'error': 'MSPileupError'}]
+        self.assertEqual(len(res), 1)
+        err = res[0]
+        self.assertEqual(err.get('error'), 'MSPileupError')
+        self.assertEqual(err.get('code'), MSPILEUP_SCHEMA_ERROR)
+
+        # and we should get zero results
+        res = self.mgr.getPileup(spec)
+        self.assertEqual(len(res), 0)
 
 
 if __name__ == '__main__':

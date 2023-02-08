@@ -15,12 +15,12 @@ curl -X POST -H "Content-type: application/json" -d '{"request":{"spec":"spec"}}
 
 # MSPileup get APIs
 # spec.json will contains spec query to delete MSPileup document, e.g.
-# {"pileupName": "bla-bla-bla"} or {"campaignName":"campaign"}
+# {"query": {"pileupName": "bla-bla-bla"}}
 curl -X POST -H "Content-type: application/json" -d@./spec.json http://lhost:port/ms-pileup/data
 
 or we will use dedicated end-point, e.g. data
-curl -X GET http://lhost:port/ms-pileup/data?pileupName=bla-bla-bla
-curl -X GET http://lhost:port/ms-pileup/data?campaign=campaign
+curl -X GET http://lhost:port/ms-pileup/data/pileup?pileupName=bla
+curl -X GET http://lhost:port/ms-pileup/data/pileup?campaign=campaign
 
 # MSPileup create APIs
 # doc.json contains new MSPileup document

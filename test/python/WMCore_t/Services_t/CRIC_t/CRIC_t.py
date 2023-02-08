@@ -149,7 +149,7 @@ class CRICTest(EmulatedUnitTestCase):
         self.assertItemsEqual(self.myCRIC.PNNstoPSNs(pnns), ['T1_US_FNAL'])
 
         pnns = ['T2_CH_CERN', 'T2_DE_DESY']
-        psns = ['T2_CH_CERN_HLT', 'T2_DE_DESY', 'T2_CH_CERN']
+        psns = ['T2_CH_CERN_HLT', 'T2_CH_CERN_P5', 'T2_DE_DESY', 'T2_CH_CERN']
         self.assertItemsEqual(self.myCRIC.PNNstoPSNs(pnns), psns)
 
         psns = ['T2_UK_London_IC', 'T3_UK_London_QMUL', 'T3_UK_SGrid_Oxford', 'T3_UK_London_RHUL', 'T3_UK_ScotGrid_GLA']
@@ -226,7 +226,7 @@ class CRICTest(EmulatedUnitTestCase):
 
         # test a exact site name, which is treated as a regex and yields a confusing result!!!
         result = self.myCRIC.PSNtoPNNMap('T2_CH_CERN')
-        self.assertItemsEqual(list(result), ['T2_CH_CERN', 'T2_CH_CERN_HLT'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN', 'T2_CH_CERN_HLT', 'T2_CH_CERN_P5'])
         self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERNBOX', 'T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERN_HLT'], ['T2_CH_CERN'])
 
@@ -274,12 +274,12 @@ class CRICTest(EmulatedUnitTestCase):
 
         result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN$')
         self.assertItemsEqual(list(result), ['T2_CH_CERN'])
-        self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN'])
+        self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN_P5', 'T2_CH_CERN'])
 
         # test a exact site name, which is treated as a regex and yields a confusing result!!!
         result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN')
         self.assertItemsEqual(list(result), ['T2_CH_CERN', 'T2_CH_CERNBOX'])
-        self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN'])
+        self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN_P5', 'T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERNBOX'], ['T2_CH_CERN'])
 
         result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN_HLT')

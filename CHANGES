@@ -1,3 +1,10 @@
+2.1.7rc5 to 2.1.7rc6:
+  - Add missing object and exception (Valentin Kuznetsov) #11475
+  - Fix MSPileup query logic (Valentin Kuznetsov) #11475
+  - Fix CRIC unit tests wrt to the T2_CH_CERN_P5 site (Alan Malta Rodrigues) #11480
+  - Skip auth check in case of localhost usage (Valentin Kuznetsov) #11462
+
+
 2.1.7rc4 to 2.1.7rc5:
   - Add future dependency to mspileup service (Valentin Kuznetsov) #11474
 

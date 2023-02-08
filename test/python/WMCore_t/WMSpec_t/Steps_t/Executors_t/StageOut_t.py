@@ -47,6 +47,7 @@ class StageOutTest(unittest.TestCase):
 
         # shut up SiteLocalConfig
         os.environ['CMS_PATH'] = os.getcwd()
+        os.environ['SITECONFIG_PATH'] = os.getcwd()
         workload = copy.deepcopy(testWorkloads.workload)
         task = workload.getTask("Production")
         step = task.getStep("stageOut1")

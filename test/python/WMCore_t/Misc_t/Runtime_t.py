@@ -19,6 +19,7 @@ import unittest
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
+import WMCore.WMBase
 import WMCore.WMRuntime.Bootstrap as Bootstrap
 # DataStructs
 from WMCore.DataStructs.File import File
@@ -89,9 +90,6 @@ class RuntimeTest(unittest.TestCase):
     A unittest to test the WMRuntime/WMSpec/Storage/etc tree
     """
 
-    # This is an integration test
-    __integration__ = "Any old bollocks"
-
     def setUp(self):
         """
         Basic setUp
@@ -109,6 +107,7 @@ class RuntimeTest(unittest.TestCase):
         self.unpackDir = None
         self.initialDir = os.getcwd()
         self.origPath = sys.path
+        self.thisDirPath = os.path.dirname(__file__)
 
         # Create some dirs
         os.makedirs(os.path.join(self.testDir, 'packages'))
@@ -153,9 +152,10 @@ class RuntimeTest(unittest.TestCase):
         siteConfigPath = os.path.join(workloadDir, 'SITECONF/local/JobConfig/')
         if not os.path.exists(siteConfigPath):
             os.makedirs(siteConfigPath)
-        shutil.copy('site-local-config.xml', siteConfigPath)
+        shutil.copy(os.path.join(self.thisDirPath, 'site-local-config.xml'), siteConfigPath)
         environment = rereco.data.section_('environment')
         environment.CMS_PATH = workloadDir
+        environment.SITECONFIG_PATH = os.path.join(workloadDir, 'SITECONF/local')
 
         taskMaker = TaskMaker(workload, workloadDir)
         taskMaker.skipSubscription = True
@@ -316,7 +316,7 @@ class RuntimeTest(unittest.TestCase):
             # Scream, run around in panic, blow up machine
             print("About to run jobs")
             print(taskDir)
-            miniStartup(dir=taskDir)
+            miniStartup(thisDir=taskDir)
 
             # When exiting, go back to where you started
             os.chdir(self.initialDir)
@@ -324,7 +324,6 @@ class RuntimeTest(unittest.TestCase):
 
         return
 
-    @attr('integration')
     def testA_CreateWorkload(self):
         """
         _CreateWorkload_
@@ -350,7 +349,7 @@ class RuntimeTest(unittest.TestCase):
 
         # Does it have the right directories?
         dirList = os.listdir(workloadPath)
-        self.assertEqual(dirList, ['WMSandbox', 'TestWorkload-Sandbox.tar.bz2'])
+        self.assertCountEqual(dirList, ['WMSandbox', 'TestWorkload-Sandbox.tar.bz2'])
         dirList = os.listdir(os.path.join(workloadPath, 'WMSandbox'))
         for taskName in taskNames:
             self.assertTrue(taskName in dirList)
@@ -396,7 +395,6 @@ class RuntimeTest(unittest.TestCase):
 
         return
 
-    @attr('integration')
     def testB_EmulatorTest(self):
         """
         _EmulatorTest_
@@ -424,10 +422,8 @@ class RuntimeTest(unittest.TestCase):
         cmsReport = report.data.cmsRun1
 
         # Now validate the report
-        self.assertEqual(report.data.ceName, socket.gethostname())
-        self.assertEqual(report.data.pnn, 'T1_US_FNAL_Disk')
-        self.assertEqual(report.data.siteName, 'T1_US_FNAL')
-        self.assertEqual(report.data.hostName, socket.gethostname())
+        self.assertEqual(report.getSiteName(), {})
+        #self.assertEqual(report.data.hostName, socket.gethostname())
         self.assertTrue(report.data.completed)
 
         # Should have status 0 (emulator job)

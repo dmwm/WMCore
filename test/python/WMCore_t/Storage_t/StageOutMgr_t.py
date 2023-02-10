@@ -13,6 +13,7 @@ class StageOutMgrTest(unittest.TestCase):
     def setUp(self):
         # shut up SiteLocalConfig
         os.putenv('CMS_PATH', os.getcwd())
+        os.putenv('SITECONFIG_PATH', os.getcwd())
 
     def testName(self):
         pass

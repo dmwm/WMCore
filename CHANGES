@@ -1,3 +1,8 @@
+2.1.7rc6 to 2.1.7rc7:
+  - Move site config setup from CMS_PATH to SITECONFIG_PATH (Alan Malta Rodrigues) #11481
+  - Deprecate TFC override for multi-step jobs (Alan Malta Rodrigues) #11473
+
+
 2.1.7rc5 to 2.1.7rc6:
   - Add missing object and exception (Valentin Kuznetsov) #11475
   - Fix MSPileup query logic (Valentin Kuznetsov) #11475

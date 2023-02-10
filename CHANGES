@@ -1,3 +1,8 @@
+2.1.6.2 to 2.1.6.3:
+  - Move site config setup from CMS_PATH to SITECONFIG_PATH (Alan Malta Rodrigues) #11483
+  - Deprecate TFC override for multi-step jobs (Alan Malta Rodrigues) #11483
+
+
 2.1.6.1 to 2.1.6.2:
   - Corrected GQ -> LQ data acquisition in slices (Alan Malta Rodrigues) #11460
 

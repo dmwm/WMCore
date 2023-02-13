@@ -1,3 +1,7 @@
+2.1.7rc7 to 2.1.7:
+  - fix NameError import in the REST package (Thanayut Seethongchuen) #11485
+
+
 2.1.7rc6 to 2.1.7rc7:
   - Move site config setup from CMS_PATH to SITECONFIG_PATH (Alan Malta Rodrigues) #11481
   - Deprecate TFC override for multi-step jobs (Alan Malta Rodrigues) #11473

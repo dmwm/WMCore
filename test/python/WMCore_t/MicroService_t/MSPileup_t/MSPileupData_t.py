@@ -19,10 +19,12 @@ class MSPileupTest(unittest.TestCase):
 
     def setUp(self):
         """setup unit test class"""
+        self.validRSEs = ['rse1']
         msConfig = {'reqmgr2Url': 'http://localhost',
                     'rucioAccount': 'wmcore_mspileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
+                    'validRSEs': self.validRSEs,
                     'mongoDB': 'msPileupDB',
                     'mongoDBCollection': 'msPileupDBCollection',
                     'mongoDBServer': 'mongodb://localhost',
@@ -74,10 +76,10 @@ class MSPileupTest(unittest.TestCase):
         skeys = ['_id']
         pname = '/skldjflksdjf/skldfjslkdjf/PREMIX'
         now = int(time.mktime(time.gmtime()))
-        expectedRSEs = []
+        expectedRSEs = self.validRSEs
         fullReplicas = 1
         pileupSize = 1
-        ruleList = []
+        ruleIds = []
         campaigns = []
         containerFraction = 0.0
         replicationGrouping = "ALL"
@@ -97,7 +99,7 @@ class MSPileupTest(unittest.TestCase):
             'deactivatedOn': now,
             'active': True,
             'pileupSize': pileupSize,
-            'ruleList': ruleList}
+            'ruleIds': ruleIds}
 
         out = self.mgr.createPileup(pdict)
         self.assertEqual(len(out), 0)

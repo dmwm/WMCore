@@ -1,0 +1,483 @@
+#!/usr/bin/env python
+"""
+File       : MSPileupTasks.py
+Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
+Description: perform different set of tasks over MSPileup data
+"""
+
+# system modules
+import time
+import asyncio
+
+# rucio modules
+from rucio.client import Client
+from rucio.common.exception import (AccountNotFound, AccessDenied, DuplicateRule,
+                                    DuplicateContent, InvalidRSEExpression,
+                                    UnsupportedOperation, RuleNotFound, RSENotFound)
+# WMCore modules
+from WMCore.MicroService.Tools.Common import getMSLogger
+from WMCore.MicroService.MSPileup.MSPileupReport import MSPileupReport
+from WMCore.Services.UUIDLib import makeUUID
+
+
+class MSPileupTasks():
+    """
+    MSPileupTaskManager class is resposible for data placement logic. It performs
+    three main tasks:
+    - monitoring task to fetch current state of rule ID
+    - inactive task to lookup pileup docs that has been set to inactive state
+    - active task to look-up pileup docs in active state
+    """
+
+    def __init__(self, dataManager, logger, rucioAccount, rucioClient):
+        """
+        MSPileupTaskManager constructor
+        :param dataManager: MSPileup Data Management layer instance
+        :param logger: logger instance
+        :param rucioAccount: rucio account name to use
+        :param rucioClient: rucio client or WMCore Rucio wrapper class to use
+        """
+        self.mgr = dataManager
+        self.logger = logger
+        self.rucioAccount = rucioAccount
+        self.rucioClient = rucioClient
+        self.report = MSPileupReport()
+
+    def monitoringTask(self):
+        """
+        Execute Monitoring task according to the following logic:
+
+        1. Read pileup document from MongoDB with filter active=true
+        2. For each rule id in ruleIds:
+           - query Rucio for that rule id and fetch its state (e.g.: afd122143kjmdskj)
+           - if state=OK, log that the rule has been satisfied and add that RSE to
+           the currentRSEs (unique)
+           - otherwise, calculate the rule completion based on the 3 locks_* field
+        3. now that all the known rules have been inspected, persist the up-to-date
+        pileup doc in MongoDB
+        """
+        spec = {'active': True}
+        docs = self.mgr.getPileup(spec)
+        taskSpec = self.getTaskSpec()
+        self.logger.info("Running the monitoring task on %d pileup objects", len(docs))
+        asyncio.run(performTasks('monitoring', docs, taskSpec))
+
+    def inactiveTask(self):
+        """
+        Inactive pileup task:
+
+        This task is supposed to look at pileup documents that have been set to
+        inactive. The main goal here is to ensure that there are no Rucio rules
+        left in the system (of course, for the relevant DID and the Rucio
+        account adopted by our microservice). Pileup documents that are updated
+        as a result of this logic should have their data persisted back in
+        MongoDB. A short algorithm for it can be done described as follows:
+
+        1. Read pileup document from MongoDB with filter active=false
+        2. for each DID and Rucio account, get a list of all the existent rules
+           - make a Rucio call to delete that rule id, then:
+             - remove the rule id from ruleIds (if any) and remove the RSE name
+             from currentRSEs (if any)
+        3. make a log record if the DID + Rucio account tuple does not have any
+        existent rules
+           - and set ruleIds and currentRSEs to an empty list
+        4. once all the relevant rules have been removed, persist an up-to-date
+        version of the pileup data structure in MongoDB
+        """
+        spec = {'active': False}
+        docs = self.mgr.getPileup(spec)
+        taskSpec = self.getTaskSpec()
+        self.logger.info("Running the inactive task on %d pileup objects", len(docs))
+        asyncio.run(performTasks('inactive', docs, taskSpec))
+
+    def activeTask(self, nodeUsage=None, marginSpace=1024**4):
+        """
+        Active pileup task:
+        :param nodeUsage: node usage dictionary, see RSEQuotas
+        :param marginSpace: minimum margin space size in bytes to have at RSE to place a dataset
+
+        This task is supposed to look at pileup documents active in the system.
+        Its main goal is to ensure that the pileup DID has all the requested
+        rules (and nothing beyond them), according to the pileup object
+        configuration. Pileup documents that are updated as a result of this
+        logic should have their data persisted back in MongoDB.
+
+        1. Read pileup document from MongoDB with filter active=true
+        2. if expectedRSEs is different than currentRSEs, then further data placement
+        is required (it's possible that data removal is required!)
+        3. make a local copy of the currentRSEs value to track rules incomplete but ongoing
+        4. for each rule matching the DID + Rucio account, perform:
+           - if rule RSE is not in expectedRSEs, then this rule needs to be deleted.
+             - upon successful rule deletion, also remove the RSE name
+             from currentRSEs and ruleIds (if any)
+             - make a log record
+           - else, save this rule RSE in the local copy of currentRSEs.
+           This rule is likely still being processed by Rucio.
+        5. now that we evaluated expected versus current,
+        for each expectedRSEs not in our local copy of currentRSEs:
+           - first, check whether the RSE has enough available space available for that
+           (we can assume that any storage with less than 1 TB available cannot be
+           considered for pileup data placement)
+             - in case of no space available, make a log record
+           - in case there is enough space, make a Rucio rule for
+           that DID + Rucio account + RSE
+             - now append the rule id to the ruleIds list
+        6. once all the relevant rules have been created,
+        or if there was any changes to the pileup object,
+        persist an up-to-date version of the pileup data structure in MongoDB
+        """
+        spec = {'active': True}
+        docs = self.mgr.getPileup(spec)
+        taskSpec = self.getTaskSpec()
+        taskSpec['marginSpace'] = marginSpace
+        taskSpec['nodeUsage'] = nodeUsage
+        self.logger.info("Running the active task on %d pileup objects", len(docs))
+        asyncio.run(performTasks('active', docs, taskSpec))
+
+    def getTaskSpec(self):
+        """Return task spec"""
+        spec = {'manager': self.mgr, 'logger': self.logger, 'report': self.report,
+                'rucioClient': self.rucioClient, 'rucioAccount': self.rucioAccount}
+        return spec
+
+    def getReport(self):
+        """
+        Return report object to upstream codebase
+        """
+        return self.report
+
+
+def rucioArgs(account):
+    """Return relevant rucio arguments"""
+    kwargs = {'groupping': 'ALL', 'account': account,
+              'lifeTime': None, 'locked': False, 'notify': 'N',
+              'purge_replicas': False, 'ignore_availability': False,
+              'ask_approval': False, 'asynchrounous': True, 'priority': 3}
+    return kwargs
+
+
+def monitoringTask(doc, spec):
+    """
+    Perform single monitoring task over provided MSPileup document
+
+    :param doc: MSPileup document
+    :param spec: task spec dict
+    """
+    mgr = spec['manager']
+    uuid = spec['uuid']
+    rucioClient = spec['rucioClient']
+    rucioAccount = spec['rucioAccount']
+    report = spec['report']
+    logger = spec['logger']
+
+    # get list of existent rule ids
+    pname = doc['pileupName']
+    kwargs = {'scope': 'cms', 'account': rucioAccount}
+    if isinstance(rucioClient, Client):
+        inputArgs = {'scope': 'cms', 'name': pname, 'account': rucioAccount}
+        rules = list(rucioClient.list_replication_rules(inputArgs))
+    else:
+        rules = rucioClient.listDataRules(pname, **kwargs)
+    modify = False
+
+    for rdoc in rules:
+        if isinstance(rucioClient, Client):
+            rses = [r['rse'] for r in rucioClient.list_rses(rdoc['rse_expression'])]
+        else:
+            rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
+        rid = rdoc['id']
+        state = rdoc['state']
+
+        # rucio state have the following values
+        # https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py
+        # the states are: OK, REPLICATING, STUCK, SUSPENDED, WAITING_APPROVAL, INJECT
+        if state == 'OK':
+            # log that the rule has been satisfied and add that RSE to the currentRSEs (unique)
+            msg = f"monitoring task {uuid}, container {pname} under the rule ID {rid}"
+            msg += f" targeting RSEs {rses} in rucio account {rucioAccount} is completely available"
+            logger.info(msg)
+            for rse in rses:
+                if rse not in doc['currentRSEs']:
+                    doc['currentRSEs'].append(rse)
+                    modify = True
+                    msg = f"update currentRSEs with {rse}"
+                    report.addEntry('monitoring', uuid, msg)
+        else:
+            # calculate the rule completion based on the 3 locks_* field
+            sumOfLocks = rdoc['locks_ok_cnt'] + rdoc['locks_replicating_cnt'] + rdoc['locks_stuck_cnt']
+            completion = rdoc['locks_ok_cnt'] / sumOfLocks
+            msg = f"monitoring task {uuid}, container {pname} under the rule ID {rid}"
+            msg += f" targeting RSEs {rses} in rucio account {rucioAccount} has"
+            msg += f" a fraction completion of {completion}"
+            logger.info(msg)
+            for rse in rses:
+                if rse in doc['currentRSEs']:
+                    doc['currentRSEs'].remove(rse)
+                    modify = True
+                    msg = f"delete rse {rse} from currentRSEs"
+                    report.addEntry('monitoring', uuid, msg)
+
+    # persist an up-to-date version of the pileup data structure in MongoDB
+    if modify:
+        logger.info(f"monitoring task {uuid}, update {pname}")
+        mgr.updatePileup(doc)
+        msg = f"update pileup {pname}"
+        report.addEntry('monitoring', uuid, msg)
+    else:
+        logger.info("monitoring task {uuid}, processed without update for {pname}")
+
+
+def inactiveTask(doc, spec):
+    """
+    Perform single inactive task over provided MSPileup document
+
+    :param doc: MSPileup document
+    :param spec: task spec dict
+    """
+    mgr = spec['manager']
+    uuid = spec['uuid']
+    rucioClient = spec['rucioClient']
+    rucioAccount = spec['rucioAccount']
+    report = spec['report']
+    logger = spec['logger']
+    pname = doc['pileupName']
+    kwargs = {'scope': 'cms', 'account': rucioAccount}
+    if isinstance(rucioClient, Client):
+        inputArgs = {'scope': 'cms', 'name': pname, 'account': rucioAccount}
+        rules = list(rucioClient.list_replication_rules(inputArgs))
+    else:
+        rules = rucioClient.listDataRules(pname, **kwargs)
+    modify = False
+
+    for rdoc in rules:
+        # make a Rucio call to delete that rule id
+        rid = rdoc['id']
+        msg = f"inactive task {uuid}, container: {pname} for Rucio account {rucioAccount}"
+        msg += f", delete replication rule {rid}"
+        logger.info(msg)
+        if isinstance(rucioClient, Client):
+            rucioClient.delete_replication_rule(rid)
+            rses = [r['rse'] for r in rucioClient.list_rses(rdoc['rse_expression'])]
+        else:
+            rucioClient.deleteRule(rid)
+            rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
+
+        # remove the rule id from ruleIds (if any) and remove the RSE name from currentRSEs (if any)
+        if rid in doc['ruleIds']:
+            doc['ruleIds'].remove(rid)
+            modify = True
+            msg = f"remove rid {rid}"
+            report.addEntry('inactive', uuid, msg)
+        for rse in rses:
+            if rse in doc['currentRSEs']:
+                doc['currentRSEs'].remove(rse)
+                modify = True
+                msg = f"remove rse {rse}"
+                report.addEntry('inactive', uuid, msg)
+
+    # make a log record if the DID + Rucio account tuple does not have any existent rules
+    if not rules:
+        msg = f"inactive task {uuid}, container: {pname} for Rucio account {rucioAccount}"
+        msg += " does not have any existing rules, proceed without update"
+        logger.info(msg)
+
+    # persist an up-to-date version of the pileup data structure in MongoDB
+    if modify:
+        logger.info(f"inactive task {uuid}, update {pname}")
+        mgr.updatePileup(doc)
+        msg = f"update pileup {pname}"
+        report.addEntry('inactive', uuid, msg)
+
+
+def activeTask(doc, spec):
+    """
+    Perform single active task over provided MSPileup document
+
+    :param doc: MSPileup document
+    :param spec: task spec dict
+    """
+    mgr = spec['manager']
+    uuid = spec['uuid']
+    logger = spec['logger']
+    rucioClient = spec['rucioClient']
+    rucioAccount = spec['rucioAccount']
+    report = spec['report']
+    marginSpace = spec['marginSpace']
+    nodeUsage = spec['nodeUsage']
+
+    # extract relevant part of our pileup document we'll use in our logic
+    expectedRSEs = set(doc['expectedRSEs'])
+    currentRSEs = set(doc['currentRSEs'])
+    pileupSize = doc['pileupSize']
+    pname = doc['pileupName']
+    inputArgs = {'scope': 'cms', 'name': pname, 'account': rucioAccount}
+    kwargs = {'scope': 'cms', 'account': rucioAccount}
+    modify = False
+    localCopyOfCurrentRSEs = list(currentRSEs)
+
+    # if expectedRSEs is different than currentRSEs, then further data placement is required
+    # it's possible that data removal is required!
+    if expectedRSEs != currentRSEs:
+        msg = f"active task {uuid}"
+        msg += f", further data placement required for pileup name: {pname},"
+        msg += f" with expectedRSEs: {expectedRSEs} and data currently available at: {currentRSEs}"
+        logger.info(msg)
+
+        # get list of replication rules for our scope, pileup name and account
+        if isinstance(rucioClient, Client):
+            rules = list(rucioClient.list_replication_rules(inputArgs))
+        else:
+            rules = rucioClient.listDataRules(pname, **kwargs)
+        # for each rse_expression in rules get list of rses
+        for rdoc in rules:
+            if isinstance(rucioClient, Client):
+                rses = [r['rse'] for r in rucioClient.list_rses(rdoc['rse_expression'])]
+            else:
+                rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
+            rdoc['rses'] = rses
+
+        # for each rule matching the DID + Rucio account
+        for rdoc in rules:
+            rid = rdoc['id']
+            rses = rdoc['rses']
+            for rse in rses:
+                # if rule RSE is not in expectedRSEs, then this rule needs to be deleted
+                if rse not in expectedRSEs:
+                    # upon successful rule deletion, also remove the RSE name from currentRSEs
+                    if isinstance(rucioClient, Client):
+                        rucioClient.delete_replication_rule(rid)
+                    else:
+                        rucioClient.deleteRule(rid)
+                    if rse in doc['currentRSEs']:
+                        doc['currentRSEs'].remove(rse)
+                        modify = True
+                    msg = f"rse {rse} rule is deleted and remove from currentRSEs of {pname}"
+                    logger.info(msg)
+                    # delete rid in ruleIds (if any)
+                    if rid in doc['ruleIds']:
+                        doc['ruleIds'].remove(rid)
+                        modify = True
+                        msg = f"rule Id {rid} is removed from ruleIds for {pname}"
+                        logger.info(msg)
+                else:
+                    # else, save this rule RSE in the local copy of currentRSEs.
+                    # This rule is likely still being processed by Rucio.
+                    if rse not in localCopyOfCurrentRSEs:
+                        localCopyOfCurrentRSEs.append(rse)
+                        msg = f"rse {rse} is added to localCopyOfCurrentRSEs"
+                        logger.info(msg)
+
+        # for each expectedRSEs not in localCopyOfCurrentRSEs
+        for rse in set(expectedRSEs).difference(localCopyOfCurrentRSEs):
+            # check whether the RSE has enough available space available for that
+            if isinstance(rucioClient, Client):
+                generator = rucioClient.get_rse_usage(rse)
+            else:
+                generator = rucioClient.getRSEUsage(rse)
+            enoughSpace = False
+            for rec in generator:
+                # use nodeUsage provided in spec to get rse space info
+                if nodeUsage and rse in nodeUsage:
+                    rseUsage = nodeUsage[rse]
+                    if rseUsage['bytes_remaining'] > marginSpace:
+                        enoughSpace = True
+                        break
+                else:
+                    # we'll use total - used space to exceed pileupSize with some margin
+                    if rec['total'] - rec['used'] - pileupSize > marginSpace:
+                        enoughSpace = True
+                        break
+            dids = [inputArgs]
+            if enoughSpace:
+                msg = f"active task {uuid}, for dids {dids} there is enough space at RSE {rse}"
+                logger.warning(msg)
+                # create the rule and append the rule id to ruleIds
+                if isinstance(rucioClient, Client):
+                    kwargs = rucioArgs(rucioAccount)
+                    copies = 1
+                    rids = rucioClient.add_replication_rule(dids, copies, rse, **kwargs)
+                else:
+                    rids = rucioClient.createReplicationRule(pname, rse, **kwargs)
+                # add new ruleId to document ruleIds
+                for rid in rids:
+                    if rid not in doc['ruleIds']:
+                        doc['ruleIds'].append(rid)
+                        modify = True
+            else:
+                # make a log record saying that there is not enough space
+                msg = f"active task {uuid}, for dids {dids} there is not enough space at RSE {rse}"
+                logger.warning(msg)
+
+    # persist an up-to-date version of the pileup data structure in MongoDB
+    if modify:
+        logger.info(f"active task {uuid} update {pname}")
+        mgr.updatePileup(doc)
+        msg = f"update pileup {pname}"
+        report.addEntry('active', uuid, msg)
+    else:
+        logger.info(f"active task {uuid}, processed without update")
+
+
+async def runTask(task, doc, spec):
+    """
+    Run specified task for given document and spec
+
+    :param task: task to perform
+    :param doc: MSPileup document to process
+    :param spec: task spec dictionary
+    """
+    time0 = time.time()
+    report = spec['report']
+    logger = spec.get('logger', getMSLogger(False))
+    pname = doc['pileupName']
+
+    # set report hash
+    uuid = makeUUID()
+    spec['uuid'] = uuid
+    report.addEntry(task, uuid, 'starts')
+    msg = f"MSPileup {task} task {uuid} pileup {pname}"
+    try:
+        if task == 'monitoring':
+            monitoringTask(doc, spec)
+        elif task == 'inactive':
+            inactiveTask(doc, spec)
+        elif task == 'active':
+            activeTask(doc, spec)
+        msg += ", successfully processed"
+    # specific rucio exception handling if we use rucio client
+    except (AccountNotFound, AccessDenied) as exp:
+        msg += f", failed with access issue, error {exp}"
+        logger.error(msg)
+    except (DuplicateRule, DuplicateContent) as exp:
+        msg += f", failed with duplicate issue, error {exp}"
+        logger.error(msg)
+    except (RSENotFound, InvalidRSEExpression) as exp:
+        msg += f", failed with rse issue, error {exp}"
+        logger.error(msg)
+    except RuleNotFound as exp:
+        msg += f", failed with rule not found, error {exp}"
+        logger.error(msg)
+    except UnsupportedOperation as exp:
+        msg += f", failed with unsupported operation, error {exp}"
+        logger.error(msg)
+    except Exception as exp:
+        msg += f", failed with error {exp}"
+        logger.exception(msg)
+    report.addEntry(task, uuid, msg)
+
+    # update task report
+    etime = time.time() - time0
+    msg = "ends, elapsed time %.2f (sec)" % etime
+    report.addEntry(task, uuid, msg)
+
+
+async def performTasks(task, docs, spec):
+    """
+    Perform tasks via async IO co-routines
+
+    :param task: task to perform
+    :param docs: list of MSPileup documents to process
+    :param spec: task spec dictionary
+    """
+    coRoutines = [runTask(task, doc, spec) for doc in docs]
+    await asyncio.gather(*coRoutines)

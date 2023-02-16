@@ -306,7 +306,7 @@ class MSRuleCleaner(MSCore):
             # NOTE: We do not check the ParentageResolved flag for these
             #       workflows, but we do need to clean output data placement
             #       rules from the agents for them
-            for pline in self.agentlines:
+            for pline in self.cleanuplines:
                 try:
                     pline.run(wflow)
                 except Exception as ex:

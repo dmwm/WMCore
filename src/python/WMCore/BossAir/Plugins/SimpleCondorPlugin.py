@@ -42,6 +42,54 @@ def activityToType(jobActivity):
     return activityMap.get(jobActivity, "unknown")
 
 
+def getTaskType(job):
+    """
+    _getTaskType_
+    Return the job task type. This is gotten from the job object task type information, except when
+    the task type is "Production", in which case we will return the specific physics task type in question.
+    task types: ["Production", "Processing", "LogCollect", "Skim", "Merge", "Harvesting", "Cleanup", "Repack", "Express"]
+    physics types: ["GENSIM", "GEN", "DIGI", "RECO", "DIGIRECO", "MINIAOD"]
+    :param job: The job object
+    :return: str, job task type
+    """
+    taskType = job['task_type']
+    res = "UNKNOWN"
+
+    if taskType == "Processing":
+        res = "DataProcessing"
+    elif taskType == "Production":
+        ttype = str(job['task_name']).rsplit("/", 1)[-1]
+        # Guess an alternate campaign name from the subtask
+        camp2_info = ttype.split("-")
+        if len(camp2_info) > 1:
+            camp2 = camp2_info[1]
+        else:
+            camp2 = ttype
+
+        job['request_name']
+        if "MiniAOD" in ttype or (
+            "MiniAOD" in job['request_name'] and ttype == "StepOneProc"
+        ):
+            res = "MINIAOD"
+        elif ttype == "StepOneProc" and (
+            re.search("[1-9][0-9]DR", camp2)
+        ):
+                res = "DIGIRECO"
+        elif re.search("[1-9][0-9]GS", camp2) and ttype.endswith("_0"):
+            res = "GENSIM"
+        elif ttype.endswith("_0"):
+            res = "DIGI"
+        elif ttype.endswith("_1") or ttype.lower() == "reco":
+            res = "RECO"
+        elif ttype == "MonteCarloFromGEN":
+            res = "GENSIM"
+        else:
+            res = "UNKNOWN"
+    else:
+        res = taskType
+
+    return res
+
 class SimpleCondorPlugin(BasePlugin):
     """
     _SimpleCondorPlugin_
@@ -533,6 +581,7 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.CMSGroups'] = undefined
             ad['My.WMAgent_JobID'] = str(job['jobid'])
             ad['My.WMAgent_SubTaskName'] = classad.quote(job['task_name'])
+            ad['My.WMAgent_JobTaskType'] = classad.quote(getTaskType(job))
             ad['My.CMS_JobType'] = classad.quote(job['task_type'])
             ad['My.CMS_Type'] = classad.quote(activityToType(job['activity']))
             ad['My.CMS_RequestType'] = classad.quote(job['requestType'])

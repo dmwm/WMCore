@@ -24,7 +24,7 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 2.1.6.1 -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 2.2.0.4 -t production -n 30
 ### Usage: Example: sh deploy-wmagent.sh -w 2.1.4-b954b0745339a347ea28afd5b5767db4 -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
 ### Usage:
 
@@ -427,7 +427,7 @@ else
   echo "55 */6 * * * /data/admin/wmagent/renew_proxy.sh"
   echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 150 --send-mail True --mail alan.malta@cern.ch"
   echo "#workaround for the ErrorHandler silence issue"
-  echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh > /dev/null"
+  echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh ErrorHandler JobSubmitter AgentStatusWatcher > /dev/null"
   ) | crontab -
 fi
 echo "Done!" && echo

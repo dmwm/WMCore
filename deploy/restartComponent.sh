@@ -1,4 +1,6 @@
 #!/bin/sh
+## Pass the component names as command line arguments, e.g.:
+## ./restartComponent.sh ErrorHandler JobSubmitter AgentStatusWatcher
 
 HOST=`hostname`
 DATENOW=`date +%s`
@@ -11,9 +13,10 @@ if [ ! -d "$install" ]; then
   install="/data/srv/wmagent/current/install/wmagentpy3"
 fi
 
-COMPONENTS="ErrorHandler JobSubmitter AgentStatusWatcher"
-for comp in $COMPONENTS; do
+echo "List of components to be monitored: $@"
+for comp in $@; do
   COMPLOG=$install/$comp/ComponentLog
+  echo "Checking logs from: $COMPLOG"
   LASTCHANGE=`stat -c %Y $COMPLOG`
   INTERVAL=`expr $DATENOW - $LASTCHANGE`
   if (("$INTERVAL" >= 1800)); then

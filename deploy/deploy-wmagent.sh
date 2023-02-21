@@ -427,7 +427,7 @@ else
   echo "55 */6 * * * /data/admin/wmagent/renew_proxy.sh"
   echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 150 --send-mail True --mail alan.malta@cern.ch"
   echo "#workaround for the ErrorHandler silence issue"
-  echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh > /dev/null"
+  echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh ErrorHandler JobSubmitter AgentStatusWatcher > /dev/null"
   ) | crontab -
 fi
 echo "Done!" && echo

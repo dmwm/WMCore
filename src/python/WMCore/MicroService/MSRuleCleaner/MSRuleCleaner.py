@@ -302,20 +302,6 @@ class MSRuleCleaner(MSCore):
             msg = "Skipping cleanup step for workflow: %s - RequestType is %s."
             msg += " Will try to archive it directly."
             self.logger.info(msg, wflow['RequestName'], wflow['RequestType'])
-        elif wflow['RequestStatus'] in ['rejected', 'aborted-completed']:
-            # NOTE: We do not check the ParentageResolved flag for these
-            #       workflows, but we do need to clean output data placement
-            #       rules from the agents for them
-            for pline in self.agentlines:
-                try:
-                    pline.run(wflow)
-                except Exception as ex:
-                    msg = "%s: General error from pipeline. Workflow: %s. Error: \n%s. "
-                    msg += "\nWill retry again in the next cycle."
-                    self.logger.exception(msg, pline.name, wflow['RequestName'], str(ex))
-                    continue
-                if wflow['CleanupStatus'][pline.name]:
-                    self.wfCounters['cleaned'][pline.name] += 1
         elif wflow['RequestStatus'] == 'announced' and not wflow['ParentageResolved']:
             # NOTE: We skip workflows which are not having 'ParentageResolved'
             #       flag, but we still need some proper logging for them.
@@ -340,7 +326,7 @@ class MSRuleCleaner(MSCore):
             msg += " Will retry again in the next cycle."
             self.logger.info(msg)
             self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
-        elif wflow['RequestStatus'] == 'announced':
+        elif wflow['RequestStatus'] in ['announced', 'rejected', 'aborted-completed']:
             for pline in self.cleanuplines:
                 try:
                     pline.run(wflow)

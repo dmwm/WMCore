@@ -326,7 +326,7 @@ class MSRuleCleaner(MSCore):
             msg += " Will retry again in the next cycle."
             self.logger.info(msg)
             self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
-        elif wflow['RequestStatus'] == ['announced', 'rejected', 'aborted-completed']:
+        elif wflow['RequestStatus'] in ['announced', 'rejected', 'aborted-completed']:
             for pline in self.cleanuplines:
                 try:
                     pline.run(wflow)

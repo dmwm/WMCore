@@ -181,13 +181,15 @@ class RucioInjectorPollerTest(EmulatedUnitTestCase):
         # create and insert blocks into dbsbuffer table
         newBlockA = DBSBufferBlock(name=self.blockAName,
                                    location="T2_CH_CERN",
-                                   datasetpath=None)
+                                   datasetpath=None,
+                                   uploader="WMAgent")
         newBlockA.setDataset(self.testDatasetA, 'data', 'VALID')
         newBlockA.status = 'Closed'
 
         newBlockB = DBSBufferBlock(name=self.blockBName,
                                    location="T1_US_FNAL_Disk",
-                                   datasetpath=None)
+                                   datasetpath=None,
+                                   uploader="WMAgent")
         newBlockB.setDataset(self.testDatasetB, 'data', 'VALID')
         newBlockB.status = 'Closed'
 

@@ -161,6 +161,7 @@ config.DBS3Upload.primaryDatasetType = "mc"
 config.DBS3Upload.dumpBlockJsonFor = ""
 # set DbsApi requests to use gzip enconding, thus sending compressed data
 config.DBS3Upload.gzipEncoding = True
+config.DBS3Upload.uploaderName = "WMAgent"
 
 config.section_("DBSInterface")
 config.DBSInterface.DBSUrl = globalDBSUrl

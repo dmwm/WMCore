@@ -31,7 +31,7 @@ class DBSBufferBlock(object):
 
     """
 
-    def __init__(self, name, location, datasetpath):
+    def __init__(self, name, location, datasetpath, uploader="WMAgent"):
         """
         Just the necessary objects
 
@@ -41,33 +41,34 @@ class DBSBufferBlock(object):
         """
 
 
-        self.data      = {'dataset_conf_list':    [],   # List of dataset configurations
-                          'file_conf_list':       [],   # List of files, the configuration for each
-                          'files':                [],   # List of file objects
-                          'block':                {},   # Dict of block info
-                          'processing_era':       {},   # Dict of processing era info
-                          'acquisition_era':      {},   # Dict of acquisition era information
-                          'primds':               {},   # Dict of primary dataset info
-                          'dataset':              {},   # Dict of processed dataset info
-                          'file_parent_list':     [],   # List of file parents
-                          'dataset_parent_list':  [],   # List of parent datasets (DBS requires this as list although it only allows one parent)
-                          'close_settings':       {}}   # Dict of info about block close settings
+        self.data = {'dataset_conf_list':[],   # List of dataset configurations
+                     'file_conf_list':[],      # List of files, the configuration for each
+                     'files':[],               # List of file objects
+                      'block':{},              # Dict of block info
+                      'processing_era':{},     # Dict of processing era info
+                      'acquisition_era':{},    # Dict of acquisition era information
+                      'primds':{},             # Dict of primary dataset info
+                      'dataset':{},            # Dict of processed dataset info
+                      'file_parent_list':[],   # List of file parents
+                      'dataset_parent_list':[],# List of parent datasets (DBS requires this as list although it only allows one parent)
+                      'close_settings':{}}     # Dict of info about block close settings
 
-        self.files        = []
-        self.encoder      = JSONRequests()
-        self.status       = 'Open'
-        self.inBuff       = False
-        self.startTime    = time.time()
-        self.name         = name
-        self.location     = location
+        self.files = []
+        self.encoder = JSONRequests()
+        self.status = 'Open'
+        self.inBuff = False
+        self.startTime = time.time()
+        self.name = name
+        self.location = location
         self.datasetpath  = datasetpath
-        self.workflows    = set()
+        self.workflows = set()
+        self.uploader = uploader
 
-        self.data['block']['block_name']       = name
+        self.data['block']['block_name'] = name
         self.data['block']['origin_site_name'] = location
         self.data['block']['open_for_writing'] = 1
 
-        self.data['block']['create_by'] = "WMAgent"
+        self.data['block']['create_by'] = self.uploader
         self.data['block']['creation_date'] = int(time.time())
         self.data['block']['block_size'] = 0
         self.data['block']['file_count'] = 0
@@ -125,7 +126,7 @@ class DBSBufferBlock(object):
         fileDict['logical_file_name']      = dbsFile['lfn']
         fileDict['file_size']              = dbsFile['size']
         fileDict['event_count']            = dbsFile['events']
-        fileDict['last_modified_by'] = "WMAgent"
+        fileDict['last_modified_by'] = self.uploader
         fileDict['last_modification_date'] = int(time.time())
         fileDict['auto_cross_section'] = 0.0
 
@@ -232,7 +233,7 @@ class DBSBufferBlock(object):
                     % (procVer, type(procVer))
             raise TypeError(msg) from None
         self.data["processing_era"]["processing_version"] = pver
-        self.data["processing_era"]["create_by"] = "WMAgent"
+        self.data["processing_era"]["create_by"] = self.uploader
         self.data["processing_era"]["description"] = ""
         return
 
@@ -292,7 +293,7 @@ class DBSBufferBlock(object):
         # Do the primary dataset
         self.data['primds']['primary_ds_name'] = primary
         self.data['primds']['primary_ds_type'] = primaryType
-        self.data['primds']['create_by'] = "WMAgent"
+        self.data['primds']['create_by'] = self.uploader
         self.data['primds']['creation_date'] = int(time.time())
 
         # Do the processed
@@ -303,8 +304,8 @@ class DBSBufferBlock(object):
         self.data['dataset']['dataset']             = datasetName
         self.data['dataset']['prep_id'] = prep_id
         # Add misc meta data.
-        self.data['dataset']['create_by'] = "WMAgent"
-        self.data['dataset']['last_modified_by'] = "WMAgent"
+        self.data['dataset']['create_by'] = self.uploader
+        self.data['dataset']['last_modified_by'] = self.uploader
         self.data['dataset']['creation_date'] = int(time.time())
         self.data['dataset']['last_modification_date'] = int(time.time())
         return

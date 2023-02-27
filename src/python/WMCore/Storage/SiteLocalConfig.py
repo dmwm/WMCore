@@ -54,6 +54,8 @@ def loadSiteLocalConfig(useTFC=False):
     config = SiteLocalConfig(actualPath,useTFC)
     return config
 
+def makeStorageAttribute(siteName,subSiteName,storageSiteName,volume,protocol):
+    return {'site':siteName,'subSite':subSiteName,'storageSite':storageSiteName,'volume':volume,'protocol':protocol}
 
 class SiteConfigError(Exception):
     """
@@ -70,7 +72,7 @@ class SiteLocalConfig(object):
     Readonly API object for getting info out of the SiteLocalConfig file
 
     """
-    def __init__(self, siteConfigXML, useTFC=False):
+    def __init__(self, siteConfigXML, useTFC):
         self.useTFC = useTFC #switch to use old TFC or new Rucio
         self.siteConfigFile = siteConfigXML
         self.siteName = None
@@ -99,12 +101,11 @@ class SiteLocalConfig(object):
         try:
             tfcFile = tfcFilename(tfcUrl)
             tfcProto = tfcProtocol(tfcUrl,self.useTFC)
-            if self.useTFC:  
-                tfcInstance = readTFC(tfcFile)
-            else:
+            storage_att = None
+            if not self.useTFC:
                 aVolume = tfcUrl.split('?')[1].split('&')[1].replace('volume=','') 
-                storage_att = {'site':self.siteName,'subSite':self.subSiteName,'storageSite':self.localStageOut.get('storageSite',None),'volume':aVolume,'protocol':tfcProto}
-                tfcInstance = readTFC(tfcFile,storage_att,self.useTFC)
+                storage_att = makeStorageAttribute(self.siteName,self.subSiteName,self.localStageOut.get('storageSite',None),aVolume,tfcProto)
+            tfcInstance = readTFC(tfcFile,storage_att,self.useTFC)
             tfcInstance.preferredProtocol = tfcProto
         except Exception as ex:
             msg = "Unable to load TrivialFileCatalog:\n"
@@ -197,7 +198,7 @@ def coroutine(func):
 
 
 
-def nodeReader(node,useTFC=True):
+def nodeReader(node,useTFC):
     """
     _nodeReader_
 
@@ -243,7 +244,8 @@ def processSite(targets):
         #Get the name first
         report['siteName'] = node.attrs.get('name', None)
         for subnode in node.children:
-            if subnode.name == 'subsite': report['subSiteName'] = subnode.attrs.get('name',None)
+            if subnode.name == 'subsite':
+                report['subSiteName'] = subnode.attrs.get('name',None)
             if subnode.name == 'event-data':
                 targets['event-data'].send((report, subnode))
             elif subnode.name == 'calib-data':
@@ -289,12 +291,14 @@ def processLocalStageOut():
         else:
             for subnode in node.children:
                 #now construct an url as used in trivial file catalog
-                subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
+                subSiteName = None
+                if 'subSiteName' in report.keys():
+                    subSiteName = report['subSiteName']
                 aStorageSite = subnode.attrs.get('site', None)
                 if aStorageSite is None: aStorageSite = report['siteName']
                 aProtocol = subnode.attrs.get('protocol', None)
                 aVolume = subnode.attrs.get('volume', None)
-                storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol} 
+                storage_att = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol) 
                 #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storage_att,False)+'?protocol='+aProtocol+'&volume='+aVolume
                 localReport['catalog'] = getCatalog(storage_att)
                 localReport['command'] = subnode.attrs.get('command', None)
@@ -305,8 +309,7 @@ def processLocalStageOut():
         
         report['localStageOut'] = localReport
 
-
-#HERE
+#This method is not used currently, for future development
 #<stage-out>
 #     <method volume="CERN_EOS_T0" protocol="XRootD" command="xrdcp" option="--wma-diablewriterecovery"/>
 #</stage-out>
@@ -318,6 +321,7 @@ def processStageOut():
     """
     while True:
         report, node = (yield)
+        #store multiple stage-out instances in <stage-out> of site-local-config.xml
         localReport = []
         for subnode in node.children:
             tmp = {}
@@ -354,7 +358,7 @@ def processFallbackStageOut():
                 if aStorageSite is None: aStorageSite = report['siteName']
                 aProtocol = subnode.attrs.get('protocol', None)
                 aVolume = subnode.attrs.get('volume', None)
-                storage_att = {'site':report['siteName'],'subSite':subSiteName,'storageSite':aStorageSite,'volume':aVolume,'protocol':aProtocol}
+                storage_att = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol)
                 lfnPrefixes = lfnPrefix(storage_att)
                 for pre in lfnPrefixes:
                     localReport = {}

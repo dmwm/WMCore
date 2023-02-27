@@ -175,12 +175,12 @@ class TrivialFileCatalog(dict):
                 result += "\n"
         return result
 
-def tfcProtocol(contactString,useTFC=True):
+def tfcProtocol(contactString,useTFC):
     """
     _tfcProtocol_
 
-    Given a Trivial File Catalog contact string, extract the
-    protocol from it.
+    Given a file catalog contact string, extract the
+    protocol from it. If useTFC=True, the Trivial File Catalog contract string is used (storage.xml). Otherwise, it is the file catalog from Rucio definitions (storage.json) 
 
     """
     args = urlsplit(contactString)[3]
@@ -188,9 +188,10 @@ def tfcProtocol(contactString,useTFC=True):
     if not useTFC:
         value = value.split('&')[0]
     return value
-
-#construct a catalog from storage attribute  
 def getCatalog(storageAttr):
+    """
+    Construct a catalog for storage.json from storage attributes. It is a string with the same format as old trivial catalog for storage.xml ('trivialcatalog_file:'+path+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']. "path" points to location of storage.json, '/abc/xyz/storage.json')  
+    """
     site = storageAttr['site']
     subSite = storageAttr['subSite']
     storageSite = storageAttr['storageSite']
@@ -235,7 +236,7 @@ def tfcFilename(contactString):
     path = os.path.normpath(value) #does this resolve relative and symbolic path?
     return path
 
-def readTFC(filename,storageAttr=None,useTFC=True):
+def readTFC(filename,storageAttr,useTFC):
     """
     _readTFC_
 
@@ -316,8 +317,8 @@ def rseName(storageAttr):
     catalog = getCatalog(storageAttr)
     storageJsonName = tfcFilename(catalog)
     try:
-        jsonFile=open(storageJsonName,encoding="utf-8")
-        jsElements = json.load(jsonFile)
+        with open(storageJsonName,encoding="utf-8") as jsonFile:
+            jsElements = json.load(jsonFile)
     except Exception as ex:
         msg = "TrivialFileCatalog.py:rseName() Error reading FileCatalog: %s\n" % storageJsonName 
         msg += str(ex)
@@ -333,8 +334,8 @@ def lfnPrefix(storageAttr):
     #now get lfn prefix
     storageJsonName = tfcFilename(catalog)
     try:
-        jsonFile = open(storageJsonName,encoding="utf-8")
-        jsElements = json.load(jsonFile)
+        with open(storageJsonName,encoding="utf-8") as jsonFile:
+            jsElements = json.load(jsonFile)
     except Exception as ex:
         msg = "TrivialFileCatalog.py:lfnPrefix() Error reading FileCatalog: %s\n" % storageJsonName 
         msg += str(ex)
@@ -359,7 +360,7 @@ def lfnPrefix(storageAttr):
             break
     return lfnPrefixCol
 
-def loadTFC(contactString,storageAttr=None,useTFC=True):
+def loadTFC(contactString,storageAttr,useTFC):
     """
     _loadTFC_
 

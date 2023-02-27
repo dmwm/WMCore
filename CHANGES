@@ -1,3 +1,7 @@
+2.1.7 to 2.1.8rc1:
+  - Run all MSRuleCleaner pipelines for rejected/aborted requests (anehnis) #11489
+
+
 2.1.7rc7 to 2.1.7:
   - fix NameError import in the REST package (Thanayut Seethongchuen) #11485
 

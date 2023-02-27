@@ -17,7 +17,7 @@ from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 class MSCore(object):
     """
     This class provides core functionality for
-    MSTransferor, MSMonitor, MSOutput, MSRuleCleaner, MSUnmerged classes.
+    MSTransferor, MSMonitor, MSOutput, MSPileup, MSRuleCleaner, MSUnmerged classes.
     """
 
     def __init__(self, msConfig, **kwargs):

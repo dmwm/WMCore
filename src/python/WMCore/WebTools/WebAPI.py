@@ -2,11 +2,14 @@
 from WMCore.WebTools.Page import exposexml, exposejson
 from WMCore.WebTools.Page import exposedasplist, exposedasjson, exposedasxml
 from WMCore.WebTools.DatabasePage import DatabasePage
-from WMCore.Lexicon import sitetier, countrycode
+from Utils.Utilities import encodeUnicodeToBytes
 from cherrypy import expose, HTTPRedirect
+from Utils.CPMetrics import promMetrics
 import sys
-import types
 import traceback
+
+# third-party libraries
+from cherrypy.lib import cpstats
 
 class WebAPI(DatabasePage):
     __version__ = 1
@@ -47,6 +50,22 @@ class WebAPI(DatabasePage):
                 'version': self.__version__}
 
     @expose
+    def stats(self):
+        """
+        Return CherryPy stats dict about underlying service activities
+        """
+        return cpstats.StatsPage().data()
+
+    @expose
+    def metrics(self):
+        """
+        Return CherryPy stats following the prometheus metrics structure
+        """
+        name = self.__class__.__name__
+        metrics = promMetrics(cpstats.StatsPage().data(), name)
+        return encodeUnicodeToBytes(metrics)
+
+    @expose
     def index(self, **kwargs):
         """
         Return the auto-generated documentation for the API
@@ -83,13 +102,13 @@ class WebAPI(DatabasePage):
         """
         Make the API call and build a DAS compatible dictionary.
         """
-        dict = {}
+        idict = {}
         try:
-            dict['request_version'] = self.methods[method]['version']
+            idict['request_version'] = self.methods[method]['version']
         except:
-            dict['request_version'] = 0
-        dict['request_call'] = method
-        dict[method] = self.runMethod(method, kwargs)
+            idict['request_version'] = 0
+        idict['request_call'] = method
+        idict[method] = self.runMethod(method, kwargs)
         return dict
 
     @exposedasjson
@@ -101,7 +120,7 @@ class WebAPI(DatabasePage):
         try:
             return self.dasOutput(args[0], kwargs)
         except:
-            raise HTTPRedirect("doc")
+            raise HTTPRedirect("doc") from None
 
     @exposedasxml
     def dasxml(self, *args, **kwargs):
@@ -135,8 +154,6 @@ class WebAPI(DatabasePage):
         name, kwargs are passed to the method
         """
         if len(args) > 0:
-#            dict = self.runMethod(args[0], kwargs)
-#            return dict
             res = self.runMethod(args[0], kwargs)
             if  isinstance(res, str):
                 res = eval(res)
@@ -144,26 +161,26 @@ class WebAPI(DatabasePage):
         else:
             raise HTTPRedirect("doc")
 
-    def runMethod(self, method, input):
+    def runMethod(self, method, userInput):
         """
         Run the specified method with the provided input, return a dict
         containing the result of the call or an exception wrapped in a dict.
         """
-        dict = {}
+        idict = {}
         try:
             assert method in self.methods, "Unknown method called"
             if len(input):
                 dict = self.methods[method]['call'](**input)
             else:
-                dict = self.methods[method]['call']()
+                idict = self.methods[method]['call']()
         except Exception as e:
             error = e.__str__()
             self.debug(error)
             self.debug(traceback.print_exc())
 #            self.debug("%s:%s" % (sys.exc_type, sys.exc_value))
-            dict = {'Exception':{'Exception_thrown_in': method,
+            idict = {'Exception':{'Exception_thrown_in': method,
                        'Exception_type': '%s' % sys.exc_info()[0],
                        'Exception_detail':error,
                        'Exception_arguments': input,
                        'Exception_dict':dict}}
-        return dict
+        return idict

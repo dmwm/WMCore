@@ -23,7 +23,7 @@ def loadSiteLocalConfig(useTFC=False):
 
     Runtime Accessor for the site local config.
 
-    Requires that CMS_PATH is defined as an environment variable
+    Requires that SITECONFIG_PATH is defined as an environment variable
 
     """
     overVarName = "WMAGENT_SITE_CONFIG_OVERRIDE"
@@ -39,11 +39,11 @@ def loadSiteLocalConfig(useTFC=False):
             msg = "%s env. var. provided but not pointing to an existing file, ignoring." % overVarName
             logging.log(logging.ERROR, msg)
 
-    defaultPath = "$CMS_PATH/SITECONF/local/JobConfig/site-local-config.xml"
+    defaultPath = "$SITECONFIG_PATH/JobConfig/site-local-config.xml"
     actualPath = os.path.expandvars(defaultPath)
-    if os.environ.get("CMS_PATH", None) is None:
+    if os.environ.get("SITECONFIG_PATH", None) is None:
         msg = "Unable to find site local config file:\n"
-        msg += "CMS_PATH variable is not defined."
+        msg += "SITECONFIG_PATH variable is not defined."
         raise SiteConfigError(msg)
 
     if not os.path.exists(actualPath):

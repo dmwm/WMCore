@@ -14,19 +14,19 @@ except ImportError:
     mongomock = None
 
 from pymongo import MongoClient, errors, IndexModel
+from pymongo.errors import ConnectionFailure
 
 
 class MongoDB(object):
     """
     A simple wrapper class for creating a connection to a MongoDB instance
     """
-    def __init__(self, database=None, server=None, port=None, replicaset=None,
+    def __init__(self, database=None, server=None,
                  create=False, collections=None, testIndexes=False,
                  logger=None, mockMongoDB=False, **kwargs):
         """
         :databases:   A database Name to connect to
-        :server:      The server url (see https://docs.mongodb.com/manual/reference/connection-string/)
-        :port:        Server port
+        :server:      The server url or a list of (server:port) pairs (see https://docs.mongodb.com/manual/reference/connection-string/)
         :create:      A flag to trigger a database creation (if missing) during
                       object construction, together with collections if present.
         :collections: A list of tuples describing collections with indexes -
@@ -34,30 +34,73 @@ class MongoDB(object):
                       the rest elements are considered as indexes
         :testIndexes: A flag to trigger index test and eventually to create them
                       if missing (TODO)
+        :mockMongoDB: A flag to trigger a database simulation instead of trying
+                      to connect to a real database server.
         :logger:      Logger
+
+        Here follows a short list of usefull optional parameters accepted by the
+        MongoClient which may be passed as keyword arguments to the current module:
+
+        :replicaSet:       The name of the replica set to connect to. The driver will verify
+                           that all servers it connects to match this name. Implies that the
+                           hosts specified are a seed list and the driver should attempt to
+                           find all members of the set. Defaults to None.
+        :port:             The port number on which to connect. It is overwritten by the ports
+                           defined in the Url string or from the tuples listed in the server list
+        :connect:          If True, immediately begin connecting to MongoDB in the background.
+                           Otherwise connect on the first operation.
+        :directConnection: If True, forces the client to connect directly to the specified MongoDB
+                           host as a standalone. If False, the client connects to the entire
+                           replica set of which the given MongoDB host(s) is a part.
+                           If this is True and a mongodb+srv:// URI or a URI containing multiple
+                           seeds is provided, an exception will be raised.
+        :username:         A string
+        :password:         A string
+                           Although username and password must be percent-escaped in a MongoDB URI,
+                           they must not be percent-escaped when passed as parameters. In this example,
+                           both the space and slash special characters are passed as-is:
+                           MongoClient(username="user name", password="pass/word")
         """
-        self.server = server # '127.0.0.1'
-        self.port = port # 8230
+        self.server = server
         self.logger = logger
         self.mockMongoDB = mockMongoDB
         if mockMongoDB and mongomock is None:
             msg = "You are trying to mock MongoDB, but you do not have mongomock in the python path."
             self.logger.critical(msg)
             raise ImportError(msg)
+
+        # NOTE: We need to explicitely check for server availiability.
+        #       From pymongo Documentation: https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
+        #       """
+        #           ...
+        #           Starting with version 3.0 the :class:`MongoClient`
+        #           constructor no longer blocks while connecting to the server or
+        #           servers, and it no longer raises
+        #           :class:`~pymongo.errors.ConnectionFailure` if they are
+        #           unavailable, nor :class:`~pymongo.errors.ConfigurationError`
+        #           if the user's credentials are wrong. Instead, the constructor
+        #           returns immediately and launches the connection process on
+        #           background threads.
+        #           ...
+        #       """
         try:
             if mockMongoDB:
                 self.client = mongomock.MongoClient()
                 self.logger.info("NOTICE: MongoDB is set to use mongomock, instead of real database.")
-            elif replicaset:
-                self.client = MongoClient(self.server, self.port, replicaset=replicaset, **kwargs )
             else:
-                self.client = MongoClient(self.server, self.port, **kwargs)
+                self.client = MongoClient(host=self.server, **kwargs)
             self.client.server_info()
-        except Exception as ex:
-            msg = "Could not connect to MongoDB server: %s\n%s" % (self.server, str(ex))
+            self.client.admin.command('ping')
+        except ConnectionFailure as ex:
+            msg = "Could not connect to MongoDB server: %s. Server not available. \n"
             msg += "Giving up Now."
-            self.logger.error(msg)
-            raise ex
+            self.logger.error(msg, self.server)
+            raise ex from None
+        except Exception as ex:
+            msg = "Could not connect to MongoDB server: %s. Due to unknown reason: %s\n"
+            msg += "Giving up Now."
+            self.logger.error(msg, self.server, str(ex))
+            raise ex from None
         self.create = create
         self.testIndexes = testIndexes
         self.dbName = database
@@ -178,18 +221,18 @@ class MongoDB(object):
                 try:
                     # self._dbCreate(getattr(self, db))
                     self._dbCreate(db)
-                except Exception as ex:
-                    msg = "Could not create MongoDB databases: %s\n%s\n" % (db, str(ex))
+                except Exception as exc:
+                    msg = "Could not create MongoDB databases: %s\n%s\n" % (db, str(exc))
                     msg += "Giving up Now."
                     self.logger.error(msg)
-                    raise ex
+                    raise exc
                 try:
                     self._dbTest(db)
-                except Exception as ex:
-                    msg = "Second failure while testing %s\n%s\n" % (db, str(ex))
+                except Exception as exc:
+                    msg = "Second failure while testing %s\n%s\n" % (db, str(exc))
                     msg += "Giving up Now."
                     self.logger.error(msg)
-                    raise ex
+                    raise exc
                 msg = "Database %s successfully created" % db
                 self.logger.error(msg)
         except Exception as ex:

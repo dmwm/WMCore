@@ -36,11 +36,11 @@ function(doc, req)
     function updateTransition(newStatus) {
     	
     	if (allowedStates.indexOf(newStatus) === -1) {
-    		return "not allowed state " + newStatus;
+    		return "Not allowed state: '" + newStatus + "'";
     	}
     	if (doc.RequestStatus && !isAllowedTransiton(doc.RequestStatus, newStatus)) {
     		// don't update the status just ignore
-    		return "not allowed transition " + doc.RequestStatus + " to " + newStatus;
+    		return "Not allowed transition, from: '" + doc.RequestStatus + "' to '" + newStatus + "'";
     	}
     	doc.RequestStatus = newStatus;
     	
@@ -70,6 +70,10 @@ function(doc, req)
     	}
 
     }
-    
-    return [doc, message];
+    if (message == "OK") {
+        return [doc, message];
+    } else {
+        // then do not change anything in the document
+        return [null, message];
+    }
 }

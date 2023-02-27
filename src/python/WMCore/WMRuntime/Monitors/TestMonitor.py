@@ -5,7 +5,7 @@ _TestMonitor_
 
 This is the test class for monitors
 """
-from __future__ import print_function
+
 
 import os.path
 import time

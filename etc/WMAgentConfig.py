@@ -141,6 +141,10 @@ config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cer
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 config.WorkQueueManager.queueParams["WorkPerCycle"] = 200  # don't pull more than this number of elements per cycle
 config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for only half of the resources
+# number of available elements to be retrieved within a single CouchDB http request
+config.WorkQueueManager.queueParams["RowsPerSlice"] = 2500
+# maximum number of available elements rows to be evaluated when acquiring GQ to LQ work
+config.WorkQueueManager.queueParams["MaxRowsPerCycle"] = 50000
 config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"  # account for data locks
 
 
@@ -153,10 +157,10 @@ config.DBS3Upload.pollInterval = 100
 # "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
-config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file
+# provided a block name, this will dump all the block info in a json file
+config.DBS3Upload.dumpBlockJsonFor = ""
 # set DbsApi requests to use gzip enconding, thus sending compressed data
-# please change to True when new DBSWriter Go server will be in place
-config.DBS3Upload.gzipEncoding = False
+config.DBS3Upload.gzipEncoding = True
 
 config.section_("DBSInterface")
 config.DBSInterface.DBSUrl = globalDBSUrl

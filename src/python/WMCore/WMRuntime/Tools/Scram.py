@@ -26,7 +26,6 @@ sample usage:
 """
 
 from builtins import range, object
-from future.utils import viewitems
 
 import logging
 import os
@@ -36,18 +35,17 @@ import sys
 import platform
 
 from PSetTweaks.WMTweak import readAdValues
-from Utils.PythonVersion import PY3
-from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicodeConditional
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 
 SCRAM_TO_ARCH = {'amd64': 'X86_64', 'aarch64': 'aarch64', 'ppc64le': 'ppc64le'}
 # Scram arch to platform machine values above are unique, so we can reverse the mapping
-ARCH_TO_SCRAM = {arch:scram for scram, arch in SCRAM_TO_ARCH.items()}
+ARCH_TO_SCRAM = {arch:scram for scram, arch in list(SCRAM_TO_ARCH.items())}
 ARCH_TO_OS = {'slc5': ['rhel6'],
               'slc6': ['rhel6'],
               'slc7': ['rhel7'],
               'el8': ['rhel8'], 'cc8': ['rhel8'], 'cs8': ['rhel8'], 'alma8': ['rhel8']}
 OS_TO_ARCH = {}
-for arch, oses in viewitems(ARCH_TO_OS):
+for arch, oses in ARCH_TO_OS.items():
     for osName in oses:
         if osName not in OS_TO_ARCH:
             OS_TO_ARCH[osName] = []
@@ -189,7 +187,7 @@ def testWriter(func, *args):
 #  //
 # // Interceptable function to push commands to the subshell, used to
 # //  enable test mode.
-procWriter = lambda s, l: s.stdin.write(encodeUnicodeToBytesConditional(l, condition=PY3))
+procWriter = lambda s, l: s.stdin.write(encodeUnicodeToBytes(l))
 
 
 class Scram(object):
@@ -318,8 +316,8 @@ class Scram(object):
         self.procWriter(proc, "eval `%s ru -sh`\n" % self.command)
 
         self.stdout, self.stderr = proc.communicate()
-        self.stdout = decodeBytesToUnicodeConditional(self.stdout, condition=PY3)
-        self.stderr = decodeBytesToUnicodeConditional(self.stderr, condition=PY3)
+        self.stdout = decodeBytesToUnicode(self.stdout)
+        self.stderr = decodeBytesToUnicode(self.stderr)
         if proc.returncode == 0:
             for l in self.stdout.split(";\n"):
                 if l.strip() == "":
@@ -387,8 +385,12 @@ class Scram(object):
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n' % os.environ['VO_CMS_SW_DIR'])
         if os.environ.get('OSG_APP', None) is not None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n' % os.environ['OSG_APP'])
+        # In general, CMSSW releases <= 12_6_0 will use CMS_PATH, while anything beyond that
+        # requires the SITECONFIG_PATH variable to properly load storage.xml/json file.
         if os.environ.get('CMS_PATH', None) is not None:
             self.procWriter(proc, 'export CMS_PATH=%s\n' % os.environ['CMS_PATH'])
+        if os.environ.get('SITECONFIG_PATH', None) is not None:
+            self.procWriter(proc, 'export SITECONFIG_PATH=%s\n' % os.environ['SITECONFIG_PATH'])
         if os.environ.get('_CONDOR_JOB_AD'):
             self.procWriter(proc, 'export _CONDOR_JOB_AD=%s\n' % os.environ['_CONDOR_JOB_AD'])
         if os.environ.get('_CONDOR_MACHINE_AD'):
@@ -418,6 +420,8 @@ class Scram(object):
         self.procWriter(proc, "%s\n" % command)
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()
+        self.stdout = decodeBytesToUnicode(self.stdout)
+        self.stderr = decodeBytesToUnicode(self.stderr)
         logging.info("Subprocess stdout was:\n%s", self.stdout)
         logging.info("Subprocess stderr was:\n%s", self.stderr)
         self.code = proc.returncode

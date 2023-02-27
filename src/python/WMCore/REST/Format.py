@@ -1,6 +1,8 @@
 from __future__ import print_function
 
+import gzip
 from builtins import str, bytes, object
+
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 from future.utils import viewitems
@@ -245,12 +247,15 @@ class JSONFormat(RESTFormat):
                 etag.update(preamble)
                 yield preamble
 
+            obj = None
             try:
                 for obj in stream:
                     chunk = comma + json.dumps(obj) + "\n"
                     etag.update(chunk)
                     yield chunk
                     comma = ","
+            except cherrypy.HTTPError:
+                raise
             except GeneratorExit:
                 etag.invalidate()
                 trailer = None
@@ -265,6 +270,8 @@ class JSONFormat(RESTFormat):
                     yield trailer
 
             cherrypy.response.headers["X-REST-Status"] = 100
+        except cherrypy.HTTPError:
+            raise
         except RESTError as e:
             etag.invalidate()
             report_rest_error(e, format_exc(), False)
@@ -486,10 +493,23 @@ def _stream_compress_deflate(reply, compress_level, max_chunk):
     if npending:
         yield z.compress(encodeUnicodeToBytes("".join(pending))) + z.flush(zlib.Z_FINISH)
 
+
+def _stream_compress_gzip(reply, compress_level, *args):
+    """Streaming compressor for the 'gzip' method. Generates output that
+    is guaranteed to expand at the exact same chunk boundaries as original
+    reply stream."""
+    data = []
+    for chunk in reply:
+        data.append(chunk)
+    if data:
+        yield gzip.compress(encodeUnicodeToBytes("".join(data)), compress_level)
+
+
 # : Stream compression methods.
 _stream_compressor = {
   'identity': _stream_compress_identity,
-  'deflate': _stream_compress_deflate
+  'deflate': _stream_compress_deflate,
+  'gzip': _stream_compress_gzip
 }
 
 def stream_compress(reply, available, compress_level, max_chunk):

@@ -1,0 +1,53 @@
+# Reusable workflow to setup a specific WMCore component for pip
+
+on:
+  workflow_call:
+    inputs:
+      wmcore_component:
+        required: true
+        type: string
+    secrets:
+      cern_user:
+        required: true
+      cern_token:
+        required: true
+
+jobs:
+  build_images_from_template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the Ref
+        id: get-ref
+        uses: ankitvgupta/ref-to-tag-action@master
+        with:
+          ref: ${{ github.ref }}
+          head_ref: ${{ github.head_ref }}
+
+      - name: Build image
+        run: |
+          curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/${{inputs.wmcore_component}}/Dockerfile
+          sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
+          cat Dockerfile
+          echo "Sleeping 5min to ensure that PyPi packages are available..."
+          sleep 300
+          docker build --tag registry.cern.ch/cmsweb/${{inputs.wmcore_component}}:${{steps.get-ref.outputs.tag}} .
+
+      - name: Images
+        run: |
+          docker images
+
+      - name: Login to registry.cern.ch
+        uses: docker/login-action@v2
+        with:
+          registry: registry.cern.ch
+          username: ${{ secrets.cern_user }}
+          password: ${{ secrets.cern_token }}
+
+      - name: Publish image to registry.cern.ch
+        uses: docker/build-push-action@v1
+        with:
+          registry: registry.cern.ch
+          username: ${{ secrets.cern_user }}
+          password: ${{ secrets.cern_token }}
+          repository: cmsweb/${{inputs.wmcore_component}}
+          tag_with_ref: true

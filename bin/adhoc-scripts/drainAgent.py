@@ -15,10 +15,9 @@ thread as well. It checks status of:
 NOTE: you need to source the agent environment:
 source apps/wmagent/etc/profile.d/init.sh
  """
-from __future__ import print_function, division
+
 
 from builtins import range, str, bytes
-from future.utils import viewitems
 
 import argparse
 import logging
@@ -165,7 +164,7 @@ def getDsetAndWf(lfns, wfsDict):
 
     match = []
     for dset in uniqDsets:
-        for wf, values in viewitems(wfsDict):
+        for wf, values in wfsDict.items():
             if dset in values['OutputDatasets']:
                 match.append((wf, values['RequestStatus'], dset))
     if match:

@@ -1,8 +1,20 @@
 #!/usr/bin/env python
 """
-Manage dependancies by declaring systems here.
-A system can depend on packages or other systems.
-If a package ends with a + include all subpackages.
+This data structure is consumed by the setup_build.py script, in order to add
+the required packages to each of the WMCore systems.
+
+It contains the name of the systems that can be built out of the WMCore
+repository, and their list of dependencies, which can be:
+ * bin: list with the name of executable scripts available in the root bin/ area
+ * packages: list with the name of a WMCore python packages (i.e. a directory
+   containing an __init__.py file)
+     * note that if it's suffixed with the '+' sign, subpackages will also be
+     recursively searched and added to the final system
+ * modules: list with the name of specific modules (a .py file) to be added.
+ * statics: list with the name of files classified as statics, e.g. css, templates,
+   javascript, etc.
+ * systems: list with WMCore system aliases (i.e., like a meta-package that can
+   be used by multiple WMCore systems).
 """
 dependencies = {
     'wmc-rest': {
@@ -110,8 +122,47 @@ dependencies = {
                     'WMCore.ReqMgr.DataStructs.RequestStatus',
                     'WMCore.ReqMgr.DataStructs.RequestType'
                     ],
-        'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
+        'systems': ['wmc-rest', 'wmc-database'],
         'statics': [],
+    },
+    'reqmgr2ms-core': {
+        'packages': ['WMCore.MicroService.MSCore', 'WMCore.MicroService.DataStructs',
+                     'WMCore.MicroService.Tools', 'WMCore.MicroService.CherryPyThreads',
+                     'WMCore.MicroService.Service', 'WMCore.MicroService.WebGui',
+                     'Utils', 'WMCore.Services+'],
+        'modules': ['WMCore.Wrappers.__init__',
+                    'WMCore.Wrappers.JsonWrapper.__init__',
+                    'WMCore.Wrappers.JsonWrapper.JSONThunker',
+                    'WMCore.ReqMgr.__init__', 'WMCore.ReqMgr.DataStructs.__init__',
+                    'WMCore.ReqMgr.DataStructs.RequestStatus',
+                    'WMCore.ReqMgr.DataStructs.RequestType'
+                    ],
+        'systems': ['wmc-rest', 'wmc-database'],
+        'statics': [],
+    },
+    'reqmgr2ms-unmerged': {
+        'packages': ['WMCore.MicroService.MSUnmerged+'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-output': {
+        'packages': ['WMCore.MicroService.MSOutput+'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-pileup': {
+        'packages': ['WMCore.MicroService.MSPileup+'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-transferor': {
+        'packages': ['WMCore.MicroService.MSTransferor+'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-monitor': {
+        'packages': ['WMCore.MicroService.MSMonitor+'],
+        'systems': ['reqmgr2ms-core'],
+    },
+    'reqmgr2ms-rulecleaner': {
+        'packages': ['WMCore.MicroService.MSRuleCleaner+'],
+        'systems': ['reqmgr2ms-core'],
     },
     'global-workqueue': {
         'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',
@@ -200,7 +251,7 @@ dependencies = {
         'statics': ['src/couchapps/ACDC+',
                     'src/couchapps/GroupUser+']
     },
-    't0': {
+    't0-agent': {
         'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
                      'WMCore.JobStateMachine', 'WMComponent+',
                      'WMCore.ThreadPool', 'WMCore.WorkerThreads',

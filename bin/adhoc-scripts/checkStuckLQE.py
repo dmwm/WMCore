@@ -8,10 +8,9 @@ Provided a workflow name in the command line, it will find all the
 local workqueue elements and print a summary of work/data location
 for the elements sitting in the Available status
 """
-from __future__ import print_function, division
+
 
 from builtins import next
-from future.utils import viewvalues, listvalues
 
 import sys
 import os
@@ -58,14 +57,14 @@ def commonDataLocation(element):
     """
     commonLoc = set()
     if element['PileupData']:
-        commonLoc = set(next(iter(viewvalues(element['PileupData']))))
+        commonLoc = set(next(iter(element['PileupData'].values())))
     if element['Inputs']:
         if commonLoc:
-            commonLoc = commonLoc & set(next(iter(viewvalues(element['Inputs']))))
+            commonLoc = commonLoc & set(next(iter(element['Inputs'].values())))
         else:
             commonLoc = set(list(element['Inputs'].values())[0])
     if element['ParentData']:
-        tempLoc = listvalues(element['ParentData'])
+        tempLoc = list(element['ParentData'].values())
         parentLoc = set(tempLoc[0])
         for temp in tempLoc:
             parentLoc = parentLoc & set(temp)

@@ -104,7 +104,7 @@ but it can help identifying show-stoppers for the migration.
 
 """
 
-from __future__ import division  # Jenkins CI
+  # Jenkins CI
 
 import argparse
 import os

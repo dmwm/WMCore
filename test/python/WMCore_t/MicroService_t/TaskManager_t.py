@@ -11,9 +11,8 @@ import unittest
 from builtins import str as newstr
 from future.utils import listvalues
 
-from WMCore.MicroService.TaskManager import \
+from WMCore.MicroService.MSCore.TaskManager import \
     TaskManager, genkey, UidSet
-
 
 def myFunc(interval, results):
     "Test function"

@@ -5,8 +5,6 @@ wmcore-SysStat
 
 Hardware monitoring utility for launched sensor daemons.
 """
-from __future__ import print_function
-
 import sys
 import os
 import getopt

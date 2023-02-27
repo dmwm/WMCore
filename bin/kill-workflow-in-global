@@ -10,7 +10,6 @@ This script will mark the global workqueue elements - for a given
 workflow - as CancelRequested, such that the agents can proceed
 and acknowledge it, moving elements to status Canceled.
 """
-from __future__ import print_function
 
 import os
 import sys

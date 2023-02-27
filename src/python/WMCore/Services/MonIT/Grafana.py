@@ -108,7 +108,7 @@ class Grafana(object):
             queryStr = '{"search_type":"query_then_fetch","ignore_unavailable":true,"index":["%s"]}\n' % indexName
             queryStr += '{"size":500,"query":{"bool":{"filter":[{"range":{"metadata.timestamp":{"gte":"now-1d","lte":"now","format":"epoch_millis"}}},' \
                         '{"query_string":{"analyze_wildcard":true,' \
-                        '"query":"metadata.type: ssbmetric AND metadata.type_prefix:raw AND metadata.path: %s"}}]}},' \
+                        '"query":"metadata.type: ssbmetric AND metadata.type_prefix:raw AND metadata.monit_hdfs_path: %s"}}]}},' \
                         '"sort":{"metadata.timestamp":{"order":"desc","unmapped_type":"boolean"}},' \
                         '"script_fields":{},"docvalue_fields":["metadata.timestamp"]}\n' % pathName
         self.logger.info("Calling API: %s with query: %s", uri, pformat(queryStr))

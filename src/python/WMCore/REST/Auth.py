@@ -25,6 +25,10 @@ def user_info_from_headers(key, verbose=False):
 
     # Reject if request was not authenticated.
     if 'cms-auth-status' not in headers:
+        if headers.get('Remote-Addr', '') == '127.0.0.1':
+            # since we are using localhost access we can skip authentication
+            log("DEBUG: non-authenticated request performed on localhost")
+            return
         log("ERROR: authz denied, front-end headers not present")
         raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
 

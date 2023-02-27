@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
-
-from future.utils import viewvalues
 
 import os
 from argparse import ArgumentParser
@@ -34,14 +31,14 @@ def getAcceptableSites(ele):
 
     if ele['Inputs']:
         if commonSites:
-            commonSites = commonSites & set([y for x in viewvalues(ele['Inputs']) for y in x])
+            commonSites = commonSites & set([y for x in ele['Inputs'].values() for y in x])
         else:
-            commonSites = set([y for x in viewvalues(ele['Inputs']) for y in x])
+            commonSites = set([y for x in ele['Inputs'].values() for y in x])
     if ele['PileupData']:
         if commonSites:
-            commonSites = commonSites & set([y for x in viewvalues(ele['PileupData']) for y in x])
+            commonSites = commonSites & set([y for x in ele['PileupData'].values() for y in x])
         else:
-            commonSites = set([y for x in viewvalues(ele['PileupData']) for y in x])
+            commonSites = set([y for x in ele['PileupData'].values() for y in x])
 
     return commonSites
 

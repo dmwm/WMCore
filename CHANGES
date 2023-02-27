@@ -1,3 +1,170 @@
+2.1.7rc7 to 2.1.7:
+  - fix NameError import in the REST package (Thanayut Seethongchuen) #11485
+
+
+2.1.7rc6 to 2.1.7rc7:
+  - Move site config setup from CMS_PATH to SITECONFIG_PATH (Alan Malta Rodrigues) #11481
+  - Deprecate TFC override for multi-step jobs (Alan Malta Rodrigues) #11473
+
+
+2.1.7rc5 to 2.1.7rc6:
+  - Add missing object and exception (Valentin Kuznetsov) #11475
+  - Fix MSPileup query logic (Valentin Kuznetsov) #11475
+  - Fix CRIC unit tests wrt to the T2_CH_CERN_P5 site (Alan Malta Rodrigues) #11480
+  - Skip auth check in case of localhost usage (Valentin Kuznetsov) #11462
+
+
+2.1.7rc4 to 2.1.7rc5:
+  - Add future dependency to mspileup service (Valentin Kuznetsov) #11474
+
+
+2.1.7rc3 to 2.1.7rc4:
+  - MSRuleCleaner: initialize transferInfo local var (Alan Malta Rodrigues) #11470
+  - Fix bad import for mspileupError (Alan Malta Rodrigues) #11468
+
+
+2.1.7rc2 to 2.1.7rc3:
+  - Use setswitchinterval instead of setcheckinterval (Valentin Kuznetsov) #11432
+  - MSPileup service HTTP APIs (Valentin Kuznetsov) #11443
+  - Open REST-based file in append mode, update deactivated (Alan Malta Rodrigues) #11463
+  - Corrected GQ -> LQ data acquisition in slices (Alan Malta Rodrigues) #11457
+
+
+2.1.7rc1 to 2.1.7rc2:
+  - MSPileup service data management layer (Valentin Kuznetsov) #11438
+  - Fix file open issue (Valentin Kuznetsov) #11431
+
+
+2.1.6 to 2.1.7rc1:
+  - Update WMAgent deploy script to use deployment HEAD/master (Alan Malta Rodrigues) #11448
+  - Add ORA-25401 to the list of handled exceptions in DBExceptionHandler. (Todor Ivanov) #11447
+  - Ensure JobAccountant does not insert files without any location (Alan Malta Rodrigues) #11433
+  - Do not duplicate error messages in DBS3Upload (Alan Malta Rodrigues) #11442
+  - Add reqmgr2ms-pileup (Valentin Kuznetsov) #11430
+  - Fix broken syntax for the f-string in DBSUploadPoller (Alan Malta Rodrigues) #11437
+
+
+2.1.6rc6 to 2.1.6:
+
+
+2.1.6rc5 to 2.1.6rc6:
+
+
+2.1.6rc4 to 2.1.6rc5:
+  - Switch to use DBSError reason/srvCode instead of if/else exception block (Valentin Kuznetsov) #11375
+
+
+2.1.6rc3 to 2.1.6rc4:
+  - Convert test/data/ReqMgr scripts to python3-only (Alan Malta Rodrigues) #11419
+  - Convert bin/ scripts to python3-only (Alan Malta Rodrigues) #11419
+  - Remove python2 compatibility for WMRuntime package (Alan Malta Rodrigues) #11420
+  - Fix multirequest API to encode input parameters and properly handle gziped content (Valentin Kuznetsov) #11404
+  - Add generic msDebugger && Fetch all wflows with missing TotaInput* parameters. (Todor Ivanov) #11366
+  - Add crt/key path resolution during service creation for RucioConMon. (Todor Ivanov) #11398
+  - Rename t0 package for pypi (to t0-agent) (Kenyi Hurtado) #11345
+
+
+2.1.6rc2 to 2.1.6rc3:
+  - Add unit test for parsing HTTP header (Valentin Kuznetsov) #11400
+  - Fix regexp pattern to match HTTP/1.1 and HTTP/2 (Valentin Kuznetsov) #11400
+  - Build docker image for t0_reqmon (Alan Malta Rodrigues) #11395
+
+
+2.1.6rc1 to 2.1.6rc2:
+  - Given a block name in DBS3Upload config, dump its info as json (Alan Malta Rodrigues) #11361
+
+
+2.1.5 to 2.1.6rc1:
+  - Add all the subpackages for each microservice (Alan Malta Rodrigues) #11392
+  - Change RucioConMon APIs' prefix. (Todor Ivanov) #11389
+  - Change metadata field in the Grafana SSB query (Alan Malta Rodrigues) #11379
+
+
+2.1.5rc7 to 2.1.5:
+
+
+2.1.5rc6 to 2.1.5rc7:
+  - Add try/except block for fetching PartialCopy parameter from camapign configuration. (Todor Ivanov) #11387
+
+
+2.1.5rc5 to 2.1.5rc6:
+  - Adding sleep of 5min to the docker build images (Alan Malta Rodrigues) 
+
+
+2.1.5rc4 to 2.1.5rc5:
+  - Update CERN credentials in the GH docker template (Alan Malta Rodrigues) 
+  - Update CERN credentials to lower case (Alan Malta Rodrigues) 
+
+
+2.1.5rc3 to 2.1.5rc4:
+  - Add checks for StatusAdvanceTimeout expiration and send alarms. (Todor Ivanov) #11299
+  - MSRuleCleaner: properly evaluate tape transfers (Alan Malta Rodrigues) #11384
+
+
+2.1.5rc2 to 2.1.5rc3:
+  - Remove obsolate estimate_ttc parameter to Rucio client calls. (Todor Ivanov) #11383
+  - Add new GH Action workflows to build WMCore images (Valentin Kuznetsov) #11377
+  - Replace dash in exporter name (Valentin Kuznetsov) #11381
+  - Add new module to convert cp stats into prometheus format suited for monitoring (Valentin Kuznetsov) #9940
+  - Update buildrelease.sh to consider release-candidate tags (Alan Malta Rodrigues) #11370
+
+
+2.1.5rc1 to 2.1.5rc2:
+  - Update rucio-clients version from 1.25.5 to 1.29.10 (Alan Malta Rodrigues) #11368
+
+
+2.1.4 to 2.1.5rc1:
+  - Switch mongo client to connect to a fully defined replicaset. (Todor Ivanov) #11360
+  - Provide DBSError class to handle DBS Go-server errors (Valentin Kuznetsov) #11173
+  - Bump WMAgent deployment example/tag to 2.1.4 (Alan Malta Rodrigues) #11362
+
+
+2.1.4.pre7 to 2.1.4:
+
+
+2.1.4.pre6 to 2.1.4.pre7:
+  - MSOutput: use AlertManagerAPI from MSCore (#11357) (Alan Malta Rodrigues) 
+
+
+2.1.4.pre5 to 2.1.4.pre6:
+  - Pylint fixes. (Todor Ivanov) #11280
+  - Switch MSOutput to use MongoDBAAS. (Todor Ivanov) #11280
+
+
+2.1.4.pre4 to 2.1.4.pre5:
+  - Fix T0 updaterequest update function to avoid same status transition (Alan Malta Rodrigues) #11353
+  - Change filter pattern (Kenyi Hurtado) #11355
+  - Trap DBS3Upload exceptions when fetching child/parent info from wmstats (Alan Malta Rodrigues) #11352
+
+
+2.1.4.pre3 to 2.1.4.pre4:
+  - Set the database dialect from the database URL && Make socket parameter optional. (Todor Ivanov) #11348
+  - Disable automatic data decompression in libcurl - ACCEPT_ENCODING (Alan Malta Rodrigues) #11343
+  - Add support to gzip response at the REST layer (Alan Malta Rodrigues) #11343
+  - Exclude GH actions to match with tags starting with JENKINS (Kenyi Hurtado) #11337
+
+
+2.1.4.pre2 to 2.1.4.pre3:
+  - Update dbs3-client version from 4.0.10 to 4.0.11 (Alan Malta Rodrigues) #11334
+  - add WebDav way to say "permission denied" to gfal_copy add webdav Insufficient Storage StageOut error (Stefano Belforte) #11328
+
+
+2.1.4.pre1 to 2.1.4.pre2:
+  - Build WMCore services (except for t0 right now, due to name conflicts) and publish them to pypy, using tag pushes (Kenyi Hurtado) #11318
+
+
+2.1.3 to 2.1.4.pre1:
+  - Enable compression of block data injected into DBSServer (Alan Malta Rodrigues) #11325
+  - Split microservices into separate packages (Erik Gough) #11324
+  - use is_alive with thread objs (isAlive deprecated) (Benjamin Tovar) #11323
+  - Scram.py - decode Popen stdout and stderr (Dario Mapelli) #11321
+
+
+2.1.3.pre1 to 2.1.3:
+  - Convert module to python3-only (Alan Malta Rodrigues) #11298
+  - Create job classad for REQUIRED_ARCH (Alan Malta Rodrigues) #11298
+
+
 2.1.2 to 2.1.3.pre1:
   - Update CMSMonitoring python library version to 0.6.9 (Alan Malta Rodrigues) #11295
   - Update schematics for WM, MSTransferor and MSMonitor (Alan Malta Rodrigues) #11294

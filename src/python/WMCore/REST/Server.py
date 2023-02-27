@@ -6,7 +6,7 @@ import inspect
 import os
 import re
 import signal
-import string
+from string import ascii_letters as letters
 import time
 from collections import namedtuple
 from functools import wraps
@@ -18,6 +18,7 @@ from cherrypy.lib import cpstats
 from WMCore.REST.Error import *
 from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
+from Utils.CPMetrics import promMetrics
 
 from Utils.Utilities import encodeUnicodeToBytes
 
@@ -36,7 +37,8 @@ _RX_CENSOR = re.compile(r"(identified by) \S+", re.I)
 _COMPRESSIBLE = ['text/html', 'text/html; charset=utf-8',
                  'text/plain', 'text/plain; charset=utf-8',
                  'text/css', 'text/css; charset=utf-8',
-                 'text/javascript', 'text/javascript; charset=utf-8']
+                 'text/javascript', 'text/javascript; charset=utf-8',
+                 'application/json']
 
 #: Type alias for arguments passed to REST validation methods, consisting
 #: of `args`, the additional path arguments, and `kwargs`, the query
@@ -362,9 +364,18 @@ class RESTFrontPage(object):
 
     @expose
     def stats(self):
-        "Return CherryPy stats dict about underlying service activities"
+        """
+        Return CherryPy stats dict about underlying service activities
+        """
         return cpstats.StatsPage().data()
 
+    @expose
+    def metrics(self):
+        """
+        Return CherryPy stats following the prometheus metrics structure
+        """
+        metrics = promMetrics(cpstats.StatsPage().data(), self.app.appname)
+        return encodeUnicodeToBytes(metrics)
 
 
 ######################################################################
@@ -649,7 +660,7 @@ class MiniRESTApi(object):
         self.etag_limit = 8 * 1024 * 1024
         self.compression_level = 9
         self.compression_chunk = 64 * 1024
-        self.compression = ['deflate']
+        self.compression = ['deflate', 'gzip']
         self.formats = [('application/json', JSONFormat()),
                         ('application/xml', XMLFormat(self.app.appname))]
         self.methods = {}
@@ -703,8 +714,18 @@ class MiniRESTApi(object):
 
     @expose
     def stats(self):
-        "Return CherryPy stats dict about underlying service activities"
+        """
+        Return CherryPy stats dict about underlying service activities
+        """
         return cpstats.StatsPage().data()
+
+    @expose
+    def metrics(self):
+        """
+        Return CherryPy stats following the prometheus metrics structure
+        """
+        metrics = promMetrics(cpstats.StatsPage().data(), self.app.appname)
+        return encodeUnicodeToBytes(metrics)
 
     @expose
     def default(self, *args, **kwargs):
@@ -727,6 +748,8 @@ class MiniRESTApi(object):
         try:
             return self._call(RESTArgs(list(args), kwargs))
         except HTTPRedirect:
+            raise
+        except cherrypy.HTTPError:
             raise
         except Exception as e:
             report_rest_error(e, format_exc(), True)
@@ -751,7 +774,7 @@ class MiniRESTApi(object):
         # Make sure the request method is something we actually support.
         if request.method not in self.methods:
             response.headers['Allow'] = " ".join(sorted(self.methods.keys()))
-            raise UnsupportedMethod()
+            raise UnsupportedMethod() from None
 
         # If this isn't a GET/HEAD request, prevent use of query string to
         # avoid cross-site request attacks and evil silent form submissions.
@@ -1468,7 +1491,7 @@ class DBConnectionPool(Thread):
         dbh, err = None, None
 
         # If tracing, issue log line that identifies this connection series.
-        trace = s["trace"] and ("RESTSQL:" + "".join(random.sample(string.ascii_letters, 12)))
+        trace = s["trace"] and ("RESTSQL:" + "".join(random.sample(letters, 12)))
         trace and cherrypy.log("%s ENTER %s@%s %s (%s) inuse=%d idle=%d" %
                                (trace, s["user"], s["dsn"], self.id, req["id"],
                                 len(self.inuse), len(self.idle)))

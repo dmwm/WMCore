@@ -5,9 +5,6 @@ _Watchdog_
 
 This cleverly named object is the thread that handles the monitoring of individual jobs
 """
-from __future__ import division
-from __future__ import print_function
-from future.utils import viewitems
 
 import logging
 import os
@@ -105,7 +102,7 @@ class Watchdog(threading.Thread):
                         args['maxPSS'] = resources['memory'] - 50
 
                 logging.info("Watchdog modified: %s. Final settings:", changedCores)
-                for k, v in viewitems(args):
+                for k, v in args.items():
                     logging.info("  %s: %r", k, v)
             # Actually initialize the monitor variables
             mon.initMonitor(task=task, job=wmbsJob,

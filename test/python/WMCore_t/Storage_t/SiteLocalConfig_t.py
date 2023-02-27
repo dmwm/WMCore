@@ -168,7 +168,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt",
                          "Error: Wrong site name.")
 
-
+    # this test requires access to CVMFS
     @attr("integration")
     def testSlcPhedexNodesEqualPhedexApiNodes(self):
         """
@@ -176,6 +176,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         site-local-config.xml is the same as the one returned by the PhEDEx api.
         """
         os.environ["CMS_PATH"] = "/cvmfs/cms.cern.ch"
+        os.environ["SITECONFIG_PATH"] = "/cvmfs/cms.cern.ch/SITECONF/local"
 
         nodes = ['FIXME']
 

@@ -13,7 +13,7 @@ import time
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import MONITOR_REPORT
-from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.Services.Rucio.Rucio import Rucio
 
 
@@ -230,9 +230,18 @@ class MSMonitor(MSCore):
             # check completion of all transfers
             statuses = []
             for transfer in record['transfers']:
-                cdict = campaigns[transfer['campaignName']]
+                try:
+                    cdict = campaigns[transfer['campaignName']]
+                    partialCopy = cdict['PartialCopy']
+                except Exception as ex:
+                    # Just log the error and stop checking any further transfers for the current request.
+                    status = 0
+                    statuses.append(status)
+                    msg = "Missing or broken campaign configuration at ReqMgr for request: %s. Error: %s"
+                    self.logger.exception(msg, reqName, str(ex))
+                    break
                 # compare against the last completion number, which is from the last cycle execution
-                if transfer['completion'][-1] >= cdict['PartialCopy'] * 100:
+                if transfer['completion'][-1] >= partialCopy * 100:
                     status = 1
                 else:
                     status = 0

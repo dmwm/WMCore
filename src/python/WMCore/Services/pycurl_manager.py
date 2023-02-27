@@ -63,6 +63,27 @@ from Utils.PortForward import portForward, PortForward
 from Utils.TokenManager import TokenManager
 
 
+def getException(url, params, headers, header, data):
+    """
+    Return HTTP exception for a given set of parameters:
+    :param url: string
+    :param params: dict
+    :param headers: dict
+    :param header: ResponseHeader
+    :param data: HTTP body
+    """
+    msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
+          % (url, header.status, header.reason, header.header, data)
+    exc = http.client.HTTPException(msg)
+    setattr(exc, 'req_data', params)
+    setattr(exc, 'req_headers', headers)
+    setattr(exc, 'url', url)
+    setattr(exc, 'result', data)
+    setattr(exc, 'status', header.status)
+    setattr(exc, 'reason', header.reason)
+    setattr(exc, 'headers', header.header)
+    return exc
+
 def decompress(body, headers):
     """
     Helper function to decompress given body if HTTP headers contains gzip encoding
@@ -100,9 +121,8 @@ class ResponseHeader(object):
 
     def parse(self, response):
         """Parse response header and assign class member data"""
-        startRegex = r"^HTTP/\d.\d \d{3}"
-        continueRegex = r"^HTTP/\d.\d 100"  # Continue: client should continue its request
-        replaceRegex = r"^HTTP/\d.\d"
+        startRegex = r"^HTTP/(\d|\d.\d) \d{3}" # to match "HTTP/1.1 200" and "HTTP/2 200"
+        continueRegex = r"^HTTP/(\d|\d.\d) 100"  # Continue: client should continue its request
 
         response = decodeBytesToUnicode(response)
 
@@ -113,10 +133,11 @@ class ResponseHeader(object):
             if re.search(startRegex, row):
                 if re.search(continueRegex, row):
                     continue
-                res = re.sub(replaceRegex, "", row).strip()
-                status, reason = res.split(' ', 1)
-                self.status = int(status)
-                self.reason = reason
+                # split HTTP header row on empty space
+                # for HTTP/proto STATUS REASON
+                arr = row.split(' ')
+                self.status = int(arr[1])
+                self.reason = ' '.join(arr[2:])
                 continue
             try:
                 key, val = row.split(':', 1)
@@ -204,26 +225,14 @@ class RequestHandler(object):
         """Set options for given curl object, params should be a dictionary"""
         if not (isinstance(params, (dict, basestring)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
+        #  ensure the original headers object remains unchanged
+        headers = headers or {}  # if it's None, then make it a dict
+        thisHeaders = copy.deepcopy(headers)
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
-
-        # If ACCEPT_ENCODING is set to the encoding string, then libcurl
-        # will automatically decode the response object according to the
-        # Content-Enconding received
-        # More info: https://curl.se/libcurl/c/CURLOPT_ACCEPT_ENCODING.html
-        thisHeaders = copy.deepcopy(headers)
-        if thisHeaders and thisHeaders.get("Accept-Encoding"):
-            if isinstance(thisHeaders["Accept-Encoding"], basestring):
-                curl.setopt(pycurl.ACCEPT_ENCODING, thisHeaders.pop("Accept-Encoding"))
-            else:
-                logging.warning("Wrong data type for header 'Accept-Encoding': %s",
-                                type(thisHeaders["Accept-Encoding"]))
-        else:
-            # add gzip encoding by default
-            curl.setopt(pycurl.ACCEPT_ENCODING, 'gzip')
 
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
@@ -255,19 +264,21 @@ class RequestHandler(object):
         if self.tmgr:
             token = self.tmgr.getToken()
             if token:
-                headers['Authorization'] = 'Bearer {}'.format(token)
+                thisHeaders['Authorization'] = 'Bearer {}'.format(token)
 
         if verb in ('POST', 'PUT'):
             # only these methods (and PATCH) require this header
             thisHeaders["Content-Length"] = str(len(encoded_data))
 
-        # we must pass url as a string data-type, otherwise pycurl will fail with error
+        # we must pass url as a bytes data-type, otherwise pycurl will fail with error
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
         curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
-        if thisHeaders:
-            curl.setopt(pycurl.HTTPHEADER, \
-                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
+        # In order to enable service intercommunication with compressed HTTP body,
+        # we need to enable this header here, in case it has not been provided by upstream.
+        thisHeaders.setdefault("Accept-Encoding", "gzip")
+        curl.setopt(pycurl.HTTPHEADER, [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(thisHeaders)])
+
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -328,24 +339,15 @@ class RequestHandler(object):
         if verbose:
             print(verb, url, params, headers)
         header = self.parse_header(hbuf.getvalue())
+        data = bbuf.getvalue()
+        data = decompress(data, header.header)
         if header.status < 300:
             if verb == 'HEAD':
                 data = ''
             else:
-                data = self.parse_body(bbuf.getvalue(), decode)
+                data = self.parse_body(data, decode)
         else:
-            data = bbuf.getvalue()
-            data = decompress(data, header.header)
-            msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
-                  % (url, header.status, header.reason, header.header, data)
-            exc = http.client.HTTPException(msg)
-            setattr(exc, 'req_data', params)
-            setattr(exc, 'req_headers', headers)
-            setattr(exc, 'url', url)
-            setattr(exc, 'result', data)
-            setattr(exc, 'status', header.status)
-            setattr(exc, 'reason', header.reason)
-            setattr(exc, 'headers', header.header)
+            exc = getException(url, params, headers, header, data)
             bbuf.flush()
             hbuf.flush()
             raise exc
@@ -371,15 +373,16 @@ class RequestHandler(object):
         return header
 
     @portForward(8443)
-    def multirequest(self, url, parray, headers=None,
-                     ckey=None, cert=None, verbose=None, cookie=None):
+    def multirequest(self, url, parray, headers=None, verb='GET',
+                     ckey=None, cert=None, verbose=None, cookie=None,
+                     encode=False, decode=False):
         """Fetch data for given set of parameters"""
         multi = pycurl.CurlMulti()
         for params in parray:
             curl = pycurl.Curl()
             bbuf, hbuf = \
                 self.set_opts(curl, url, params, headers, ckey=ckey, cert=cert,
-                              verbose=verbose, cookie=cookie)
+                              verbose=verbose, cookie=cookie, encode=encode)
             multi.add_handle(curl)
             while True:
                 ret, num_handles = multi.perform()
@@ -395,8 +398,20 @@ class RequestHandler(object):
                         break
             dummyNumq, response, dummyErr = multi.info_read()
             for _respItem in response:
-                data = decodeBytesToUnicode(bbuf.getvalue())
-                data = json.loads(data)
+                header = self.parse_header(hbuf.getvalue())
+                data = bbuf.getvalue()
+                data = decompress(data, header.header)
+                data = decodeBytesToUnicode(data)
+                if header.status < 300:
+                    if verb == 'HEAD':
+                        data = ''
+                    else:
+                        data = self.parse_body(data, decode)
+                else:
+                    exc = getException(url, params, headers, header, data)
+                    bbuf.flush()
+                    hbuf.flush()
+                    raise exc
                 if isinstance(data, dict):
                     data.update(params)
                     yield data

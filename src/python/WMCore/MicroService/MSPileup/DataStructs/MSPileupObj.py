@@ -44,17 +44,12 @@ class MSPileupObj():
             validRSEs = []
         self.validRSEs = validRSEs
 
-        expectedRSEs = pdict['expectedRSEs']
-        if len(expectedRSEs) == 0:
-            msg = 'MSPileup document require non-empty list of expectedRSEs'
-            raise Exception(msg)
-
         self.data = {
             'pileupName': pdict['pileupName'],
             'pileupType': pdict['pileupType'],
             'insertTime': pdict.get('insertTime', gmtimeSeconds()),
             'lastUpdateTime': pdict.get('lastUpdateTime', gmtimeSeconds()),
-            'expectedRSEs': expectedRSEs,
+            'expectedRSEs': pdict['expectedRSEs'],
             'currentRSEs': pdict.get('currentRSEs', []),
             'fullReplicas': pdict.get('fullReplicas', 1),
             'campaigns': pdict.get('campaigns', []),
@@ -62,7 +57,7 @@ class MSPileupObj():
             'replicationGrouping': pdict.get('replicationGrouping', 'ALL'),
             'activatedOn': pdict.get('activatedOn', gmtimeSeconds()),
             'deactivatedOn': pdict.get('deactivatedOn', gmtimeSeconds()),
-            'active': pdict.get('active', False),
+            'active': pdict['active'],
             'pileupSize': pdict.get('pileupSize', 0),
             'ruleIds': pdict.get('ruleIds', [])}
         valid, msg = self.validate(self.data)
@@ -133,6 +128,10 @@ class MSPileupObj():
                 return False, msg
             if key in ('expectedRSEs', 'currentRSEs') and not self.validateRSEs(val):
                 msg = f"{key} value {val} is not in validRSEs {self.validRSEs}"
+                self.logger.error(msg)
+                return False, msg
+            if key == 'expectedRSEs' and len(val) == 0:
+                msg = 'document require non-empty list of expectedRSEs'
                 self.logger.error(msg)
                 return False, msg
         return True, msg

@@ -152,7 +152,7 @@ class Rucio(object):
         :return: a list of dictionaries with the account usage information.
           None in case of failure
         """
-        res = None
+        res = []
         try:
             res = list(self.cli.get_local_account_usage(acct, rse=rse))
         except (AccountNotFound, AccessDenied) as ex:

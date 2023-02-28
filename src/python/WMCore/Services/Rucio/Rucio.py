@@ -52,7 +52,7 @@ class Rucio(object):
     We will try to use Container -> CMS dataset, block -> CMS block.
     """
 
-    def __init__(self, acct, hostUrl=None, authUrl=None, configDict=None):
+    def __init__(self, acct, hostUrl=None, authUrl=None, configDict=None, client=None):
         """
         Constructs a Rucio object with the Client object embedded.
         In order to instantiate a Rucio Client object, it assumes the host has
@@ -62,6 +62,7 @@ class Rucio(object):
         :param hostUrl: defaults to the rucio config one
         :param authUrl: defaults to the rucio config one
         :param configDict: dictionary with extra parameters
+        :param client: optional Rucio client to use (useful for mock-up)
         """
         configDict = configDict or {}
         # default RSE data caching to 12h
@@ -79,15 +80,18 @@ class Rucio(object):
         self.rucioParams.setdefault('user_agent', 'wmcore-client')
 
         self.logger.info("WMCore Rucio initialization parameters: %s", self.rucioParams)
-        self.cli = Client(rucio_host=hostUrl, auth_host=authUrl, account=acct,
-                          ca_cert=self.rucioParams['ca_cert'], auth_type=self.rucioParams['auth_type'],
-                          creds=self.rucioParams['creds'], timeout=self.rucioParams['timeout'],
-                          user_agent=self.rucioParams['user_agent'])
-        clientParams = {}
-        for k in ("host", "auth_host", "auth_type", "account", "user_agent",
-                  "ca_cert", "creds", "timeout", "request_retries"):
-            clientParams[k] = getattr(self.cli, k)
-        self.logger.info("Rucio client initialization parameters: %s", clientParams)
+        if client:
+            self.cli = client
+        else:
+            self.cli = Client(rucio_host=hostUrl, auth_host=authUrl, account=acct,
+                              ca_cert=self.rucioParams['ca_cert'], auth_type=self.rucioParams['auth_type'],
+                              creds=self.rucioParams['creds'], timeout=self.rucioParams['timeout'],
+                              user_agent=self.rucioParams['user_agent'])
+            clientParams = {}
+            for k in ("host", "auth_host", "auth_type", "account", "user_agent",
+                      "ca_cert", "creds", "timeout", "request_retries"):
+                clientParams[k] = getattr(self.cli, k)
+            self.logger.info("Rucio client initialization parameters: %s", clientParams)
 
         # keep a map of rse expression to RSE names mapped for some time
         self.cachedRSEs = MemoryCache(rseCacheExpiration, {})
@@ -1216,3 +1220,16 @@ class Rucio(object):
         self.logger.info("Container: %s with block-based location at: %s, and final location: %s",
                           kwargs['name'], commonBlockRSEs, finalRSEs)
         return finalRSEs
+
+    def getRSEUsage(self, rse):
+        """
+        get_rse_usage rucio API
+
+        :param rse: name of RSE
+        :return: generator of records about given RSE
+        """
+        try:
+            return self.cli.get_rse_usage(rse)
+        except Exception as exp:
+            self.logger.error("Failed to get information about rse %s. Error: %s", rse, str(exp))
+            raise exp

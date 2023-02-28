@@ -35,7 +35,6 @@ class MSPileupTest(unittest.TestCase):
                     'mockMongoDB': True}
         self.mgr = MSPileup(msConfig)
 
-
         self.pname = '/lksjdflksdjf/kljsdklfjsldfj/PREMIX'
         expectedRSEs = self.validRSEs
         fullReplicas = 0
@@ -51,7 +50,7 @@ class MSPileupTest(unittest.TestCase):
             'replicationGrouping': "ALL",
             'active': True,
             'pileupSize': 0,
-            'ruleList': []}
+            'ruleIds': []}
 
         obj = MSPileupObj(data, validRSEs=self.validRSEs)
         for key in ['insertTime', 'lastUpdateTime', 'activatedOn', 'deactivatedOn']:

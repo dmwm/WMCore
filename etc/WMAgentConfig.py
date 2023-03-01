@@ -99,6 +99,12 @@ config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
 config.JobStateMachine.jobSummaryDBName = jobSummaryDBName
 config.JobStateMachine.summaryStatsDBName = summaryStatsDBName
+# Amount of documents allowed in the ChangeState module for bulk commits
+config.JobStateMachine.maxBulkCommitDocs = 250
+# total allowed serialized size for the FJR document that is uploaded to wmagent_jobdump/fwjrs
+# NOTE: this needs to be in sync with CouchDB couchdb.max_document_size parameter
+# see: https://docs.couchdb.org/en/latest/config/couchdb.html#couchdb/max_document_size
+config.JobStateMachine.fwjrLimitSize = 8 * 1000**2  # default: 8 million bytes (not 8MB!!!)
 
 config.section_("ACDC")
 config.ACDC.couchurl = "https://cmsweb.cern.ch/couchdb"

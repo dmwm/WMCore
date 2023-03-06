@@ -9,15 +9,11 @@ Description: perform different set of tasks over MSPileup data
 import time
 import asyncio
 
-# rucio modules
-from rucio.client import Client
-from rucio.common.exception import (AccountNotFound, AccessDenied, DuplicateRule,
-                                    DuplicateContent, InvalidRSEExpression,
-                                    UnsupportedOperation, RuleNotFound, RSENotFound)
 # WMCore modules
 from WMCore.MicroService.Tools.Common import getMSLogger
-from WMCore.MicroService.MSPileup.MSPileupReport import MSPileupReport
+from WMCore.MicroService.MSPileup.DataStructs.MSPileupReport import MSPileupReport
 from WMCore.Services.UUIDLib import makeUUID
+from WMCore.MicroService.Tools.PycurlRucio import getPileupContainerSizesRucio, getRucioToken
 
 
 class MSPileupTasks():
@@ -29,19 +25,42 @@ class MSPileupTasks():
     - active task to look-up pileup docs in active state
     """
 
-    def __init__(self, dataManager, logger, rucioAccount, rucioClient):
+    def __init__(self, dataManager, logger, rucioAccount, rucioClient, dryRun=False):
         """
         MSPileupTaskManager constructor
         :param dataManager: MSPileup Data Management layer instance
         :param logger: logger instance
         :param rucioAccount: rucio account name to use
         :param rucioClient: rucio client or WMCore Rucio wrapper class to use
+        :param dryRun: dry-run mode of operations
         """
         self.mgr = dataManager
         self.logger = logger
         self.rucioAccount = rucioAccount
         self.rucioClient = rucioClient
         self.report = MSPileupReport()
+        self.dryRun = dryRun
+
+    def pileupSizeTask(self):
+        """
+        Execute pileup size update task
+        """
+        try:
+            # get pileup sizes and update them in DB
+            spec = {}
+            docs = self.mgr.getPileup(spec)
+            rucioAuthUrl = self.rucioClient.rucioParams['auth_host']
+            rucioHostUrl = self.rucioClient.rucioParams['rucio_host']
+            rucioToken = getRucioToken(rucioAuthUrl, self.rucioAccount)
+            containers = [r['pileupName'] for r in docs]
+            datasetSizes = getPileupContainerSizesRucio(containers, rucioHostUrl, rucioToken)
+            for doc in docs:
+                pileupSize = datasetSizes.get(doc['pileupName'], 0)
+                doc['pileupSize'] = pileupSize
+                self.mgr.updatePileup(doc)
+        except Exception as exp:
+            msg = f"MSPileup pileup size task failed with error {exp}"
+            self.logger.exception(msg)
 
     def monitoringTask(self):
         """
@@ -90,10 +109,9 @@ class MSPileupTasks():
         self.logger.info("Running the inactive task on %d pileup objects", len(docs))
         asyncio.run(performTasks('inactive', docs, taskSpec))
 
-    def activeTask(self, nodeUsage=None, marginSpace=1024**4):
+    def activeTask(self, marginSpace=1024**4):
         """
         Active pileup task:
-        :param nodeUsage: node usage dictionary, see RSEQuotas
         :param marginSpace: minimum margin space size in bytes to have at RSE to place a dataset
 
         This task is supposed to look at pileup documents active in the system.
@@ -130,14 +148,14 @@ class MSPileupTasks():
         docs = self.mgr.getPileup(spec)
         taskSpec = self.getTaskSpec()
         taskSpec['marginSpace'] = marginSpace
-        taskSpec['nodeUsage'] = nodeUsage
         self.logger.info("Running the active task on %d pileup objects", len(docs))
         asyncio.run(performTasks('active', docs, taskSpec))
 
     def getTaskSpec(self):
         """Return task spec"""
         spec = {'manager': self.mgr, 'logger': self.logger, 'report': self.report,
-                'rucioClient': self.rucioClient, 'rucioAccount': self.rucioAccount}
+                'rucioClient': self.rucioClient, 'rucioAccount': self.rucioAccount,
+                'dryRun': self.dryRun}
         return spec
 
     def getReport(self):
@@ -145,15 +163,6 @@ class MSPileupTasks():
         Return report object to upstream codebase
         """
         return self.report
-
-
-def rucioArgs(account):
-    """Return relevant rucio arguments"""
-    kwargs = {'groupping': 'ALL', 'account': account,
-              'lifeTime': None, 'locked': False, 'notify': 'N',
-              'purge_replicas': False, 'ignore_availability': False,
-              'ask_approval': False, 'asynchrounous': True, 'priority': 3}
-    return kwargs
 
 
 def monitoringTask(doc, spec):
@@ -173,18 +182,11 @@ def monitoringTask(doc, spec):
     # get list of existent rule ids
     pname = doc['pileupName']
     kwargs = {'scope': 'cms', 'account': rucioAccount}
-    if isinstance(rucioClient, Client):
-        inputArgs = {'scope': 'cms', 'name': pname, 'account': rucioAccount}
-        rules = list(rucioClient.list_replication_rules(inputArgs))
-    else:
-        rules = rucioClient.listDataRules(pname, **kwargs)
+    rules = rucioClient.listDataRules(pname, **kwargs)
     modify = False
 
     for rdoc in rules:
-        if isinstance(rucioClient, Client):
-            rses = [r['rse'] for r in rucioClient.list_rses(rdoc['rse_expression'])]
-        else:
-            rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
+        rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
         rid = rdoc['id']
         state = rdoc['state']
 
@@ -242,11 +244,7 @@ def inactiveTask(doc, spec):
     logger = spec['logger']
     pname = doc['pileupName']
     kwargs = {'scope': 'cms', 'account': rucioAccount}
-    if isinstance(rucioClient, Client):
-        inputArgs = {'scope': 'cms', 'name': pname, 'account': rucioAccount}
-        rules = list(rucioClient.list_replication_rules(inputArgs))
-    else:
-        rules = rucioClient.listDataRules(pname, **kwargs)
+    rules = rucioClient.listDataRules(pname, **kwargs)
     modify = False
 
     for rdoc in rules:
@@ -255,12 +253,8 @@ def inactiveTask(doc, spec):
         msg = f"inactive task {uuid}, container: {pname} for Rucio account {rucioAccount}"
         msg += f", delete replication rule {rid}"
         logger.info(msg)
-        if isinstance(rucioClient, Client):
-            rucioClient.delete_replication_rule(rid)
-            rses = [r['rse'] for r in rucioClient.list_rses(rdoc['rse_expression'])]
-        else:
-            rucioClient.deleteRule(rid)
-            rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
+        rucioClient.deleteRule(rid)
+        rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
 
         # remove the rule id from ruleIds (if any) and remove the RSE name from currentRSEs (if any)
         if rid in doc['ruleIds']:
@@ -303,7 +297,7 @@ def activeTask(doc, spec):
     rucioAccount = spec['rucioAccount']
     report = spec['report']
     marginSpace = spec['marginSpace']
-    nodeUsage = spec['nodeUsage']
+    dryRun = spec['dryRun']
 
     # extract relevant part of our pileup document we'll use in our logic
     expectedRSEs = set(doc['expectedRSEs'])
@@ -324,16 +318,10 @@ def activeTask(doc, spec):
         logger.info(msg)
 
         # get list of replication rules for our scope, pileup name and account
-        if isinstance(rucioClient, Client):
-            rules = list(rucioClient.list_replication_rules(inputArgs))
-        else:
-            rules = rucioClient.listDataRules(pname, **kwargs)
+        rules = rucioClient.listDataRules(pname, **kwargs)
         # for each rse_expression in rules get list of rses
         for rdoc in rules:
-            if isinstance(rucioClient, Client):
-                rses = [r['rse'] for r in rucioClient.list_rses(rdoc['rse_expression'])]
-            else:
-                rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
+            rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
             rdoc['rses'] = rses
 
         # for each rule matching the DID + Rucio account
@@ -344,9 +332,7 @@ def activeTask(doc, spec):
                 # if rule RSE is not in expectedRSEs, then this rule needs to be deleted
                 if rse not in expectedRSEs:
                     # upon successful rule deletion, also remove the RSE name from currentRSEs
-                    if isinstance(rucioClient, Client):
-                        rucioClient.delete_replication_rule(rid)
-                    else:
+                    if not dryRun:
                         rucioClient.deleteRule(rid)
                     if rse in doc['currentRSEs']:
                         doc['currentRSEs'].remove(rse)
@@ -370,34 +356,24 @@ def activeTask(doc, spec):
         # for each expectedRSEs not in localCopyOfCurrentRSEs
         for rse in set(expectedRSEs).difference(localCopyOfCurrentRSEs):
             # check whether the RSE has enough available space available for that
-            if isinstance(rucioClient, Client):
-                generator = rucioClient.get_rse_usage(rse)
-            else:
-                generator = rucioClient.getRSEUsage(rse)
+            # taken from logic of RSEQuotas, see https://bit.ly/3kDJZmO
+            # but here we use explicitly rse parameter
+            records = rucioClient.getAccountUsage(rucioAccount, rse)
             enoughSpace = False
-            for rec in generator:
-                # use nodeUsage provided in spec to get rse space info
-                if nodeUsage and rse in nodeUsage:
-                    rseUsage = nodeUsage[rse]
-                    if rseUsage['bytes_remaining'] > marginSpace:
-                        enoughSpace = True
-                        break
-                else:
-                    # we'll use total - used space to exceed pileupSize with some margin
-                    if rec['total'] - rec['used'] - pileupSize > marginSpace:
-                        enoughSpace = True
-                        break
+            for rec in records:
+                # each record has form
+                # {"rse": ..., "bytes_limit": ..., "bytes": ..., "bytes_remaining": ...}
+                if rec['bytes_remaining'] - pileupSize > marginSpace:
+                    enoughSpace = True
+                    break
             dids = [inputArgs]
             if enoughSpace:
                 msg = f"active task {uuid}, for dids {dids} there is enough space at RSE {rse}"
                 logger.warning(msg)
                 # create the rule and append the rule id to ruleIds
-                if isinstance(rucioClient, Client):
-                    kwargs = rucioArgs(rucioAccount)
-                    copies = 1
-                    rids = rucioClient.add_replication_rule(dids, copies, rse, **kwargs)
-                else:
-                    rids = rucioClient.createReplicationRule(pname, rse, **kwargs)
+                if dryRun:
+                    continue
+                rids = rucioClient.createReplicationRule(pname, rse, **kwargs)
                 # add new ruleId to document ruleIds
                 for rid in rids:
                     if rid not in doc['ruleIds']:
@@ -444,22 +420,6 @@ async def runTask(task, doc, spec):
         elif task == 'active':
             activeTask(doc, spec)
         msg += ", successfully processed"
-    # specific rucio exception handling if we use rucio client
-    except (AccountNotFound, AccessDenied) as exp:
-        msg += f", failed with access issue, error {exp}"
-        logger.error(msg)
-    except (DuplicateRule, DuplicateContent) as exp:
-        msg += f", failed with duplicate issue, error {exp}"
-        logger.error(msg)
-    except (RSENotFound, InvalidRSEExpression) as exp:
-        msg += f", failed with rse issue, error {exp}"
-        logger.error(msg)
-    except RuleNotFound as exp:
-        msg += f", failed with rule not found, error {exp}"
-        logger.error(msg)
-    except UnsupportedOperation as exp:
-        msg += f", failed with unsupported operation, error {exp}"
-        logger.error(msg)
     except Exception as exp:
         msg += f", failed with error {exp}"
         logger.exception(msg)

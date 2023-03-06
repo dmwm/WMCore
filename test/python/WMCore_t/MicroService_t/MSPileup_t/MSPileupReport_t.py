@@ -8,7 +8,7 @@ Description: Unit tests for MicorService/MSPileup/MSPileupReport.py module
 import unittest
 
 # WMCore modules
-from WMCore.MicroService.MSPileup.MSPileupReport import MSPileupReport
+from WMCore.MicroService.MSPileup.DataStructs.MSPileupReport import MSPileupReport
 
 
 class MSPileupReportTest(unittest.TestCase):

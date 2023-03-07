@@ -1,3 +1,11 @@
+2.1.8rc1 to 2.1.8rc2:
+  - Second round of changes for MSPileup data placement logic (Valentin Kuznetsov) #11499
+  - MSpileup integration with MSManager (Valentin Kuznetsov) #11504
+  - Added optional client to ctor; added getRSEUsage to wrap get_rse_usage rucio API (Valentin Kuznetsov) #11487
+  - First draft implementation of MSPileup tasks (Valentin Kuznetsov) #11487
+  - MSAuth module for authorization (Valentin Kuznetsov) #11476
+
+
 2.1.7 to 2.1.8rc1:
   - Run all MSRuleCleaner pipelines for rejected/aborted requests (anehnis) #11489
 

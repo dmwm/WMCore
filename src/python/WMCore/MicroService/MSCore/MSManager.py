@@ -90,6 +90,17 @@ class MSManager(object):
                                                   self.logger))
             self.logger.info("### Running %s thread %s", thname, self.pileupThread.running())
 
+        # initialize pileup-tasks module
+        if 'pileup-tasks' in self.services:
+            from WMCore.MicroService.MSPileup.MSPileupTaskManager import MSPileupTaskManager
+            self.msPileupTasks = MSPileupTaskManager(self.msConfig, logger=self.logger)
+            thname = 'MSPileupTasks'
+            self.pileupTasksThread = start_new_thread(thname, daemonOpt,
+                                                      (self.pileupTasks,
+                                                       self.msConfig['interval'],
+                                                       self.logger))
+            self.logger.info("### Running %s thread %s", thname, self.pileupTasksThread.running())
+
         # initialize transferor module
         if 'transferor' in self.services:
             from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
@@ -189,6 +200,19 @@ class MSManager(object):
         self.updateTimeUTC(res, startTime, endTime)
         self.logger.info("Total pileup execution time: %.2f secs", res['execution_time'])
         self.statusPileup = res
+
+    def pileupTasks(self, *args, **kwargs):
+        """
+        MSManager pileup tasks function.
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the pileup-tasks thread...")
+        self.msPileupTasks.executeCycle()
+        res = self.msPileupTasks.status()
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total pileup-tasks execution time: %.2f secs", res['execution_time'])
+        self.statusPileupTasks = res
 
     def transferor(self, reqStatus):
         """
@@ -296,6 +320,10 @@ class MSManager(object):
         if 'pileup' in self.services and hasattr(self, 'pileupThread'):
             self.pileupThread.stop()  # stop checkStatus thread
             status = self.pileupThread.running()
+        # stop MSPileupTasks thread
+        if 'pileup-tasks' in self.services and hasattr(self, 'pileupTasksThread'):
+            self.pileupTasksThread.stop()  # stop checkStatus thread
+            status = self.pileupTasksThread.running()
         # stop MSTransferor thread
         if 'transferor' in self.services and hasattr(self, 'transfThread'):
             self.transfThread.stop()  # stop checkStatus thread
@@ -326,7 +354,8 @@ class MSManager(object):
             rse: string with the name of the RSE (e.g 'T2_DE_DESY')
         :return: data transfer information for this request
         """
-        if 'ruleCleaner' in self.services or 'unmerged' in self.services or 'pileup' in self.services:
+        if 'ruleCleaner' in self.services or 'unmerged' in self.services \
+                or 'pileup' in self.services or 'pileup-tasks' in self.services:
             data = {}
         else:
             data = {"request": reqName, "transferDoc": None}
@@ -418,6 +447,8 @@ class MSManager(object):
             data.update(self.statusTrans)
         elif detail and 'pileup' in self.services:
             data.update(self.statusPileup)
+        elif detail and 'pileup-tasks' in self.services:
+            data.update(self.statusPileupTasks)
         elif detail and 'monitor' in self.services:
             data.update(self.statusMon)
         elif detail and 'output' in self.services:

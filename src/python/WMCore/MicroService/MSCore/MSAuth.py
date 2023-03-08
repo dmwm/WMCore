@@ -19,8 +19,8 @@ authz_rules = \
     [{"role": "admin", "group": "reqmgr", "service": "ms-pileup", "action": "create", "method": ["POST"]},
      {"role": "production-operator", "group": "dataops", "service": "ms-pileup", "action": "create", "method": ["POST"]},
 
-     {"role": "admin", "group": "reqmgr", "service": "ms-pileup", "action": "create", "method": ["DELETE"]},
-     {"role": "production-operator", "group": "dataops", "service": "ms-pileup", "action": "create", "method": ["DELETE"]},
+     {"role": "admin", "group": "reqmgr", "service": "ms-pileup", "action": "delete", "method": ["DELETE"]},
+     {"role": "production-operator", "group": "dataops", "service": "ms-pileup", "action": "delete", "method": ["DELETE"]},
 
      {"role": "admin", "group": "reqmgr", "service": "ms-pileup", "action": "update", "method": ["PUT"]},
      {"role": "production-operator", "group": "dataops", "service": "ms-pileup", "action": "update", "method": ["PUT"]}]
@@ -29,6 +29,7 @@ authz_rules = \
 # system modules
 import os
 import json
+from pathlib import Path
 
 # third party modules
 import cherrypy
@@ -36,6 +37,7 @@ import cherrypy
 # WMCore modules
 from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.REST.Auth import user_info_from_headers
+from Utils.Utilities import lowerCmsHeaders
 
 
 def readAuthzRules(entry):
@@ -79,12 +81,27 @@ class MSAuth():
         # load auth/authz configuration
         self.authzRules = readAuthzRules(msConfig.get('authz_rules', None))
         self.authzKey = msConfig['authz_key']  # hmac key of front-end
+        # check if provided authz_key is a file name
+        if isinstance(self.authzKey, str):
+            authFile = Path(self.authzKey)
+            if authFile.is_file():
+                # msConfig provided file name with authz_key
+                with open(authFile, 'rb') as istream:
+                    self.authzKey = istream.read()
 
     def authorizeApiAccess(self, service, action, method=None):
         """
         Check auth role.
         :return: boolean
         """
+        # skip authorization on localhost or if no remote address is provided
+        # this is only valid if no cms auth headers is set, i.e. in unit tests
+        headers = lowerCmsHeaders(cherrypy.request.headers)
+        if 'cms-auth-status' not in headers:
+            remoteAddr = headers.get('Remote-Addr', '')
+            if remoteAddr == '127.0.0.1' or remoteAddr == '':
+                return
+
         # get user information
         user = user_info_from_headers(key=self.authzKey)
 
@@ -95,7 +112,7 @@ class MSAuth():
             if method and method not in entry['method']:
                 continue
             userMethod = user.get('method', None)
-            if userMethod and userMethod not in entry['method']:
+            if userMethod and userMethod != "X509Cert" and userMethod not in entry['method']:
                 continue
 
             # check if entry service and action matches

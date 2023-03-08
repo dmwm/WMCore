@@ -22,6 +22,7 @@ class MSPileupTest(unittest.TestCase):
         cherrypy.request.user = "test"
         self.validRSEs = ['rse1', 'rse2']
         msConfig = {'reqmgr2Url': 'http://localhost',
+                    'authz_key': '123',
                     'rucioAccount': 'wmcore_mspileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',

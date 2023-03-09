@@ -1,3 +1,6 @@
+2.1.8rc2 to 2.1.8:
+
+
 2.1.8rc1 to 2.1.8rc2:
   - Second round of changes for MSPileup data placement logic (Valentin Kuznetsov) #11499
   - MSpileup integration with MSManager (Valentin Kuznetsov) #11504

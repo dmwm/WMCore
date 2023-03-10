@@ -27,6 +27,7 @@ class MSManagerTest(unittest.TestCase):
         data.quotaUsage = 0.8
         data.quotaAccount = "DataOps"
         data.enableStatusTransition = True
+        data.authz_key = '123'
         data.rucioAccount = "wma_test"
         data.rucioUrl = "http://cms-rucio-int.cern.ch"
         data.rucioAuthUrl = "https://cms-rucio-auth-int.cern.ch"

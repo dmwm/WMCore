@@ -8,7 +8,7 @@ Description: MSPileup provides logic behind the pileup WMCore module.
 from threading import current_thread
 
 # WMCore modules
-from WMCore.REST.Auth import authz_match
+from WMCore.MicroService.MSCore.MSAuth import MSAuth
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.DataStructs.DefaultStructs import PILEUP_REPORT
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
@@ -20,19 +20,11 @@ class MSPileup(MSCore):
     """
 
     def __init__(self, msConfig, **kwargs):
-        # TODO: so far we are testing this service w/o Rucio access
-        super(MSPileup, self).__init__(msConfig, skipRucio=True)
-        # TODO: if more generic approach will be required we'll need to switch to
-        # super(MSPileup, self).__init__(msConfig, **kwargs)
-
-        # for authz we should provide relevant section in MS configuration
-        # if no role/group is provided then authz_match used in HTTP APIs
-        # will always return valid state. Therefore, for test purposes we can
-        # use empty role and group, while for production setup we should set thenm up
-        authzDefaults = msConfig.get('authz_defaults', {})
-        self.role = authzDefaults.get('role', [])
-        self.group = authzDefaults.get('group', [])
+        # this class do not operate with Rucio as it is delegated to
+        # MSPileupTasks and MSPileupTaskManager, therefore we skip its configuration
+        super().__init__(msConfig, skipRucio=True)
         self.mgr = MSPileupData(msConfig)
+        self.authMgr = MSAuth(msConfig)
 
     def status(self):
         """
@@ -98,7 +90,7 @@ class MSPileup(MSCore):
         :param pdict: input MSPilup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
-        authz_match(self.role, self.group)
+        self.authMgr.authorizeApiAccess('ms-pileup', 'create')
         return self.mgr.createPileup(pdict)
 
     def updatePileup(self, pdict):
@@ -108,7 +100,7 @@ class MSPileup(MSCore):
         :param pdict: input MSPilup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
-        authz_match(self.role, self.group)
+        self.authMgr.authorizeApiAccess('ms-pileup', 'update')
         return self.mgr.updatePileup(pdict)
 
     def deletePileup(self, spec):
@@ -118,5 +110,5 @@ class MSPileup(MSCore):
         :param pdict: input MSPilup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
-        authz_match(self.role, self.group)
+        self.authMgr.authorizeApiAccess('ms-pileup', 'delete')
         return self.mgr.deletePileup(spec)

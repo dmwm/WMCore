@@ -45,7 +45,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
         TODO: parameters to turn off emulators individually
         """
-
+        print(f"Running setUp with emulated services. ")
         if self.mockDBS:
             self.dbsPatchers = []
             patchDBSAt = ["dbs.apis.dbsClient.DbsApi",
@@ -60,6 +60,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
             patchRucioAt = ['WMCore.WorkQueue.WorkQueue.Rucio',
                             'WMCore.WorkQueue.WorkQueueReqMgrInterface.Rucio',
                             'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.Rucio',
+                            'WMCore.MicroService.MSCore.MSCore.Rucio',
                             'WMComponent.RucioInjector.RucioInjectorPoller.Rucio',
                             'WMCore.WMSpec.Steps.Fetchers.PileupFetcher.Rucio',
                             'WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio',

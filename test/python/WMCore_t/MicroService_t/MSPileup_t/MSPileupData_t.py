@@ -101,8 +101,14 @@ class MSPileupTest(unittest.TestCase):
             'pileupSize': pileupSize,
             'ruleIds': ruleIds}
 
-        out = self.mgr.createPileup(pdict)
+        out = self.mgr.createPileup(pdict, self.validRSEs)
         self.assertEqual(len(out), 0)
+
+        # now fail the RSE validation
+        out = self.mgr.createPileup(pdict, ['rse2'])[0]
+        self.assertEqual(out['error'], "MSPileupError")
+        self.assertEqual(out['code'], 7)
+        self.assertEqual(out['message'], "schema error")
 
         spec = {'pileupName': pname}
         results = self.mgr.getPileup(spec)
@@ -111,7 +117,7 @@ class MSPileupTest(unittest.TestCase):
         self.assertDictEqual(pdict, doc)
 
         doc.update({'pileupSize': 2})
-        out = self.mgr.updatePileup(doc)
+        out = self.mgr.updatePileup(doc, self.validRSEs)
         self.assertEqual(len(out), 0)
         results = self.mgr.getPileup(spec)
         doc = results[0]

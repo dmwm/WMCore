@@ -98,11 +98,10 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         testRucioClient = TestRucioClient(logger=self.logger, state='OK')
         self.rucioClient = Rucio(self.rucioAccount, configDict=configDict, client=testRucioClient)
 
-        expectedRSEs = ['rse1', 'rse2']
+        self.validRSEs = ['rse1', 'rse2']
 
         # setup pileup data manager
         msConfig = {'reqmgr2Url': 'http://localhost',
-                    'validRSEs': expectedRSEs,
                     'rucioAccount': 'wmcore_mspileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
@@ -123,8 +122,8 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         data = {
             'pileupName': pname,
             'pileupType': 'classic',
-            'expectedRSEs': expectedRSEs,
-            'currentRSEs': expectedRSEs,
+            'expectedRSEs': self.validRSEs,
+            'currentRSEs': self.validRSEs,
             'fullReplicas': fullReplicas,
             'campaigns': campaigns,
             'containerFraction': 0.0,
@@ -134,13 +133,13 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
             'ruleIds': ['rse1']}
         self.data = data
 
-        self.mgr.createPileup(data)
+        self.mgr.createPileup(data, self.validRSEs)
 
         # add more docs similar in nature but with different size
         data['pileupName'] = pname.replace('processed', 'processed-2')
-        self.mgr.createPileup(data)
+        self.mgr.createPileup(data, self.validRSEs)
         data['pileupName'] = pname.replace('processed', 'processed-3')
-        self.mgr.createPileup(data)
+        self.mgr.createPileup(data, self.validRSEs)
 
     def testMSPileupTasks(self):
         """
@@ -211,7 +210,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         pname = '/MinimumBias/ComissioningHI-v1/RAW'
         data = dict(self.data)
         data['pileupName'] = pname
-        self.mgr.createPileup(data)
+        self.mgr.createPileup(data, self.validRSEs)
 
         # now create mock rucio client
         rucioClient = MockRucioApi(self.rucioAccount, hostUrl=self.hostUrl, authUrl=self.authUrl)

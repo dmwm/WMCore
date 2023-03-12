@@ -1,3 +1,10 @@
+2.1.8 to 2.2.0rc1:
+  - Mock Rucio in MSCore module (Alan Malta Rodrigues) #11510
+  - Only add data to the cache in Rucio wrapper when requested for (Alan Malta Rodrigues) #11510
+  - MSPileup: validate list of RSEs in both create/update calls (Alan Malta Rodrigues) #11510
+  - Integrate MSAuth into MSPileup (Valentin Kuznetsov) #11509
+
+
 2.1.8rc2 to 2.1.8:
 
 

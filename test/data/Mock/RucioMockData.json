@@ -1404,6 +1404,7 @@
   "account": "ms-pileup"
  }],
  "evaluateRSEExpression": ["T2_XX_CERN"],
+ "evaluateRSEExpression:[('useCache', True)]": ["rse1", "rse2"],
  "deleteRule": true,
  "isContainer:[('didName', '/Cosmics/ComissioningHI-PromptReco-v1/RECO#00ad285a-0d7b-11e1-9b6c-003048caaace')]": false,
  "isContainer:[('didName', '/Cosmics/ComissioningHI-PromptReco-v1/RECO#14ad7dfe-0acf-11e1-8347-003048caaace')]": false,

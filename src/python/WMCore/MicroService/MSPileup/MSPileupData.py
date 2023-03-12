@@ -60,7 +60,6 @@ class MSPileupData():
         self.msConfig.setdefault("mongoDBReplicaSet", None)
         self.msConfig.setdefault("mongoDBPort", None)
         self.msConfig.setdefault("mockMongoDB", False)
-        self.validRSEs = self.msConfig.get('validRSEs', [])
 
         # A full set of valid database connection parameters can be found at:
         # https://pymongo.readthedocs.io/en/stable/api/pymongo/mongo_client.html
@@ -83,21 +82,23 @@ class MSPileupData():
         self.msDB = getattr(mongoDB, self.msConfig['mongoDB'])
         self.dbColl = self.msDB[collection]
 
-    def createPileup(self, pdict):
+    def createPileup(self, pdict, rseList):
         """
         Create and return pileup data from campaigns dictionary
 
         :param pdict: a dictionary representing MSPileup data
+        :param rseList: a list of RSE names
         :return: list of MSPileupError or empty list
         """
         # first, create MSPileupObj which will be validated against its schema
+        # and against the valid and existent Rucio RSEs
         try:
-            obj = MSPileupObj(pdict, validRSEs=self.validRSEs)
+            obj = MSPileupObj(pdict, validRSEs=rseList)
             doc = obj.getPileupData()
         except Exception as exp:
             msg = f"Failed to create MSPileupObj, {exp}"
             self.logger.exception(msg)
-            err = MSPileupDuplicateDocumentError(pdict, msg)
+            err = MSPileupSchemaError(pdict, msg)
             self.logger.error(err)
             return [err.error()]
 
@@ -113,37 +114,58 @@ class MSPileupData():
             return [err.error()]
         return []
 
-    def updatePileup(self, doc):
+    def updatePileup(self, doc, rseList=None, validate=True):
         """
         Update pileup data with provided input
 
         :param doc: a dictionary of pieleup data to be updated
+        :param rseList: a list of valid RSE names
+        :param validate: boolean defining whether the doc needs
+                         to be validated or not
         :return: list of MSPileupError or empty list
         """
-        # check if given document contains pileup Name (unique key)
+        rseList = rseList or []
         pname = doc.get('pileupName', '')
-        if not pname:
-            err = MSPileupNoKeyFoundError(doc, f'No document found for {pname}')
-            self.logger.error(err)
-            return [err.error()]
-
-        # look-up piileup document in underlying DB
         spec = {'pileupName': pname}
-        results = self.getPileup(spec)
-        if not results:
-            err = MSPileupNoKeyFoundError(spec, f'No document found for {spec} query')
-            self.logger.error(err)
-            return [err.error()]
+        # if validate=True, then try to load the original document from the
+        # database and perform full validation on the updated doc
+        if validate:
+            # check if given document contains pileup Name (unique key)
+            if not pname:
+                err = MSPileupNoKeyFoundError(doc, f'No document found for {pname}')
+                self.logger.error(err)
+                return [err.error()]
 
-        # we should have a single document corresponding to given pileup name
-        if len(results) != 1:
-            msg = f"Unique constrain violated for {pname}"
-            err = MSPileupUniqueConstrainError(spec, msg)
-            self.logger.error(err)
-            return [err.error()]
+            # look-up pileup document in underlying DB
+            results = self.getPileup(spec)
+            if not results:
+                err = MSPileupNoKeyFoundError(spec, f'No document found for {spec} query')
+                self.logger.error(err)
+                return [err.error()]
 
-        # we do not need to create MSPileupObj and validate it since our doc comes directly from DB
+            # we should have a single document corresponding to given pileup name
+            if len(results) != 1:
+                msg = f"Unique constraint violated for {pname}"
+                err = MSPileupUniqueConstrainError(spec, msg)
+                self.logger.error(err)
+                return [err.error()]
+
+            # Based on the document retrieved from the database, apply the user-related
+            # updates and run this new data structure through the usual validation
+            dbDoc = results[0]
+            dbDoc.update(doc)
+            try:
+                obj = MSPileupObj(dbDoc, validRSEs=rseList)
+                doc = obj.getPileupData()
+            except Exception as exp:
+                msg = f"Failed to update MSPileupObj, {exp}"
+                self.logger.exception(msg)
+                err = MSPileupSchemaError(doc, msg)
+                self.logger.error(err)
+                return [err.error()]
+
         doc['lastUpdateTime'] = gmtimeSeconds()
+        # we do not need to create MSPileupObj and validate it since our doc comes directly from DB
         try:
             self.dbColl.update_one(spec, {"$set": doc})
             self.logger.info("Pileup object %s successfully updated", spec.get("pileupName"))

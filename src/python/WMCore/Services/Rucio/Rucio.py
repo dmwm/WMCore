@@ -704,8 +704,9 @@ class Rucio(object):
             except InvalidRSEExpression as exc:
                 msg = "Provided RSE expression is considered invalid: {}. Error: {}".format(rseExpr, str(exc))
                 raise WMRucioException(msg)
-        # add this key/value pair to the cache
-        self.cachedRSEs.addItemToCache({rseExpr: matchingRSEs})
+        if useCache:
+            # add this key/value pair to the cache
+            self.cachedRSEs.addItemToCache({rseExpr: matchingRSEs})
         if returnTape:
             return matchingRSEs
         return dropTapeRSEs(matchingRSEs)

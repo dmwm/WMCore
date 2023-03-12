@@ -57,7 +57,7 @@ class MSPileupTasks():
             for doc in docs:
                 pileupSize = datasetSizes.get(doc['pileupName'], 0)
                 doc['pileupSize'] = pileupSize
-                self.mgr.updatePileup(doc)
+                self.mgr.updatePileup(doc, validate=False)
         except Exception as exp:
             msg = f"MSPileup pileup size task failed with error {exp}"
             self.logger.exception(msg)
@@ -222,7 +222,7 @@ def monitoringTask(doc, spec):
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"monitoring task {uuid}, update {pname}")
-        mgr.updatePileup(doc)
+        mgr.updatePileup(doc, validate=False)
         msg = f"update pileup {pname}"
         report.addEntry('monitoring', uuid, msg)
     else:
@@ -278,7 +278,7 @@ def inactiveTask(doc, spec):
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"inactive task {uuid}, update {pname}")
-        mgr.updatePileup(doc)
+        mgr.updatePileup(doc, validate=False)
         msg = f"update pileup {pname}"
         report.addEntry('inactive', uuid, msg)
 
@@ -387,7 +387,7 @@ def activeTask(doc, spec):
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"active task {uuid} update {pname}")
-        mgr.updatePileup(doc)
+        mgr.updatePileup(doc, validate=False)
         msg = f"update pileup {pname}"
         report.addEntry('active', uuid, msg)
     else:

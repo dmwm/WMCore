@@ -20,11 +20,11 @@ class MSPileup(MSCore):
     """
 
     def __init__(self, msConfig, **kwargs):
-        # this class do not operate with Rucio as it is delegated to
-        # MSPileupTasks and MSPileupTaskManager, therefore we skip its configuration
-        super().__init__(msConfig, skipRucio=True)
-        self.mgr = MSPileupData(msConfig)
+        super().__init__(msConfig)
+        self.dataMgr = MSPileupData(msConfig)
         self.authMgr = MSAuth(msConfig)
+        # Get the RSE expression for Disk RSEs from the configuration
+        self.diskRSEExpr = msConfig.get("rucioDiskExpression", "")
 
     def status(self):
         """
@@ -61,7 +61,7 @@ class MSPileup(MSCore):
         projection = {}
         for key in kwargs.get('filters', []):
             projection[key] = 1
-        results = self.mgr.getPileup(spec, projection)
+        results = self.dataMgr.getPileup(spec, projection)
 
         return results
 
@@ -80,28 +80,30 @@ class MSPileup(MSCore):
         projection = {}
         for key in query.get('filters', []):
             projection[key] = 1
-        return self.mgr.getPileup(spec, projection)
+        return self.dataMgr.getPileup(spec, projection)
 
     def createPileup(self, pdict):
         """
         MSPileup create pileup API to create appropriate pileup document
         in underlying database.
 
-        :param pdict: input MSPilup data dictionary
+        :param pdict: input MSPileup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
         self.authMgr.authorizeApiAccess('ms-pileup', 'create')
-        return self.mgr.createPileup(pdict)
+        rseNames = self.rucio.evaluateRSEExpression(self.diskRSEExpr, useCache=True)
+        return self.dataMgr.createPileup(pdict, rseNames)
 
     def updatePileup(self, pdict):
         """
-        MSPileup update API to update correspoding pileup document in data layer.
+        MSPileup update API to update corresponding pileup document in data layer.
 
         :param pdict: input MSPilup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
         self.authMgr.authorizeApiAccess('ms-pileup', 'update')
-        return self.mgr.updatePileup(pdict)
+        rseNames = self.rucio.evaluateRSEExpression(self.diskRSEExpr, useCache=True)
+        return self.dataMgr.updatePileup(pdict, rseNames, validate=True)
 
     def deletePileup(self, spec):
         """
@@ -111,4 +113,4 @@ class MSPileup(MSCore):
         :return: results of MSPileup data layer (list of dicts)
         """
         self.authMgr.authorizeApiAccess('ms-pileup', 'delete')
-        return self.mgr.deletePileup(spec)
+        return self.dataMgr.deletePileup(spec)

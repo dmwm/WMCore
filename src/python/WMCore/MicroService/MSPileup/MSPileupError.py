@@ -74,7 +74,8 @@ class MSPileupGenericError(MSPileupError):
     """
     def __init__(self, data, msg=""):
         super().__init__(data, msg)
-        self.assign(msg="generic error", code=MSPILEUP_GENERIC_ERROR)
+        msg = self.msg if self.msg else "generic error"
+        self.assign(msg=msg, code=MSPILEUP_GENERIC_ERROR)
 
 
 class MSPileupSchemaError(MSPileupError):
@@ -83,7 +84,8 @@ class MSPileupSchemaError(MSPileupError):
     """
     def __init__(self, data, msg=""):
         super().__init__(data, msg)
-        self.assign(msg="schema error", code=MSPILEUP_SCHEMA_ERROR)
+        msg = self.msg if self.msg else "schema error"
+        self.assign(msg=msg, code=MSPILEUP_SCHEMA_ERROR)
 
 
 class MSPileupInvalidDataError(MSPileupError):
@@ -92,7 +94,8 @@ class MSPileupInvalidDataError(MSPileupError):
     """
     def __init__(self, data, msg=""):
         super().__init__(data, msg)
-        self.assign(msg="invalid data", code=MSPILEUP_INVALID_ERROR)
+        msg = self.msg if self.msg else "invalid data"
+        self.assign(msg=msg, code=MSPILEUP_INVALID_ERROR)
 
 
 class MSPileupDuplicateDocumentError(MSPileupError):

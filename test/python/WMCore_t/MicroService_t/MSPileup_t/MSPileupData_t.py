@@ -108,7 +108,8 @@ class MSPileupTest(unittest.TestCase):
         out = self.mgr.createPileup(pdict, ['rse2'])[0]
         self.assertEqual(out['error'], "MSPileupError")
         self.assertEqual(out['code'], 7)
-        self.assertEqual(out['message'], "schema error")
+        expect = "Failed to create MSPileupObj, MSPileup input is invalid, expectedRSEs value ['rse1'] is not in validRSEs ['rse2']"
+        self.assertEqual(out['message'], expect)
 
         spec = {'pileupName': pname}
         results = self.mgr.getPileup(spec)

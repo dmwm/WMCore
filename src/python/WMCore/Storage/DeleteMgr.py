@@ -72,10 +72,54 @@ class DeleteMgr(object):
         if self.override == False:
             self.siteCfg = loadSiteLocalConfig()
 
-        if self.override:
-            self.initialiseOverride()
+        if self.siteCfg.siteName == "T3_CH_CMSAtHome":
+            self.initialiseCmsAtHome()
         else:
-            self.initialiseSiteConf()
+            if self.override:
+                self.initialiseOverride()
+            else:
+                self.initialiseSiteConf()
+    def initialiseCmsAtHome(self):
+        """
+        _initialiseCmsAtHome_
+
+        Extract required information from site from fallback info or from eventdata
+
+        """
+        overrideParams = {
+            "command": None,
+            "option": None,
+            "phedex-node": None,
+            "lfn-prefix": None,
+        }
+        
+        msg += "Print self.siteCfg obj\n"
+        msg += "%s\n" % self.siteCfg.__dict__
+
+        implName = self.siteCfg.fallbackStageOut[0].get("command", None)
+        if implName == None:
+            msg = "Unable to retrieve command\n"
+            raise StageOutInitError(msg)
+        overrideParams['command'] = implName
+
+        pnn = self.siteCfg.fallbackStageOut[0].get("phedex-node", None)
+        if pnn == None:
+            msg = "Unable to retrieve phedex-node\n"
+            raise StageOutInitError(msg)
+        overrideParams['phedex-node'] = pnn
+
+        lfnprefix = self.siteCfg.fallbackStageOut[0].get("lfn-prefix", None)
+        if lfnprefix == None:
+            msg = "Unable to retrieve the lfn-prefix\n"
+            raise StageOutInitError(msg)
+        overrideParams['lfn-prefix'] = lfnprefix
+
+        self.fallbacks.append(overrideParams)
+        self.pnn = overrideParams['phedex-node']
+        self.override = True
+        msg += "### self.fallbacks %s\n" % self.fallbacks
+        self.logger.info(msg)
+        return
 
     def initialiseSiteConf(self):
         """

@@ -1,3 +1,8 @@
+2.2.0rc2 to 2.2.0rc3:
+  - there is no changes to WMCore, but we updated dmwm-base image to pypi-20230314 tag to fix monitor.sh script in order to allow Prometheus to scrape metrics from MS services
+ 
+
+
 2.2.0rc1 to 2.2.0rc2:
   - Fix error message in MSPileup (Valentin Kuznetsov) #11512
  

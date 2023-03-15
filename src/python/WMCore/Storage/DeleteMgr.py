@@ -79,11 +79,12 @@ class DeleteMgr(object):
                 self.initialiseOverride()
             else:
                 self.initialiseSiteConf()
+
     def initialiseCmsAtHome(self):
         """
         _initialiseCmsAtHome_
 
-        Extract required information from site from fallback info or from eventdata
+        Extract required information about site from the fallback section
 
         """
         overrideParams = {
@@ -93,7 +94,7 @@ class DeleteMgr(object):
             "lfn-prefix": None,
         }
         
-        msg += "Print self.siteCfg obj\n"
+        msg = "### self.siteCfg obj\n"
         msg += "%s\n" % self.siteCfg.__dict__
 
         implName = self.siteCfg.fallbackStageOut[0].get("command", None)

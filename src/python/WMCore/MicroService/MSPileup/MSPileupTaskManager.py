@@ -33,6 +33,7 @@ class MSPileupTaskManager(MSCore):
         self.rucioAccount = msConfig.get('rucioAccount', 'wmcore_transferor')
         self.rucioUrl = msConfig['rucioUrl']  # aligned with MSCore init
         self.rucioAuthUrl = msConfig['rucioAuthUrl']  # aligned with MSCore init
+        self.cleanupDaysThreshold = msConfig.get('cleanupDaysThreshold', 15)
         dryRun = msConfig.get('dryRun', False)
         self.rucioClient = self.rucio  # set in MSCore init
         self.dataManager = MSPileupData(msConfig)
@@ -59,3 +60,4 @@ class MSPileupTaskManager(MSCore):
         self.mgr.monitoringTask()
         self.mgr.activeTask(marginSpace=self.marginSpace)
         self.mgr.inactiveTask()
+        self.mgr.cleanupTask(self.cleanupDaysThreshold)

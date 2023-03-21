@@ -10,22 +10,20 @@ from future.utils import viewitems
 
 # system modules
 import datetime
-import time
 # WMCore modules
 from pprint import pformat
 from copy import deepcopy
 from Utils.IteratorTools import grouper
+from Utils.Timers import CodeTimer
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.MSTransferor.DataStructs.DQMHarvestWorkflow import DQMHarvestWorkflow
 from WMCore.MicroService.MSTransferor.DataStructs.GrowingWorkflow import GrowingWorkflow
 from WMCore.MicroService.MSTransferor.DataStructs.NanoWorkflow import NanoWorkflow
 from WMCore.MicroService.MSTransferor.DataStructs.RelValWorkflow import RelValWorkflow
 from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
-from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getPileupContainerSizesRucio,
-                                                   listReplicationRules, getBlocksAndSizeRucio)
-from WMCore.MicroService.Tools.Common import (elapsedTime, findBlockParents,
-                                              findParent, getBlocksByDsetAndRun,
-                                              getFileLumisInBlock, getRunsInBlock)
+from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getBlocksAndSizeRucio)
+from WMCore.MicroService.Tools.Common import (findBlockParents, getBlocksByDsetAndRun,
+                                              getFileLumisInBlock, findParent, getRunsInBlock)
 from WMCore.MicroService.MSCore.MSCore import MSCore
 
 
@@ -47,6 +45,24 @@ def isNanoWorkflow(reqDict):
     return False
 
 
+def rsesIntersection(listRSEs):
+    """
+    Helper function to find the intersection of 2 or more
+    sets. E.g., used for workflows with multiple datasets.
+    :param listRSEs: a list of lists/sets
+    :return: a flat list with unique RSEs
+    """
+    if not listRSEs:
+        return []
+    if len(listRSEs) == 1:
+        return list(listRSEs[0])
+    # otherwise, multiple objects
+    rses = set(listRSEs[0])
+    for itemList in listRSEs:
+        rses = rses.intersection(set(itemList))
+    return list(rses)
+
+
 class RequestInfo(MSCore):
     """
     RequestInfo class provides functionality to access and
@@ -64,13 +80,21 @@ class RequestInfo(MSCore):
         self.rucioToken = None
         self.tokenValidity = None
         self.openRunning = self.msConfig["openRunning"]
+        self.pileupDocs = []
 
-    def __call__(self, reqRecords):
+    def __call__(self, reqRecords, pileupDocs):
         """
-        Run the unified transferor box
+        Execute the main logic for input data placement, which depends on:
+        1. parsing the workflow and finding the parent dataset name, if any
+        2. check the expected locations for pileup dataset(s)
+        3. discover all the input data blocks, which are valid
+        4. create a map of child to parent blocks
         :param reqRecords: input records
-        :return: output records
+        :param pileupDocs: list with dictionary of pileup objects
+        :return: output records. Note that in case of failures, it
+            will be a subset of the input records.
         """
+        self.pileupDocs = pileupDocs
         # obtain new unified Configuration
         uConfig = self.unifiedConfig()
         if not uConfig:
@@ -82,10 +106,30 @@ class RequestInfo(MSCore):
         # against some specific templates
         workflows = self.classifyWorkflows(reqRecords)
 
-        # setup the Rucio token
-        self.setupRucio()
-        # get complete requests information (based on Unified Transferor logic)
-        self.unified(workflows)
+        # check Rucio token validity and renew it if needed
+        self.setupRucioToken()
+        # Step 1: figure out any possible parent datasets
+        self.logger.info("Getting/setting parent datasets for %d requests", len(workflows))
+        with CodeTimer("### getParentDatasets", logger=self.logger):
+            parentMap = self.getParentDatasets(workflows)
+            self.setParentDatasets(workflows, parentMap)
+
+        self.setupRucioToken()
+        # Step 2: check if pileup datasets are active and their expected locations
+        with CodeTimer("### checkSecondaryData", logger=self.logger):
+            workflows = self.setSecondaryData(workflows)
+
+        self.setupRucioToken()
+        # Step 3: get final list of valid blocks for both parent and primary data
+        # considers run, block and lumi lists
+        with CodeTimer("### getInputDataBlocks", logger=self.logger):
+            blocksByDset = self.getInputDataBlocks(workflows)
+            self.setInputDataBlocks(workflows, blocksByDset)
+
+        # Step 4: compose the final list of parent/child dependency
+        with CodeTimer("### getParentChildBlocks", logger=self.logger):
+            parentageMap = self.getParentChildBlocks(workflows)
+            self.setParentChildBlocks(workflows, parentageMap)
 
         return workflows
 
@@ -119,9 +163,10 @@ class RequestInfo(MSCore):
             self.logger.info(msg)
         return workflows
 
-    def setupRucio(self):
+    def setupRucioToken(self):
         """
         Check whether Rucio is enabled and create a new token, or renew it if needed
+        :return: a tuple with the token and  its expiration date
         """
         if not self.tokenValidity:
             # a brand new token needs to be created. To be done in the coming lines...
@@ -136,46 +181,6 @@ class RequestInfo(MSCore):
 
         self.rucioToken, self.tokenValidity = getRucioToken(self.msConfig['rucioAuthUrl'],
                                                             self.msConfig['rucioAccount'])
-
-    def unified(self, workflows):
-        """
-        Unified Transferor black box
-        :param workflows: input workflow objects
-        """
-        # get aux info for dataset/blocks from inputs/parents/pileups
-        # make subscriptions based on site white/black lists
-        self.logger.info("Unified method processing %d requests", len(workflows))
-
-        orig = time.time()
-        # start by finding what are the parent datasets for requests requiring it
-        time0 = time.time()
-        parentMap = self.getParentDatasets(workflows)
-        self.setParentDatasets(workflows, parentMap)
-        self.logger.info(elapsedTime(time0, "### getParentDatasets"))
-
-        # then check the secondary dataset sizes and locations
-        time0 = time.time()
-        sizeByDset, locationByDset = self.getSecondaryDatasets(workflows)
-        locationByDset = self.resolveSecondaryRSEs(locationByDset)
-        self.setSecondaryDatasets(workflows, sizeByDset, locationByDset)
-        self.logger.info(elapsedTime(time0, "### getSecondaryDatasets"))
-
-        # get final primary and parent list of valid blocks,
-        # considering run, block and lumi lists
-        time0 = time.time()
-        blocksByDset = self.getInputDataBlocks(workflows)
-        self.setInputDataBlocks(workflows, blocksByDset)
-        self.logger.info(elapsedTime(time0, "### getInputDataBlocks"))
-
-        # get a final list of parent blocks
-        time0 = time.time()
-        parentageMap = self.getParentChildBlocks(workflows)
-        self.setParentChildBlocks(workflows, parentageMap)
-        self.logger.info(elapsedTime(time0, "### getParentChildBlocks"))
-        self.logger.info(elapsedTime(orig, '### total time for unified method'))
-        self.logger.info("Unified method successfully processed %d requests", len(workflows))
-
-        return workflows
 
     def _workflowRemoval(self, listOfWorkflows, workflowsToRetry):
         """
@@ -233,75 +238,30 @@ class RequestInfo(MSCore):
             if wflow.hasParents() and wflow.getInputDataset() in parentageMap:
                 wflow.setParentDataset(parentageMap[wflow.getInputDataset()])
 
-    def getSecondaryDatasets(self, workflows):
+    def setSecondaryData(self, workflows):
         """
-        Given a list of requests, list all the pileup datasets and, find their
-        total dataset sizes and which locations host completed and subscribed datasets.
-        NOTE it only uses valid blocks (i.e., blocks with at least one replica!)
+        Given a list of requests, list all the pileup datasets and check their
+        configuration in MSPileup, including their expected locations.
+        NOTE: pileup documents contain only active pileup.
         :param workflows: a list of Workflow objects
-        :return: two dictionaries keyed by the dataset.
-           First contains dataset size as value.
-           Second contains a list of locations as value.
-        """
-        retryWorkflows = []
-        retryDatasets = []
-        datasets = set()
-        for wflow in workflows:
-            datasets = datasets | wflow.getPileupDatasets()
-
-        # retrieve pileup container size and locations from Rucio
-        self.logger.info("Fetching pileup dataset sizes for %d datasets against Rucio: %s",
-                         len(datasets), self.msConfig['rucioUrl'])
-        sizesByDset = getPileupContainerSizesRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
-
-        # then fetch data location for locked data, under our own rucio account
-        self.logger.info("Fetching pileup container location for %d containers against Rucio: %s",
-                         len(datasets), self.msConfig['rucioUrl'])
-        locationsByDset = listReplicationRules(datasets, self.msConfig['rucioAccount'],
-                                               grouping="A", rucioUrl=self.msConfig['rucioUrl'],
-                                               rucioToken=self.rucioToken)
-        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
-        # FIXME: isn't there a better way to do this?!?
-        for dset, value in viewitems(sizesByDset):
-            if value is None:
-                retryDatasets.append(dset)
-        for dset, value in viewitems(locationsByDset):
-            if value is None:
-                retryDatasets.append(dset)
-        if retryDatasets:
-            for wflow in workflows:
-                for pileup in wflow.getPileupDatasets():
-                    if pileup in retryDatasets:
-                        retryWorkflows.append(wflow)
-            # remove workflows that failed one or more of the bulk queries to the data-service
-            self._workflowRemoval(workflows, retryWorkflows)
-        return sizesByDset, locationsByDset
-
-    def resolveSecondaryRSEs(self, rsesByContainer):
-        """
-        Given a dictionary with containers and their list of RSE
-        expressions, resolve the RSE expressions into RSE names,
-        dropping all the Tape RSEs.
-        :param rsesByContainer: dict key'ed by the container with a list of expressions
-        :return: a dictionary key'ed by the container name, with a flat list of unique
-            RSE names.
-        """
-        self.logger.info("Resolving Rucio RSE expressions for %d containers", len(rsesByContainer))
-        for contName in list(rsesByContainer):
-            rseNames = []
-            for rseExpr in rsesByContainer[contName]:
-                rseNames.extend(self.rucio.evaluateRSEExpression(rseExpr, returnTape=False))
-            rsesByContainer[contName] = list(set(rseNames))
-        return rsesByContainer
-
-    def setSecondaryDatasets(self, workflows, sizesByDset, locationsByDset):
-        """
-        Given dictionaries with the pileup dataset size and locations, set the
-        workflow object accordingly.
+        :return: list of workflow objects with secondary information set.
         """
         for wflow in workflows:
-            for dsetName in wflow.getPileupDatasets():
-                wflow.setSecondarySummary(dsetName, sizesByDset[dsetName], locationsByDset[dsetName])
+            self.logger.info("Checking secondary dataset for workflow: %s", wflow.getName())
+            puRSEs = []
+            for puDset in wflow.getPileupDatasets():
+                # if pileup is not found, then it will have an empty location
+                wflow.setSecondarySummary(puDset)
+                for puDoc in self.pileupDocs:
+                    if puDset == puDoc["pileupName"]:
+                        wflow.setSecondarySummary(puDset, puDoc["expectedRSEs"])
+                        puRSEs.append(puDoc["expectedRSEs"])
+                        self.logger.info("  have pileup %s expected at RSEs: %s",
+                                         puDset, puDoc['expectedRSEs'])
+                        break  # continue with the next pileup dataset
+            # set an unique intersection of RSEs for multiple pileups
+            wflow.setPURSElist(rsesIntersection(puRSEs))
+        return workflows
 
     def getInputDataBlocks(self, workflows):
         """

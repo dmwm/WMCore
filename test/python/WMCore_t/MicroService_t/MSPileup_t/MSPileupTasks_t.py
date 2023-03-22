@@ -227,6 +227,14 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
                 found = True
         self.assertEqual(found, True)
 
+        # update doc in MSPileup and call cleanup task to delete it
+        data['active'] = False
+        data['rulesIds'] = []
+        data['currentRSEs'] = []
+        data['deactivatedOn'] = 0
+        self.mgr.updatePileup(data)
+        obj.cleanupTask(0)
+
 
 if __name__ == '__main__':
     unittest.main()

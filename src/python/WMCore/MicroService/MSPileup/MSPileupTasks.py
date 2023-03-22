@@ -62,6 +62,32 @@ class MSPileupTasks():
             msg = f"MSPileup pileup size task failed with error {exp}"
             self.logger.exception(msg)
 
+    def cleanupTask(self, cleanupDaysThreshold):
+        """
+        Execute cleanup task according to the following logic:
+
+        1. Fetch documents from backend database for the following conditions
+           - active=False, and
+           - empty ruleIds list; and
+           - empty currentRSEs; and
+           document has been deactivated for a while (deactivatedOn=XXX),
+        2. For those documents which are fetched make delete call to backend database
+
+        :param timeThreshold: time threshold in days which will determine document clean-up readiness
+        """
+        spec = {'active': False}
+        docs = self.mgr.getPileup(spec)
+        deleteDocs = 0
+        seconds = cleanupDaysThreshold * 24 * 60 * 60  # convert to second
+        for doc in docs:
+            if not doc['ruleIds'] and not doc['currentRSEs'] and \
+                    doc['deactivatedOn'] + seconds > time.time():
+                spec = {'_id': doc['_id']}
+                self.logger.info("Cleanup task delete pileup %s", doc['pileupName'])
+                self.mgr.deletePileup(spec)
+                deleteDocs += 1
+        self.logger.info("Cleanup task deleted %d pileup objects", deleteDocs)
+
     def monitoringTask(self):
         """
         Execute Monitoring task according to the following logic:

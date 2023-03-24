@@ -17,6 +17,7 @@ from WMQuality.Emulators.RucioClient.MockRucioApi import MockRucioApi
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMCore.MicroService.MSPileup.MSPileupTasks import MSPileupTasks
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
+from WMCore.MicroService.MSPileup.MSPileupMonitoring import MSPileupMonitoring
 from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.Services.Rucio.Rucio import Rucio
 
@@ -113,6 +114,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
                     'mongoDBPassword': None,
                     'mockMongoDB': True}
         self.mgr = MSPileupData(msConfig, skipRucio=True)
+        self.monMgr = MSPileupMonitoring(msConfig)
 
         # setup our pileup data
         self.pname = '/primary/processed/PREMIX'
@@ -147,7 +149,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         """
         self.logger.info("---------- CHECK for state=OK -----------")
 
-        obj = MSPileupTasks(self.mgr, self.logger, self.rucioAccount, self.rucioClient)
+        obj = MSPileupTasks(self.mgr, self.monMgr, self.logger, self.rucioAccount, self.rucioClient)
         obj.monitoringTask()
 
         # we added three pileup documents and should have update at least one of them
@@ -180,7 +182,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         # now we can test non OK state in Rucio
         self.logger.info("---------- CHECK for state=STUCK -----------")
         self.rucioClient = TestRucioClient(logger=self.logger, state='STUCK')
-        obj = MSPileupTasks(self.mgr, self.logger, self.rucioAccount, self.rucioClient)
+        obj = MSPileupTasks(self.mgr, self.monMgr, self.logger, self.rucioAccount, self.rucioClient)
         obj.monitoringTask()
         # at this step the T2_XX_CERN should NOT be added to currentRSEs
         spec = {'pileupName': self.pname}
@@ -197,7 +199,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         # we use CustomException for state to check how our code will
         # handle Rucio API exceptions
         self.rucioClient = TestRucioClient(logger=self.logger, state='CustomException')
-        obj = MSPileupTasks(self.mgr, self.logger, self.rucioAccount, self.rucioClient)
+        obj = MSPileupTasks(self.mgr, self.monMgr, self.logger, self.rucioAccount, self.rucioClient)
         obj.monitoringTask()
 
     def testMSPileupTasksWithMockApi(self):
@@ -214,7 +216,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
 
         # now create mock rucio client
         rucioClient = MockRucioApi(self.rucioAccount, hostUrl=self.hostUrl, authUrl=self.authUrl)
-        obj = MSPileupTasks(self.mgr, self.logger, self.rucioAccount, rucioClient)
+        obj = MSPileupTasks(self.mgr, self.monMgr, self.logger, self.rucioAccount, rucioClient)
         obj.monitoringTask()
         obj.activeTask()
         obj.inactiveTask()

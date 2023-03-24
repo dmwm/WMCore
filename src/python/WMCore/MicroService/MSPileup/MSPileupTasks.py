@@ -14,6 +14,7 @@ from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.MicroService.MSPileup.DataStructs.MSPileupReport import MSPileupReport
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.MicroService.Tools.PycurlRucio import getPileupContainerSizesRucio, getRucioToken
+from WMCore.MicroService.MSPileup.MSPileupMonitoring import flatDocuments
 
 
 class MSPileupTasks():
@@ -25,7 +26,7 @@ class MSPileupTasks():
     - active task to look-up pileup docs in active state
     """
 
-    def __init__(self, dataManager, logger, rucioAccount, rucioClient, dryRun=False):
+    def __init__(self, dataManager, monitManager, logger, rucioAccount, rucioClient, dryRun=False):
         """
         MSPileupTaskManager constructor
         :param dataManager: MSPileup Data Management layer instance
@@ -35,6 +36,7 @@ class MSPileupTasks():
         :param dryRun: dry-run mode of operations
         """
         self.mgr = dataManager
+        self.monitManager = monitManager
         self.logger = logger
         self.rucioAccount = rucioAccount
         self.rucioClient = rucioClient
@@ -87,6 +89,38 @@ class MSPileupTasks():
                 self.mgr.deletePileup(spec)
                 deleteDocs += 1
         self.logger.info("Cleanup task deleted %d pileup objects", deleteDocs)
+
+    def cmsMonitTask(self):
+        """
+        Execute CMS MONIT task according to the following logic:
+
+        1. Read all pileup document from MongoDB
+        2. Flatten all docs
+        3. Submit flatten docs to CMS MONIT
+        """
+        if not self.monitManager.userAMQ or not self.monitManager.passAMQ:
+            self.logger.info("MSPileupMonitoring has no AMQ credentials, will skip the upload to MONIT")
+            return
+        startTime = time.time()
+        spec = {}
+        msPileupDocs = self.mgr.getPileup(spec)
+        docs = []
+        for doc in msPileupDocs:
+            for flatDoc in flatDocuments(doc):
+                docs.append(flatDoc)
+        results = self.monitManager.uploadToAMQ(docs)
+        endTime = time.time()
+        elapsedTime = endTime - startTime
+        if results and isinstance(results, dict):
+            success = results['success']
+            failures = results['failures']
+            msg = f"MSPileup CMS MONIT task fetched {len(msPileupDocs)} docs from MSPileup backend DB"
+            msg += f", and sent {len(docs)} flatten docs to MONIT"
+            msg += f", number of success docs {success} and failures {failures},"
+            msg += " in %.2f secs" % elapsedTime
+            self.logger.info(msg)
+        else:
+            self.logger.error("MSPileup CMS MONIT task failed, execution time %.2f secs", elapsedTime)
 
     def monitoringTask(self):
         """

@@ -1,0 +1,37 @@
+[
+  {
+    "pileupName": "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM",
+    "pileupType": "classic",
+    "expectedRSEs": ["T1_US_FNAL_Disk", "T2_CH_CERN"],
+    "campaigns": ["Apr2023_Val"],
+    "active": true
+  },
+  {
+    "pileupName": "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX",
+    "pileupType": "premix",
+    "expectedRSEs": ["T2_CH_CERN"],
+    "campaigns": ["Apr2023_Val"],
+    "active": true
+  },
+  {
+    "pileupName": "/RelValMinBias_14TeV/CMSSW_10_6_1-106X_mcRun3_2021_realistic_v1_rsb-v1/GEN-SIM",
+    "pileupType": "classic",
+    "expectedRSEs": ["T1_US_FNAL_Disk", "T2_CH_CERN"],
+    "campaigns": ["Apr2023_Val"],
+    "active": true
+  },
+  {
+    "pileupName": "/RelValMinBias_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM",
+    "pileupType": "classic",
+    "expectedRSEs": ["T2_CH_CERN"],
+    "campaigns": ["Apr2023_Val"],
+    "active": true
+  },
+  {
+    "pileupName": "/RelValMinBias_14TeV/CMSSW_12_0_0_pre4-120X_mcRun3_2021_realistic_v2-v1/GEN-SIM",
+    "pileupType": "classic",
+    "expectedRSEs": ["T2_CH_CERN"],
+    "campaigns": ["Apr2023_Val"],
+    "active": true
+  }
+]

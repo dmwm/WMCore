@@ -120,6 +120,7 @@ class DBSUploadTest(unittest.TestCase):
         config.DBS3Upload.nProcesses = 1
         config.DBS3Upload.dbsWaitTime = 0.1
         config.DBS3Upload.datasetType = "VALID"
+        config.DBS3Upload.uploaderName = "WMAgent"
 
         # added to skip the StepChain parentage setting test
         config.component_("Tier0Feeder")
@@ -414,7 +415,8 @@ class DBSUploadTest(unittest.TestCase):
             blockName = parentFiles[0]["datasetPath"] + "#" + makeUUID()
             dbsBlock = DBSBufferBlock(blockName,
                                       location="malpaquet",
-                                      datasetpath=None)
+                                      datasetpath=None,
+                                      uploader=config.uploaderName)
             dbsBlock.status = "Open"
             dbsBlock.setDataset(parentFiles[0]["datasetPath"], 'data', 'VALID')
             dbsUtil.createBlocks([dbsBlock])
@@ -431,7 +433,8 @@ class DBSUploadTest(unittest.TestCase):
         blockName = childFiles[0]["datasetPath"] + "#" + makeUUID()
         dbsBlock = DBSBufferBlock(blockName,
                                   location="malpaquet",
-                                  datasetpath=None)
+                                  datasetpath=None,
+                                  uploader=config.uploaderName)
         dbsBlock.status = "InDBS"
         dbsBlock.setDataset(childFiles[0]["datasetPath"], 'data', 'VALID')
         dbsUtil.createBlocks([dbsBlock])

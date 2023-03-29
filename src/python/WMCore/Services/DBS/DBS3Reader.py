@@ -857,41 +857,6 @@ class DBS3Reader(object):
         """
         return self.dbs.insertFileParents({"block_name": childBlockName, "child_parent_id_list": childParentsIDPairs})
 
-    def findAndInsertMissingParentage(self, childBlockName, parentData, insertFlag=True):
-        """
-        :param childBlockName: child block name
-        :param parentData: a dictionary with complete parent dataset file/run/lumi information
-        :param insertFlag: boolean to allow parentage insertion into DBS or not
-        :return: number of file parents pair inserted
-        """
-        # in the format of: {'fileid': [[run_num1, lumi1], [run_num1, lumi2], etc]
-        # e.g. {'554307997': [[1, 557179], [1, 557178], [1, 557181],
-        childBlockData = self.dbs.listBlockTrio(block_name=childBlockName)
-
-        # runs the actual mapping logic, like {"child_id": ["parent_id", "parent_id2", ...], etc
-        mapChildParent = {}
-        # there should be only 1 item, but we better be safe
-        for item in childBlockData:
-            for childFileID in item:
-                for runLumiPair in item[childFileID]:
-                    frozenKey = frozenset(runLumiPair)
-                    parentId = parentData.get(frozenKey)
-                    if parentId is None:
-                        msg = "Child file id: %s, with run/lumi: %s, has no match in the parent dataset"
-                        self.logger.warning(msg, childFileID, frozenKey)
-                        continue
-                    mapChildParent.setdefault(childFileID, set())
-                    mapChildParent[childFileID].add(parentId)
-
-        if insertFlag and mapChildParent:
-            # convert dictionary to list of unique childID, parentID tuples
-            listChildParent = []
-            for childID in mapChildParent:
-                for parentID in mapChildParent[childID]:
-                    listChildParent.append([int(childID), int(parentID)])
-            self.dbs.insertFileParents({"block_name": childBlockName, "child_parent_id_list": listChildParent})
-        return len(mapChildParent)
-
     def listBlocksWithNoParents(self, childDataset):
         """
         :param childDataset: child dataset for
@@ -934,27 +899,51 @@ class DBS3Reader(object):
         :param childDataset: child dataset need to set the parentage correctly.
         :return: blocks which failed to insert parentage. for retry
         """
-        pDatasets = self.listDatasetParents(childDataset)
-        self.logger.info("Parent datasets for %s are: %s", childDataset, pDatasets)
-        # print("parent datasets %s\n" % pDatasets)
-        # pDatasets format is
-        # [{'this_dataset': '/SingleMuon/Run2016D-03Feb2017-v1/MINIAOD', 'parent_dataset_id': 13265209, 'parent_dataset': '/SingleMuon/Run2016D-23Sep2016-v1/AOD'}]
-        if not pDatasets:
+        parentDatasets = self.listDatasetParents(childDataset)
+        self.logger.info("Parent datasets for %s are: %s", childDataset, parentDatasets)
+        # parentDatasets format is
+        # [{'this_dataset': '/SingleMuon/Run2016D-03Feb2017-v1/MINIAOD',
+        #   'parent_dataset_id': 13265209,
+        #   'parent_dataset': '/SingleMuon/Run2016D-23Sep2016-v1/AOD'}]
+        if not parentDatasets:
             self.logger.warning("No parent dataset found for child dataset %s", childDataset)
             return {}
 
-        parentFullInfo = self.getParentDatasetTrio(childDataset)
+        parentFlatData = self.getParentDatasetTrio(childDataset)
+
         blocks = self.listBlocksWithNoParents(childDataset)
         failedBlocks = []
         self.logger.info("Found %d blocks without parentage information", len(blocks))
         for blockName in blocks:
             try:
                 self.logger.info("Fixing parentage for block: %s", blockName)
-                numFiles = self.findAndInsertMissingParentage(blockName, parentFullInfo, insertFlag=insertFlag)
-                self.logger.debug("%s file parentage added for block %s", numFiles, blockName)
+                childFlatData = self.getChildBlockTrio(blockName)
+                listChildParent = []
+
+                # first resolve parentage for all common runLumi pairs between childBlock and parentDataset
+                for runLumi in childFlatData.keys() & parentFlatData.keys():
+                    childFileId = childFlatData[runLumi]
+                    parentFileId = parentFlatData[runLumi]
+                    listChildParent.append([childFileId, parentFileId])
+
+                # then add all run lumi pairs which are missing at the parent Dataset by appending None as parentage information
+                for runLumi in childFlatData.keys() - parentFlatData.keys():
+                    childFileId = childFlatData[runLumi]
+                    parentFileId = None
+                    listChildParent.append([childFileId, parentFileId])
+                    msg = "Child file id: %s, with run/lumi: %s, has no match in the parent dataset. "
+                    msg += "Adding it with null parentage information to DBS."
+                    self.logger.warning(msg, childFileId, runLumi)
+
+                # insert block parentage information to DBS
+                if insertFlag and any(listChildParent):
+                    self.insertFileParents(blockName, listChildParent)
+                    self.logger.info("Parentage information successfuly added to DBS for block %s", blockName)
+                else:
+                    self.logger.warning("No parentage information added to DBS for block %s", blockName)
             except Exception as ex:
                 self.logger.exception(
-                        "Parentage updated failed for block %s with error %s", blockName, str(ex))
+                        "Parentage update failed for block %s with error %s", blockName, str(ex))
                 failedBlocks.append(blockName)
 
         return failedBlocks
@@ -965,18 +954,44 @@ class DBS3Reader(object):
           - file ids, run number and lumi section
         NOTE: This API is meant to be used by the StepChainParentage thread only!!!
         :param childDataset: name of the child dataset
-        :return: a dictionary where the key is a set of run/lumi, its value is the fileid
+        :return: A dictionary using (run, lumi) tuples as keys and fileIds as values
+                 {(1, 5110): 2746490237,
+                  (1, 5959): 2746487877,
+                  (1, 5990): 2746487877,
+                  ...}
         """
-        # this will return data in the format of:
+        # the call to DBS from bellow will return data in the following format of:
         # {554307997: [[1, 557179], [1, 557178],...
         # such that: key is file id, in each list is [run_number, lumi_section_numer].
         parentFullInfo = self.dbs.listParentDSTrio(dataset=childDataset)
 
-        # runs the actual mapping logic, like {"child_id": ["parent_id", "parent_id2", ...], etc
-        parentFrozenData = {}
-        for item in parentFullInfo:
-            for fileId in item:
-                for runLumiPair in item[fileId]:
-                    frozenKey = frozenset(runLumiPair)
-                    parentFrozenData[frozenKey] = fileId
-        return parentFrozenData
+        parentFlatData = {}
+        for parentDataset in parentFullInfo:
+            for fileId in parentDataset:
+                for runLumiPair in parentDataset[fileId]:
+                    parentFlatData[tuple(runLumiPair)] = fileId
+        return parentFlatData
+
+    def getChildBlockTrio(self, childBlock):
+        """
+        Provided a block name, return all block contents information, such as:
+          - file ids, run number and lumi section
+        NOTE: This API is meant to be used by the StepChainParentage thread only!!!
+        :param chilBlock: name of the child block
+        :return: A dictionary using (run, lumi) tuples as keys and fileIds as values
+                 {(1, 5110): 2746490237,
+                  (1, 5959): 2746487877,
+                  (1, 5990): 2746487877,
+                  ...}
+        """
+        # the call to DBS from bellow will return data in the following format of:
+        # {554307997: [[1, 557179], [1, 557178],...
+        # such that: key is file id, in each list is [run_number, lumi_section_numer].
+        childBlockInfo = self.dbs.listBlockTrio(block_name=childBlock)
+
+        childFlatData = {}
+        for childBlock in childBlockInfo:
+            for fileId in childBlock:
+                for runLumiPair in childBlock[fileId]:
+                    childFlatData[tuple(runLumiPair)] = fileId
+        return childFlatData

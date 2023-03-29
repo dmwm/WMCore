@@ -34,7 +34,7 @@ from WMCore.ReqMgr.DataStructs import RequestStatus
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.MicroService.Tools.Common import findParent, isRelVal
+from WMCore.MicroService.Tools.Common import findParent
 from Utils.Pipeline import Pipeline, Functor
 from Utils.CertTools import ckey, cert
 
@@ -690,8 +690,7 @@ class MSRuleCleaner(MSCore):
 
         # Create the container list to the rucio account map and set the checkGlobalLocks flag.
         mapRuleType = {self.msConfig['rucioWmaAccount']: ["OutputDatasets"],
-                       self.msConfig['rucioMStrAccount']: ["InputDataset", "MCPileup",
-                                                           "DataPileup", "ParentDataset"]}
+                       self.msConfig['rucioMStrAccount']: ["InputDataset", "ParentDataset"]}
         if rucioAcct == self.msConfig['rucioMStrAccount']:
             checkGlobalLocks = True
         else:
@@ -711,13 +710,7 @@ class MSRuleCleaner(MSCore):
                     continue
                 if gran == 'container':
                     ruleIds = [rule['id'] for rule in self.rucio.listDataRules(dataCont, account=rucioAcct)]
-                    if ruleIds and dataType in ("MCPileup", "DataPileup"):
-                        msg = "Pileup container %s has the following container-level rules to be removed: %s."
-                        msg += " However, this component is no longer removing pileup rules."
-                        self.logger.info(msg, dataCont, ruleIds)
-                        if not isRelVal(wflow):
-                            self.alertDeletablePU(wflow['RequestName'], dataCont, ruleIds)
-                    elif ruleIds:
+                    if ruleIds:
                         wflow['RulesToClean'][currPline].extend(ruleIds)
                         msg = "Container %s has the following container-level rules to be removed: %s"
                         self.logger.info(msg, dataCont, ruleIds)
@@ -777,28 +770,6 @@ class MSRuleCleaner(MSCore):
             requests = result[0]
         self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
         return requests
-
-    def alertDeletablePU(self, workflowName, containerName, ruleList):
-        """
-        Send alert notifying that there is a pileup dataset eligible for rule removal
-        :param workflowName: string with the workflow name
-        :param containerName: string with the container name
-        :param ruleList: list of strings with the rule ids
-        :return: none
-        """
-        alertName = "{}: PU eligible for deletion: {}".format(self.alertServiceName, containerName)
-        alertSeverity = "high"
-        alertSummary = "[MSRuleCleaner] Found pileup container no longer locked and available for rule deletion."
-        alertDescription = "Workflow: {} has the following pileup container ".format(workflowName)
-        alertDescription += "\n{}\n no longer in the global locks. ".format(containerName)
-        alertDescription += "These rules\n{}\nare eligible for deletion.".format(ruleList)
-
-        # Check if alarms are enabled for this service
-        # Alert expiration time defaults to 2 days
-        if self.msConfig["sendNotification"]:
-            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                           service=self.alertServiceName, endSecs=self.alertExpiration)
-        self.logger.critical(alertDescription)
 
     def alertStatusAdvanceExpired(self, wflow, additionalInfo=None):
         """

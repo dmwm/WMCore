@@ -67,8 +67,6 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         self.assertEqual(wflow["ForceArchive"], False)
         self.assertEqual(wflow["RequestTransition"], [])
         self.assertEqual(wflow['IncludeParents'], False)
-        self.assertEqual(wflow['DataPileup'], [])
-        self.assertEqual(wflow['MCPileup'], [])
         self.assertEqual(wflow['InputDataset'], None)
         self.assertEqual(wflow['ParentDataset'], [])
 
@@ -76,14 +74,12 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         # Test Taskchain:
         wflow = MSRuleCleanerWflow(self.taskChainReq)
         expectedWflow = {'CleanupStatus': {},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': False,
                          'InputDataset': u'/JetHT/Run2012C-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'MCPileup': [],
                          'OutputDatasets': [
                              u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                              u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
@@ -121,14 +117,12 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         # Test ReReco workflow:
         wflow = MSRuleCleanerWflow(self.reRecoReq)
         expectedWflow = {'CleanupStatus': {},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': False,
                          'InputDataset': u'/SingleElectron/Run2017F-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'MCPileup': [],
                          'OutputDatasets': [u'/SingleElectron/Run2017F-09Aug2019_UL2017_EcalRecovery-v1/MINIAOD',
                                             u'/SingleElectron/Run2017F-EcalUncalWElectron-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
                                             u'/SingleElectron/Run2017F-EcalUncalZElectron-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
@@ -165,14 +159,12 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         # Test include parents::
         wflow = MSRuleCleanerWflow(self.includeParentsReq)
         expectedWflow = {'CleanupStatus': {},
-                         'DataPileup': [],
                          'ForceArchive': False,
                          'IncludeParents': True,
                          'InputDataset': u'/Cosmics/Commissioning2015-PromptReco-v1/RECO',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'MCPileup': [],
                          'OutputDatasets': [
                              u'/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO'],
                          'ParentDataset': [],
@@ -192,48 +184,6 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                                                {u'DN': u'', u'Status': u'running-open', u'UpdateTime': 1586860927},
                                                {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1586861535},
                                                {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1586863942}],
-                         'RequestType': u'StepChain',
-                         'SubRequestType': u'',
-                         'RulesToClean': {},
-                         'TargetStatus': None,
-                         'TransferDone': False,
-                         'TransferTape': False}
-        self.assertDictEqual(wflow, expectedWflow)
-
-    def testMultiPU(self):
-        # Test workflow with multiple pileups::
-        wflow = MSRuleCleanerWflow(self.multiPUReq)
-        expectedWflow = {'CleanupStatus': {},
-                         'DataPileup': [],
-                         'ForceArchive': False,
-                         'IncludeParents': False,
-                         'InputDataset': None,
-                         'IsArchivalDelayExpired': False,
-                         'IsClean': False,
-                         'IsLogDBClean': False,
-                         'MCPileup': [u'/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIIWinter15GS-MCRUN2_71_V1-v1/GEN-SIM',
-                                      u'/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW'],
-                         'OutputDatasets': [
-                             u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM',
-                             u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/LHE',
-                             u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM-RAW'],
-                         'ParentDataset': [],
-                         'ParentageResolved': False,
-                         'PlineMarkers': None,
-                         'RequestName': u'tivanov_SC_MultiPU_HG2002_Val_200121_043659_4925',
-                         'RequestStatus': u'completed',
-                         'RequestTransition': [{u'DN': u'',
-                                                u'Status': u'new',
-                                                u'UpdateTime': 1579577819},
-                                               {u'DN': u'', u'Status': u'assignment-approved',
-                                                u'UpdateTime': 1579577822},
-                                               {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1579577822},
-                                               {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1579577895},
-                                               {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1579578050},
-                                               {u'DN': u'', u'Status': u'acquired', u'UpdateTime': 1579578770},
-                                               {u'DN': u'', u'Status': u'running-open', u'UpdateTime': 1579578770},
-                                               {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1579579378},
-                                               {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1579587203}],
                          'RequestType': u'StepChain',
                          'SubRequestType': u'',
                          'RulesToClean': {},

@@ -53,12 +53,16 @@ class MSPileupTasks():
             docs = self.mgr.getPileup(spec)
             rucioAuthUrl = self.rucioClient.rucioParams['auth_host']
             rucioHostUrl = self.rucioClient.rucioParams['rucio_host']
-            rucioToken = getRucioToken(rucioAuthUrl, self.rucioAccount)
+            rucioToken, _tokenValidity = getRucioToken(rucioAuthUrl, self.rucioAccount)
             containers = [r['pileupName'] for r in docs]
+            msg = f"Fetching pileup size for {len(containers)} containers "
+            msg += f"against rucio url: {rucioHostUrl}"
+            self.logger.info(msg)
             datasetSizes = getPileupContainerSizesRucio(containers, rucioHostUrl, rucioToken)
             for doc in docs:
                 pileupSize = datasetSizes.get(doc['pileupName'], 0)
-                doc['pileupSize'] = pileupSize
+                if pileupSize:
+                    doc['pileupSize'] = pileupSize
                 self.mgr.updatePileup(doc, validate=False)
         except Exception as exp:
             msg = f"MSPileup pileup size task failed with error {exp}"
@@ -286,7 +290,7 @@ def monitoringTask(doc, spec):
         msg = f"update pileup {pname}"
         report.addEntry('monitoring', uuid, msg)
     else:
-        logger.info("monitoring task {uuid}, processed without update for {pname}")
+        logger.info(f"monitoring task {uuid}, processed without update for {pname}")
 
 
 def inactiveTask(doc, spec):
@@ -369,9 +373,11 @@ def activeTask(doc, spec):
     modify = False
     localCopyOfCurrentRSEs = list(currentRSEs)
 
-    # if expectedRSEs is different than currentRSEs, then further data placement is required
-    # it's possible that data removal is required!
-    if expectedRSEs != currentRSEs:
+    if not pileupSize:
+        logger.error(f"Pileup {pname} does not have its size defined: {pileupSize}")
+    elif expectedRSEs != currentRSEs:
+        # this means that further data placement is required, or it could be
+        # that that data removal is actually required!
         msg = f"active task {uuid}"
         msg += f", further data placement required for pileup name: {pname},"
         msg += f" with expectedRSEs: {expectedRSEs} and data currently available at: {currentRSEs}"

@@ -1,3 +1,9 @@
+2.2.0rc4 to 2.2.0rc5:
+  - Adding Null parentage information for RunLumi pairs missing at the parent Dataset. (Todor Ivanov) #11520
+  - Add uploaderName as DBS3Upload config parameter (German Giraldo) #11497
+  - Remove MS/DataPileup from MSRuleCleanerWflow && Remove Pilup logic from MSRuleCleaner. (Todor Ivanov) #11441
+
+
 2.2.0rc3 to 2.2.0rc4:
   - New MSMonitoring module (Valentin Kuznetsov) #11478
   - Implement MSPileup clean-up task (Valentin Kuznetsov) #11517

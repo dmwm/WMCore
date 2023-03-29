@@ -435,10 +435,10 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """Test the getParentDatasetTrio method"""
         self.dbs = DBSReader(self.endpoint)
         results = self.dbs.getParentDatasetTrio(DATASET_WITH_PARENTS)
-        self.assertTrue(frozenset({2, 180851}) in results)
-        self.assertEqual(int(results[frozenset({2, 180851})]), 36092526)
-        self.assertTrue(frozenset({1, 180851}) in results)
-        self.assertEqual(int(results[frozenset({2, 180851})]), 36092526)
+        self.assertTrue((180851, 2) in results)
+        self.assertEqual(int(results[(180851, 2)]), 36092526)
+        self.assertTrue((180851, 1) in results)
+        self.assertEqual(int(results[(180851, 1)]), 36092526)
 
 
 if __name__ == '__main__':

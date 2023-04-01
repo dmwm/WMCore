@@ -1,3 +1,11 @@
+2.2.0rc5 to 2.2.0rc6:
+  - refactor to use MSPileup data location (Alan Malta Rodrigues) #11519
+  - Final tweaks to MSPileup (Alan Malta Rodrigues) #11526
+  - Dump of production pileup configurations; pileup json for dev cluster (Alan Malta Rodrigues) #11521
+  - Script to parse campaigns and extract pileup configuration (Alan Malta Rodrigues) #11521
+  - Support logger object in the CodeTimer class (Alan Malta Rodrigues) #11519
+
+
 2.2.0rc4 to 2.2.0rc5:
   - Adding Null parentage information for RunLumi pairs missing at the parent Dataset. (Todor Ivanov) #11520
   - Add uploaderName as DBS3Upload config parameter (German Giraldo) #11497

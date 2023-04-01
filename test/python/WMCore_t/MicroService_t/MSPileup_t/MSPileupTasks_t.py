@@ -30,6 +30,7 @@ class TestRucioClient(Client):
             self.logger = logger
         else:
             self.logger = getMSLogger(False)
+        self.rses = ['rse1', 'rse2', 'T2_XX_CERN']
         self.state = state
         self.doc = {'id': '123', 'rse_expression': 'T2_XX_CERN', 'state': self.state}
 
@@ -62,7 +63,7 @@ class TestRucioClient(Client):
 
     def list_rses(self, rseExpression):
         """Immitate get list_rses Rucio client API"""
-        for rse in ['rse1', 'rse2', 'T2_XX_CERN']:
+        for rse in self.rses:
             yield {'rse': rse}
 
     def get_rse_usage(self, rse):
@@ -74,6 +75,16 @@ class TestRucioClient(Client):
                'total': 440245583794751, 'files': 138519,
                'rse': rse}
         yield doc
+
+    def listDataRules(self, pname, **kwargs):
+        """Mock the Rucio wrapper listDataRules API"""
+        self.logger.info("%s: mocking listDataRules.", self.__class__.__name__)
+        return self.list_replication_rules(kwargs)
+
+    def evaluateRSEExpression(self, expr):
+        """Mock the Rucio wrapper evaluateRSEExpression API"""
+        self.logger.info("%s: mocking evaluateRSEExpression.", self.__class__.__name__)
+        return self.rses
 
 
 class MSPileupTasksTest(EmulatedUnitTestCase):

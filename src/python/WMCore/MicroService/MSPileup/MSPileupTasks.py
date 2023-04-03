@@ -88,7 +88,7 @@ class MSPileupTasks():
         for doc in docs:
             if not doc['ruleIds'] and not doc['currentRSEs'] and \
                     doc['deactivatedOn'] + seconds > time.time():
-                spec = {'_id': doc['_id']}
+                spec = {'pileupName': doc['pileupName']}
                 self.logger.info("Cleanup task delete pileup %s", doc['pileupName'])
                 self.mgr.deletePileup(spec)
                 deleteDocs += 1

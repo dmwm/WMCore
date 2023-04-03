@@ -224,7 +224,6 @@ class MSPileupData():
             return results
 
         for doc in self.dbColl.find(spec, projection):
-            doc = stripKeys(doc, ['_id'])
             results.append(doc)
         return results
 

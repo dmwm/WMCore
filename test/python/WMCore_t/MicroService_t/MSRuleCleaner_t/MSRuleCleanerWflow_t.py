@@ -31,17 +31,17 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         self.includeParentsFile = getTestFile('data/ReqMgr/requests/Static/IncludeParentsRequestDump.json')
         self.multiPUFile = getTestFile('data/ReqMgr/requests/Static/MultiPURequestDump.json')
         self.reqRecordsFile = getTestFile('data/ReqMgr/requests/Static/BatchRequestsDump.json')
-        with open(self.reqRecordsFile) as fd:
+        with open(self.reqRecordsFile, encoding="utf8") as fd:
             self.reqRecords = json.load(fd)
-        with open(self.taskChainFile) as fd:
+        with open(self.taskChainFile, encoding="utf8") as fd:
             self.taskChainReq = json.load(fd)
-        with open(self.stepChainFile) as fd:
+        with open(self.stepChainFile, encoding="utf8") as fd:
             self.stepChainReq = json.load(fd)
-        with open(self.reRecoFile) as fd:
+        with open(self.reRecoFile, encoding="utf8") as fd:
             self.reRecoReq = json.load(fd)
-        with open(self.includeParentsFile) as fd:
+        with open(self.includeParentsFile, encoding="utf8") as fd:
             self.includeParentsReq = json.load(fd)
-        with open(self.multiPUFile) as fd:
+        with open(self.multiPUFile, encoding="utf8") as fd:
             self.multiPUReq = json.load(fd)
         super(MSRuleCleanerWflowTest, self).setUp()
 
@@ -69,6 +69,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         self.assertEqual(wflow['IncludeParents'], False)
         self.assertEqual(wflow['InputDataset'], None)
         self.assertEqual(wflow['ParentDataset'], [])
+        self.assertEqual(wflow['TapeRulesStatus'], [])
+        self.assertEqual(wflow['StatusAdvanceExpiredMsg'], "")
 
     def testTaskChain(self):
         # Test Taskchain:
@@ -76,41 +78,43 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         expectedWflow = {'CleanupStatus': {},
                          'ForceArchive': False,
                          'IncludeParents': False,
-                         'InputDataset': u'/JetHT/Run2012C-v1/RAW',
+                         'InputDataset': '/JetHT/Run2012C-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'OutputDatasets': [
-                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
-                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
-                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                             u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                             u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
+                             '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
+                             '/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
+                             '/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             '/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             '/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': None,
-                         'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
-                         'RequestStatus': u'announced',
-                         'RequestTransition': [{u'DN': u'',
-                                                u'Status': u'new',
-                                                u'UpdateTime': 1606723304},
-                                               {u'DN': u'', u'Status': u'assignment-approved',
-                                                u'UpdateTime': 1606723305},
-                                               {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1606723306},
-                                               {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1606723461},
-                                               {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1606723590},
-                                               {u'DN': u'', u'Status': u'acquired', u'UpdateTime': 1606723968},
-                                               {u'DN': u'', u'Status': u'running-open', u'UpdateTime': 1606724572},
-                                               {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1606724573},
-                                               {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1607018413},
-                                               {u'DN': u'', u'Status': u'closed-out', u'UpdateTime': 1607347706},
-                                               {u'DN': u'', u'Status': u'announced', u'UpdateTime': 1607359514}],
-                         'RequestType': u'TaskChain',
-                         'SubRequestType': u'',
+                         'RequestName': 'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
+                         'RequestStatus': 'announced',
+                         'RequestTransition': [{'DN': '',
+                                                'Status': 'new',
+                                                'UpdateTime': 1606723304},
+                                               {'DN': '', 'Status': 'assignment-approved',
+                                                'UpdateTime': 1606723305},
+                                               {'DN': '', 'Status': 'assigned', 'UpdateTime': 1606723306},
+                                               {'DN': '', 'Status': 'staging', 'UpdateTime': 1606723461},
+                                               {'DN': '', 'Status': 'staged', 'UpdateTime': 1606723590},
+                                               {'DN': '', 'Status': 'acquired', 'UpdateTime': 1606723968},
+                                               {'DN': '', 'Status': 'running-open', 'UpdateTime': 1606724572},
+                                               {'DN': '', 'Status': 'running-closed', 'UpdateTime': 1606724573},
+                                               {'DN': '', 'Status': 'completed', 'UpdateTime': 1607018413},
+                                               {'DN': '', 'Status': 'closed-out', 'UpdateTime': 1607347706},
+                                               {'DN': '', 'Status': 'announced', 'UpdateTime': 1607359514}],
+                         'RequestType': 'TaskChain',
+                         'SubRequestType': '',
                          'RulesToClean': {},
                          'TargetStatus': None,
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testReReco(self):
@@ -119,40 +123,42 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         expectedWflow = {'CleanupStatus': {},
                          'ForceArchive': False,
                          'IncludeParents': False,
-                         'InputDataset': u'/SingleElectron/Run2017F-v1/RAW',
+                         'InputDataset': '/SingleElectron/Run2017F-v1/RAW',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
-                         'OutputDatasets': [u'/SingleElectron/Run2017F-09Aug2019_UL2017_EcalRecovery-v1/MINIAOD',
-                                            u'/SingleElectron/Run2017F-EcalUncalWElectron-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
-                                            u'/SingleElectron/Run2017F-EcalUncalZElectron-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
-                                            u'/SingleElectron/Run2017F-09Aug2019_UL2017_EcalRecovery-v1/AOD',
-                                            u'/SingleElectron/Run2017F-EcalESAlign-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
-                                            u'/SingleElectron/Run2017F-09Aug2019_UL2017_EcalRecovery-v1/DQMIO',
-                                            u'/SingleElectron/Run2017F-HcalCalIterativePhiSym-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO'],
+                         'OutputDatasets': ['/SingleElectron/Run2017F-09Aug2019_UL2017_EcalRecovery-v1/MINIAOD',
+                                            '/SingleElectron/Run2017F-EcalUncalWElectron-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
+                                            '/SingleElectron/Run2017F-EcalUncalZElectron-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
+                                            '/SingleElectron/Run2017F-09Aug2019_UL2017_EcalRecovery-v1/AOD',
+                                            '/SingleElectron/Run2017F-EcalESAlign-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO',
+                                            '/SingleElectron/Run2017F-09Aug2019_UL2017_EcalRecovery-v1/DQMIO',
+                                            '/SingleElectron/Run2017F-HcalCalIterativePhiSym-09Aug2019_UL2017_EcalRecovery-v1/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': None,
-                         'RequestName': u'pdmvserv_Run2017F-v1_SingleElectron_09Aug2019_UL2017_EcalRecovery_200506_120455_3146',
-                         'RequestStatus': u'completed',
-                         'RequestTransition': [{u'DN': u'',
-                                                u'Status': u'new',
-                                                u'UpdateTime': 1588759495},
-                                               {u'DN': u'', u'Status': u'assignment-approved',
-                                                u'UpdateTime': 1588759500},
-                                               {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1588760963},
-                                               {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1588761258},
-                                               {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1588761688},
-                                               {u'DN': u'', u'Status': u'acquired', u'UpdateTime': 1588762166},
-                                               {u'DN': u'', u'Status': u'running-open', u'UpdateTime': 1588763098},
-                                               {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1588775354},
-                                               {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1589041121}],
-                         'RequestType': u'ReReco',
-                         'SubRequestType': u'',
+                         'RequestName': 'pdmvserv_Run2017F-v1_SingleElectron_09Aug2019_UL2017_EcalRecovery_200506_120455_3146',
+                         'RequestStatus': 'completed',
+                         'RequestTransition': [{'DN': '',
+                                                'Status': 'new',
+                                                'UpdateTime': 1588759495},
+                                               {'DN': '', 'Status': 'assignment-approved',
+                                                'UpdateTime': 1588759500},
+                                               {'DN': '', 'Status': 'assigned', 'UpdateTime': 1588760963},
+                                               {'DN': '', 'Status': 'staging', 'UpdateTime': 1588761258},
+                                               {'DN': '', 'Status': 'staged', 'UpdateTime': 1588761688},
+                                               {'DN': '', 'Status': 'acquired', 'UpdateTime': 1588762166},
+                                               {'DN': '', 'Status': 'running-open', 'UpdateTime': 1588763098},
+                                               {'DN': '', 'Status': 'running-closed', 'UpdateTime': 1588775354},
+                                               {'DN': '', 'Status': 'completed', 'UpdateTime': 1589041121}],
+                         'RequestType': 'ReReco',
+                         'SubRequestType': '',
                          'RulesToClean': {},
                          'TargetStatus': None,
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testIncludeParents(self):
@@ -161,37 +167,38 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         expectedWflow = {'CleanupStatus': {},
                          'ForceArchive': False,
                          'IncludeParents': True,
-                         'InputDataset': u'/Cosmics/Commissioning2015-PromptReco-v1/RECO',
+                         'InputDataset': '/Cosmics/Commissioning2015-PromptReco-v1/RECO',
                          'IsArchivalDelayExpired': False,
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'OutputDatasets': [
-                             u'/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO'],
+                             '/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO'],
                          'ParentDataset': [],
                          'ParentageResolved': False,
                          'PlineMarkers': None,
-                         'RequestName': u'amaltaro_StepChain_InclParents_April2020_Val_200414_120713_81',
-                         'RequestStatus': u'completed',
-                         'RequestTransition': [{u'DN': u'',
-                                                u'Status': u'new',
-                                                u'UpdateTime': 1586858833},
-                                               {u'DN': u'', u'Status': u'assignment-approved',
-                                                u'UpdateTime': 1586858834},
-                                               {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1586858835},
-                                               {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1586859358},
-                                               {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1586859733},
-                                               {u'DN': u'', u'Status': u'acquired', u'UpdateTime': 1586860322},
-                                               {u'DN': u'', u'Status': u'running-open', u'UpdateTime': 1586860927},
-                                               {u'DN': u'', u'Status': u'running-closed', u'UpdateTime': 1586861535},
-                                               {u'DN': u'', u'Status': u'completed', u'UpdateTime': 1586863942}],
-                         'RequestType': u'StepChain',
-                         'SubRequestType': u'',
+                         'RequestName': 'amaltaro_StepChain_InclParents_April2020_Val_200414_120713_81',
+                         'RequestStatus': 'completed',
+                         'RequestTransition': [{'DN': '',
+                                                'Status': 'new',
+                                                'UpdateTime': 1586858833},
+                                               {'DN': '', 'Status': 'assignment-approved',
+                                                'UpdateTime': 1586858834},
+                                               {'DN': '', 'Status': 'assigned', 'UpdateTime': 1586858835},
+                                               {'DN': '', 'Status': 'staging', 'UpdateTime': 1586859358},
+                                               {'DN': '', 'Status': 'staged', 'UpdateTime': 1586859733},
+                                               {'DN': '', 'Status': 'acquired', 'UpdateTime': 1586860322},
+                                               {'DN': '', 'Status': 'running-open', 'UpdateTime': 1586860927},
+                                               {'DN': '', 'Status': 'running-closed', 'UpdateTime': 1586861535},
+                                               {'DN': '', 'Status': 'completed', 'UpdateTime': 1586863942}],
+                         'RequestType': 'StepChain',
+                         'SubRequestType': '',
                          'RulesToClean': {},
                          'TargetStatus': None,
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,7 +9,6 @@ Tests for the PSet configuration code.
 
 from builtins import zip
 
-import imp
 import unittest
 import os
 import sys

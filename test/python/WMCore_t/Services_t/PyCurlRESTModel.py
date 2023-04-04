@@ -7,7 +7,6 @@ import logging
 import unittest
 import threading
 import cherrypy
-import imp
 import os
 import uuid
 import tempfile

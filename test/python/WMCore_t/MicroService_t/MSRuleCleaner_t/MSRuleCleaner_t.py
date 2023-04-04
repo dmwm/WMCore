@@ -88,7 +88,7 @@ class MSRuleCleanerTest(unittest.TestCase):
 
     def testIsStatusAdvanceExpired(self):
         wflow = MSRuleCleanerWflow(self.taskChainReq)
-        self.assertTrue(self.msRuleCleaner._isStatusAdvanceExpired(wflow))
+        self.assertTrue(self.msRuleCleaner._checkStatusAdvanceExpired(wflow))
 
     def testPipelineAgentBlock(self):
         # Test plineAgentBlock:
@@ -129,7 +129,9 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineAgentBlock': []},
                          'TargetStatus': None,
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineAgentCont(self):
@@ -171,7 +173,9 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineAgentCont': []},
                          'TargetStatus': None,
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineMSTrBlock(self):
@@ -215,7 +219,9 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineMSTrBlock': []},
                          'TargetStatus': None,
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineMSTrCont(self):
@@ -259,7 +265,9 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineMSTrCont': []},
                          'TargetStatus': None,
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineArchive(self):
@@ -315,7 +323,9 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineAgentBlock': [], 'plineAgentCont': []},
                          'TargetStatus': 'normal-archived',
                          'TransferDone': False,
-                         'TransferTape': False}
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': "Not properly cleaned workflow: TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891"}
         self.assertDictEqual(wflow, expectedWflow)
 
         # Try archival of an uncleaned workflow

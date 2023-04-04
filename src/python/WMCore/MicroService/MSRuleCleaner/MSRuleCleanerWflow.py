@@ -182,6 +182,8 @@ class MSRuleCleanerWflow(dict):
                               'plineAgentBlock': False},
             "TransferDone": False  # information - returned by the MSOutput REST call.
             "TransferTape": False  # information - fetched by Rucio about tape rules completion
+            "TapeRulesStatus": [('36805b823062415c8ee60300b0e60378', 'OK', '/AToZHToLLTTbar_MA-1900_MH-1200_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16RECO-106X_mcRun2_asymptotic_v13-v2/AODSIM'),
+                                ('5b75fb7503524449b0f304ea0e52f0de', 'STUCK', '/AToZHToLLTTbar_MA-1900_MH-1200_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16MiniAODv2-106X_mcRun2_asymptotic_v17-v2/MINIAODSIM')]
             'TargetStatus': 'normal-archived' || 'rejected-achived' || 'aborted-archived',
             'ParentageResolved': Bool,
             'PlineMarkers': None,
@@ -206,6 +208,7 @@ class MSRuleCleanerWflow(dict):
             ('CleanupStatus', {}, dict),
             ('TransferDone', False, bool),
             ('TransferTape', False, bool),
+            ('TapeRulesStatus', [], list),
             ('TargetStatus', None, (bytes, str)),
             ('ParentageResolved', True, bool),
             ('PlineMarkers', None, list),
@@ -216,7 +219,8 @@ class MSRuleCleanerWflow(dict):
             ('RequestTransition', [], list),
             ('IncludeParents', False, bool),
             ('InputDataset', None, (bytes, str)),
-            ('ParentDataset', None, (bytes, str))]
+            ('ParentDataset', None, (bytes, str)),
+            ('StatusAdvanceExpiredMsg', "", str)]
 
         # NOTE: ParentageResolved is set by default to True it will be False only if:
         #       - RequestType is StepChain

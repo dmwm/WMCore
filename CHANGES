@@ -1,3 +1,8 @@
+2.2.0rc6 to 2.2.0rc7:
+  - Add TapeRulesStatus to the alarm message && Decrease alarm severity. (Todor Ivanov) #11528
+  - Do not strip anything from MSPileup docs when fetching them and use pileupName for query in clean-up task (Valentin Kuznetsov) #11529
+
+
 2.2.0rc5 to 2.2.0rc6:
   - refactor to use MSPileup data location (Alan Malta Rodrigues) #11519
   - Final tweaks to MSPileup (Alan Malta Rodrigues) #11526

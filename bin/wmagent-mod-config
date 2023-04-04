@@ -11,7 +11,7 @@ https://github.com/dmwm/deployment/blob/master/asyncstageout/manage#L246
 """
 
 import getopt
-import imp
+import importlib
 import os
 import socket
 import sys
@@ -43,7 +43,8 @@ def importConfigTemplate(filename):
     Given filename, load it and grab the configuration object from it
 
     """
-    mod = imp.load_module("wmcore_config_input", open(filename, 'r'), filename, (".py", "r", imp.PY_SOURCE))
+    modSpecs = importlib.machinery.PathFinder().find_spec(filename)
+    mod = modSpecs.loader.load_module("wmcore_config_input")
     config = getattr(mod, 'config', None)
     if config is None:
         msg = "No config attribute found in %s" % filename

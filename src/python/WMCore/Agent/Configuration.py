@@ -9,10 +9,6 @@ This code has been moded to WMCore.Configuration
 
 """
 
-import os
-import imp
-import types
-
 from WMCore.Configuration import ConfigSection as BaseConfigSection
 from WMCore.Configuration import Configuration as BaseConfiguration
 from WMCore.Configuration import loadConfigurationFile as baseLoadConfigurationFile

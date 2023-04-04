@@ -7,8 +7,7 @@ Add a config and it's meta data to the config cache.
 
 import os
 import sys
-import imp
-import subprocess
+import importlib
 
 from PSetTweaks.WMTweak import makeTweak
 from WMCore.Cache.WMConfigCache import ConfigCache
@@ -23,15 +22,16 @@ def loadConfig(configPath):
     sys.stdout.flush()
     cfgBaseName = os.path.basename(configPath).replace(".py", "")
     cfgDirName = os.path.dirname(configPath)
-    modPath = imp.find_module(cfgBaseName, [cfgDirName])
-
-    loadedConfig = imp.load_module(cfgBaseName, modPath[0],
-                                   modPath[1], modPath[2])
+    modSpecs = importlib.machinery.PathFinder().find_spec(cfgBaseName, [cfgDirName])
+    module = modSpecs.loader.load_module()
 
     print("done.")
-    return loadedConfig
+    return module
 
-if __name__ == "__main__":
+def main():
+    """
+    Main function of the module
+    """
     if len(sys.argv) != 8:
         print("Usage: %s couchUrl database_name user_name group_name input_file label description" % sys.argv[0])
         sys.exit(1)
@@ -54,3 +54,6 @@ if __name__ == "__main__":
     print("  DocID:    %s" % configCache.document["_id"])
     print("  Revision: %s" % configCache.document["_rev"])
     sys.exit(0)
+
+if __name__ == "__main__":
+    main()

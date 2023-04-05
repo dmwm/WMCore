@@ -8,7 +8,8 @@ from __future__ import division, print_function
 import unittest
 
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.Utils.Validation import validateOutputDatasets, validate_request_priority
+from WMCore.ReqMgr.Utils.Validation import (validateOutputDatasets,
+                                            validate_request_priority)
 
 
 class ValidationTests(unittest.TestCase):

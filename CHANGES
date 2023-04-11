@@ -1,3 +1,8 @@
+2.2.0rc7 to 2.2.0rc8:
+  - Remove _id attribute from pileup mongo objects (Alan Malta Rodrigues) #11539
+  - Fix a typo in the XMLParser (Todor Ivanov) #11533
+
+
 2.2.0rc6 to 2.2.0rc7:
   - Add TapeRulesStatus to the alarm message && Decrease alarm severity. (Todor Ivanov) #11528
   - Do not strip anything from MSPileup docs when fetching them and use pileupName for query in clean-up task (Valentin Kuznetsov) #11529

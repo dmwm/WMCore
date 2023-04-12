@@ -411,6 +411,9 @@ class MSTransferor(MSCore):
             if not isRelVal(wflow.data):
                 # enforce RSE quota
                 rses = list(set(rseList) & self.rseQuotas.getAvailableRSEs())
+            else:
+                rses = rseList
+
             if not rses:
                 msg = f"Workflow: {wflow.getName()} could have data placed at: {rseList}, "
                 msg += "but those are all out of quota. Skipping it till next cycle"

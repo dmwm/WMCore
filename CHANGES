@@ -1,3 +1,7 @@
+2.2.0rc8 to 2.2.0rc9:
+  - Set rseList for RelVal workflows (Todor Ivanov) #11542
+
+
 2.2.0rc7 to 2.2.0rc8:
   - Remove _id attribute from pileup mongo objects (Alan Malta Rodrigues) #11539
   - Fix a typo in the XMLParser (Todor Ivanov) #11533

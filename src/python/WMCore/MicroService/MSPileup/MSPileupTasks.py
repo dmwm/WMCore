@@ -42,11 +42,14 @@ class MSPileupTasks():
         self.rucioClient = rucioClient
         self.report = MSPileupReport()
         self.dryRun = dryRun
+        if dryRun:
+            self.logger.info("MSPileupTasks is set to DRY-RUN mode!")
 
     def pileupSizeTask(self):
         """
         Execute pileup size update task
         """
+        self.logger.info("====> Executing pileupSizeTask method...")
         try:
             # get pileup sizes and update them in DB
             spec = {}
@@ -81,6 +84,7 @@ class MSPileupTasks():
 
         :param timeThreshold: time threshold in days which will determine document clean-up readiness
         """
+        self.logger.info("====> Executing cleanupTask method...")
         spec = {'active': False}
         docs = self.mgr.getPileup(spec)
         deleteDocs = 0
@@ -89,9 +93,12 @@ class MSPileupTasks():
             if not doc['ruleIds'] and not doc['currentRSEs'] and \
                     doc['deactivatedOn'] + seconds > time.time():
                 spec = {'pileupName': doc['pileupName']}
-                self.logger.info("Cleanup task delete pileup %s", doc['pileupName'])
-                self.mgr.deletePileup(spec)
-                deleteDocs += 1
+                if not self.dryRun:
+                    self.logger.info("Cleanup task deleting pileup %s", doc['pileupName'])
+                    self.mgr.deletePileup(spec)
+                    deleteDocs += 1
+                else:
+                    self.logger.info(f"DRY-RUN: should have deleted pileup document for {doc['pileupName']}")
         self.logger.info("Cleanup task deleted %d pileup objects", deleteDocs)
 
     def cmsMonitTask(self):
@@ -102,10 +109,10 @@ class MSPileupTasks():
         2. Flatten all docs
         3. Submit flatten docs to CMS MONIT
         """
+        self.logger.info("====> Executing cmsMonitTask method...")
         if not self.monitManager.userAMQ or not self.monitManager.passAMQ:
             self.logger.info("MSPileupMonitoring has no AMQ credentials, will skip the upload to MONIT")
             return
-        startTime = time.time()
         spec = {}
         msPileupDocs = self.mgr.getPileup(spec)
         docs = []
@@ -113,18 +120,15 @@ class MSPileupTasks():
             for flatDoc in flatDocuments(doc):
                 docs.append(flatDoc)
         results = self.monitManager.uploadToAMQ(docs)
-        endTime = time.time()
-        elapsedTime = endTime - startTime
         if results and isinstance(results, dict):
             success = results['success']
             failures = results['failures']
             msg = f"MSPileup CMS MONIT task fetched {len(msPileupDocs)} docs from MSPileup backend DB"
             msg += f", and sent {len(docs)} flatten docs to MONIT"
             msg += f", number of success docs {success} and failures {failures},"
-            msg += " in %.2f secs" % elapsedTime
             self.logger.info(msg)
         else:
-            self.logger.error("MSPileup CMS MONIT task failed, execution time %.2f secs", elapsedTime)
+            self.logger.error("MSPileup CMS MONIT task failed!")
 
     def monitoringTask(self):
         """
@@ -139,6 +143,7 @@ class MSPileupTasks():
         3. now that all the known rules have been inspected, persist the up-to-date
         pileup doc in MongoDB
         """
+        self.logger.info("====> Executing monitoringTask method...")
         spec = {'active': True}
         docs = self.mgr.getPileup(spec)
         taskSpec = self.getTaskSpec()
@@ -167,6 +172,7 @@ class MSPileupTasks():
         4. once all the relevant rules have been removed, persist an up-to-date
         version of the pileup data structure in MongoDB
         """
+        self.logger.info("====> Executing inactiveTask method...")
         spec = {'active': False}
         docs = self.mgr.getPileup(spec)
         taskSpec = self.getTaskSpec()
@@ -208,6 +214,7 @@ class MSPileupTasks():
         or if there was any changes to the pileup object,
         persist an up-to-date version of the pileup data structure in MongoDB
         """
+        self.logger.info("====> Executing activeTask method...")
         spec = {'active': True}
         docs = self.mgr.getPileup(spec)
         taskSpec = self.getTaskSpec()
@@ -283,6 +290,14 @@ def monitoringTask(doc, spec):
                     msg = f"delete rse {rse} from currentRSEs"
                     report.addEntry('monitoring', uuid, msg)
 
+        # now keep track of this rule id in the pileup document
+        for rse in rses:
+            if rse in doc['expectedRSEs'] and rid not in doc['ruleIds']:
+                logger.info(f"Tracking rule id {rid} that was not created by MSPileup")
+                doc['ruleIds'].append(rid)
+                modify = True
+                break
+
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"monitoring task {uuid}, update {pname}")
@@ -306,6 +321,7 @@ def inactiveTask(doc, spec):
     rucioAccount = spec['rucioAccount']
     report = spec['report']
     logger = spec['logger']
+    dryRun = spec['dryRun']
     pname = doc['pileupName']
     kwargs = {'scope': 'cms', 'account': rucioAccount}
     rules = rucioClient.listDataRules(pname, **kwargs)
@@ -317,7 +333,11 @@ def inactiveTask(doc, spec):
         msg = f"inactive task {uuid}, container: {pname} for Rucio account {rucioAccount}"
         msg += f", delete replication rule {rid}"
         logger.info(msg)
-        rucioClient.deleteRule(rid)
+        if not dryRun:
+            rucioClient.deleteRule(rid)
+        else:
+            logger.info(f"DRY-RUN: rule id '{rid}' should have been deleted.")
+            continue
         rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
 
         # remove the rule id from ruleIds (if any) and remove the RSE name from currentRSEs (if any)
@@ -400,6 +420,8 @@ def activeTask(doc, spec):
                     # upon successful rule deletion, also remove the RSE name from currentRSEs
                     if not dryRun:
                         rucioClient.deleteRule(rid)
+                    else:
+                        logger.info(f"DRY-RUN: rule id '{rid}' should have been deleted.")
                     if rse in doc['currentRSEs']:
                         doc['currentRSEs'].remove(rse)
                         modify = True
@@ -437,9 +459,12 @@ def activeTask(doc, spec):
                 msg = f"active task {uuid}, for dids {dids} there is enough space at RSE {rse}"
                 logger.warning(msg)
                 # create the rule and append the rule id to ruleIds
-                if dryRun:
+                if not dryRun:
+                    rids = rucioClient.createReplicationRule(pname, rse, **kwargs)
+                else:
+                    msg = f"DRY-RUN: rule for pileup {pname} and rse {rse} should have been created"
+                    logger.info(msg)
                     continue
-                rids = rucioClient.createReplicationRule(pname, rse, **kwargs)
                 # add new ruleId to document ruleIds
                 for rid in rids:
                     if rid not in doc['ruleIds']:

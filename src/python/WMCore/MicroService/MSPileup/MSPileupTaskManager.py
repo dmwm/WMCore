@@ -16,6 +16,7 @@ In particular, it perform the following tasks each polling cycle:
 from threading import current_thread
 
 # WMCore modules
+from Utils.Timers import CodeTimer
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.DataStructs.DefaultStructs import PILEUP_REPORT
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
@@ -58,9 +59,15 @@ class MSPileupTaskManager(MSCore):
         """
         execute MSPileupTasks polling cycle
         """
-        self.mgr.pileupSizeTask()
-        self.mgr.monitoringTask()
-        self.mgr.activeTask(marginSpace=self.marginSpace)
-        self.mgr.inactiveTask()
-        self.mgr.cleanupTask(self.cleanupDaysThreshold)
-        self.mgr.cmsMonitTask()
+        with CodeTimer("### pileupSizeTask", logger=self.logger):
+            self.mgr.pileupSizeTask()
+        with CodeTimer("### monitoringTask", logger=self.logger):
+            self.mgr.monitoringTask()
+        with CodeTimer("### activeTask", logger=self.logger):
+            self.mgr.activeTask(marginSpace=self.marginSpace)
+        with CodeTimer("### inactiveTask", logger=self.logger):
+            self.mgr.inactiveTask()
+        with CodeTimer("### cleanupTask", logger=self.logger):
+            self.mgr.cleanupTask(self.cleanupDaysThreshold)
+        with CodeTimer("### cmsMonitTask", logger=self.logger):
+            self.mgr.cmsMonitTask()

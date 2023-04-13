@@ -1,0 +1,303 @@
+[
+  {
+    "active": false,
+    "campaigns": [
+      "Commission22DR"
+    ],
+    "expectedRSEs": [
+      "T1_DE_KIT_Disk",
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13p6TeV-pythia8/Commission22GS-125X_mcRun3_2022_realistic_v3-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "Phase2Fall22DRMiniAOD"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_14TeV-pythia8/Phase2Fall22GS-HCalDetIDFix_125X_mcRun4_realistic_v2-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "Phase2HLTTDRWinter20DIGI"
+    ],
+    "expectedRSEs": [
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/RelValMinBias_14TeV/CMSSW_11_1_2_patch3-110X_mcRun4_realistic_v3_2026D49noPU_BSzpz35-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "PhaseIISpring22DRMiniAOD"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_14TeV-pythia8/PhaseIISpring22GS-123X_mcRun4_realistic_v11-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "Run3Summer21PrePremix",
+      "Run3Summer22EEDR",
+      "Run3Summer22DR"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13p6TeV-pythia8/Run3Summer22GS-124X_mcRun3_2022_realistic_v10-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "Run3Summer22DRPremix",
+      "Run3Summer22EEDRPremix"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/Run3Summer21PrePremix-Summer22_124X_mcRun3_2022_realistic_v11-v2/PREMIX",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "Run3Summer21PrePremix",
+      "Run3Winter22DR"
+    ],
+    "expectedRSEs": [
+      "T1_ES_PIC_Disk",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13p6TeV-pythia8/Run3Winter22GS-122X_mcRun3_2021_realistic_v9-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "Run3Winter22DRPremix"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/Run3Summer21PrePremix-Winter22_122X_mcRun3_2021_realistic_v9-v1/PREMIX",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "Run3Summer21PrePremix",
+      "Run3Winter23Digi"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13p6TeV-pythia8/Run3Winter23GS-126X_mcRun3_2023_forPU65_v1-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIIAutumn18DRPremix"
+    ],
+    "expectedRSEs": [
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIISummer17PrePremix-PUAutumn18_102X_upgrade2018_realistic_v15-v1/GEN-SIM-DIGI-RAW",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIIAutumn18FSPremix"
+    ],
+    "expectedRSEs": [
+      "T1_DE_KIT_Disk",
+      "T1_RU_JINR_Disk",
+      "T2_US_Nebraska",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIIFall17FSPrePremix-PUMoriond18_102X_upgrade2018_realistic_v15-v2/GEN-SIM-DIGI-RAW",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIIFall17DRPremix"
+    ],
+    "expectedRSEs": [
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIISummer17PrePremix-MCv2_correctPU_94X_mc2017_realistic_v9-v1/GEN-SIM-DIGI-RAW",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIIFall17FSPremix"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIIFall17FSPrePremix-PUMoriond17_94X_mc2017_realistic_v15-v1/GEN-SIM-DIGI-RAW",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISpring21UL18FSSIMDR",
+      "RunIISpring21UL18FSwmLHEGSDR",
+      "RunIIFall17FSPrePremix",
+      "RunIISpring21UL18FSGSDR"
+    ],
+    "expectedRSEs": [
+      "T1_RU_JINR_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13TeV-pythia8/RunIISpring21UL18FSGSPremix-PUFSUL18CP5_106X_upgrade2018_realistic_v16-v1/GEN-SIM-RECO",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISummer16DR80Premix"
+    ],
+    "expectedRSEs": [
+      "T1_RU_JINR_Disk",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISpring16FSSIMDRPremix",
+      "RunIISummer16FSPremix"
+    ],
+    "expectedRSEs": [
+      "T1_DE_KIT_Disk",
+      "T2_US_Purdue"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIISummer16FSPremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v4-v1/GEN-SIM-DIGI-RAW",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISummer20UL16DIGIPremixAPV",
+      "RunIISummer20UL16DIGIPremix"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISummer20UL17DIGIPremix"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL17_106X_mc2017_realistic_v6-v3/PREMIX",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISummer20UL17pp5TeVDR",
+      "RunIISummer20UL17pp5TeVDIGI"
+    ],
+    "expectedRSEs": [
+      "T2_DE_DESY"
+    ],
+    "pileupName": "/MinBias_TuneCP5_5TeV-pythia8/RunIISummer20UL17pp5TeVGS-106X_mc2017_realistic_forppRef5TeV_v3-v1/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISummer20UL18DIGIPremix"
+    ],
+    "expectedRSEs": [
+      "T2_CH_CERN",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX",
+    "pileupType": "premix"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIILowPUSummer20UL17DR",
+      "RunIISummer20UL17DIGI",
+      "RunIISummer20ULPrePremix"
+    ],
+    "expectedRSEs": [
+      "T1_IT_CNAF_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL17SIM-106X_mc2017_realistic_v6-v2/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISummer20ULPrePremix",
+      "RunIISummer20UL18DIGI"
+    ],
+    "expectedRSEs": [
+      "T1_IT_CNAF_Disk",
+      "T2_CH_CERN"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIISummer20UL16DIGIAPV",
+      "RunIISummer20UL16DIGI",
+      "RunIISummer20ULPrePremix"
+    ],
+    "expectedRSEs": [
+      "T1_IT_CNAF_Disk",
+      "T1_US_FNAL_Disk"
+    ],
+    "pileupName": "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL16SIM-106X_mcRun2_asymptotic_v13-v2/GEN-SIM",
+    "pileupType": "classic"
+  },
+  {
+    "active": false,
+    "campaigns": [
+      "RunIIpp5Spring18DR",
+      "RunIIpp5Spring18GSFixBeamspot"
+    ],
+    "expectedRSEs": [
+      "T2_US_MIT",
+      "T2_CH_CERN"
+    ],
+    "pileupName": "/MinBias_TuneCUETP8M1_2017_5p02TeV-pythia8/RunIIpp5Spring18GS-94X_mc2017_realistic_v10For2017G_v3-v2/GEN-SIM",
+    "pileupType": "classic"
+  }
+]

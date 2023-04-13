@@ -287,6 +287,14 @@ def monitoringTask(doc, spec):
                     msg = f"delete rse {rse} from currentRSEs"
                     report.addEntry('monitoring', uuid, msg)
 
+        # now keep track of this rule id in the pileup document
+        for rse in rses:
+            if rse in doc['expectedRSEs'] and rid not in doc['ruleIds']:
+                logger.info(f"Tracking rule id {rid} that was not created by MSPileup")
+                doc['ruleIds'].append(rid)
+                modify = True
+                break
+
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"monitoring task {uuid}, update {pname}")

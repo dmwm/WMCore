@@ -91,7 +91,7 @@ class MSPileupTasks():
         seconds = cleanupDaysThreshold * 24 * 60 * 60  # convert to second
         for doc in docs:
             if not doc['ruleIds'] and not doc['currentRSEs'] and \
-                    doc['deactivatedOn'] + seconds > time.time():
+                    time.time() > doc['deactivatedOn'] + seconds:
                 spec = {'pileupName': doc['pileupName']}
                 if not self.dryRun:
                     self.logger.info("Cleanup task deleting pileup %s", doc['pileupName'])

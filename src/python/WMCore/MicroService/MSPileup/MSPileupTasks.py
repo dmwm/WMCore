@@ -93,9 +93,12 @@ class MSPileupTasks():
             if not doc['ruleIds'] and not doc['currentRSEs'] and \
                     doc['deactivatedOn'] + seconds > time.time():
                 spec = {'pileupName': doc['pileupName']}
-                self.logger.info("Cleanup task delete pileup %s", doc['pileupName'])
-                self.mgr.deletePileup(spec)
-                deleteDocs += 1
+                if not self.dryRun:
+                    self.logger.info("Cleanup task deleting pileup %s", doc['pileupName'])
+                    self.mgr.deletePileup(spec)
+                    deleteDocs += 1
+                else:
+                    self.logger.info(f"DRY-RUN: should have deleted pileup document for {doc['pileupName']}")
         self.logger.info("Cleanup task deleted %d pileup objects", deleteDocs)
 
     def cmsMonitTask(self):
@@ -318,6 +321,7 @@ def inactiveTask(doc, spec):
     rucioAccount = spec['rucioAccount']
     report = spec['report']
     logger = spec['logger']
+    dryRun = spec['dryRun']
     pname = doc['pileupName']
     kwargs = {'scope': 'cms', 'account': rucioAccount}
     rules = rucioClient.listDataRules(pname, **kwargs)
@@ -329,7 +333,11 @@ def inactiveTask(doc, spec):
         msg = f"inactive task {uuid}, container: {pname} for Rucio account {rucioAccount}"
         msg += f", delete replication rule {rid}"
         logger.info(msg)
-        rucioClient.deleteRule(rid)
+        if not dryRun:
+            rucioClient.deleteRule(rid)
+        else:
+            logger.info(f"DRY-RUN: rule id '{rid}' should have been deleted.")
+            continue
         rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
 
         # remove the rule id from ruleIds (if any) and remove the RSE name from currentRSEs (if any)

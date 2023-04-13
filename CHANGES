@@ -1,3 +1,10 @@
+2.2.0 to 2.2.0.1:
+  - MSPileup: fix logic for deleting old inactive pileup documents (Alan Malta Rodrigues) #11549
+  - Protect rule and document deletion with the dryRun option (Alan Malta Rodrigues) #11545
+  - Track rule ids not created by MSPileup (Alan Malta Rodrigues) #11545
+  - Make MSPileupTasks log more friendly (Alan Malta Rodrigues) #11545
+
+
 2.2.0rc9 to 2.2.0:
 
 

@@ -9,9 +9,9 @@ import time
 import unittest
 
 # WMCore modules
-from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys
+from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys, getNewTimestamp
 from WMCore.MicroService.MSPileup.MSPileupError import MSPILEUP_SCHEMA_ERROR
-from Utils.Timers import encodeTimestamp, decodeTimestamp
+from Utils.Timers import encodeTimestamp, decodeTimestamp, gmtimeSeconds
 
 
 class MSPileupTest(unittest.TestCase):
@@ -149,6 +149,29 @@ class MSPileupTest(unittest.TestCase):
         # and we should get zero results
         res = self.mgr.getPileup(spec)
         self.assertEqual(len(res), 0)
+
+    def testGetNewTimestamp(self):
+        """Test the getNewTimestamp function"""
+        timeNow = gmtimeSeconds()
+        resp = getNewTimestamp({})
+        self.assertEqual(len(resp), 1)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+
+        resp = getNewTimestamp({'lastUpdateTime': 1})
+        self.assertEqual(len(resp), 1)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+
+        resp = getNewTimestamp({'active': True})
+        self.assertEqual(len(resp), 2)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+        self.assertTrue(resp['activatedOn'] >= timeNow)
+        self.assertFalse('deactivatedOn' in resp)
+
+        resp = getNewTimestamp({'active': False})
+        self.assertEqual(len(resp), 2)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+        self.assertTrue(resp['deactivatedOn'] >= timeNow)
+        self.assertFalse('activatedOn' in resp)
 
 
 if __name__ == '__main__':

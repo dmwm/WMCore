@@ -45,6 +45,21 @@ def stripKeys(docs, skeys=None):
     return docs
 
 
+def getNewTimestamp(doc):
+    """
+    Given a pileup doc - or a subset of it - return a dictionary
+    with a couple timestamp attributes that need to be updated.
+    :param doc: a python dictionary representing the pileup information
+    :return: a python dictionary to update the pileup object
+    """
+    subDoc = {'lastUpdateTime': gmtimeSeconds()}
+    if "active" in doc and doc['active'] is True:
+        subDoc['activatedOn'] = gmtimeSeconds()
+    elif "active" in doc and doc['active'] is False:
+        subDoc['deactivatedOn'] = gmtimeSeconds()
+    return subDoc
+
+
 class MSPileupData():
     """
     MSPileupData provides logic behind data used and stored by MSPileup module
@@ -164,7 +179,8 @@ class MSPileupData():
                 self.logger.error(err)
                 return [err.error()]
 
-        doc['lastUpdateTime'] = gmtimeSeconds()
+        # mandatory timestamp updates
+        doc.update(getNewTimestamp(doc))
         # we do not need to create MSPileupObj and validate it since our doc comes directly from DB
         try:
             self.dbColl.update_one(spec, {"$set": doc})

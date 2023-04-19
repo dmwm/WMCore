@@ -7,7 +7,7 @@ help(){
                                  [-r <wmcore_source_repository>] [-b <wmcore_source_branch>] [-t <wmcore_tag>]
                                  [-g <wmcore_config_repository>] [-d <wmcore_config_branch>]
                                  [-d wmcore_path] [-p <patches>] [-m <security string>]
-                                 [-l <service_list>] [-i <pypi_index>]
+                                 [-l <service_list>] [-i <pypi_index>]  [-e <python_executable>]
                                  [-h <help>]
 
       -c  <central_services>         Url to central services (e.g. cmsweb-test1.cern.ch)
@@ -25,10 +25,11 @@ help(){
                                      (in double quotes and space separated e.g. "5906 5934 5922")
       -m  <security string>          The security string to be used during deployment. Will be needed at startup [Default: ""]
       -l  <service_list>             List of services to be deployed [Default: "wmcore" - WMCore metapackage]
-                                     The full list of installable services: "reqmgr2 reqmgr2ms workqueue reqmon t0_reqmon"
-                                     (in double quotes and space separated e.g. "rqmgr2 reqmgr2ms")
+                                     The full list of installable services: "reqmgr2 workqueue reqmon t0_reqmon reqmgr2ms-transferor reqmgr2ms-monitor reqmgr2ms-output reqmgr2ms-unmerged reqmgr2ms-rulecleaner reqmgr2ms-pileup "
+                                     (in double quotes and space separated e.g. "rqmgr2 reqmgr2ms-output")
                                      (pip based package version syntax is also acceptable e.g. "wmcore==2.0.0")
       -i <pypi-index>                The pypi index to use (i.e. prod or test) [Default: prod - pointing to https://pypi.org/simple/]
+      -e <python_executable>         The path to the python executable to be used for this installation. To be preserved in the venv. [Default: System default python]
       -h <help>                      Provides help to the current script
 
     # Example: Deploy WMCore central services version 2.0.3rc1 linked with 'cmsweb-test1.cern.ch' as a frontend from 'test' pypi index
@@ -57,12 +58,17 @@ help(){
     #               So far those has been resolved through the set of *.spec files maintained at: https://github.com/cms-sw/cmsdist/tree/comp_gcc630
     #               Here follows the list of all direct (first level) dependencies per service generated from those spec files:
 
-    #               acdcserver: [python3, rotatelogs, couchdb]
-    #               reqmgr2ms : [python3, rotatelogs, mongo]
-    #               reqmgr2   : [python3, rotatelogs, couchdb]
-    #               reqmon    : [python3, rotatelogs]
-    #               t0_reqmon : [python3, rotatelogs]
-    #               workqueue : [python3, rotatelogs, couchdb, yui]
+    #               acdcserver           : [python3, rotatelogs, couchdb]
+    #               reqmgr2              : [python3, rotatelogs, couchdb]
+    #               reqmgr2ms-transferor : [python3, rotatelogs]
+    #               reqmgr2ms-monitor    : [python3, rotatelogs]
+    #               reqmgr2ms-output     : [python3, rotatelogs]
+    #               reqmgr2ms-unmerged   : [python3, rotatelogs]
+    #               reqmgr2ms-rulecleaner: [python3, rotatelogs]
+    #               reqmgr2ms-pileup     : [python3, rotatelogs]
+    #               reqmon               : [python3, rotatelogs]
+    #               t0_reqmon            : [python3, rotatelogs]
+    #               workqueue            : [python3, rotatelogs, couchdb, yui]
 
     #               The above list is generated from the 'cmsdist' repository by:
     #               git clone https://github.com/cms-sw/cmsdist/tree/comp_gcc630
@@ -142,7 +148,7 @@ wmCfgBranch="test"                                                        # WMCo
 wmTag=""                                                                  # wmcore tag Default: no tag
 serPatch=""                                                               # a list of service patches to be applied
 runFromSource=false                                                       # a bool flag indicating run from source
-vmName=""                                                                 # hostname for central services
+vmName=`hostname`                                                         # hostname for central services
 vmName=${vmName%%.*}
 pipIndex="prod"                                                           # pypi Index to use
 verboseMode=false
@@ -160,11 +166,13 @@ secString=""                                                              # The 
 #       so the `pythonCmd' variable shouldn't be needed any more.
 
 pythonCmd=python
-[[ $(python -V 2>&1) =~ Python\ *2.* ]] && pythonCmd=python3
+initPythonCmd=`which $pythonCmd`
+[[ $(python --version 2>&1) =~ Python[[:blank:]]+2.* ]] && pythonCmd=python3
+
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
-while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvyh" opt; do
+while getopts ":t:c:r:b:g:j:d:p:m:l:i:e:snvyh" opt; do
     case ${opt} in
         d)
             venvPath=$OPTARG
@@ -198,6 +206,8 @@ while getopts ":t:c:r:b:g:j:d:p:m:l:i:snvyh" opt; do
             verboseMode=true ;;
         y)
             assumeYes=true ;;
+        e)
+            pythonCmd=$OPTARG ;;
         h)
             help
             exit 0 ;;
@@ -250,7 +260,10 @@ do
         enabledList="$enabledList reqmgr2ms-monitor"
         enabledList="$enabledList reqmgr2ms-output"
         enabledList="$enabledList reqmgr2ms-rulecleaner"
-        enabledList="$enabledList reqmgr2ms-unmerged"
+        enabledList="$enabledList reqmgr2ms-unmerged-t1"
+        enabledList="$enabledList reqmgr2ms-unmerged-t2t3"
+        enabledList="$enabledList reqmgr2ms-unmerged-t2t3us"
+        enabledList="$enabledList reqmgr2ms-pileup"
     elif [[ $service == "reqmgr2" ]]; then
         enabledList="$enabledList reqmgr2"
         enabledList="$enabledList reqmgr2-tasks"
@@ -349,6 +362,7 @@ startSetupVenv(){
     echo "assumeYes            : $assumeYes"
     echo "central services host: $vmName"
     echo "secSring             : $secString"
+    echo "pythonCmd            : `$pythonCmd --version` at: `which $pythonCmd`"
     echo "======================================================="
     echo -n "Continue? [y]: "
     $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 102
@@ -474,7 +488,7 @@ _pkgInstall(){
         echo
         echo "======================================================="
         echo "There were some package dependencies that couldn't be satisfied."
-        echo "List of packages failed to install: $depFail"
+        echo "List of packages failed to install: $pkgFail"
         echo -n "Should we try to reinstall them while releasing version constraint? [y]: "
         $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
         echo "..."
@@ -910,8 +924,8 @@ setupIpython(){
     echo
     echo "======================================================="
     echo "If the current environment is about to be used for deployment Ipython would be a good recomemndation, but is not mandatory."
-    echo -n "Skip Ipython installation? [y]: "
-    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] || return 101
+    echo -n "Install Ipython? [y]: "
+    $assumeYes || read x && [[ $x =~ (n|no|nO|N|No|NO) ]] && return 101
     echo "Installing ipython..."
     pip install ipython
 }
@@ -1104,11 +1118,13 @@ main(){
     createVenv       || handleReturn $?
     activateVenv     || handleReturn $?
     setupDeplTree    || handleReturn $?
-    if $runFromSource; then
+    if $runFromSource;
+    then
         cloneWMCore  || handleReturn $?
+        setupDependencies|| handleReturn $?
+    else
+        pkgInstall       || handleReturn $?
     fi
-    pkgInstall       || handleReturn $?
-    setupDependencies|| handleReturn $?
     setupRucio       || handleReturn $?
     setupConfig      || handleReturn $?
     setupInitScripts || handleReturn $?

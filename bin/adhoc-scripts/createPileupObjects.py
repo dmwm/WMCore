@@ -71,10 +71,10 @@ def getPUSchema(pileupName, pileupDocs, logger):
     :param pileupDocs: list of pileup documents
     :return: a dictionary with the pileup configuration
     """
-    for doc in pileupDocs:
+    for idx, doc in enumerate(pileupDocs):
         if pileupName == doc["pileupName"]:
             logger.warning("Reusing pileup configuration for pileup: %s", pileupName)
-            return doc
+            return pileupDocs.pop(idx)
     pileupDoc = {
         'pileupName': "",
         'pileupType': "",
@@ -96,7 +96,10 @@ def parseCampaigns(campDocs, logger):
         # for each secondary dataset, create one pileup document
         for puName, puRSEs in camp.get("Secondaries", {}).items():
             puDoc = getPUSchema(puName, pileupDocs, logger)
-            puType = "premix" if puName.split("/")[-1] == "PREMIX" else "classic"
+            if puName.startswith("/Neutrino") or puName.split("/")[-1] == "PREMIX":
+                puType = "premix"
+            else:
+                puType = "classic"
             puDoc["pileupName"] = puName
             puDoc["pileupType"] = puType
             puDoc["expectedRSEs"].extend(puRSEs)
@@ -168,7 +171,7 @@ def main():
     if opts.fout:
         logger.info("Saving all %d pileup documents into file: %s", len(puDocs), opts.fout)
         with open(opts.fout, "w") as jo:
-            json.dump(puDocs, jo, indent=2)
+            json.dump(puDocs, jo, indent=2, sort_keys=True)
 
     if opts.inject:
         logger.info("Going to inject %d pileup documents into: %s", len(puDocs), opts.url)

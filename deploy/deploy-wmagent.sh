@@ -181,6 +181,25 @@ check_oracle()
   rm -rf $tmpdir
 }
 
+setup_amtool()
+{
+  local pkg_version=0.25.0
+  local pkg_name=alertmanager-${pkg_version}.linux-amd64
+  echo -n "Setting up amtool prometheus alert manager ..."
+  cd $ADMIN_DIR
+  curl -ksLO https://github.com/prometheus/alertmanager/releases/download/v${pkg_version}/${pkg_name}.tar.gz
+  if [ ! -f ${pkg_name}.tar.gz ]; then
+    echo -e "  FAILED to download Prometheus alertmanager."
+    exit 10
+  fi
+  tar xfz ${pkg_name}.tar.gz ${pkg_name}/amtool
+  mv ${pkg_name}/amtool .
+  ./amtool --version
+  rm -f ${pkg_name}.tar.gz
+  cd -
+  echo -e "  OK!\n"
+}
+
 for arg; do
   case $arg in
     -h) help ;;
@@ -408,12 +427,13 @@ echo "Done!" && echo
 # set scripts and specific cronjobs
 ###
 echo "*** Downloading utilitarian scripts ***"
-cd /data/admin/wmagent
+cd $ADMIN_DIR
 wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/checkProxy.py -O checkProxy.py
 wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/restartComponent.sh -O restartComponent.sh
 wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/renew_proxy.sh -O renew_proxy.sh
 chmod +x renew_proxy.sh restartComponent.sh
-sed -i "s+CREDNAME+$MYPROXY_CREDNAME+" /data/admin/wmagent/renew_proxy.sh
+sed -i "s+CREDNAME+$MYPROXY_CREDNAME+" $ADMIN_DIR/renew_proxy.sh
+setup_amtool
 echo "Done!" && echo
 
 ### Populating cronjob with utilitarian scripts

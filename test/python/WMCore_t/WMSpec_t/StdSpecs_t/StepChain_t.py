@@ -2408,6 +2408,16 @@ class StepChainTests(EmulatedUnitTestCase):
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
         self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "MonteCarlo")
 
+    def testRunlist(self):
+        """
+        Check that the properly setup run white/black lists
+        """
+        arguments = StepChainWorkloadFactory.getTestArguments()
+        arguments['Step1']['RunWhiteList'] = ["111111", "222222"]
+        factory = StepChainWorkloadFactory()
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("TestWorkload", arguments)
+
 
 if __name__ == '__main__':
     unittest.main()

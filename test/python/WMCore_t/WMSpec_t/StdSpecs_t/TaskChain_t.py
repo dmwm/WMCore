@@ -2480,6 +2480,16 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
         self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "MonteCarlo")
 
+    def testRunlist(self):
+        """
+        Check that the properly setup run white/black lists
+        """
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments['Task1']['RunWhiteList'] = ["111111", "222222"]
+        factory = TaskChainWorkloadFactory()
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
 
 if __name__ == '__main__':
     unittest.main()

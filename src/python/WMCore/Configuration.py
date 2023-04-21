@@ -18,7 +18,7 @@ import traceback
 
 from Utils.PythonVersion import PY3
 
-import imp
+import importlib
 
 _SimpleTypes = [
     bool,
@@ -596,12 +596,11 @@ def loadConfigurationFile(filename):
     cfgBaseName = os.path.basename(filename).replace(".py", "")
     cfgDirName = os.path.dirname(filename)
     if not cfgDirName:
-        modPath = imp.find_module(cfgBaseName)
+        modSpecs = importlib.machinery.PathFinder().find_spec(cfgBaseName)
     else:
-        modPath = imp.find_module(cfgBaseName, [cfgDirName])
+        modSpecs = importlib.machinery.PathFinder().find_spec(cfgBaseName, [cfgDirName])
     try:
-        modRef = imp.load_module(cfgBaseName, modPath[0],
-                                          modPath[1], modPath[2])
+        modRef = modSpecs.loader.load_module()
     except Exception as ex:
         msg = "Unable to load Configuration File:\n"
         msg += "%s\n" % filename

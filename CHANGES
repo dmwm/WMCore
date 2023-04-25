@@ -1,3 +1,12 @@
+2.2.0.2 to 2.2.1rc1:
+  - Remove postToAMQ (post_to_amq) and fix typo in doc_type_amq (Valentin Kuznetsov) #11573
+  - Add validateRunlist (Valentin Kuznetsov) #11535
+  - New production dump with unique pileups (Alan Malta Rodrigues) #11543
+  - MSPileup: consider Neutrino PDs as premix (Alan Malta Rodrigues) #11543
+  - Fix racing condition in unit test with CouchDB (Valentin Kuznetsov) #11540
+  - Replace imp by importlib (Valentin Kuznetsov) #11530
+
+
 2.2.0.1 to 2.2.0.2:
   - Couple pileup activatedOn/deactivatedOn to its active state change (Alan Malta Rodrigues) #11553
 

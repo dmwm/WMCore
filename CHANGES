@@ -1,3 +1,9 @@
+2.2.0.2 to 2.2.0.4:
+  - Add new CMSCouch exception for Request Entity Too Large (Alan Malta Rodrigues) #11577
+  - Fix manage path in the restartComponent script (Alan Malta Rodrigues) #11577
+  - Remove postToAMQ (post_to_amq) and fix typo in doc_type_amq (Valentin Kuznetsov) #11577
+
+
 2.2.0.1 to 2.2.0.2:
   - Couple pileup activatedOn/deactivatedOn to its active state change (Alan Malta Rodrigues) #11553
 

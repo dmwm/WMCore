@@ -57,9 +57,8 @@ class MSPileupMonitoring():
         """
         self.userAMQ = msConfig.get('user_amq', None)
         self.passAMQ = msConfig.get('pass_amq', None)
-        self.postToAMQ = msConfig.get('post_to_amq', False)
         self.topicAMQ = msConfig.get('topic_amq', None)
-        self.docTypeAMQ = msConfig.get('doc_type_amg', 'cms-ms-pileup')
+        self.docTypeAMQ = msConfig.get('doc_type_amq', 'cms-ms-pileup')
         self.hostPortAMQ = msConfig.get('host_port_amq', None)
         self.producer = msConfig.get('producer', 'cms-ms-pileup')
         self.logger = msConfig.get('logger', getMSLogger(False))
@@ -103,7 +102,7 @@ class MSPileupMonitoring():
             msg = "%i out of %i documents successfully sent to AMQ" % (len(notifications) - len(failures),
                                                                        len(notifications))
             self.logger.info(msg)
-            return {"success": len(notifications)-len(failures), "failures": len(failures)}
+            return {"success": len(notifications) - len(failures), "failures": len(failures)}
         except Exception as ex:
             self.logger.exception("Failed to send data to StompAMQ. Error %s", str(ex))
         return {}

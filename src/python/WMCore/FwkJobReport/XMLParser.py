@@ -310,17 +310,23 @@ def perfRepHandler(targets):
         perfRep.section_("cpu")
         perfRep.section_("memory")
         perfRep.section_("storage")
+        perfRep.section_("io")
+        perfRep.section_("site")
         for subnode in node.children:
             metric = subnode.attrs.get('Metric', None)
+            module = subnode.attrs.get('Module', None)
             if metric == "Timing":
                 targets['CPU'].send((perfRep.cpu, subnode))
             elif metric == "SystemMemory" or metric == "ApplicationMemory":
                 targets['Memory'].send((perfRep.memory, subnode))
             elif metric == "StorageStatistics":
                 targets['Storage'].send((perfRep.storage, subnode))
+                targets['IO'].send((perfRep.io, subnode))
             else:
                 targets['PerformanceSummary'].send((perfRep.summaries,
                                                     subnode))
+            if module == 'XrdSiteStatistics':
+                targets['Site'].send((perfRep.site, subnode))
 
 
 @coroutine
@@ -386,6 +392,37 @@ def checkRegEx(regexp, candidate):
         return False
     return True
 
+@coroutine
+def SiteHandler():
+    """
+    _SiteHandler_
+
+    Handle the information from the Storage Site report
+    """
+    while True:
+        report, node = (yield)
+        logging.debug("preparing to parse Site statistics")
+        iovalues = {}
+        for prop in node.children:
+            name = prop.attrs['Name']
+            value = float(prop.attrs['Value'])
+            setattr(report, name, value)
+
+@coroutine
+def IOMetricsHandler():
+    """
+    _IOMetricsHandler_
+
+    Handle the information from the Storage IO report
+    """
+    while True:
+        report, node = (yield)
+        logging.debug("preparing to parse IO statistics")
+        for prop in node.children:
+            name = prop.attrs['Name']
+            if name.lower().startswith('timing-'):
+                value = float(prop.attrs['Value'])
+                setattr(report, name, value)
 
 @coroutine
 def perfStoreHandler():
@@ -437,7 +474,6 @@ def perfStoreHandler():
                     # This is the reader
                     writeMethod = key.split('-')[1]
                     break
-
         # Then assemble the information
         # Calculate the values
         logging.debug("ReadMethod: %s", readMethod)
@@ -512,6 +548,8 @@ def xmlToJobReport(reportInstance, xmlFile):
         "CPU": perfCPUHandler(),
         "Memory": perfMemHandler(),
         "Storage": perfStoreHandler(),
+        "IO": IOMetricsHandler(),
+        "Site": SiteHandler(),
     }
 
     dispatchers = {

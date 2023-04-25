@@ -1,3 +1,7 @@
+2.2.0.2 to 2.2.0.3:
+  - backport doc_type_amq typo fix to 2.2.0.2_cmsweb branch (Valentin Kuznetsov) #11574
+
+
 2.2.0.1 to 2.2.0.2:
   - Couple pileup activatedOn/deactivatedOn to its active state change (Alan Malta Rodrigues) #11553
 

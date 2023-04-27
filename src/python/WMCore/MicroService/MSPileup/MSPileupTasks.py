@@ -256,6 +256,15 @@ def monitoringTask(doc, spec):
     rules = rucioClient.listDataRules(pname, **kwargs)
     modify = False
 
+    if not rules:
+        logger.info(f"Did not find any wmcore_transferor rules for container: {pname}.")
+        if not doc['expectedRSEs']:
+            logger.warning(f"Container: {pname} is active but has no expected RSEs.")
+        elif doc['currentRSEs'] or doc['ruleIds']:
+            doc['currentRSEs'].clear()
+            doc['ruleIds'].clear()
+            modify = True
+
     for rdoc in rules:
         rses = rucioClient.evaluateRSEExpression(rdoc['rse_expression'])
         rid = rdoc['id']

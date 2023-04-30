@@ -7,9 +7,10 @@ Base class with helper functions for standard WMSpec files.
 from __future__ import division
 from future.utils import viewitems
 from builtins import range, object
-
+import cherrypy
 import logging
 import json
+from collections import deque
 
 from Utils.PythonVersion import PY3
 from Utils.Utilities import decodeBytesToUnicodeConditional
@@ -53,7 +54,8 @@ class StdBase(object):
 
         # Internal parameters
         self.workloadName = None
-        self.config_cache = {}
+        # cache to be used for the workflow config IDs
+        self.config_cache = deque([], 10)
 
         return
 
@@ -65,6 +67,7 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
+        cherrypy.log("AMR getWorkloadCreateArgs")
         argumentDefinition = self.getWorkloadCreateArgs()
         for arg in argumentDefinition:
             try:
@@ -81,6 +84,7 @@ class StdBase(object):
                 raise WMSpecFactoryException("parameter %s: %s" % (arg, str(ex)))
 
         # TODO: this replace can be removed in one year from now, thus March 2022
+        cherrypy.log("AMR updating dbs")
         if hasattr(self, "dbsUrl"):
             self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
             self.dbsUrl = self.dbsUrl.rstrip("/")
@@ -89,6 +93,18 @@ class StdBase(object):
 
     # static copy of the skim mapping
     skimMap = {}
+
+    def getCachedConfigID(self, absoluteConfigID):
+        """
+        Given a ConfigCacheID (including the url and db name), return it if it's
+        available in the memory cache.
+        :param absoluteConfigID: string with the configID url
+        :return: the config cache document, or None if not found
+        """
+        for item in self.config_cache:
+            if absoluteConfigID == item['name']:
+                return item['configDoc']
+        return
 
     @staticmethod
     def calcEvtsPerJobLumi(ePerJob, ePerLumi, tPerEvent, requestedEvents=None):
@@ -193,15 +209,17 @@ class StdBase(object):
         scenarioArgs = scenarioArgs or {}
 
         outputModules = {}
+        cherrypy.log("AMR determineOutputModules for %s and %s" % (configCacheUrl, couchDBName))
+        cacheKey = configCacheUrl + couchDBName + configDoc
         if configDoc is not None and configDoc != "":
-            if (configCacheUrl, couchDBName) in self.config_cache:
-                configCache = self.config_cache[(configCacheUrl, couchDBName)]
-            else:
-                configCache = ConfigCache(configCacheUrl, couchDBName, True)
-                self.config_cache[(configCacheUrl, couchDBName)] = configCache
+            configCache = self.getCachedConfigID(cacheKey)
+            if not configCache:
+                configCacheDB = ConfigCache(configCacheUrl, couchDBName)
+                configCacheDB.loadByID(configDoc)
+                # FIXME: this does not cache the attachment
+                self.config_cache[cacheKey] = configCache
             # TODO: need to change to DataCache
             # configCache.loadDocument(configDoc)
-            configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
             if 'outputs' in scenarioArgs and scenarioFunc in ["promptReco", "expressProcessing", "repack"]:
@@ -235,6 +253,7 @@ class StdBase(object):
                     outputModules[moduleLabel] = {'dataTier': dataTier,
                                                   'primaryDataset': scenarioArgs.get('primaryDataset'),
                                                   'filterName': alcaSkim}
+        cherrypy.log("AMR determineOutputModules self.config_cache keys %s" % self.config_cache.keys())
 
         return outputModules
 
@@ -902,11 +921,16 @@ class StdBase(object):
         if arguments.get('RequestType') == 'Resubmission':
             self.validateSchema(schema=arguments)
         else:
+            cherrypy.log("AMR running masterValidation")
             self.masterValidation(schema=arguments)
+            cherrypy.log("AMR running validateSchema")
             self.validateSchema(schema=arguments)
 
+        cherrypy.log("AMR running StdBase.__call__")
         workload = self.__call__(workloadName=workloadName, arguments=arguments)
+        cherrypy.log("AMR running validateWorkload")
         self.validateWorkload(workload)
+        self.config_cache.clear()
 
         return workload
 
@@ -952,11 +976,15 @@ class StdBase(object):
         if configID == '' or configID == ' ':
             self.raiseValidationException(msg="ConfigCacheID is invalid and cannot be loaded")
 
-        if (configCacheUrl, couchDBName) in self.config_cache:
-            configCache = self.config_cache[(configCacheUrl, couchDBName)]
+        cherrypy.log("AMR validateConfigCacheExists for %s and %s" % (configCacheUrl, couchDBName))
+        cacheKey = configCacheUrl + couchDBName + configID
+        if cacheKey in self.config_cache:
+            cherrypy.log("AMR fetching doc from cache: %s" % configID)
+            configCache = self.config_cache[cacheKey]
         else:
             configCache = ConfigCache(dbURL=configCacheUrl, couchDBName=couchDBName, detail=getOutputModules)
-            self.config_cache[(configCacheUrl, couchDBName)] = configCache
+            self.config_cache[cacheKey] = configCache
+        cherrypy.log("AMR validateConfigCacheExists self.config_cache keys %s" % self.config_cache.keys())
 
         try:
             # if detail option is set return outputModules

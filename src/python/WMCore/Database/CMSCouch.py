@@ -1032,7 +1032,7 @@ class CouchServer(CouchDBRequests):
             raise RuntimeError(msg)
         return self.delete("/%s" % dbname)
 
-    def connectDatabase(self, dbname='database', create=True, size=1000):
+    def connectDatabase(self, dbname='database', create=False, size=1000):
         """
         Return a Database instance, pointing to a database in the server. If the
         database doesn't exist create it if create is True.

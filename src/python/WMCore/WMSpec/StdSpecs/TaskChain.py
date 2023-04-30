@@ -84,7 +84,7 @@ Example initial processing task
  },
 """
 from __future__ import division
-
+import cherrypy
 import json
 from builtins import range, object
 from future.utils import viewitems
@@ -219,7 +219,7 @@ class TaskChainWorkloadFactory(StdBase):
         """
         _call_
 
-        Create a ReReco workload with the given parameters.
+        Create a TaskChain workload with the given parameters.
         """
         StdBase.__call__(self, workloadName, arguments)
         self.workload = self.createWorkload()
@@ -719,6 +719,7 @@ class TaskChainWorkloadFactory(StdBase):
 
             # Validate the existence of the configCache
             if task["ConfigCacheID"]:
+                cherrypy.log("AMR validating configCacheExists in TaskChain for id: %s" % task["ConfigCacheID"])
                 self.validateConfigCacheExists(configID=task['ConfigCacheID'],
                                                configCacheUrl=schema["ConfigCacheUrl"],
                                                couchDBName=schema["CouchDBName"],

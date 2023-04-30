@@ -29,6 +29,7 @@ PROCESSED_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 199}
 TIER = {'re': '[A-Z\-_]+', 'maxLength': 99}
 BLOCK_STR = {'re': '#[a-zA-Z0-9\.\-_]+', 'maxLength': 100}
 
+
 lfnParts = {
     'era': '([a-zA-Z0-9\-_]+)',
     'primDS': '([a-zA-Z][a-zA-Z0-9\-_]*)',
@@ -191,6 +192,9 @@ def block(candidate):
     blockCheck = check(r"%s" % BLOCK_STR['re'], "#%s" % lastParts[1], BLOCK_STR['maxLength'])
     return (primDSCheck and procDSCheck and tierCheck and blockCheck)
 
+def outputModule(candidate):
+    """ Asserts if a valid output module name """
+    return check(r'[a-zA-Z0-9\s\.\-_:]{1,45}$', candidate)
 
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
@@ -200,7 +204,6 @@ def identifier(candidate):
 def globalTag(candidate):
     """ Identifier plus colons """
     return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
-
 
 DATASET_RE = r'^/[a-zA-Z0-9\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[A-Z\-]{1,50}$'
 

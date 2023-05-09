@@ -14,12 +14,15 @@ to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
 from __future__ import division
+
+import json
+
 from future.utils import viewitems
 from builtins import range
 
 from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-from WMCore.Lexicon import primdataset, taskStepName
+from WMCore.Lexicon import primdataset, taskStepName, gpuParameters
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsCreate, parsePileupConfig,
                                            checkMemCore, checkEventStreams, checkTimePerEvent)
@@ -321,8 +324,16 @@ class StepChainWorkloadFactory(StdBase):
                 multicore = taskConf['Multicore']
             if taskConf.get("EventStreams") is not None and taskConf['EventStreams'] >= 0:
                 eventStreams = taskConf['EventStreams']
-
             currentCmsswStepHelper.setNumberOfCores(multicore, eventStreams)
+
+            # GPU settings
+            gpuRequired = self.requiresGPU
+            gpuParams = json.loads(taskConf.get('GPUParams', 'null'))
+            if taskConf.get('RequiresGPU', None):
+                gpuRequired = taskConf['RequiresGPU']
+            if "GPUParams" not in taskConf:
+                gpuParams = json.loads(self.gPUParams)
+            currentCmsswStepHelper.setGPUSettings(gpuRequired, gpuParams)
 
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
@@ -484,7 +495,11 @@ class StepChainWorkloadFactory(StdBase):
                     "TimePerEvent": {"default": 12.0, "type": float, "validate": lambda x: x > 0},
                     "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                     "Multicore": {"default": 1, "type": int, "validate": checkMemCore},
-                    "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams}
+                    "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams},
+                    # no need for workload-level defaults, if task-level default is provided
+                    "RequiresGPU": {"default": None, "null": True,
+                                    "validate": lambda x: x in ("forbidden", "optional", "required")},
+                    "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
@@ -554,6 +569,11 @@ class StepChainWorkloadFactory(StdBase):
             msg += "You probably want to remove that step completely and try again."
             self.raiseValidationException(msg=msg)
 
+        try:
+            StdBase.validateGPUSettings(schema)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))
+
         outputModTier = []
         for i in range(1, numSteps + 1):
             stepNumber = "Step%s" % i
@@ -603,6 +623,8 @@ class StepChainWorkloadFactory(StdBase):
         """
         try:
             validateArgumentsCreate(taskConf, taskArgumentDefinition, checkInputDset=False)
+            # Validate GPU-related spec parameters
+            StdBase.validateGPUSettings(taskConf)
         except WMSpecFactoryException:
             # just re-raise it to keep the error message clear
             raise

@@ -43,9 +43,21 @@ def importConfigTemplate(filename):
     Given filename, load it and grab the configuration object from it
 
     """
-    modSpecs = importlib.machinery.PathFinder().find_spec(filename)
-    mod = modSpecs.loader.load_module("wmcore_config_input")
-    config = getattr(mod, 'config', None)
+
+    cfgBaseName = os.path.basename(filename).replace(".py", "")
+    cfgDirName = os.path.dirname(filename)
+    if not cfgDirName:
+        modSpecs = importlib.machinery.PathFinder().find_spec(cfgBaseName)
+    else:
+        modSpecs = importlib.machinery.PathFinder().find_spec(cfgBaseName, [cfgDirName])
+    try:
+        modRef = modSpecs.loader.load_module(cfgBaseName)
+    except Exception as ex:
+        msg = "Unable to load Configuration File: %s\n Due to error:\n" % filename
+        msg += str(ex)
+        msg += str(traceback.format_exc())
+        raise RuntimeError(msg)
+    config = getattr(modRef, 'config', None)
     if config is None:
         msg = "No config attribute found in %s" % filename
         raise RuntimeError(msg)

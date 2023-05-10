@@ -1,3 +1,7 @@
+2.2.0.4 to 2.2.0.6:
+  - Use previous existStatus code instead of default 99108 (Valentin Kuznetsov) #11589
+
+
 2.2.0.2 to 2.2.0.4:
   - Add new CMSCouch exception for Request Entity Too Large (Alan Malta Rodrigues) #11577
   - Fix manage path in the restartComponent script (Alan Malta Rodrigues) #11577

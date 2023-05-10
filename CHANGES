@@ -1,3 +1,11 @@
+2.2.1rc1 to 2.2.1rc2:
+  - Fix broken module path and module name during import (#11587) (Todor Ivanov) #11587
+  - Fix missing static dependencies for wmagent package (Todor Ivanov) #11586
+  - MSPileup: detect active containers with no wmcore_trasnferor rules (Alan Malta Rodrigues) #11579
+  - Fix manage path in the restartComponent script (Alan Malta Rodrigues) #11572
+  - Add new CMSCouch exception for Request Entity Too Large (Alan Malta Rodrigues) #11502
+
+
 2.2.0.2 to 2.2.1rc1:
   - Remove postToAMQ (post_to_amq) and fix typo in doc_type_amq (Valentin Kuznetsov) #11573
   - Add validateRunlist (Valentin Kuznetsov) #11535

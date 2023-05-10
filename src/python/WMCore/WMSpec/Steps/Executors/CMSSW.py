@@ -50,14 +50,18 @@ class CMSSW(Executor):
         self.failedPreviousStep = None
 
     def _setStatus(self, returnCode, returnMessage):
-        """
-        Set return code.
-        """
-        self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returnCode)
+        """Chirp Job/step exit code through HTCondor"""
+        # we will set Chirp_WMCore_cmsRun_ExitCode codes only if previous step was clean
+        if not self.failedPreviousStep:
+            self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returnCode)
+            logging.info("Step %s: Chirp_WMCore_cmsRun_ExitCode %s", self.stepName, returnCode)
+            if returnMessage and returnCode != 0:
+                self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_Exception_Message', returnMessage, compress=True)
         self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returnCode)
+        logging.info("Step %s: Chirp_WMCore_%s_ExitCode %s", self.stepName, self.stepName, returnCode)
         if returnMessage and returnCode != 0:
-            self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_Exception_Message', returnMessage, compress=True)
             self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_Exception_Message' % self.stepName, returnMessage, compress=True)
+
         self.step.execution.exitStatus = returnCode
 
     def pre(self, emulator=None):

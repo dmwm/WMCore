@@ -83,12 +83,13 @@ def fwjr_parser(doc):
                             cmsRunCPUPerformance=pdict)
         if key.startswith('cmsRun'):
             perf = val['performance']
-            pdict['totalJobCPU'] += float(perf['cpu']['TotalJobCPU'])
-            pdict['totalJobTime'] += float(perf['cpu']['TotalJobTime'])
+            perf.setdefault('cpu', {})
+            pdict['totalJobCPU'] += float(perf['cpu'].get('TotalJobCPU', 0))
+            pdict['totalJobTime'] += float(perf['cpu'].get('TotalJobTime', 0))
             if 'TotalEventCPU' in perf['cpu']:
                 pdict['totalEventCPU'] += float(perf['cpu']['TotalEventCPU'])
             else:
-                pdict['totalEventCPU'] += float(perf['cpu']['TotalLoopCPU'])
+                pdict['totalEventCPU'] += float(perf['cpu'].get('TotalLoopCPU', 0))
 
             odict = val['output']
             for kkk, vvv in viewitems(odict):

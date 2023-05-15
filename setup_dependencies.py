@@ -36,7 +36,7 @@ dependencies = {
         'systems': ['wmc-base']
     },
     'wmc-database': {
-        'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs', 'WMCore.Database',
+        'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs+', 'WMCore.Database+',
                      'WMCore.Algorithms', 'WMCore.Services'],
         'modules': ['WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
         'systems': ['wmc-base']

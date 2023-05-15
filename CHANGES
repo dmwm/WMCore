@@ -1,3 +1,8 @@
+2.2.1rc2 to 2.2.1rc3:
+  - Fix missing sublevel areas of packages in the wm-database module (#11592) (Todor Ivanov) #11592
+  - Use previous existStatus code instead of default 99108 (Valentin Kuznetsov) #11581
+
+
 2.2.1rc1 to 2.2.1rc2:
   - Fix broken module path and module name during import (#11587) (Todor Ivanov) #11587
   - Fix missing static dependencies for wmagent package (Todor Ivanov) #11586

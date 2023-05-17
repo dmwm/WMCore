@@ -408,6 +408,16 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.gpu.gpuRequired = requiresGPU
         self.data.application.gpu.gpuRequirements = gpuParams
 
+    def getGPUSettings(self):
+        """
+        Return the GPU configuration for this CMSSW step
+        :return: a tuple with:
+          * string whether GPU is required or not
+          * dictionary with the GPU requirements (or None)
+        """
+        return (self.data.application.gpu.gpuRequired,
+                self.data.application.gpu.gpuRequirements)
+
 
 class CMSSW(Template):
     """

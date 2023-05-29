@@ -463,6 +463,8 @@ class ResourceControlTest(EmulatedUnitTestCase):
         myResourceControl.insertSite("testSite2", 100, 200, "testSE2", "testCE2")
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
+        self.assertEqual(len(siteInfo), 1)
+        siteInfo = siteInfo[0]
 
         self.assertEqual(siteInfo["site_name"], "testSite1",
                          "Error: Site name is wrong.")
@@ -491,28 +493,32 @@ class ResourceControlTest(EmulatedUnitTestCase):
         myResourceControl.insertSite("testSite1", 10, 20, "testSE1", "testCE1")
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
+        self.assertEqual(len(siteInfo), 1)
 
-        self.assertEqual(siteInfo["pending_slots"], 10, "Error: Pending slots is wrong.")
-        self.assertEqual(siteInfo["running_slots"], 20, "Error: Running slots is wrong.")
+        self.assertEqual(siteInfo[0]["pending_slots"], 10, "Error: Pending slots is wrong.")
+        self.assertEqual(siteInfo[0]["running_slots"], 20, "Error: Running slots is wrong.")
 
         myResourceControl.setJobSlotsForSite("testSite1", pendingJobSlots=20)
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
+        self.assertEqual(len(siteInfo), 1)
 
-        self.assertEqual(siteInfo["pending_slots"], 20, "Error: Pending slots is wrong.")
+        self.assertEqual(siteInfo[0]["pending_slots"], 20, "Error: Pending slots is wrong.")
 
         myResourceControl.setJobSlotsForSite("testSite1", runningJobSlots=40)
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
+        self.assertEqual(len(siteInfo), 1)
 
-        self.assertEqual(siteInfo["running_slots"], 40, "Error: Running slots is wrong.")
+        self.assertEqual(siteInfo[0]["running_slots"], 40, "Error: Running slots is wrong.")
 
         myResourceControl.setJobSlotsForSite("testSite1", 5, 10)
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
+        self.assertEqual(len(siteInfo), 1)
 
-        self.assertEqual(siteInfo["pending_slots"], 5, "Error: Pending slots is wrong.")
-        self.assertEqual(siteInfo["running_slots"], 10, "Error: Running slots is wrong.")
+        self.assertEqual(siteInfo[0]["pending_slots"], 5, "Error: Pending slots is wrong.")
+        self.assertEqual(siteInfo[0]["running_slots"], 10, "Error: Running slots is wrong.")
 
         return
 
@@ -704,7 +710,8 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         # Verify that sites with more than one SE were added correctly.
         cernInfo = myResourceControl.listSiteInfo("CERN")
-        self.assertTrue(len(cernInfo["pnn"]) == 2)
+        self.assertTrue(len(cernInfo) == 1)
+        self.assertTrue(len(cernInfo[0]["pnn"]) == 2)
         return
 
 

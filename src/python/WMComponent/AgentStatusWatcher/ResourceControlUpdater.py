@@ -246,21 +246,21 @@ class ResourceControlUpdater(BaseWorkerThread):
         ssbSiteSlots = {}
         for site in infoCpu:
             if infoCpu[site]['core_cpu_intensive'] is None:
-                logging.warn('Site %s has invalid CPU thresholds in SSB. Taking no action', site)
+                logging.warning('Site %s has invalid CPU thresholds in SSB. Taking no action', site)
             else:
                 ssbSiteSlots[site] = {'slotsCPU': int(infoCpu[site]['core_cpu_intensive'])}
 
         # then iterate over the IO slots
         for site in infoIo:
             if infoIo[site]['core_io_intensive'] is None:
-                logging.warn('Site %s has invalid IO thresholds in SSB. Taking no action', site)
+                logging.warning('Site %s has invalid IO thresholds in SSB. Taking no action', site)
             else:
                 ssbSiteSlots[site]['slotsIO'] = int(infoIo[site]['core_io_intensive'])
 
         # Before proceeding, remove sites without both metrics
         for site in list(ssbSiteSlots):
             if len(ssbSiteSlots[site]) != 2:
-                logging.warn("Site: %s has incomplete SSB metrics, see %s", site, ssbSiteSlots[site])
+                logging.warning("Site: %s has incomplete SSB metrics, see %s", site, ssbSiteSlots[site])
                 ssbSiteSlots.pop(site)
 
         return ssbSiteSlots

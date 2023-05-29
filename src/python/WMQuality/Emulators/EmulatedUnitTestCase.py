@@ -103,7 +103,8 @@ class EmulatedUnitTestCase(unittest.TestCase):
             patchCRICAt = ['WMCore.ReqMgr.Tools.cms.CRIC',
                            'WMCore.WorkQueue.WorkQueue.CRIC',
                            'WMCore.WorkQueue.WorkQueueUtils.CRIC',
-                           'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.CRIC']
+                           'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.CRIC',
+                           'WMComponent.AgentStatusWatcher.ResourceControlUpdater.CRIC']
             for module in patchCRICAt:
                 self.cricPatchers.append(mock.patch(module, new=MockCRICApi))
                 self.cricPatchers[-1].start()

@@ -10,6 +10,7 @@ import traceback
 
 from Utils.Timers import timeFunction
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 from WMCore.Services.MonIT.Grafana import Grafana
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
@@ -70,6 +71,9 @@ class ResourceControlUpdater(BaseWorkerThread):
         # set resource control
         self.resourceControl = ResourceControl(config=self.config)
 
+        # get CRIC wrapper instance
+        self.cricObj = CRIC()
+
         # wmstats connection
         self.centralCouchDBReader = WMStatsReader(self.config.General.centralWMStatsURL)
 
@@ -90,6 +94,13 @@ class ResourceControlUpdater(BaseWorkerThread):
         if not self.enabled:
             logging.info("This component is not enabled in the configuration. Doing nothing.")
             return
+
+        logging.info("Checking and updating PSN to PNN map...")
+        try:
+            self.updatePNNMap()
+        except Exception as ex:
+            msg = f"Generic error while updating PSN/PNNs. Details: {str(ex)}"
+            logging.exception(msg)
 
         try:
             sitesRC = self.resourceControl.listSitesSlots()
@@ -112,9 +123,8 @@ class ResourceControlUpdater(BaseWorkerThread):
             # Check which site slots need to be updated in the database
             self.checkSlotsChanges(sitesRC, sitesSSB)
         except Exception as ex:
-            logging.error("Error occurred, will retry later:")
-            logging.error(str(ex))
-            logging.error("Trace back: \n%s", traceback.format_exc())
+            logging.exception("Error occurred, will retry later. Details: %s", str(ex))
+
         logging.info("Resource control cycle finished updating site state and thresholds.")
 
     def getAgentsByTeam(self):
@@ -336,3 +346,35 @@ class ResourceControlUpdater(BaseWorkerThread):
             repackSlots = int(CPUBound * self.runningRepackPercent / 100)
             pendingRepack = int(repackSlots * self.pendingSlotsTaskPercent / 100)
             self.resourceControl.insertThreshold(siteName, 'Repack', repackSlots, pendingRepack)
+
+    def updatePNNMap(self):
+        """
+        Method to make new PNN associations based on the CRIC and local
+        database PSNs/PNNs information.
+        If a PNN is changed or removed in CRIC, then it will simply be
+        logged as an error, as it cause have deeper consequences in the agent.
+        :return: None
+        """
+        cricPattern = ".*"  # all sites
+        cricMap = self.cricObj.PSNtoPNNMap(cricPattern)
+        logging.info("Retrieved %i PSN to PNNs map from CRICs", len(cricMap))
+        localMap = self.resourceControl.listSiteInfo()
+        logging.info("Retrieved %i PSN to PNNs map from local database", len(localMap))
+
+        for siteInfo in localMap:
+            siteName = siteInfo['site_name']
+            if siteName not in cricMap:
+                logging.warning(f"Site name: {siteName} cannot be found in CRIC data-processing API.")
+                continue
+            if not set(siteInfo['pnn']) - cricMap[siteName]:
+                # then there is no difference, nothing to do with this site
+                continue
+
+            msg = f"Site: {siteName} has an inconsistent list of PNNs."
+            msg += f"PNNs in the agent are: {siteInfo['pnn']} while CRIC has: {cricMap[siteName]}"
+            for pnn in (cricMap[siteName] - set(siteInfo['pnn'])):
+                logging.info("Inserting PNN: %s against PSN: %s", pnn, siteName)
+                # requires other attributes, but site insertion will be ignored and
+                # only the pnn and psn/pnn association will be registed in the database
+                self.resourceControl.insertSite(siteName, pnn=pnn)
+        logging.info("Done updating PSN/PNN associations.")

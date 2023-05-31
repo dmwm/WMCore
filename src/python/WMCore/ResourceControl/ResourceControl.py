@@ -114,28 +114,18 @@ class ResourceControl(WMConnectionBase):
                                      transaction=self.existingTransaction())
         return results
 
-    def listSiteInfo(self, siteName):
+    def listSiteInfo(self, siteName=None):
         """
-        _listSiteInfo_
-
         List the site name, SE name, CE name, pending and running slots,
         plugin, cms name and state for a given site.
+        :param siteName: a string with the site name
+        :return: a list of dictionaries with site information
         """
         listAction = self.wmbsDAOFactory(classname="Locations.GetSiteInfo")
         results = listAction.execute(siteName=siteName,
                                      conn=self.getDBConn(),
                                      transaction=self.existingTransaction())
-        if len(results) == 0:
-            return None
-
-        # We get a row back for every single SE.  Return a single dict with a
-        # list in the SE field.
-        pnns = []
-        for result in results:
-            pnns.append(result["pnn"])
-
-        results[0]["pnn"] = pnns
-        return results[0]
+        return results
 
     def changeTaskPriority(self, taskType, priority):
         """

@@ -1,3 +1,6 @@
+2.2.1rc5 to 2.2.1:
+  - Final stable tag
+
 2.2.1rc4 to 2.2.1rc5:
   - Updadte dmwm-base image to pypi-20230525, fixing process_exporter 
 

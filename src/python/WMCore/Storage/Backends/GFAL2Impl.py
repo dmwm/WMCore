@@ -5,9 +5,11 @@ Implementation of StageOutImpl interface for gfal-copy
 """
 import argparse
 import os
+import logging
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
+from WMCore.Storage.Execute import runCommandWithOutput
 
 _CheckExitCodeOption = True
 
@@ -116,6 +118,10 @@ class GFAL2Impl(StageOutImpl):
         copyCommand = self.copyCommand % copyCommandDict
         result += copyCommand
 
+        status, msg = self.compareChecksum(sourcePFN, targetPFN)
+        if not status:
+            result += "echo \"{msg}\""
+
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=$?
@@ -140,6 +146,34 @@ class GFAL2Impl(StageOutImpl):
         else:
             command = self.removeCommand % self.createFinalPFN(pfnToRemove)
         self.executeCommand(command)
+
+    def compareChecksum(self, sourcePFN, targetPFN):
+        """
+        _compareChecksum_
+        Calculate and compare checksums of source and target PFNs
+        :param sourcePFN: source PFN
+        :param targetPFN: target PFN
+        :return: a tuple of (status, msg) where status is boolean check and msg is a string
+        """
+        sourceSum = f"gfal-sum {sourcePFN} ADLER32"
+        targetSum = f"gfal-sum {targetPFN} ADLER32"
+        sourceCode, sourceOut = runCommandWithOutput(sourceSum)
+        targetCode, targetOut = runCommandWithOutput(targetSum)
+        if sourceCode:
+            msg = "Command %s, ExitCode: %s Output: %s" % (sourceSum, sourceCode, sourceOut)
+            logging.error(msg)
+            return False, msg
+        if targetCode:
+            msg = "Command %s, ExitCode: %s Output: %s" % (targetSum, targetCode, targetOut)
+            logging.error(msg)
+            return False, msg
+        if sourceOut != targetOut:
+            msg = "source and target checksum outputs differe:"
+            msg += "source: %s, exitCode: %s output: %s\n" % (sourceSum, sourceCode, sourceOut)
+            msg += "target: %s, exitCode: %s output: %s\n" % (targetSum, targetCode, targetOut)
+            logging.error(msg)
+            return False, msg
+        return True, ""
 
 
 registerStageOutImpl("gfal2", GFAL2Impl)

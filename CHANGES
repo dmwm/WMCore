@@ -1,3 +1,8 @@
+2.2.1 to 2.2.2rc1:
+  - New CouchDB view for WorkQueue OpenForNewData requests (Alan Malta Rodrigues) #11611
+  - Fix ResourceControl and GetSiteInfo modules (Alan Malta Rodrigues) #11599
+
+
 2.2.1rc5 to 2.2.1:
   - Final stable tag
 

@@ -76,6 +76,31 @@ def moveToCompletedForNoWQJobs(reqmgrSvc, globalQSvc, wfStatusDict, logger):
         logger.info("Total %s: %d", nextStatus, count)
 
 
+def moveOpenRequests(globalQSvc, wfStatusDict, logger):
+    """
+    Method to advance the request status for workflows that must remain
+    open for new work in global workqueue.
+    :param globalQSvc: object instance of the WorkQueue class
+    :param wfStatusDict: workflow status according to the workqueue elements
+    :param logger: a logger object instance
+    :return: None object, but the wfStatusDict object can be updated in this function.
+    """
+    logger.info("Getting requests open for new data")
+    openWflows = globalQSvc.getOpenRequests(inboxFlag=True)
+    logger.info("Found %d requests still opened in global workqueue.", len(openWflows))
+    for wflow in openWflows:
+        if wflow not in wfStatusDict:
+            msg = f"Workflow {wflow} marked as open for new data, but it"
+            msg += "has no status based on the set of WQEs. Skipping it."
+            logger.info(msg)
+        elif wfStatusDict.get(wflow, "") in ("running-closed", "completed"):
+            logger.info(f"Workflow {wflow} being forced to stay in running-open")
+            # open workflows should not advance beyond running-open
+            wfStatusDict[wflow] = "running-open"
+        # otherwise let it follow its natural status transition
+    return
+
+
 class StatusChangeTasks(CherryPyPeriodicTask):
     def __init__(self, rest, config):
         super(StatusChangeTasks, self).__init__(config)
@@ -95,6 +120,7 @@ class StatusChangeTasks(CherryPyPeriodicTask):
 
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = globalQSvc.getWorkflowStatusFromWQE()
+        moveOpenRequests(globalQSvc, wfStatusDict, self.logger)
 
         self.logger.info("Advancing statuses")
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)

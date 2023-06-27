@@ -2,10 +2,9 @@
 """
 Module containing mathematical and physics utils
 """
-from __future__ import division, print_function
 
-from builtins import int
-from past.builtins import basestring
+
+from builtins import int, str
 from math import ceil
 
 
@@ -15,13 +14,13 @@ def quantize(inputVal, quanta):
 
     Quantize the input value following the quanta provided.
     """
-    if isinstance(inputVal, basestring):
+    if isinstance(inputVal, str):
         inputVal = float(inputVal)
     elif not isinstance(inputVal, (int, float)):
         msg = "Input value has to be either int or float, not %s" % (type(inputVal))
         raise ValueError(msg)
 
-    if isinstance(quanta, (basestring, int, float)):
+    if isinstance(quanta, (str, int, float)):
         quanta = int(float(quanta))
     elif not isinstance(quanta, int):
         msg = "Quanta value has to be either int or float, not %s" % (type(quanta))

@@ -3,7 +3,6 @@
 Utilities related to file handling
 """
 
-from __future__ import print_function, division
 
 import io
 import os
@@ -13,7 +12,6 @@ import time
 import zlib
 
 from Utils.Utilities import decodeBytesToUnicode
-from Utils.PythonVersion import PY3
 
 def calculateChecksums(filename):
     """
@@ -51,10 +49,7 @@ def calculateChecksums(filename):
     if len(cksumStdout) != 2 or int(cksumStdout[1]) != filesize:
         raise RuntimeError("Something went wrong with the cksum calculation !")
 
-    if PY3:
-        # using native-string approach. convert from bytes to unicode in
-        # python 3 only.
-        cksumStdout[0] = decodeBytesToUnicode(cksumStdout[0])
+    cksumStdout[0] = decodeBytesToUnicode(cksumStdout[0])
     return (format(adler32Checksum & 0xffffffff, '08x'), cksumStdout[0])
 
 

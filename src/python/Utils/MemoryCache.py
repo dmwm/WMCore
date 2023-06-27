@@ -10,8 +10,6 @@ or if the user tries to extend the cache with an incompatible
 data type.
 """
 
-from __future__ import (print_function, division)
-
 from copy import copy
 
 from builtins import object
@@ -22,8 +20,7 @@ class MemoryCacheException(Exception):
     def __init__(self, message):
         super(MemoryCacheException, self).__init__(message)
 
-
-class MemoryCache(object):
+class MemoryCache():
 
     __slots__ = ["lastUpdate", "expiration", "_cache"]
 

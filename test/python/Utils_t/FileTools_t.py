@@ -4,7 +4,6 @@ _FileTools_t_
 
 Test class for file handling tools
 """
-from __future__ import division
 
 import os
 import os.path

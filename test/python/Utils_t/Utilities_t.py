@@ -3,10 +3,7 @@
 Unittests for Utilities functions
 """
 
-from __future__ import division, print_function
-
 from builtins import object
-import os
 import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
@@ -30,11 +27,11 @@ class UtilitiesTests(unittest.TestCase):
         self.assertListEqual(makeList(['123', 456, '789']), ['123', 456, '789'])
 
         self.assertEqual(makeList('123'), ['123'])
-        self.assertEqual(makeList(u'123'), [u'123'])
+        self.assertEqual(makeList('123'), ['123'])
         self.assertListEqual(makeList('123,456'), ['123', '456'])
-        self.assertListEqual(makeList(u'123,456'), [u'123', u'456'])
+        self.assertListEqual(makeList('123,456'), ['123', '456'])
         self.assertListEqual(makeList('["aa","bb","cc"]'), ['aa', 'bb', 'cc'])
-        self.assertListEqual(makeList(u' ["aa", "bb", "cc"] '), ['aa', 'bb', 'cc'])
+        self.assertListEqual(makeList(' ["aa", "bb", "cc"] '), ['aa', 'bb', 'cc'])
 
         self.assertRaises(ValueError, makeList, 123)
         self.assertRaises(ValueError, makeList, 123.456)
@@ -60,7 +57,7 @@ class UtilitiesTests(unittest.TestCase):
         self.assertEqual(makeList(['123']), makeNonEmptyList(['123']))
         self.assertListEqual(makeList(['123', 456, '789']), makeNonEmptyList(['123', 456, '789']))
 
-        self.assertListEqual(makeList(u'123,456'), makeNonEmptyList(u'123, 456'))
+        self.assertListEqual(makeList('123,456'), makeNonEmptyList('123, 456'))
         self.assertListEqual(makeList('["aa","bb","cc"]'), makeNonEmptyList('["aa", "bb", "cc"]'))
 
         self.assertRaises(ValueError, makeNonEmptyList, [])
@@ -82,7 +79,7 @@ class UtilitiesTests(unittest.TestCase):
         """
         Test the safeStr function.
         """
-        for v in ['123', u'123', 123]:
+        for v in ['123', '123', 123]:
             self.assertEqual(safeStr(v), '123')
         self.assertEqual(safeStr(123.45), '123.45')
         self.assertEqual(safeStr(False), 'False')

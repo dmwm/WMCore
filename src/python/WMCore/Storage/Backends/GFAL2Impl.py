@@ -9,8 +9,6 @@ import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
-_CheckExitCodeOption = True
-
 
 class GFAL2Impl(StageOutImpl):
     """
@@ -26,7 +24,9 @@ class GFAL2Impl(StageOutImpl):
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
         self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '%s'"
         self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '
-        self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
+        self.copyOpts = ' -t 2400 -T 2400 -v -p --abort-on-failure %(checksum)s %(options)s %(source)s %(destination)s'
+        self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy '
+        self.copyCommand += self.copyOpts
 
     def createFinalPFN(self, pfn):
         """
@@ -87,12 +87,12 @@ class GFAL2Impl(StageOutImpl):
           -T   global timeout for the transfer operation
           -p   if the destination directory does not exist, create it
           -K   checksum algorithm to use, or algorithm:value
+          -v   enable the verbose mode (-v for warning level)
+          --abort-on-failure  abort the whole copy as soon as one failure is encountered
         """
         result = "#!/bin/bash\n"
 
         copyCommandDict = {'checksum': '', 'options': '', 'source': '', 'destination': ''}
-
-        useChecksum = (checksums is not None and 'adler32' in checksums and not self.stageIn)
 
         if not options:
             options = ''
@@ -102,11 +102,8 @@ class GFAL2Impl(StageOutImpl):
         args, unknown = parser.parse_known_args(options.split())
 
         if not args.nochecksum:
-            if useChecksum:
-                checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
-                copyCommandDict['checksum'] = "-K adler32:%s" % checksums['adler32']
-            else:
-                copyCommandDict['checksum'] = "-K adler32"
+            # then calculate the adler32 checksum on both source and destination files
+            copyCommandDict['checksum'] = "--checksum-mode both -K adler32"
 
         copyCommandDict['options'] = ' '.join(unknown)
 
@@ -116,17 +113,16 @@ class GFAL2Impl(StageOutImpl):
         copyCommand = self.copyCommand % copyCommandDict
         result += copyCommand
 
-        if _CheckExitCodeOption:
-            result += """
-            EXIT_STATUS=$?
-            echo "gfal-copy exit status: $EXIT_STATUS"
-            if [[ $EXIT_STATUS != 0 ]]; then
-               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-               echo "Cleaning up failed file:"
-               %s
-            fi
-            exit $EXIT_STATUS
-            """ % self.createRemoveFileCommand(targetPFN)
+        result += """
+        EXIT_STATUS=$?
+        echo "gfal-copy exit status: $EXIT_STATUS"
+        if [[ $EXIT_STATUS != 0 ]]; then
+           echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+           echo "Cleaning up failed file:"
+           %s
+        fi
+        exit $EXIT_STATUS
+        """ % self.createRemoveFileCommand(targetPFN)
 
         return result
 

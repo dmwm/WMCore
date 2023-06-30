@@ -18,7 +18,7 @@ class GFAL2ImplTest(unittest.TestCase):
                         "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '"
         copyCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
                       ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 " \
-                      "-p %(checksum)s %(options)s %(source)s %(destination)s'"
+                      "-p -v --abort-on-failure %(checksum)s %(options)s %(source)s %(destination)s'"
         self.assertEqual(removeCommand, testGFAL2Impl.removeCommand)
         self.assertEqual(copyCommand, testGFAL2Impl.copyCommand)
 
@@ -81,7 +81,7 @@ class GFAL2ImplTest(unittest.TestCase):
         mock_createRemoveFileCommand.return_value = "targetPFN2"
         result = self.GFAL2Impl.createStageOutCommand("sourcePFN", "targetPFN")
         expectedResult = self.getStageOutCommandResult(
-            self.getCopyCommandDict("-K adler32", "", "sourcePFN", "targetPFN"), "targetPFN2")
+            self.getCopyCommandDict("--checksum-mode both -K adler32", "", "sourcePFN", "targetPFN"), "targetPFN2")
         mock_createRemoveFileCommand.assert_called_with("targetPFN")
         self.assertEqual(expectedResult, result)
 
@@ -109,15 +109,15 @@ class GFAL2ImplTest(unittest.TestCase):
         result += copyCommand
 
         result += """
-            EXIT_STATUS=$?
-            echo "gfal-copy exit status: $EXIT_STATUS"
-            if [[ $EXIT_STATUS != 0 ]]; then
-               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-               echo "Cleaning up failed file:"
-               %s
-            fi
-            exit $EXIT_STATUS
-            """ % createRemoveFileCommandResult
+        EXIT_STATUS=$?
+        echo "gfal-copy exit status: $EXIT_STATUS"
+        if [[ $EXIT_STATUS != 0 ]]; then
+           echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+           echo "Cleaning up failed file:"
+           %s
+        fi
+        exit $EXIT_STATUS
+        """ % createRemoveFileCommandResult
 
         return result
 

@@ -1,3 +1,7 @@
+2.2.2rc4 to 2.2.2rc5:
+  - Just triggering a new build workflow 
+
+
 2.2.2rc3 to 2.2.2rc4:
   - Add Docker context path to docker/build-push-action@v1 (Todor Ivanov) #11642
 

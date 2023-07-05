@@ -25,7 +25,8 @@ jobs:
 
       - name: Build image
         run: |
-          curl -ksLO https://raw.githubusercontent.com/dmwm/CMSKubernetes/master/docker/pypi/${{inputs.wmcore_component}}/Dockerfile
+          svn checkout https://github.com/dmwm/CMSKubernetes/trunk/docker/pypi/${{inputs.wmcore_component}}
+          cd ${{inputs.wmcore_component}}
           sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
           cat Dockerfile
           echo "Sleeping 5min to ensure that PyPi packages are available..."

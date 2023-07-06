@@ -24,14 +24,16 @@ jobs:
           head_ref: ${{ github.head_ref }}
 
       - name: Build image
+        env:
+          PYPI_TAG: ${{steps.get-ref.outputs.tag}}
         run: |
+          echo "Building service: ${{inputs.wmcore_component}}, with tag: ${PYPI_TAG}"
           svn checkout https://github.com/dmwm/CMSKubernetes/trunk/docker/pypi/${{inputs.wmcore_component}}
           cd ${{inputs.wmcore_component}}
-          sed -i -e "s,ENV TAG=.*,ENV TAG=${{steps.get-ref.outputs.tag}},g" Dockerfile
           cat Dockerfile
           echo "Sleeping 5min to ensure that PyPi packages are available..."
           sleep 300
-          docker build --tag registry.cern.ch/cmsweb/${{inputs.wmcore_component}}:${{steps.get-ref.outputs.tag}} .
+          docker build --build-arg TAG=${PYPI_TAG} --tag registry.cern.ch/cmsweb/${{inputs.wmcore_component}}:${PYPI_TAG} .
 
       - name: Images
         run: |

@@ -160,6 +160,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       50662: "Application terminated by wrapper because using too much disk.",  # (CRAB3)
                       50664: "Application terminated by wrapper because using too much Wall Clock time.",  # (WMA, CRAB3)
                       50665: "Application terminated by wrapper because it stay idle too long.",  # (CRAB3)
+                      50666: "Job removed by condor for unknown reasons." # (WMA, CRAB3)
                       50669: "Application terminated by wrapper for not defined reason.",  # (CRAB3)
                       60302: "Output file(s) not found.",  # (CRAB3)
                       60307: "General failure during files stage out.",  # (WMA, CRAB3)

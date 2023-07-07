@@ -50,7 +50,7 @@ jobs:
         uses: docker/build-push-action@v1
         with:
           path: ${{inputs.wmcore_component}}
-          build-args: |
+          build_args: |
             TAG=${{steps.get-ref.outputs.tag}}
           registry: registry.cern.ch
           username: ${{ secrets.cern_user }}

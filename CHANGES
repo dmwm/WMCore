@@ -1,3 +1,6 @@
+2.2.2rc6 to 2.2.2rc7:
+
+
 2.2.2rc5 to 2.2.2rc6:
   - Change GH api to build release notes; plus refactoring (Alan Malta Rodrigues) #11645
   - Add new exception/error code for jobs removed by condor for unknown reasons. (khurtado) #11649

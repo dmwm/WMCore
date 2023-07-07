@@ -1,3 +1,7 @@
+2.2.2rc8 to 2.2.2rc9:
+  - Fix GH action to build/push docker image (Alan Malta Rodrigues) #11651
+
+
 2.2.2rc7 to 2.2.2rc8:
   - Triggering builds once again
 

@@ -15,6 +15,8 @@ on:
 jobs:
   build_images_from_template:
     runs-on: ubuntu-latest
+    env:
+      SERVICE_NAME: ${{inputs.wmcore_component}}
     steps:
       - name: Get the Ref
         id: get-ref
@@ -23,22 +25,6 @@ jobs:
           ref: ${{ github.ref }}
           head_ref: ${{ github.head_ref }}
 
-      - name: Build image
-        env:
-          PYPI_TAG: ${{steps.get-ref.outputs.tag}}
-        run: |
-          echo "Building service: ${{inputs.wmcore_component}}, with tag: ${PYPI_TAG}"
-          svn checkout https://github.com/dmwm/CMSKubernetes/trunk/docker/pypi/${{inputs.wmcore_component}}
-          cd ${{inputs.wmcore_component}}
-          cat Dockerfile
-          echo "Sleeping 5min to ensure that PyPi packages are available..."
-          sleep 300
-          docker build --build-arg TAG=${PYPI_TAG} --tag registry.cern.ch/cmsweb/${{inputs.wmcore_component}}:${PYPI_TAG} .
-
-      - name: Images
-        run: |
-          docker images
-
       - name: Login to registry.cern.ch
         uses: docker/login-action@v2
         with:
@@ -46,14 +32,20 @@ jobs:
           username: ${{ secrets.cern_user }}
           password: ${{ secrets.cern_token }}
 
-      - name: Publish image to registry.cern.ch
-        uses: docker/build-push-action@v1
-        with:
-          path: ${{inputs.wmcore_component}}
-          build_args: |
-            TAG=${{steps.get-ref.outputs.tag}}
-          registry: registry.cern.ch
-          username: ${{ secrets.cern_user }}
-          password: ${{ secrets.cern_token }}
-          repository: cmsweb/${{inputs.wmcore_component}}
-          tag_with_ref: true
+      - name: Build and publish docker image
+        env:
+          PYPI_TAG: ${{steps.get-ref.outputs.tag}}
+          CERN_REGISTRY: registry.cern.ch
+        run: |
+          echo "Building service: ${SERVICE_NAME}, with tag: ${PYPI_TAG}"
+          svn checkout https://github.com/dmwm/CMSKubernetes/trunk/docker/pypi/${SERVICE_NAME}
+          cd ${SERVICE_NAME}
+          echo "Retrieved Dockerfile with content:"
+          cat Dockerfile
+          echo "Sleeping 5min to ensure that PyPi packages are available..."
+          sleep 300
+          docker build --build-arg TAG=${PYPI_TAG} --tag ${CERN_REGISTRY}/cmsweb/${SERVICE_NAME}:${PYPI_TAG} .
+          echo "Image build process completed. Current images are:"
+          docker images
+          echo "Now push new image to the CERN registry"
+          docker push ${CERN_REGISTRY}/cmsweb/${SERVICE_NAME}:${PYPI_TAG}

@@ -1,3 +1,7 @@
+2.2.2rc11 to 2.2.2rc12:
+  - Refactor docker build/push workflow action (Alan Malta Rodrigues) #11653
+
+
 2.2.2rc10 to 2.2.2rc11:
   - Rebuilding ms-unmerged
 

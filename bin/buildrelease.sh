@@ -72,6 +72,10 @@ echo "" >> $TMP_HASHES_SUBJ_AUTHOR
 # Use github public API to fetch pull request # from commit hash
 
 cat $TMP_HASHES_SUBJ_AUTHOR | while read commitline; do
+  if [ -z "$commitline" ]
+  then
+      continue  # line is empty
+  fi
   HASH_ID=$(echo $commitline | awk '{print $1}')
   PR=$(curl -s https://api.github.com/repos/dmwm/WMCore/commits/$HASH_ID/pulls | grep -Po '\"html_url\": \"https://github.com/dmwm/WMCore/pull/\K[0-9]+' | sort | uniq)
   # remove hash_id from the commit line

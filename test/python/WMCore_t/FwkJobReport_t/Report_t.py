@@ -19,7 +19,7 @@ from Utils.PythonVersion import PY3
 from WMCore.Configuration import ConfigSection
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
-from WMQuality.TestInitCouchApp import TestInitCouchApp
+# from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 class ReportTest(unittest.TestCase):
@@ -35,10 +35,10 @@ class ReportTest(unittest.TestCase):
 
         Figure out the location of the XML report produced by CMSSW.
         """
-        self.testInit = TestInitCouchApp(__file__)
-        self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
-        self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
+#         self.testInit = TestInitCouchApp(__file__)
+#         self.testInit.setLogging()
+#         self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+#         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
         testData = os.path.join(getTestBase(), "WMCore_t/FwkJobReport_t")
         self.xmlPath = os.path.join(testData, "CMSSWProcessingReport.xml")
@@ -48,10 +48,12 @@ class ReportTest(unittest.TestCase):
         self.fallbackXmlPath = os.path.join(testData, "CMSSWInputFallback.xml")
         self.twoFileFallbackXmlPath = os.path.join(testData, "CMSSWTwoFileRemote.xml")
         self.pileupXmlPath = os.path.join(testData, "CMSSWPileup.xml")
+        self.siteXmlPath = os.path.join(testData, "CMSSWSiteMetrics.xml")
         self.withEventsXmlPath = os.path.join(testData, "CMSSWWithEventCounts.xml")
         self.noLocationReport = os.path.join(testData, "Report.0.pkl")
 
-        self.testDir = self.testInit.generateWorkDir()
+#         self.testDir = self.testInit.generateWorkDir()
+        self.testDir = os.getcwd()
 
         if PY3:
             self.assertItemsEqual = self.assertCountEqual
@@ -64,9 +66,9 @@ class ReportTest(unittest.TestCase):
 
         Cleanup the databases.
         """
-        self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
-        self.testInit.delWorkDir()
+#         self.testInit.tearDownCouch()
+#         self.testInit.clearDatabase()
+#         self.testInit.delWorkDir()
         return
 
     def verifyInputData(self, report):
@@ -1007,6 +1009,38 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(fileList[0]['outputModule'], "RAWSIMoutput")
         self.assertItemsEqual(fileList[1]['locations'], {"T2_CH_CSCS"})
         self.assertEqual(fileList[1]['outputModule'], "logArchive")
+
+    def testIOMetrics(self):
+        """
+        testIOMetrics
+
+        Check IO metrics
+        """
+        report = Report('cmsRun1')
+        report.parse(self.pileupXmlPath)
+        cmsRun = getattr(report.data, 'cmsRun1', {})
+        performance = getattr(cmsRun, 'performance', {})
+        io = getattr(performance, 'io', {})
+        obj = io.dictionary_()
+        self.assertEqual(len(obj), 204)
+        self.assertEqual(obj.get('Timing-file-prefetch-totalMegabytes'), 0)
+        self.assertEqual(obj.get('Timing-file-position-numOperations'), 41760)
+
+    def testSiteMetrics(self):
+        """
+        testSiteMetrics
+
+        Check Site metrics
+        """
+        report = Report('cmsRun1')
+        report.parse(self.siteXmlPath)
+        cmsRun = getattr(report.data, 'cmsRun1', {})
+        performance = getattr(cmsRun, 'performance', {})
+        site = getattr(performance, 'site', {})
+        obj = site.dictionary_()
+        self.assertEqual(len(obj), 7)
+        self.assertEqual(obj.get('read-numOperations'), 1235)
+        self.assertEqual(obj.get('read-totalMsecs'), 18337.6)
 
 
 if __name__ == "__main__":

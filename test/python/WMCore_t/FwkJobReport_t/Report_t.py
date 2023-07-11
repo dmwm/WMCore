@@ -19,7 +19,7 @@ from Utils.PythonVersion import PY3
 from WMCore.Configuration import ConfigSection
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
-# from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 class ReportTest(unittest.TestCase):
@@ -35,10 +35,10 @@ class ReportTest(unittest.TestCase):
 
         Figure out the location of the XML report produced by CMSSW.
         """
-#         self.testInit = TestInitCouchApp(__file__)
-#         self.testInit.setLogging()
-#         self.testInit.setDatabaseConnection(destroyAllDatabase=True)
-#         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
+        self.testInit = TestInitCouchApp(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+        self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
         testData = os.path.join(getTestBase(), "WMCore_t/FwkJobReport_t")
         self.xmlPath = os.path.join(testData, "CMSSWProcessingReport.xml")
@@ -52,8 +52,7 @@ class ReportTest(unittest.TestCase):
         self.withEventsXmlPath = os.path.join(testData, "CMSSWWithEventCounts.xml")
         self.noLocationReport = os.path.join(testData, "Report.0.pkl")
 
-#         self.testDir = self.testInit.generateWorkDir()
-        self.testDir = os.getcwd()
+        self.testDir = self.testInit.generateWorkDir()
 
         if PY3:
             self.assertItemsEqual = self.assertCountEqual
@@ -66,9 +65,9 @@ class ReportTest(unittest.TestCase):
 
         Cleanup the databases.
         """
-#         self.testInit.tearDownCouch()
-#         self.testInit.clearDatabase()
-#         self.testInit.delWorkDir()
+        self.testInit.tearDownCouch()
+        self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
     def verifyInputData(self, report):

@@ -1,6 +1,10 @@
+2.2.2rc12 to 2.2.2:
+  - Fix buildrelease for when there are no changes between releases (Alan Malta Rodrigues) #11650
+
+
 2.2.2rc11 to 2.2.2rc12:
   - Refactor docker build/push workflow action (Alan Malta Rodrigues) #11653
-
+  - Upgrade pip-based HTCondor from 8.9.7 to 10.2.3 (Alan Malta Rodrigues) cmsdist#8582
 
 2.2.2rc10 to 2.2.2rc11:
   - Rebuilding ms-unmerged

@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# acquire initial timestamps for reporting in FJR
+timeStartSec=`date +%s`
+
 # On some sites we know there were some problems with environment cleaning
 # with using 'env -i'. To overcome this issue, whenever we start a job, we have
 # to save full current environment into file, and whenever it is needed we can load
@@ -207,6 +211,15 @@ $pythonCommand Startup.py
 jobrc=$?
 echo -e "======== WMAgent Run the job FINISH at $(TZ=GMT date) ========\n"
 
+echo "======== WMAgent add timestamps metrics to FJR $outputFile ========"
+timeEndSec=`date +%s`
+reportIn=$outputFile
+$pythonCommand Timestamps.py --reportFile=$outputFile --wmJobEnd=$timeEndSec --wmJobStart=$timeStartSec
+status=$?
+if [ "$status" != "0" ]; then
+    echo "WARNING: failed to update FJR with timestamps metrics, status=$status"
+fi
+echo -e "======== WMAgent finished adding timestamps metrics to FJR ========\n"
 
 echo "WMAgent bootstrap: WMAgent finished the job, it's copying the pickled report"
 set -x

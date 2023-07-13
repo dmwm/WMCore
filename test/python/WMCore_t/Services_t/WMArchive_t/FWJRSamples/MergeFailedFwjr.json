@@ -6,6 +6,7 @@
    "retrycount": 0,
    "fwjr": {
        "task": "/sryu_ReRecoSkim_Sryu_reqmgr2_160318_050217_7302/DataProcessing/DataProcessingMergeRECOoutput",
+       "WMTiming": {"WMTotalWallClockTime": 10},
        "skippedFiles": [
        ],
        "fallbackFiles": [

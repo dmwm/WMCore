@@ -6,6 +6,7 @@
    "retrycount": 0,
    "fwjr": {
        "task": "/sryu_ReDigi_3steps_Sryu_reqmgr2_160318_050052_982/StepOneProc/StepOneProcMergeRAWSIMoutput/StepTwoProc/StepTwoProcMergeAODSIMoutput/StepThreeProc",
+       "WMTiming": {"WMTotalWallClockTime": 10},
        "skippedFiles": [
        ],
        "fallbackFiles": [

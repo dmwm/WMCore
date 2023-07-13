@@ -6,6 +6,7 @@
    "retrycount": 0,
    "fwjr": {
        "task": "/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/EndOfRunDQMHarvest/EndOfRunDQMHarvestLogCollect",
+       "WMTiming": {"WMTotalWallClockTime": 10},
        "skippedFiles": [
        ],
        "fallbackFiles": [

@@ -6,6 +6,7 @@
    "retrycount": 0,
    "fwjr": {
        "task": "/sryu_ReRecoSkim_Sryu_reqmgr2_160318_050217_7302/DataProcessing/DataProcessingMergeRECOoutput/skim_2012A_BTag",
+       "WMTiming": {"WMTotalWallClockTime": 10},
        "skippedFiles": [
        ],
        "fallbackFiles": [

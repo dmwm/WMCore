@@ -161,7 +161,9 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                          'start': 1454569727,
                          'status': 0,
                          'stop': 1454569735}},
- 'task': '/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD'}
+ 'task': '/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD',
+ 'WMTiming': {'WMTotalWallClockTime': 10}
+ }
 
 class DataMap_t(unittest.TestCase):
 

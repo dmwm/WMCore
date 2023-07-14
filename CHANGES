@@ -1,3 +1,6 @@
+2.2.2 to 2.2.3.1:
+
+
 2.2.2rc12 to 2.2.2:
   - Fix buildrelease for when there are no changes between releases (Alan Malta Rodrigues) #11650
 

@@ -11,6 +11,8 @@ import os
 import socket
 import subprocess
 import sys
+import time
+from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
 
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytesConditional
@@ -243,9 +245,6 @@ class CMSSW(Executor):
         # spawn this new process
         # the script looks for:
         # <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION> <JOB_REPORT> <EXECUTABLE> <CONFIG>
-        # open the output files
-        stdoutHandle = open(self.step.output.stdout, 'w')
-        stderrHandle = open(self.step.output.stderr, 'w')
         args = ['/bin/bash',
                 configPath,
                 scramSetup,
@@ -273,7 +272,24 @@ class CMSSW(Executor):
 
         os.environ.update(envOverride)
 
-        returnCode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
+        # take snapshot of user and sys time before we call subprocess
+        startTime = time.time()
+        userTime0 = getrusage(RUSAGE_CHILDREN).ru_utime
+        sysTime0 = getrusage(RUSAGE_CHILDREN).ru_stime
+        returnCode = 1  # by default we assume process may fail
+        with open(self.step.output.stdout, 'w') as stdoutHandle, open(self.step.output.stderr, 'w') as stderrHandle:
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            childPid, exitStatus, resource = os.wait4(proc.pid, os.P_PID)
+            stdout, stderr = proc.communicate()
+            stdoutHandle.write(str(stdout))
+            stderrHandle.write(str(stderr))
+            returnCode = proc.returncode
+
+        # calculate user and sys time of subprocess by substructing relevant
+        # parts take before we spawn the subprocess
+        userTime = getrusage(RUSAGE_CHILDREN).ru_utime - userTime0
+        sysTime = getrusage(RUSAGE_CHILDREN).ru_stime - sysTime0
+        endTime = time.time()
         returnMessage = None
 
         # Return PYTHONPATH to its original value, as this
@@ -300,10 +316,11 @@ class CMSSW(Executor):
         else:
             self._setStatus(returnCode, returnMessage)
 
-        stdoutHandle.close()
-        stderrHandle.close()
-
         try:
+            # update FJR report info with subprocess info
+            self.report.updateSubprocessInfo(sysTime, userTime, startTime, endTime)
+
+            # parse job report XML
             self.report.parse(jobReportXML, stepName=self.stepName)
         except Exception as ex:
             msg = WM_JOB_ERROR_CODES[50115]

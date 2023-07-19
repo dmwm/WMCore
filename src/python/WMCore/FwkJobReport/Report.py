@@ -1323,6 +1323,21 @@ class Report(object):
 
         return
 
+    def updateSubprocessInfo(self, sysTime, userTime, startTime, endTime):
+        """
+        Add process information to WMCore FJR
+        :param sysTime: systtem time reported by subprocess job
+        :param userTime: user time reported by subprocess job
+        :param startTime: start time of subprocess (in seconds)
+        :param endTime: endtime time of subprocess (in seconds)
+        """
+        self.report.section_('WMCMSSWSubprocess')
+        self.report.WMCMSSWSubprocess.startTime = startTime
+        self.report.WMCMSSWSubprocess.endTime = endTime
+        self.report.WMCMSSWSubprocess.wallClockTime = endTime - startTime
+        self.report.WMCMSSWSubprocess.userTime = userTime
+        self.report.WMCMSSWSubprocess.sysTime = sysTime
+
     def setValidStatus(self, validStatus):
         """
         _setValidStatus_

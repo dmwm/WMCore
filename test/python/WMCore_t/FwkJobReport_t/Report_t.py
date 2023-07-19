@@ -21,9 +21,6 @@ from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
-# third-party modules
-import psutil
-
 
 class ReportTest(unittest.TestCase):
     """
@@ -471,15 +468,18 @@ class ReportTest(unittest.TestCase):
         Check CMSSW subprocess metrics
         """
         report = Report("cmsRun1")
-        process = psutil.Process(os.getpid())
-        elapsedTime = 1
-        report.updateSubprocessInfo(process, elapsedTime)
-        subinfo = report.retrieveStep("cmsRun1").CMSSWSubprocess
+        startTime = 0
+        endTime = 1
+        userTime = 1
+        sysTime = 1
+        report.updateSubprocessInfo(sysTime, userTime, startTime, endTime)
+        subinfo = report.retrieveStep("cmsRun1").WMCMSSWSubprocess
         sdict = subinfo.dictionary_()
-        self.assertEqual(sdict['elapsedTime'], 1)
-        self.assertEqual('cpu_user' in sdict, True)
-        self.assertEqual('mem_rss' in sdict, True)
-#         self.assertEqual('virt_used' in sdict, True)
+        self.assertEqual(sdict['startTime'], startTime)
+        self.assertEqual(sdict['endTime'], endTime)
+        self.assertEqual(sdict['wallClockTime'], endTime-startTime)
+        self.assertEqual(sdict['userTime'], userTime)
+        self.assertEqual(sdict['sysTime'], sysTime)
 
     def test_PerformanceReport(self):
         """

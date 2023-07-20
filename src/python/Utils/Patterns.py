@@ -1,7 +1,6 @@
 """
 Patterns module provides set of CS patterns
 """
-from __future__ import division, print_function
 
 
 class Singleton(type):

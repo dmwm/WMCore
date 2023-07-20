@@ -210,7 +210,7 @@ def promMetrics(data, exporter):
         'cherrypy_http_server_enabled']
     # our prometheus data representation
     pdata = ""
-    for key, val in metrics.items():
+    for key, val in list(metrics.items()):
         if key in skip:
             continue
         # add exporter name as a prefix for each key
@@ -222,7 +222,7 @@ def promMetrics(data, exporter):
             pdata += mtype
             for wdict in val:
                 entries = []
-                for kkk, vvv in wdict.items():
+                for kkk, vvv in list(wdict.items()):
                     entries.append('{}="{}"'.format(kkk, vvv))
                 entry = "{%s}" % ','.join(entries)
                 pdata += "{}{} 1\n".format(key, entry)
@@ -244,21 +244,21 @@ def flattenStats(cpdata):
     if isinstance(cpdata, str) or isinstance(cpdata, bytes):
         cpdata = json.loads(decodeBytesToUnicode(cpdata))
     data = {}
-    for cpKey, cpVal in cpdata.items():
+    for cpKey, cpVal in list(cpdata.items()):
         if cpKey.lower().find('cherrypy') != -1:
-            for cpnKey, cpnVal in cpVal.items():
+            for cpnKey, cpnVal in list(cpVal.items()):
                 nkey = 'cherrypy_app_%s' % cpnKey
                 nkey = nkey.lower().replace(" ", "_").replace("/", "_")
                 data[nkey] = cpnVal
         if cpKey.lower().find('cheroot') != -1:
-            for cpnKey, cpnVal in cpVal.items():
+            for cpnKey, cpnVal in list(cpVal.items()):
                 if cpnKey == 'Worker Threads':
                     wdata = []
-                    for workerKey, threadValue in cpnVal.items():
+                    for workerKey, threadValue in list(cpnVal.items()):
                         workerKey = workerKey.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
                         threadValue['thread_name'] = workerKey
                         nval = {}
-                        for tkey, tval in threadValue.items():
+                        for tkey, tval in list(threadValue.items()):
                             tkey = tkey.lower().replace(" ", "_").replace("/", "_")
                             nval[tkey] = tval
                         wdata.append(nval)

@@ -3,7 +3,6 @@
 Unittests for MathUtils functions
 """
 
-from __future__ import division, print_function
 
 import unittest
 

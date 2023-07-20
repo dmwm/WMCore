@@ -31,7 +31,6 @@ def api():
 
 """
 
-from __future__ import division
 
 # standard modules
 import time

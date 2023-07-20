@@ -25,12 +25,6 @@ The exposed status endpoint will return a json dictionary containing server
 upteima and cpu/mem/threads information.
 """
 
-# futures
-from __future__ import print_function
-from __future__ import division
-
-from future.utils import viewitems
-
 # system modules
 import os
 import sys
@@ -85,7 +79,7 @@ def threadStack():
     tdict = {}
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
     threads = []
-    for tid, stack in viewitems(sys._current_frames()):
+    for tid, stack in list(sys._current_frames().items()):
         tdict = {"thead": id2name.get(tid, ""), "thead_id": tid}
         stacklist = []
         for filename, lineno, name, line in traceback.extract_stack(stack):

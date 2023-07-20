@@ -41,7 +41,7 @@ def twClosure(replace_whitespace=False,
         """
         output = ''
         if isinstance(obj, dict):
-            obj = OrderedDict(sorted(obj.items(),
+            obj = OrderedDict(sorted(list(obj.items()),
                                      key=lambda t: t[0],
                                      reverse=False))
             if reCall:
@@ -49,7 +49,7 @@ def twClosure(replace_whitespace=False,
             ind += '    '
             depthReached += 1
             lengthReached = 0
-            for key, value in obj.items():
+            for key, value in list(obj.items()):
                 lengthReached += 1
                 if lengthReached > maxLength and maxLength >= 0:
                     output += "%s...\n" % ind

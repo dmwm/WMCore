@@ -4,9 +4,8 @@ _PortForward_
 
 A decorator for swapping ports in an url
 """
-from __future__ import print_function, division
-from builtins import str, bytes
 
+from builtins import str, bytes
 
 def portForward(port):
     """
@@ -51,9 +50,9 @@ def portForward(port):
             forwarded = False
             try:
                 if isinstance(url, str):
-                    urlToMangle = u'https://cmsweb'
+                    urlToMangle = 'https://cmsweb'
                     if url.startswith(urlToMangle):
-                        newUrl = url.replace(u'.cern.ch/', u'.cern.ch:%d/' % port, 1)
+                        newUrl = url.replace('.cern.ch/', '.cern.ch:%d/' % port, 1)
                         forwarded = True
                 elif isinstance(url, bytes):
                     urlToMangle = b'https://cmsweb'

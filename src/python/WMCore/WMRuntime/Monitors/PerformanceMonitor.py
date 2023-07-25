@@ -85,7 +85,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.pid = None
         self.uid = os.getuid()
         self.monitorBase = "ps -p %i -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep %i"
-        self.pssMemoryCommand = "awk '/^Pss/ {pss += $2} END {print pss}' /proc/%i/smaps"
+        self.pssMemoryCommand = "awk '/^Pss:/ {pss += $2} END {print pss}' /proc/%i/smaps"
         self.monitorCommand = None
         self.currentStepSpace = None
         self.currentStepName = None

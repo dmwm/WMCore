@@ -257,7 +257,7 @@ def monitoringTask(doc, spec):
     modify = False
 
     if not rules:
-        logger.info(f"Did not find any wmcore_transferor rules for container: {pname}.")
+        logger.info(f"Did not find any {rucioAccount} rules for container: {pname}.")
         if not doc['expectedRSEs']:
             logger.warning(f"Container: {pname} is active but has no expected RSEs.")
         elif doc['currentRSEs'] or doc['ruleIds']:

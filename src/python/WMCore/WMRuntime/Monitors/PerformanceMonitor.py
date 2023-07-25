@@ -216,9 +216,11 @@ class PerformanceMonitor(WMRuntimeMonitor):
             logging.warning(msg, stepPID, self.currentStepName)
             return
 
-        stepCmd = stepProc.cmdline()
-        stepMemInfo = stepProc.memory_full_info()
-        stepCpuInfo = stepProc.cpu_times()
+        with stepProc.oneshot():
+            stepCmd = stepProc.cmdline()
+            stepMemInfo = stepProc.memory_full_info()
+            stepCpuInfo = stepProc.cpu_times()
+
         # NOTE: All the information from psutil.memory_*info() comes in Bytes
         #       we need to make it in MegaBytes
         pss = int(stepMemInfo.pss) // (1000**2)

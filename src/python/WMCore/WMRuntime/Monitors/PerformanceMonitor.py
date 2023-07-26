@@ -14,7 +14,7 @@ import os
 import os.path
 import signal
 import time
-import psutils
+import psutil
 
 import WMCore.FwkJobReport.Report as Report
 from WMCore.WMException import WMException
@@ -208,7 +208,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         # Now we run the psutil module and collate some process data.
         # We gather info about CPU system time and Memory statistics - VMS, PSS, RSS
-        stepProc = psutils.Process(stepPID)
+        stepProc = psutil.Process(stepPID)
         if not stepProc.is_running():
             # The step process has vanished before we managed to finish the current periodic update
             msg = " The step process with PID: %s of STEP: %s "

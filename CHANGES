@@ -1,3 +1,8 @@
+2.2.2 to 2.2.2.1:
+  - Adopt wmcore_pileup Rucio account in workqueue (Alan Malta Rodrigues) #11678
+  - Change default rucio pileup account (khurtado) #11678
+
+
 2.2.2rc12 to 2.2.2:
   - Fix buildrelease for when there are no changes between releases (Alan Malta Rodrigues) #11650
 

@@ -1,3 +1,8 @@
+2.2.3.1 to 2.2.3.2:
+  - Adopt wmcore_pileup Rucio account in workqueue (Alan Malta Rodrigues) #11679
+  - Parse /proc/<pid>/smaps_rollup if present && Reduce string concatenation operations (Todor Ivanov) #11679
+
+
 2.2.2 to 2.2.3.1:
 
 

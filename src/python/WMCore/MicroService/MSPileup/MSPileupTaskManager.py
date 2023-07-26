@@ -32,7 +32,7 @@ class MSPileupTaskManager(MSCore):
     def __init__(self, msConfig, **kwargs):
         super().__init__(msConfig, **kwargs)
         self.marginSpace = msConfig.get('marginSpace', 1024**4)
-        self.rucioAccount = msConfig.get('rucioAccount', 'wmcore_transferor')
+        self.rucioAccount = msConfig.get('rucioAccount', 'wmcore_pileup')
         self.rucioUrl = msConfig['rucioUrl']  # aligned with MSCore init
         self.rucioAuthUrl = msConfig['rucioAuthUrl']  # aligned with MSCore init
         self.cleanupDaysThreshold = msConfig.get('cleanupDaysThreshold', 15)

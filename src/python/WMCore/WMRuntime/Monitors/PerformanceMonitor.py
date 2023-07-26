@@ -225,7 +225,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         #       we need to make it in MegaBytes
         pss = int(stepMemInfo.pss) // (1000**2)
 
-        logging.info("PID: %s; VirtMEM: %s, PSS: %s; RSS: %s; SystemTime: %s;", stepPID, stepMemInfo.vms, stepMemInfo.pss, stepMemInfo.rss, stepCpuInfo.system)
+        logging.info("PID: %s; VirtMEM: %s; PSS: %s; RSS: %s; SystemTime: %s; UserTime: %s;", stepPID, stepMemInfo.vms, stepMemInfo.pss, stepMemInfo.rss, stepCpuInfo.system, stepCpuInfo.user)
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
         msg += 'Number of Cores: %s\n' % self.numOfCores

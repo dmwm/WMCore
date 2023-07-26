@@ -84,8 +84,8 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         self.pid = None
         self.uid = os.getuid()
-        self.monitorBase = "ps -p %i -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep %i"
-        self.pssMemoryCommand = "awk '/^Pss/ {pss += $2} END {print pss}' /proc/%i/smaps"
+        self.monitorBase = "pid=%i; ps -p $pid -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep $pid"
+        self.pssMemoryCommand = "pid=%i; awk '/^Pss:/ {print $2}' /proc/$pid/smaps_rollup 2>/dev/null || awk '/^Pss:/ {pss += $2} END {print pss}' /proc/$pid/smaps"
         self.monitorCommand = None
         self.currentStepSpace = None
         self.currentStepName = None
@@ -210,7 +210,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         # Now we run the ps monitor command and collate the data
         # Gathers RSS, %CPU and %MEM statistics from ps
-        ps_cmd = self.monitorBase % (stepPID, stepPID)
+        ps_cmd = self.monitorBase % (stepPID)
         stdout, _stderr, _retcode = subprocessAlgos.runCommand(ps_cmd)
 
         ps_output = stdout.split()

@@ -14,8 +14,8 @@ import os
 import os.path
 import signal
 import time
+import psutil
 
-import WMCore.Algorithms.SubprocessAlgos as subprocessAlgos
 import WMCore.FwkJobReport.Report as Report
 from WMCore.WMException import WMException
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
@@ -84,8 +84,6 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         self.pid = None
         self.uid = os.getuid()
-        self.monitorBase = "ps -p %i -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep %i"
-        self.pssMemoryCommand = "awk '/^Pss/ {pss += $2} END {print pss}' /proc/%i/smaps"
         self.monitorCommand = None
         self.currentStepSpace = None
         self.currentStepName = None
@@ -208,38 +206,26 @@ class PerformanceMonitor(WMRuntimeMonitor):
             # Then we have no step PID, we can do nothing
             return
 
-        # Now we run the ps monitor command and collate the data
-        # Gathers RSS, %CPU and %MEM statistics from ps
-        ps_cmd = self.monitorBase % (stepPID, stepPID)
-        stdout, _stderr, _retcode = subprocessAlgos.runCommand(ps_cmd)
-
-        ps_output = stdout.split()
-        if not len(ps_output) > 6:
-            # Then something went wrong in getting the ps data
-            msg = "Error when grabbing output from process ps\n"
-            msg += "output = %s\n" % ps_output
-            msg += "command = %s\n" % ps_cmd
-            logging.error(msg)
+        # Now we run the psutil module and collate some process data.
+        # We gather info about CPU system time and Memory statistics - VMS, PSS, RSS
+        stepProc = psutil.Process(stepPID)
+        if not stepProc.is_running():
+            # The step process has vanished before we managed to finish the current periodic update
+            msg = " The step process with PID: %s of STEP: %s "
+            msg += "has finished execution before the last periodic resource update.\n"
+            logging.warning(msg, stepPID, self.currentStepName)
             return
 
-        # run the command to gather PSS memory statistics from /proc/<pid>/smaps
-        smaps_cmd = self.pssMemoryCommand % (stepPID)
-        stdout, _stderr, _retcode = subprocessAlgos.runCommand(smaps_cmd)
+        with stepProc.oneshot():
+            stepCmd = stepProc.cmdline()
+            stepMemInfo = stepProc.memory_full_info()
+            stepCpuInfo = stepProc.cpu_times()
 
-        smaps_output = stdout.split()
-        if not len(smaps_output) == 1:
-            # Then something went wrong in getting the smaps data
-            msg = "Error when grabbing output from smaps\n"
-            msg += "output = %s\n" % smaps_output
-            msg += "command = %s\n" % smaps_cmd
-            logging.error(msg)
-            return
+        # NOTE: All the information from psutil.memory_*info() comes in Bytes
+        #       we need to make it in MegaBytes
+        pss = int(stepMemInfo.pss) // (1000**2)
 
-        # smaps also returns data in kiloBytes, let's make it megaBytes
-        # I'm also confused with these megabytes and mebibytes...
-        pss = int(smaps_output[0]) // 1000
-
-        logging.info("PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", smaps_output[0], ps_output[2], ps_output[3], ps_output[4])
+        logging.info("PID: %s; VirtMEM: %s; PSS: %s; RSS: %s; SystemTime: %s; UserTime: %s;", stepPID, stepMemInfo.vms, stepMemInfo.pss, stepMemInfo.rss, stepCpuInfo.system, stepCpuInfo.user)
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
         msg += 'Number of Cores: %s\n' % self.numOfCores

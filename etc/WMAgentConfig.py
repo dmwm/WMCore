@@ -151,7 +151,9 @@ config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for
 config.WorkQueueManager.queueParams["RowsPerSlice"] = 2500
 # maximum number of available elements rows to be evaluated when acquiring GQ to LQ work
 config.WorkQueueManager.queueParams["MaxRowsPerCycle"] = 50000
-config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"  # account for data locks
+# Rucio accounts for input data locks and secondary data locks
+config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"
+config.WorkQueueManager.queueParams["rucioAccountPU"] = "wmcore_pileup"
 
 
 config.component_("DBS3Upload")

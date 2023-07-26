@@ -52,6 +52,7 @@ class DataLocationMapper(object):
         self.params.setdefault('incompleteBlocks', False)
         self.params.setdefault('requireBlocksSubscribed', True)
         self.params.setdefault('rucioAccount', "wmcore_transferor")
+        self.params.setdefault('rucioAccountPU', "wmcore_pileup")
 
         validLocationFrom = ('subscription', 'location')
         if self.params['locationFrom'] not in validLocationFrom:
@@ -67,7 +68,8 @@ class DataLocationMapper(object):
         # the same object is not shared amongst multiple threads
         self.dbses = {}
 
-    def __call__(self, dataItems):
+    def __call__(self, dataItems, rucioAcct=None):
+        rucioAcct = rucioAcct or self.params['rucioAccount']
         result = {}
 
         dataByDbs = self.organiseByDbs(dataItems)
@@ -75,26 +77,27 @@ class DataLocationMapper(object):
         for dbs, dataItems in viewitems(dataByDbs):
             # if global use Rucio, else use dbs
             if isGlobalDBS(dbs):
-                output = self.locationsFromRucio(dataItems)
+                output = self.locationsFromRucio(dataItems, rucioAcct)
             else:
                 output = self.locationsFromDBS(dbs, dataItems)
             result[dbs] = output
 
         return result
 
-    def locationsFromRucio(self, dataItems):
+    def locationsFromRucio(self, dataItems, rucioAcct):
         """
         Get data location from Rucio. Location is mapped to the actual
         sites associated with them, so PSNs are actually returned
         :param dataItems: list of datasets/blocks names
+        :param rucioAcct: string with the Rucio account name to check the rules against
         :return: dictionary key'ed by the dataset/block, with a list of PSNs as value
         """
         result = defaultdict(set)
-        self.logger.info("Fetching location from Rucio...")
+        self.logger.info("Fetching location from Rucio for account: %s", rucioAcct)
         for dataItem in dataItems:
             try:
                 dataLocations = self.rucio.getDataLockedAndAvailable(name=dataItem,
-                                                                     account=self.params['rucioAccount'])
+                                                                     account=rucioAcct)
                 # resolve the PNNs into PSNs
                 result[dataItem] = self.cric.PNNstoPSNs(dataLocations)
             except Exception as ex:
@@ -207,7 +210,7 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         dataItems = self.backend.getActivePileupData()
 
         # fullResync incorrect with multiple dbs's - fix!!!
-        dataLocations = DataLocationMapper.__call__(self, dataItems)
+        dataLocations = DataLocationMapper.__call__(self, dataItems, self.params['rucioAccountPU'])
         self.logger.info("Found %d unique pileup data to update location", len(dataItems))
 
         # Given that there might be multiple data items to be updated

@@ -44,7 +44,7 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("pileupfetcher_t")
         self.testDir = self.testInit.generateWorkDir()
-        self.rucioAcct = "wmcore_transferor"
+        self.rucioAcct = "wmcore_pileup"
         if PY3:
             self.assertItemsEqual = self.assertCountEqual
 

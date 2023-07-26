@@ -35,7 +35,7 @@ class PileupFetcher(FetcherInterface):
         """
         super(PileupFetcher, self).__init__()
         # FIXME: find a way to pass the Rucio account name to this fetcher module
-        self.rucioAcct = "wmcore_transferor"
+        self.rucioAcct = "wmcore_pileup"
         self.rucio = None
 
     def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):

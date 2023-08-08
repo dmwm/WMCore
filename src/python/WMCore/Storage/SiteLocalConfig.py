@@ -14,7 +14,7 @@ import os
 import logging
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
-from WMCore.Storage.TrivialFileCatalog import getCatalog, tfcFilename, tfcProtocol, readTFC, rseName, lfnPrefix
+from WMCore.Storage.TrivialFileCatalog import getCatalogString, tfcFilename, tfcProtocol, readTFC, rseName, lfnPrefix
 
 
 def loadSiteLocalConfig(useTFC=False):
@@ -101,11 +101,11 @@ class SiteLocalConfig(object):
         try:
             tfcFile = tfcFilename(tfcUrl)
             tfcProto = tfcProtocol(tfcUrl,self.useTFC)
-            storage_att = None
+            storageAtt = None
             if not self.useTFC:
                 aVolume = tfcUrl.split('?')[1].split('&')[1].replace('volume=','') 
-                storage_att = makeStorageAttribute(self.siteName,self.subSiteName,self.localStageOut.get('storageSite',None),aVolume,tfcProto)
-            tfcInstance = readTFC(tfcFile,storage_att,self.useTFC)
+                storageAtt = makeStorageAttribute(self.siteName,self.subSiteName,self.localStageOut.get('storageSite',None),aVolume,tfcProto)
+            tfcInstance = readTFC(tfcFile,storageAtt,self.useTFC)
             tfcInstance.preferredProtocol = tfcProto
         except Exception as ex:
             msg = "Unable to load TrivialFileCatalog:\n"
@@ -298,12 +298,12 @@ def processLocalStageOut():
                 if aStorageSite is None: aStorageSite = report['siteName']
                 aProtocol = subnode.attrs.get('protocol', None)
                 aVolume = subnode.attrs.get('volume', None)
-                storage_att = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol) 
-                #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storage_att,False)+'?protocol='+aProtocol+'&volume='+aVolume
-                localReport['catalog'] = getCatalog(storage_att)
+                storageAtt = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol) 
+                #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storageAtt,False)+'?protocol='+aProtocol+'&volume='+aVolume
+                localReport['catalog'] = getCatalogString(storageAtt)
                 localReport['command'] = subnode.attrs.get('command', None)
                 localReport['option'] = subnode.attrs.get('option', None)
-                localReport['phedex-node'] = rseName(storage_att)
+                localReport['phedex-node'] = rseName(storageAtt)
                 localReport['storageSite'] = aStorageSite
                 break #only take the first stageOut, others are in fallbacks
         
@@ -358,13 +358,13 @@ def processFallbackStageOut():
                 if aStorageSite is None: aStorageSite = report['siteName']
                 aProtocol = subnode.attrs.get('protocol', None)
                 aVolume = subnode.attrs.get('volume', None)
-                storage_att = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol)
-                lfnPrefixes = lfnPrefix(storage_att)
+                storageAtt = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol)
+                lfnPrefixes = lfnPrefix(storageAtt)
                 for pre in lfnPrefixes:
                     localReport = {}
                     localReport['command'] = subnode.attrs.get('command', None)
                     localReport['option'] = subnode.attrs.get('option', None)
-                    localReport['phedex-node'] = rseName(storage_att)
+                    localReport['phedex-node'] = rseName(storageAtt)
                     localReport['lfn-prefix'] = pre
                     report['fallbackStageOut'].append(localReport)
 

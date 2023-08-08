@@ -11,7 +11,7 @@ given a TFC file, invoke readTFC on it. This will return
 a TrivialFileCatalog instance that can be used to match LFNs
 to PFNs.
 
-Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
+Usage: Given a TFC contact string: trivialcatalog_file:/path?protocol=proto
 
 
     filename = tfcFilename(tfcContactString)
@@ -180,7 +180,7 @@ def tfcProtocol(contactString,useTFC):
     _tfcProtocol_
 
     Given a file catalog contact string, extract the
-    protocol from it. If useTFC=True, the Trivial File Catalog contract string is used (storage.xml). Otherwise, it is the file catalog from Rucio definitions (storage.json) 
+    protocol from it. If useTFC=True, the Trivial File Catalog contact string is used (storage.xml or storage-disk.xml). Otherwise, it is the file catalog from Rucio definitions (storage.json) 
 
     """
     args = urlsplit(contactString)[3]
@@ -188,42 +188,43 @@ def tfcProtocol(contactString,useTFC):
     if not useTFC:
         value = value.split('&')[0]
     return value
-def getCatalog(storageAttr):
+
+def getCatalogString(storageAttr):
     """
     Construct a catalog for storage.json from storage attributes. It is a string with the same format as old trivial catalog for storage.xml ('trivialcatalog_file:'+path+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']. "path" points to location of storage.json, '/abc/xyz/storage.json')  
+    :param storageAttr = {'site':siteName, 'subSite':subSiteName, 'storageSite':storageSiteName, 'volume':volume, 'protocol':protocol}
+    :return catalogString('trivialcatalog_file:/pathToStorageDescription/xyz?protocol=protocolName&volume=volumeName')
     """
     site = storageAttr['site']
     subSite = storageAttr['subSite']
     storageSite = storageAttr['storageSite']
     #get site config
-    siteconfig_path = os.getenv('SITECONFIG_PATH',None)
-    if not siteconfig_path:
+    siteConfigPath = os.getenv('SITECONFIG_PATH',None)
+    if not siteConfigPath:
         raise RuntimeError('SITECONFIG_PATH is not defined')
     subPath = ''
     #not a cross site, use local path given in SITECONFIG_PATH
     if site == storageSite:
         #it is a site (no defined subSite), use local path given in SITECONFIG_PATH
         if subSite is None:
-            subPath = siteconfig_path
+            subPath = siteConfigPath
         #it is a subsite, move one level up
         else:
-            subPath = siteconfig_path + '/..'
+            subPath = siteConfigPath + '/..'
     #cross site
     else:
         #it is a site (no defined subSite), move one level up
         if subSite is None:
-            subPath = siteconfig_path + '/../' + storageSite
+            subPath = siteConfigPath + '/../' + storageSite
         #it is a subsite, move two levels up
         else:
-            subPath = siteconfig_path + '/../../' + storageSite
-    value = subPath + '/storage.json'
-    value = os.path.realpath(value) #resolve symbolic links
-    path = os.path.normpath(value) #does this resolve relative and symbolic path?
-    catalog = 'trivialcatalog_file:'+path+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']
-    return catalog
+            subPath = siteConfigPath + '/../../' + storageSite
+    pathToStorageDescription = subPath + '/storage.json'
+    pathToStorageDescription = os.path.normpath(os.path.realpath(pathToStorageDescription))#resolve symbolic link and relative path?
+    catalogString = 'trivialcatalog_file:'+pathToStorageDescription+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']
+    return catalogString
 
-
-#TFC file name can be constructed using either contractString or storage attributes
+#TFC file name can be constructed using either contactString or storage attributes
 def tfcFilename(contactString):
     """
     _tfcFilename_
@@ -236,7 +237,7 @@ def tfcFilename(contactString):
     path = os.path.normpath(value) #does this resolve relative and symbolic path?
     return path
 
-def readTFC(filename,storageAttr,useTFC):
+def readTFC(filename, storageAttr, useTFC):
     """
     _readTFC_
 
@@ -247,8 +248,7 @@ def readTFC(filename,storageAttr,useTFC):
     tfcInstance = TrivialFileCatalog()
     if useTFC:
         if not os.path.exists(filename):
-            #msg = "TrivialFileCatalog not found: %s" % filename
-            msg = "FileCatalog not found: %s" % filename
+            msg = "TrivialFileCatalog not found: %s" % filename
             raise RuntimeError(msg)
         try:
             node = xmlFileToNode(filename)
@@ -314,7 +314,7 @@ def readTFC(filename,storageAttr,useTFC):
 
 def rseName(storageAttr):
     rse = None
-    catalog = getCatalog(storageAttr)
+    catalog = getCatalogString(storageAttr)
     storageJsonName = tfcFilename(catalog)
     try:
         with open(storageJsonName,encoding="utf-8") as jsonFile:
@@ -330,7 +330,7 @@ def rseName(storageAttr):
     return rse
 
 def lfnPrefix(storageAttr):
-    catalog = getCatalog(storageAttr)
+    catalog = getCatalogString(storageAttr)
     #now get lfn prefix
     storageJsonName = tfcFilename(catalog)
     try:

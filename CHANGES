@@ -1,3 +1,13 @@
+2.2.2 to 2.2.4rc1:
+  - Fix use of input function in unregister-wmstats script (Alan Malta Rodrigues) #11688
+  - Adopt wmcore_pileup Rucio account in workqueue (Alan Malta Rodrigues) #11670
+  - Parse /proc/<pid>/smaps_rollup if present && Reduce string concatenation operations (Todor Ivanov) #11676
+  - Change default rucio pileup account (khurtado) #11673
+  - Update McM client (Geovanny Gonzalez-Rodriguez) #11672
+  - Committing changes for removing references to py2 portability (anpicci) #11618
+  - WMAgent deploy script: use latest stable release 2.2.3.1 (Alan Malta Rodrigues) #11662
+
+
 2.2.2rc12 to 2.2.2:
   - Fix buildrelease for when there are no changes between releases (Alan Malta Rodrigues) #11650
 

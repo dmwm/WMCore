@@ -78,5 +78,26 @@ class BasePluginTest(BossAirTest):
 
         return
 
+    def testCudaCapabilityToSingleVersion(self):
+        """
+        Test conversion of a list of version strings to a single integer version
+        """
+        bp = BasePlugin(config=None)
+
+        # bad input
+        self.assertEqual(bp.cudaCapabilityToSingleVersion([]), 0)
+        self.assertEqual(bp.cudaCapabilityToSingleVersion({}), 0)
+        self.assertEqual(bp.cudaCapabilityToSingleVersion(None), 0)
+        # good and expected input
+        unorderedL = ["2.3.1", "1.2.3", "3.2.1", "1.3.2", "1.2"]
+        self.assertEqual(bp.cudaCapabilityToSingleVersion(unorderedL), 1020)
+        orderedL = ["1.2", "1.2.3", "1.3.2", "2.3.1", "3.2.1"]
+        self.assertEqual(bp.cudaCapabilityToSingleVersion(orderedL), 1020)
+        orderedL = ["1.2.3", "1.3.2", "2.3.1", "3.2.1"]
+        self.assertEqual(bp.cudaCapabilityToSingleVersion(orderedL), 1023)
+        orderedL = ["2.3.1", "3.2.1"]
+        self.assertEqual(bp.cudaCapabilityToSingleVersion(orderedL), 2031)
+
+
 if __name__ == '__main__':
     unittest.main()

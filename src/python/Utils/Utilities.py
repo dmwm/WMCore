@@ -10,8 +10,6 @@ import base64
 import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
-from distutils.version import StrictVersion
-
 
 def lowerCmsHeaders(headers):
     """
@@ -297,21 +295,3 @@ def encodeUnicodeToBytesConditional(value, errors="ignore", condition=True):
     if condition:
         return encodeUnicodeToBytes(value, errors)
     return value
-
-
-def orderVersionList(versionList):
-    """
-    This function will order a list of version-style strings.
-    The order of precedence digits is from left to right. E.g.:
-      from: ["2.3.1", "1.2.3", "3.2.1", "1.3.2"]
-      to:   ["1.2.3", "1.3.2", "2.3.1", "3.2.1"]
-    :param versionList: list of strings
-    :return: an ordered list; or the initial data if different than list.
-
-    NOTE: implementation suggested in:
-    https://stackoverflow.com/questions/2574080/sorting-a-list-of-dot-separated-numbers-like-software-versions
-    """
-    if not isinstance(versionList, list):
-        return versionList
-    versionList.sort(key=StrictVersion)
-    return versionList

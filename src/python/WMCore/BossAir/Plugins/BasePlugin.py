@@ -7,8 +7,9 @@ Base class for BossAir plugins
 
 from builtins import object, str, bytes
 from future.utils import viewvalues
+from distutils.version import StrictVersion
 
-from Utils.Utilities import decodeBytesToUnicode, orderVersionList
+from Utils.Utilities import decodeBytesToUnicode
 from WMCore.WMException import WMException
 from WMCore.WMRuntime.Tools.Scram import ARCH_TO_OS, SCRAM_TO_ARCH
 
@@ -190,16 +191,17 @@ class BasePlugin(object):
         for comparison/job matchmaking purposes.
         Version conversion formula is: (1000 * major + 10 * medium + minor)
         :param capabilities: a list of string versions
-        :return: an integer with the version value; 0 in case of failure
+        :return: an integer with the version value; None in case of failure
 
         For further details:
         https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART____VERSION.html
         """
-        defaultRes = 0
-        # get an ordered list of the versions and use the very first element
-        capabilities = orderVersionList(capabilities)
-        if not capabilities:
-            return defaultRes
+        if not (isinstance(capabilities, list) and capabilities):
+            return None
+        # now order the list of string versions in place. Precedence of digits is from left to right
+        #    from: ["2.3.1", "1.2.3", "3.2.1", "1.3.2"]
+        #    to:   ["1.2.3", "1.3.2", "2.3.1", "3.2.1"]
+        capabilities.sort(key=StrictVersion)
 
         smallestVersion = capabilities[0]
         smallestVersion = smallestVersion.split(".")

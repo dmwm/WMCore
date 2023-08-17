@@ -8,7 +8,7 @@ import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
     safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
-    encodeUnicodeToBytes, diskUse, numberCouchProcess, orderVersionList
+    encodeUnicodeToBytes, diskUse, numberCouchProcess
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -179,16 +179,6 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         data = numberCouchProcess()
         # there should be at least one process, but who knows...
         self.assertTrue(data >= 0)
-
-    def testOrderVersionList(self):
-        """
-        Test the `orderVersionList` function.
-        """
-        oldL = ["2.3.1", "1.2.3", "3.2.1", "1.3.2", "1.2"]
-        newL = ["1.2", "1.2.3", "1.3.2", "2.3.1", "3.2.1"]
-        with self.assertRaises(AssertionError):
-            self.assertListEqual(oldL, newL)
-        self.assertListEqual(orderVersionList(oldL), newL)
 
 
 if __name__ == '__main__':

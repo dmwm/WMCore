@@ -461,6 +461,26 @@ class ReportTest(unittest.TestCase):
 
         return
 
+    def test_SubprocessInfo(self):
+        """
+        _SubprocessInfo_
+
+        Check CMSSW subprocess metrics
+        """
+        report = Report("cmsRun1")
+        startTime = 0
+        endTime = 1
+        userTime = 1
+        sysTime = 1
+        report.updateSubprocessInfo(sysTime, userTime, startTime, endTime)
+        subinfo = report.retrieveStep("cmsRun1").WMCMSSWSubprocess
+        sdict = subinfo.dictionary_()
+        self.assertEqual(sdict['startTime'], startTime)
+        self.assertEqual(sdict['endTime'], endTime)
+        self.assertEqual(sdict['wallClockTime'], endTime-startTime)
+        self.assertEqual(sdict['userTime'], userTime)
+        self.assertEqual(sdict['sysTime'], sysTime)
+
     def test_PerformanceReport(self):
         """
         _PerformanceReport_

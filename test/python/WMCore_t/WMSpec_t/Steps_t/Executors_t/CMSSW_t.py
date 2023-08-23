@@ -13,8 +13,10 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import inspect
 import os
 import shutil
+import subprocess
 import sys
 import unittest
+from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
 
 import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 
@@ -231,6 +233,36 @@ class CMSSW_t(unittest.TestCase):
         finally:
             os.chdir(self.oldCwd)
         return
+
+    def testSubprocessTime(self):
+        """
+        Test logic of calculating subprocess user/sys times
+        """
+        # take snapshot of user and sys time before we call subprocess
+        userTime0 = getrusage(RUSAGE_CHILDREN).ru_utime
+        sysTime0 = getrusage(RUSAGE_CHILDREN).ru_stime
+
+        # call subprocess command
+        args = ["sleep", "1"]
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        childPid, exitStatus, resource = os.wait4(proc.pid, os.P_PID)
+        stdout, stderr = proc.communicate()
+        returnCode = proc.returncode
+        self.assertTrue(stdout == b'')
+        self.assertTrue(stderr == b'')
+        self.assertTrue(childPid >= 0)
+        self.assertTrue(exitStatus == 0)
+        self.assertTrue(returnCode == 0)
+        self.assertTrue(resource.ru_utime > 0)
+        self.assertTrue(resource.ru_stime > 0)
+
+        # calculate user and sys time of subprocess by substructing relevant
+        # parts take before we spawn the subprocess
+        userTime1 = getrusage(RUSAGE_CHILDREN).ru_utime
+        sysTime1 = getrusage(RUSAGE_CHILDREN).ru_stime
+
+        self.assertTrue(userTime1 > userTime0)
+        self.assertTrue(sysTime1 > sysTime0)
 
 
 if __name__ == '__main__':

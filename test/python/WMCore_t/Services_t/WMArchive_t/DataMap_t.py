@@ -9,6 +9,11 @@ from WMCore.Services.WMArchive.DataMap import createArchiverDoc
 SAMPLE_FWJR = {'fallbackFiles': [],
  'skippedFiles': [],
  'steps': {'cmsRun1': {'analysis': {},
+                       'WMCMSSWSubprocess': {'endTime': 1692718964.7409143,
+                                             'startTime': 1692712699.8846245,
+                                             'sysTime': 94.256681,
+                                             'userTime': 6053.7735170000005,
+                                             'wallClockTime': 6264.856289863586},
                        'cleanup': {},
                        'errors': [],
                        'input': {'source': [{'catalog': '',
@@ -161,6 +166,9 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                          'start': 1454569727,
                          'status': 0,
                          'stop': 1454569735}},
+ 'WMTiming': {'WMJobStart': 1692712699.8846245,
+              'WMJobEnd': 1692718964.7409143,
+              'WMTotalWallClockTime': 6264.856289863586},
  'task': '/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD'}
 
 class DataMap_t(unittest.TestCase):
@@ -183,6 +191,18 @@ class DataMap_t(unittest.TestCase):
         for step in newData['steps']:
             if step['name'] == 'cmsRun1':
                 runInfo = step['output'][0]['runs'][0]
+            subStruct = step.get('WMCMSSWSubprocess', {})
+            if subStruct:
+                # validate WMCMSSWSubprocess struct
+                for key in ['startTime', 'endTime', 'wallClockTime', 'userTime', 'sysTime']:
+                    self.assertTrue(subStruct[key] > 0)
+
+        wmTiming = newData.get('WMTiming', {})
+        if wmTiming:
+            # validate WMTiming struct
+            for key in ['WMJobStart', 'WMJobEnd', 'WMTotalWallClockTime']:
+                self.assertTrue(wmTiming[key] > 0)
+
         # we no longer ship the lumis and eventsPerLumi lists to WMArchive. Hard-wired to []
         self.assertEqual(runInfo['lumis'], [])
         self.assertEqual(runInfo['eventsPerLumi'], [])

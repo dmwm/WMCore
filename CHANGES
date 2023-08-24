@@ -1,3 +1,9 @@
+2.2.4rc2 to 2.2.4rc3:
+  - Provide timestamps metrics about WM job (Valentin Kuznetsov) #11656
+  - Provide in the FWJR the CPU and wallclock time for CMSSW subprocesses (Valentin Kuznetsov) #11665
+  - Add WMCMSSWSubprocess and WMTiming metrics to WMArchive document (Valentin Kuznetsov) #11692
+
+
 2.2.4rc1 to 2.2.4rc2:
   - Update requirements for HTCondor 10.2.3 (Alan Malta Rodrigues) #11691
 

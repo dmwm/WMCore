@@ -302,6 +302,8 @@ def processLocalStageOut():
                 #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storageAtt,False)+'?protocol='+aProtocol+'&volume='+aVolume
                 localReport['catalog'] = getCatalogString(storageAtt)
                 localReport['command'] = subnode.attrs.get('command', None)
+                #use default command='gfal2' when 'command' is not specified 
+                if localReport['command'] is None: localReport['command'] = 'gfal2'
                 localReport['option'] = subnode.attrs.get('option', None)
                 localReport['phedex-node'] = rseName(storageAtt)
                 localReport['storageSite'] = aStorageSite
@@ -363,6 +365,8 @@ def processFallbackStageOut():
                 for pre in lfnPrefixes:
                     localReport = {}
                     localReport['command'] = subnode.attrs.get('command', None)
+                    #use default command='gfal2' when 'command' is not specified 
+                    if localReport['command'] is None: localReport['command'] = 'gfal2'
                     localReport['option'] = subnode.attrs.get('option', None)
                     localReport['phedex-node'] = rseName(storageAtt)
                     localReport['lfn-prefix'] = pre

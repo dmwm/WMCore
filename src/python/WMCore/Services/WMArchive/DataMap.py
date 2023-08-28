@@ -6,6 +6,8 @@ import copy
 import socket
 from collections import defaultdict
 
+from WMCore.Services.WMArchive.CMSSWMetrics import CMSSWMetrics
+
 # From top level
 
 WMARCHIVE_TOP_LEVEL_REMOVE_OUTSIDE_LAYER = ["steps"]
@@ -52,7 +54,8 @@ PERFORMANCE_TYPE = {'cpu': {'AvgEventCPU': float,
                                 'readTotalMB': float,
                                 'readTotalSecs': float,
                                 'writeTotalMB': float,
-                                'writeTotalSecs': float}}
+                                'writeTotalSecs': float},
+                    'cmssw': CMSSWMetrics()}
 
 TOP_LEVEL_STEP_DEFAULT = {'analysis': {},
                           'cleanup': {},
@@ -110,17 +113,18 @@ STEP_DEFAULT = {  # 'name': '',
         # "PNN": '',
         # "GUID": '',
         # 'StageOutCommand': ''
-    }],
+        }],
     'WMCMSSWSubprocess': {},
     'performance': {'cpu': {},
                     'memory': {},
                     'multicore': {},
-                    'storage': {}},
+                    'storage': {},
+                    'cmssw': {}}
     # 'site': 'T2_CH_CERN',
     # 'start': 1454569735,
     # 'status': 0,
     # 'stop': 1454569736
-}
+    }
 
 
 def cleanStep(idict):
@@ -139,6 +143,7 @@ def cleanStep(idict):
                         del elem[skip]
             data[key] = values
     return idict
+
 
 def combineDataset(dataset):
     dataset["outputDataset"] = "/%s/%s/%s" % (dataset.pop("primaryDataset"),
@@ -207,6 +212,11 @@ def typeCastPerformance(performDict):
     for key in PERFORMANCE_TYPE:
         if key in performDict:
             for param in PERFORMANCE_TYPE[key]:
+                if key == 'cmssw':
+                    # so far we skip validation of cmssw metrics values
+                    # since they may differ in different CMSSW releases
+                    newPerfDict[key] = performDict[key]
+                    continue
                 if param in performDict[key]:
                     try:
                         value = performDict[key][param]
@@ -314,6 +324,7 @@ def convertStepValue(stepValue):
     #    stepValue[key] = changeToList(stepValue[key])
 
     return stepValue
+
 
 def convertSteps(steps):
     stepList = []

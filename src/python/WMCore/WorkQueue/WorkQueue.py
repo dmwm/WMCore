@@ -719,10 +719,13 @@ class WorkQueue(WorkQueueBase):
                                          **filters)
 
         if wmbsInfo:
-            self.logger.debug("Syncing element statuses with WMBS for workflow: %s", filters.get("RequestName"))
+            self.logger.info("Syncing element statuses with WMBS for workflow: %s", filters.get("RequestName"))
             for item in items:
                 for wmbs in wmbsInfo:
                     if item['SubscriptionId'] == wmbs['subscription_id']:
+                        msg = f"Updating element with SubscriptionId {item['SubscriptionId']}"
+                        msg += f" with the following information: {wmbs}"
+                        self.logger.info(msg)
                         item.updateFromSubscription(wmbs)
                         break
 
@@ -959,6 +962,7 @@ class WorkQueue(WorkQueueBase):
         useWMBS = not skipWMBS and self.params['LocalQueueFlag']
         if useWMBS:
             wmbsWflowSummary = self.getWMBSSubscriptionStatus()
+            self.logger.info('WMBS subscription status is: ', wmbsWflowSummary)
         else:
             wmbsWflowSummary = []
         # Get queue elements grouped by their workflow with updated wmbs progress

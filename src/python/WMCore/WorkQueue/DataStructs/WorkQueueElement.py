@@ -3,6 +3,7 @@ WorkQueueElement
 
 A dictionary based object meant to represent a WorkQueue element
 """
+import logging
 
 from future.utils import viewitems, viewvalues
 import time
@@ -220,6 +221,7 @@ class WorkQueueElement(dict):
             if wmbskey in wmbsStatus and self[ourkey] != wmbsStatus[wmbskey]:
                 self['Modified'] = True
                 self[ourkey] = wmbsStatus[wmbskey]
+                logging.info(f"AMR: element really modified for key {wmbskey} and value {wmbsStatus[wmbskey]}")
 
     def updateWithResult(self, progressReport):
         """Take a progress report and update ourself

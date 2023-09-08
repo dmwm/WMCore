@@ -349,7 +349,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                                                  getDataFromSpecFile(
                                                                      self.getWorkflowSpecDAO.execute(job['task'])[
                                                                          job['task']]['spec']))
-                job['fwjr'].setCampaign(cachedByWorkflow.get('Campaign', ''))
+                job['fwjr'].setCampaign(job.get('campaignName', ''))
                 job['fwjr'].setPrepID(cachedByWorkflow.get(job['task'], ''))
                 # If there are too many input files, strip them out
                 # of the FWJR, as they should already

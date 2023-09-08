@@ -145,6 +145,7 @@ def saveJob(job, thisJobNumber, **kwargs):
     job['requiresGPU'] = kwargs['requiresGPU']
     job['gpuRequirements'] = kwargs['gpuRequirements']
     job['requestType'] = kwargs['requestType']
+    job['campaignName'] = kwargs['campaignName']
 
     with open(os.path.join(cacheDir, 'job.pkl'), 'wb') as output:
         pickle.dump(job, output, HIGHEST_PICKLE_PROTOCOL)
@@ -539,7 +540,8 @@ class JobCreatorPoller(BaseWorkerThread):
                                'scramArch': wmTask.getScramArch(),
                                'agentNumber': self.agentNumber,
                                'agentName': self.agentName,
-                               'allowOpportunistic': allowOpport}
+                               'campaignName': wmTask.getCampaignName(),
+                               'allowOpportunistic': allowOpport,}
 
                 tempSubscription = Subscription(id=wmbsSubscription['id'])
 

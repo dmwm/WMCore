@@ -373,9 +373,11 @@ class StdBase(object):
         procStr = taskConf.get("ProcessingString") or self.processingString
         procVer = taskConf.get("ProcessingVersion") or self.processingVersion
         prepID = taskConf.get("PrepID") or self.prepID
+        campaignName = taskConf.get("Campaign") or self.campaign
         procTask.setAcquisitionEra(acqEra)
         procTask.setProcessingString(procStr)
         procTask.setProcessingVersion(procVer)
+        procTask.setCampaignName(campaignName)
 
         if taskType in ["Production", 'PrivateMC'] and totalEvents is not None:
             procTask.addGenerator(seeding)

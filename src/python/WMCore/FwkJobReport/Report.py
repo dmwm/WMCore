@@ -221,6 +221,7 @@ class Report(object):
         jsonReport["Campaign"] = self.getCampaign()
         jsonReport["PrepID"] = self.getPrepID()
         jsonReport["EOSLogURL"] = self.getLogURL()
+        jsonReport["WMTiming"] = self.getWMTiming()
 
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
@@ -266,6 +267,7 @@ class Report(object):
             jsonStep["site"] = self.getSiteName()
             jsonStep["analysis"] = {}
             jsonStep["logs"] = {}
+            jsonStep["WMCMSSWSubprocess"] = self.getWMCMSSWSubprocess(stepName)
             jsonReport["steps"][stepName] = jsonStep
 
         return jsonReport
@@ -300,6 +302,18 @@ class Report(object):
         for stepName in self.listSteps():
             returnCodes.update(self.getStepExitCodes(stepName=stepName))
         return returnCodes
+
+    def getWMCMSSWSubprocess(self, stepName):
+        """
+        Returns a WMCMSSWSubprocess metrics for given step
+        :param stepName: string representing step name, e.g. cmsRun1
+        :return: dictionary of WMCMSSWSubprocess metrics
+        """
+        reportStep = self.retrieveStep(stepName)
+        data = getattr(reportStep, 'WMCMSSWSubprocess', {})
+        if isinstance(data, dict):
+            return data
+        return data.dictionary_()
 
     def getStepExitCodes(self, stepName):
         """
@@ -1409,6 +1423,16 @@ class Report(object):
          Return the PrepID
         """
         return getattr(self.data, 'prep_id', "")
+
+    def getWMTiming(self):
+        """
+        Returns a WMTiming metrics
+        :return: dictionary of WMTiming metrics
+        """
+        data = getattr(self.data, 'WMTiming', {})
+        if isinstance(data, dict):
+            return data
+        return data.dictionary_()
 
     def setConfigURL(self, configURL):
         """

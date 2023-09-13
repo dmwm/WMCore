@@ -61,7 +61,6 @@ TOP_LEVEL_STEP_DEFAULT = {'analysis': {},
                           'input': [],
                           'output': [],
                           'WMCMSSWSubprocess': {},
-                          'WMTiming': {},
                           'performance': {}
                           }
 
@@ -113,7 +112,6 @@ STEP_DEFAULT = {  # 'name': '',
         # 'StageOutCommand': ''
     }],
     'WMCMSSWSubprocess': {},
-    'WMTiming': {},
     'performance': {'cpu': {},
                     'memory': {},
                     'multicore': {},

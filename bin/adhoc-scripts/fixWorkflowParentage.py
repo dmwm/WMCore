@@ -9,18 +9,14 @@ However, it takes a workflow name as input and performs the parentage fix only
 against that one workflow.
 Use case for this is on workflows that require a very large memory footprint.
 """
+import argparse
 import time
 import logging
 import os
-import sys
 import psutil
 
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
-
-
-REQMGR_URL = 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
-DBS_URL = 'https://cmsweb.cern.ch/dbs/prod/global/DBSWriter'
 
 
 def getChildDatasetsForStepChainMissingParent(reqmgrDB, wflowName):
@@ -33,7 +29,7 @@ def getChildDatasetsForStepChainMissingParent(reqmgrDB, wflowName):
     data = reqmgrDB.getRequestByNames(wflowName)
     for reqName, info in data.items():
         childrenDsets = []
-        for _stepNum, dsetDict in info.get("ChainParentageMap", {}).items():
+        for dsetDict in info.get("ChainParentageMap", {}).values():
             childrenDsets.extend(dsetDict['ChildDsets'])
         wflowChildrenDsets = {"workflowName": reqName, "childrenDsets": childrenDsets}
     return wflowChildrenDsets
@@ -44,6 +40,8 @@ def updateParentageFlag(reqName, reqmgrDB, logger):
     Given a workflow name, update its ParentageResolved flag in
     ReqMgr2.
     :param reqName: string with the workflow name
+    :param reqmgrDB: object instance of the RequestDBWriter class
+    :param logger: a logger object instance
     :return: none
     """
     try:
@@ -53,20 +51,36 @@ def updateParentageFlag(reqName, reqmgrDB, logger):
         logger.error("  Failed to update 'ParentageResolved' flag to True for request: %s", reqName)
 
 
+def parseArgs():
+    """
+    Parse the command line arguments, or provide default values.
+    """
+    msg = "Script to resolve a workflow parentage information and insert it into the DBS server"
+    parser = argparse.ArgumentParser(description=msg)
+    parser.add_argument("-w", "--workflow", help="String with the workflow name",
+                        action="store", required=True)
+    parser.add_argument("-r", "--reqmgr_url", help="ReqMgr2 URL (defaults to the production instance)",
+                        action="store", default='https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache')
+    parser.add_argument("-d", "--dbs_url", help="DBS Writer URL (defaults to the global production instance)",
+                        action="store", default='https://cmsweb.cern.ch/dbs/prod/global/DBSWriter')
+    args = parser.parse_args()
+    return args
+
+
 def main():
-    """Executes everything"""
+    """
+    Executes everything
+    """
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     logging.basicConfig()
+    # parse the input arguments
+    args = parseArgs()
+    logger.info(f"Contacting ReqMgr2 URL: {args.reqmgr_url}")
+    logger.info(f"Data will be written to DBS Server instance: {args.dbs_url}")
 
-    if len(sys.argv) != 2:
-        logger.error("Please provide the workflow name as argument.")
-        logger.error("E.g.: python fixWorkflowParentage.py my_workflow_name")
-        sys.exit(1)
-
-    wflowName = sys.argv[1]
-    reqmgrDB = RequestDBWriter(REQMGR_URL)
-    dbsSvc = DBS3Reader(DBS_URL, logger=logger)
+    reqmgrDB = RequestDBWriter(args.reqmgr_url)
+    dbsSvc = DBS3Reader(args.dbs_url, logger=logger)
 
     # memory usage before starting the actual processing
     thisPID = os.getpid()
@@ -76,7 +90,7 @@ def main():
         logger.info(f"Initial memory info: {thisProc.cpu_times()}")
 
     # retrieve request from ReqMgr2
-    wflowData = getChildDatasetsForStepChainMissingParent(reqmgrDB, wflowName)
+    wflowData = getChildDatasetsForStepChainMissingParent(reqmgrDB, args.workflow)
 
     # measure time taken to fix the actual workflow parentage
     start = time.time()

@@ -10,6 +10,7 @@ def getChildDatasetsForStepChainMissingParent(reqmgrDB, status):
     """
     Fetches data from ReqMgr2/CouchDB for workflows that need to
     have their parentage information fixed.
+    :param reqmgrDB: object instance of the RequestDBWriter class
     :param status: string with the workflow status
     :return: a flat list of dictionaries with request name and children datasets
     """

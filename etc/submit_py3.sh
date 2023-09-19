@@ -211,21 +211,25 @@ $pythonCommand Startup.py
 jobrc=$?
 echo -e "======== WMAgent Run the job FINISH at $(TZ=GMT date) ========\n"
 
-echo "======== WMAgent add timestamps metrics to FJR $outputFile ========"
+# add WMTiming metrics to FJR pkl file
+echo "======== WMAgent add WMTiming metrics to FJR $outputFile ========"
 timeEndSec=`date +%s`
-reportIn=$outputFile
-$pythonCommand Timestamps.py --reportFile=$outputFile --wmJobEnd=$timeEndSec --wmJobStart=$timeStartSec
+tpy=$HOME/job/Utils/Timestamps.py
+reportIn=WMTaskSpace/$outputFile
+echo -e "$pythonCommand $tpy --reportFile=$reportIn --wmJobEnd=$timeEndSec --wmJobStart=$timeStartSec"
+$pythonCommand $tpy --reportFile=$reportIn --wmJobEnd=$timeEndSec --wmJobStart=$timeStartSec
 status=$?
 if [ "$status" != "0" ]; then
     echo "WARNING: failed to update FJR with timestamps metrics, status=$status"
 fi
-echo -e "======== WMAgent finished adding timestamps metrics to FJR ========\n"
+echo -e "======== WMAgent finished adding WMTiming metrics to FJR ========\n"
 
 echo "WMAgent bootstrap: WMAgent finished the job, it's copying the pickled report"
 set -x
-cp WMTaskSpace/Report*.pkl ../
+cp WMTaskSpace/$outputFile ../
 ls -l WMTaskSpace
 ls -l WMTaskSpace/*
+
 set +x
 echo -e "======== WMAgent bootstrap FINISH at $(TZ=GMT date) ========\n"
 exit $jobrc

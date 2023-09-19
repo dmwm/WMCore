@@ -884,5 +884,36 @@ class ReRecoTest(unittest.TestCase):
         self.assertItemsEqual(subscriptions, subMaps)
 
 
+    def testCampaignName(self):
+        """
+        Make sure the campaign name has been set in the processing task
+        """
+        skimConfig = self.injectSkimConfig()
+        recoConfig = self.injectReRecoConfig()
+        dataProcArguments = ReRecoWorkloadFactory.getTestArguments()
+        dataProcArguments["ConfigCacheID"] = recoConfig
+        dataProcArguments.update({"SkimName1": "SomeSkim",
+                                  "SkimInput1": "RECOoutput",
+                                  "Skim1ConfigCacheID": skimConfig})
+        dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
+        dataProcArguments["CouchDBName"] = "rereco_t"
+        dataProcArguments["EnableHarvesting"] = True
+        dataProcArguments["DQMConfigCacheID"] = self.injectDQMHarvestConfig()
+
+        factory = ReRecoWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", dataProcArguments)
+
+        # test default values
+        taskPaths = {'/TestWorkload/DataProcessing': ['cmsRun1', 'stageOut1', 'logArch1'],
+                     '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim': ['cmsRun1', 'stageOut1',
+                                                                                             'logArch1']}
+
+        # Check task object has campaign name method
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            self.assertEqual(taskObj.getCampaignName(), '')
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

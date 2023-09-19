@@ -2490,6 +2490,25 @@ class TaskChainTests(EmulatedUnitTestCase):
         with self.assertRaises(WMSpecFactoryException):
             factory.factoryWorkloadConstruction("PullingTheChain", arguments)
 
+    def testCampaignNameTaskChainTasks(self):
+        """
+        Test campaign names in tasks
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(deepcopy(REQUEST_INPUT))
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+        arguments['Task1'].update({"Campaign": "Campaign_DIGI"})
+        arguments['Task2'].update({"Campaign": "Campaign_RECO"})
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+        taskObj = testWorkload.getTaskByName("DIGI")
+        self.assertEqual(taskObj.getCampaignName(), "Campaign_DIGI")
+        taskObj = testWorkload.getTaskByName("RECO")
+        self.assertEqual(taskObj.getCampaignName(), "Campaign_RECO")
 
 if __name__ == '__main__':
     unittest.main()

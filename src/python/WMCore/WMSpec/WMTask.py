@@ -1105,8 +1105,6 @@ class WMTaskHelper(TreeHelper):
 
     def setTaskType(self, taskType):
         """
-        _setTaskType_
-
         Set the type field of this task
         """
         self.data.taskType = taskType
@@ -1615,6 +1613,20 @@ class WMTaskHelper(TreeHelper):
         Get the task acquisition era.
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
+
+    def setCampaignName(self, campaign):
+        """
+        Set the campaign name of this task
+        :param campaign: str, name of the campaign to be defined
+        """
+        self.data.campaignName = campaign
+
+    def getCampaignName(self):
+        """
+        Get the task campaign name
+        :return: str, campaign name value
+        """
+        return getattr(self.data, 'campaignName', None)
 
     def setLumiMask(self, lumiMask=None, override=True):
         """

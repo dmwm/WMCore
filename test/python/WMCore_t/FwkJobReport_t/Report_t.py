@@ -1028,6 +1028,25 @@ class ReportTest(unittest.TestCase):
         self.assertItemsEqual(fileList[1]['locations'], {"T2_CH_CSCS"})
         self.assertEqual(fileList[1]['outputModule'], "logArchive")
 
+    def testWMTiming(self):
+        """
+        test WMTiming metrics from FJR report
+        """
+        jobReport = Report()
+        data = jobReport.getWMTiming()
+        self.assertTrue(isinstance(data, dict))
+
+    def testWMCMSSWSubprocess(self):
+        """
+        test WMCMSSWSubprocess metrics from FJR report
+        """
+        xmlPath = os.path.join(getTestBase(),
+                               "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")
+        jobReport = Report("cmsRun1")
+        jobReport.parse(xmlPath)
+        data = jobReport.getWMCMSSWSubprocess("cmsRun1")
+        self.assertTrue(isinstance(data, dict))
+
 
 if __name__ == "__main__":
     unittest.main()

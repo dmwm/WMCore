@@ -1,3 +1,8 @@
+2.2.4rc3 to 2.2.4rc4:
+  - Adds WMCMSSWSubprocess metrics to FJR document (Valentin Kuznetsov) #11716
+  - Add campaign name attribute to base WMTask object and propagate it to the job level as a classad (Kenyi Hurtado Anampa) #11710
+
+
 2.2.4rc2 to 2.2.4rc3:
   - Provide timestamps metrics about WM job (Valentin Kuznetsov) #11656
   - Provide in the FWJR the CPU and wallclock time for CMSSW subprocesses (Valentin Kuznetsov) #11665

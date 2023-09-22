@@ -285,7 +285,7 @@ class StepChainWorkloadFactory(StdBase):
         chain the output between all three steps.
         """
         self.stepParentageMapping.setdefault(origArgs['Step1']['StepName'], {})
-
+        campaignNames = []
         for i in range(2, self.stepChain + 1):
             currentStepNumber = "Step%d" % i
             currentCmsRun = "cmsRun%d" % i
@@ -348,8 +348,26 @@ class StepChainWorkloadFactory(StdBase):
             currentCmsswStepHelper.keepOutput(childKeepOutput)
             self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
 
+            # Get and append campaign name for each step
+            if taskConf.get("Campaign", None) is not None:
+                campaignNames.append(taskConf.get("Campaign"))
+            else:
+                # check if workload has a campaign name
+                if self.workload.getCampaign() is not None:
+                    campaignNames.append(self.workload.getCampaign())
+
         # Closing out the task configuration. The last step output must be saved/merged
         currentCmsswStepHelper.keepOutput(True)
+
+        # Set campaign name
+        if campaignNames:
+            # Add first task campaign name if it exists
+            if task.getCampaignName() is not None:
+                campaignNames = [task.getCampaignName()] + campaignNames
+            # Report only unique values and preserve original content order 
+            seen = set()
+            uniqueCampaignNames = [x for x in campaignNames if not (x in seen or seen.add(x))]
+            task.setCampaignName(",".join(uniqueCampaignNames))
 
         return
 

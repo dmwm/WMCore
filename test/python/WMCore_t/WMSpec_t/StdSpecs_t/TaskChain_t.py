@@ -2510,5 +2510,25 @@ class TaskChainTests(EmulatedUnitTestCase):
         taskObj = testWorkload.getTaskByName("RECO")
         self.assertEqual(taskObj.getCampaignName(), "Campaign_RECO")
 
+    def testSetPhysicsTypeTaskChainTasks(self):
+        """
+        Test campaign names in tasks
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(deepcopy(REQUEST_INPUT))
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+        taskObj = testWorkload.getTaskByName("DIGI")
+        taskObj.data.physicsTaskType = "DIGI"
+        self.assertEqual(taskObj.getPhysicsTaskType(), "DIGI")
+        taskObj = testWorkload.getTaskByName("RECO")
+        taskObj.data.physicsTaskType = "RECO"
+        self.assertEqual(taskObj.getPhysicsTaskType(), "RECO")
+
 if __name__ == '__main__':
     unittest.main()

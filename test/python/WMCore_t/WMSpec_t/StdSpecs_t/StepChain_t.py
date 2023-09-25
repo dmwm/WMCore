@@ -2577,6 +2577,107 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(gpuRequired, testArguments["Step3"].get('RequiresGPU', "forbidden"))
         self.assertIsNone(gpuRequirements)
 
+    def testCampaignNamesCaseA(self):
+        """
+        Check campaign names are properly set when al Steps have a campaign
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Step1'].update({"Campaign": "Campaign1"})
+        testArguments['Step2'].update({"Campaign": "Campaign2"})
+        testArguments['Step3'].update({"Campaign": "Campaign3"})
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "Campaign1,Campaign2,Campaign3")
+
+        return
+
+    def testCampaignNamesCaseB(self):
+        """
+        Check campaign names are properly set when the workload not all steps
+        have a campaign defined (hence defaulting to the workload campaign)
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Step1'].update({"Campaign": "Campaign1"})
+        testArguments['Step3'].update({"Campaign": "Campaign3"})
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "Campaign1,TaskForceUnitTest,Campaign3")
+
+        return
+
+    def testCampaignNamesCaseC(self):
+        """
+        Check campaign names are properly set when all step campaigns are the same
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Step1'].update({"Campaign": "Campaign"})
+        testArguments['Step2'].update({"Campaign": "Campaign"})
+        testArguments['Step3'].update({"Campaign": "Campaign"})
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "Campaign")
+
+        return
+
+    def testCampaignNamesCaseD(self):
+        """
+        Check campaign names are properly set to workload request campaign when
+        no steps have a campaign
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "TaskForceUnitTest")
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

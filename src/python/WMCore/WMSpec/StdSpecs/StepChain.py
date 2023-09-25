@@ -346,7 +346,9 @@ class StepChainWorkloadFactory(StdBase):
             parentCmsswStepHelper.keepOutput(parentKeepOutput)
             childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
             currentCmsswStepHelper.keepOutput(childKeepOutput)
-            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
+            configCache = self.loadCouchID(taskConf["ConfigCacheID"], self.configCacheUrl, self.couchDBName)
+            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput, configCache)
+            currentCmsswStepHelper.setPhysicsType(configCache)
 
             # Get and append campaign name for each step
             if taskConf.get("Campaign", None) is not None:
@@ -358,6 +360,8 @@ class StepChainWorkloadFactory(StdBase):
 
         # Closing out the task configuration. The last step output must be saved/merged
         currentCmsswStepHelper.keepOutput(True)
+        # Since we added more cmssw steps to the task, update physics task type
+        task.setPhysicsTaskType()
 
         # Set campaign name
         if campaignNames:
@@ -381,20 +385,21 @@ class StepChainWorkloadFactory(StdBase):
         else:
             return topLevelValue
 
-    def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput):
+    def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput, configCache):
         """
-        _setupOutputModules_
-
         Retrieves the outputModules from the step configuration and sets up
         a merge task for them. Only when KeepOutput is set to True.
+        :param task: WMTask object
+        :param taskConf: dict with task parameters
+        :param stepCmsRun: cms step name
+        :param keepOutput: bool
+        :param configCache: configCache object
         """
         taskConf = taskConf or {}
 
         outputMods = {}
+        configOutput = self.determineOutputModules(configCache=configCache)
 
-        configOutput = self.determineOutputModules(configDoc=taskConf["ConfigCacheID"],
-                                                   configCacheUrl=self.configCacheUrl,
-                                                   couchDBName=self.couchDBName)
         for outputModuleName in configOutput:
             outputModule = self.addOutputModule(task, outputModuleName,
                                                 self.inputPrimaryDataset,
@@ -617,9 +622,8 @@ class StepChainWorkloadFactory(StdBase):
                                                getOutputModules=False)
             # we cannot save output of two steps using the same output module and datatier(s)
             if strToBool(step.get("KeepOutput", True)):
-                configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
-                                                           configCacheUrl=schema['ConfigCacheUrl'],
-                                                           couchDBName=schema["CouchDBName"])
+                configCache = self.loadCouchID(step["ConfigCacheID"], schema['ConfigCacheUrl'], schema["CouchDBName"])
+                configOutput = self.determineOutputModules(configCache=configCache)
                 for modName, values in viewitems(configOutput):
                     thisOutput = (modName, values['dataTier'])
                     if thisOutput in outputModTier:

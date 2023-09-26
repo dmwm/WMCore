@@ -2643,10 +2643,10 @@ class StepChainTests(EmulatedUnitTestCase):
 
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
-
         testArguments['Step1'].update({"Campaign": "Campaign"})
         testArguments['Step2'].update({"Campaign": "Campaign"})
         testArguments['Step3'].update({"Campaign": "Campaign"})
+
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
         task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
@@ -2676,6 +2676,29 @@ class StepChainTests(EmulatedUnitTestCase):
         task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
 
         self.assertEqual(task.getCampaignName(), "TaskForceUnitTest")
+
+        return
+
+    def testSetPhysicsType(self):
+        """
+        Check step physics type is properly set at step level and reported
+        in WMTask
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+        self.assertEqual(task.getPhysicsTaskType(), "UNKNOWN,UNKNOWN,UNKNOWN")
 
         return
 

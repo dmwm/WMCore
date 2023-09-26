@@ -70,6 +70,7 @@ class RunJob(dict):
         self.setdefault('gpuRequirements', None)
         self.setdefault('campaignName', None)
         self.setdefault('requestType', None)
+        self.setdefault('physicsTaskType', None)
 
         return
 

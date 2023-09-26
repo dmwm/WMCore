@@ -108,6 +108,10 @@ class TestTaskChainFactory(TaskChainWorkloadFactory):
         "Don't talk to couch"
         return {}
 
+    def loadCouchID(self, *args, **kwargs):
+        "Don't talk to couch"
+        return None
+
 def taskChainWorkload(workloadName, arguments):
     """
     _monteCarloWorkload_

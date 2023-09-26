@@ -8,7 +8,7 @@ Tests timestamps metrics
 import unittest
 
 from WMCore.Configuration import Configuration
-from WMCore.WMRuntime.Scripts.Timestamps import addTimestampMetrics
+from Utils.Timestamps import addTimestampMetrics
 
 
 class TimestampsTest(unittest.TestCase):

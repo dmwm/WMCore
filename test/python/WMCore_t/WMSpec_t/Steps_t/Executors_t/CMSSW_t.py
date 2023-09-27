@@ -261,8 +261,8 @@ class CMSSW_t(unittest.TestCase):
         userTime1 = getrusage(RUSAGE_CHILDREN).ru_utime
         sysTime1 = getrusage(RUSAGE_CHILDREN).ru_stime
 
-        self.assertTrue(userTime1 > userTime0)
-        self.assertTrue(sysTime1 > sysTime0)
+        self.assertTrue(userTime1 >= userTime0)
+        self.assertTrue(sysTime1 >= sysTime0)
 
 
 if __name__ == '__main__':

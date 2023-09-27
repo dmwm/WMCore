@@ -5,6 +5,10 @@ Usage: python3 Timestamps.py --reportFile=$outputFile --wmJobStart=<sec> --wmJob
 where outputFile represents output FJR file, and wmJobStart/wmJobEnd represent
 start and end time of WM job, respectively.
 
+NOTE: this script should reside in Utils area of WMCore repository since it is required
+at run time on condor node where there is no WMCore installation and we only provide WMCore.zip
+archive, and worker node may not have unzip tool to extract this script.
+
 """
 
 import getopt
@@ -30,6 +34,7 @@ def addTimestampMetrics(config, wmJobStart, wmJobEnd):
     wmTiming.WMJobStart = wmJobStart
     wmTiming.WMJobEnd = wmJobEnd
     wmTiming.WMTotalWallClockTime = wmJobEnd - wmJobStart
+    return config
 
 
 def main():
@@ -62,7 +67,7 @@ def main():
         data = pickle.load(istream)
 
     # adjust FJR data with provided metrics
-    addTimestampMetrics(data, wmJobStart, wmJobEnd)
+    data = addTimestampMetrics(data, wmJobStart, wmJobEnd)
 
     # write content of FJR back to report file
     reportOutFile = reportFile + ".new"
@@ -72,7 +77,7 @@ def main():
         pickle.dump(data, ostream)
 
     # if we successfully wrote reportOutFile we can swap it with input one
-    sizeStatus = os.path.getsize(reportOutFile) > os.path.getsize(reportFile)
+    sizeStatus = os.path.getsize(reportOutFile) >= os.path.getsize(reportFile)
     if os.path.isfile(reportOutFile) and sizeStatus:
         os.rename(reportOutFile, reportFile)
 

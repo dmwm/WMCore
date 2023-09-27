@@ -38,7 +38,14 @@ jobs:
           CERN_REGISTRY: registry.cern.ch
         run: |
           echo "Building service: ${SERVICE_NAME}, with tag: ${PYPI_TAG}"
-          svn checkout https://github.com/dmwm/CMSKubernetes/trunk/docker/pypi/${SERVICE_NAME}
+          for i in 1 2 3 4 5; do
+            svn checkout https://github.com/dmwm/CMSKubernetes/trunk/docker/pypi/${SERVICE_NAME}
+            if [ $? -eq 0 ]; then
+              break
+            fi
+            echo "Retry $i: SVN failed to fetch files. Sleeping 60 seconds..."
+            sleep 60
+          done
           cd ${SERVICE_NAME}
           echo "Retrieved Dockerfile with content:"
           cat Dockerfile

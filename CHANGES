@@ -1,3 +1,8 @@
+2.2.4rc7 to 2.2.4rc8:
+  - Retry svn checkout in the CD pipeline up to 5 times (Alan Malta Rodrigues) #11752
+  - Update WMTiming metrics in given pkl file (Valentin Kuznetsov) #11726
+
+
 2.2.4rc6 to 2.2.4rc7:
   - Add characterization and propagation of task type based on cmsDriver step arguments (Kenyi Hurtado Anampa) #11680
   - Add additional variables to WMAgent.secrets needed for the docker container intialization process. (Todor Ivanov) #11717

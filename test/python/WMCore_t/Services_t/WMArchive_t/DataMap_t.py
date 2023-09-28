@@ -5,6 +5,7 @@ import json
 import os
 from WMCore.WMBase import getTestBase
 from WMCore.Services.WMArchive.DataMap import createArchiverDoc
+from WMCore.Services.WMArchive.CMSSWMetrics import CMSSW_METRICS
 
 SAMPLE_FWJR = {'fallbackFiles': [],
  'skippedFiles': [],
@@ -130,6 +131,7 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                                                     'writeTotalMB': 357.624,
                                                     'writeTotalSecs': 575158.0},
                                         "multicore": {},
+                                        "cmssw": CMSSW_METRICS,
                                         "memory": {
                                                    "PeakValueRss": 0,
                                                    "PeakValueVsize": 0
@@ -202,6 +204,15 @@ class DataMap_t(unittest.TestCase):
             # validate WMTiming struct
             for key in ['WMJobStart', 'WMJobEnd', 'WMTotalWallClockTime']:
                 self.assertTrue(wmTiming[key] > 0)
+
+        # test CMSSW metrics
+        performance = newData.get('performance', {})
+        if performance:
+            # validate CMSSW metrics performance part
+            for pkey, vdict in performance.get('cmssw', {}).items():
+                if pkey != 'XrdSiteStatistics':
+                    for key, val in vdict.items():
+                        self.assertTrue(val >= 0)
 
         # we no longer ship the lumis and eventsPerLumi lists to WMArchive. Hard-wired to []
         self.assertEqual(runInfo['lumis'], [])

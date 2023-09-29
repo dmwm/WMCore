@@ -541,9 +541,9 @@ class SimpleCondorPlugin(BasePlugin):
             else:
                 ad['My.CMS_extendedJobType'] = classad.quote(job['task_type'])
             if job.get('campaignName') is None:
-                ad['My.CMS_CampaignName'] = classad.quote(job['campaignName'])
-            else:
                 ad['My.CMS_CampaignName'] = undefined
+            else:
+                ad['My.CMS_CampaignName'] = classad.quote(job['campaignName'])
 
             # Handling for AWS, cloud and opportunistic resources
             ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))

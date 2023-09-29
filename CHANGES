@@ -1,3 +1,8 @@
+2.2.4rc8 to 2.2.4rc9:
+  - Add CMSSW metrics to FJR (Valentin Kuznetsov) #11663
+  - Add CMSSW performance metrics to WMArchvie document (Valentin Kuznetsov) #11696
+
+
 2.2.4rc7 to 2.2.4rc8:
   - Retry svn checkout in the CD pipeline up to 5 times (Alan Malta Rodrigues) #11752
   - Update WMTiming metrics in given pkl file (Valentin Kuznetsov) #11726

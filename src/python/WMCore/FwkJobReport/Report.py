@@ -192,7 +192,7 @@ class Report(object):
         Convert the performance section of the FWJR into JSON.
         """
         jsonPerformance = {}
-        for reportSection in ["storage", "memory", "cpu", "multicore"]:
+        for reportSection in ["storage", "memory", "cpu", "multicore", "cmssw"]:
             jsonPerformance[reportSection] = {}
             if not hasattr(perfSection, reportSection):
                 continue
@@ -200,7 +200,9 @@ class Report(object):
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
             for key in jsonPerformance[reportSection]:
                 val = jsonPerformance[reportSection][key]
-                if isinstance(val, float):
+                if reportSection == 'cmssw' and isinstance(val, ConfigSection):
+                    jsonPerformance[reportSection][key] = val.dictionary_()
+                elif isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
                         jsonPerformance[reportSection][key] = None
 

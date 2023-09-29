@@ -20,7 +20,7 @@ from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import dbsClientException
 from retry import retry
 
-from Utils.IteratorTools import grouper
+from Utils.IteratorTools import grouper, makeListElementsUnique
 from Utils.PythonVersion import PY2
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.DBS.DBSUtils import dbsListFileParents, dbsListFileLumis, \
@@ -848,18 +848,26 @@ class DBS3Reader(object):
                 result.append({"ParentDataset": parent['parent_dataset'], "ParentFiles": list(parentFiles[childLFN])})
         return result
 
-    def insertFileParents(self, childBlockName, childParentsIDPairs):
+    def insertFileParents(self, childBlockName, childParentsIDPairs, missingFiles=0):
         """
+        For a given block name, inject its child/parent file id relationship
         :param childBlockName: child block name
         :param childParentsIDPairs: list of list child and parent file ids, i.e. [[1,2], [3,4]...]
                 dbs validate child ids from the childBlockName
+        :param missingFiles: an integer with the number of children files missing parents
         :return: None
         """
-        return self.dbs.insertFileParents({"block_name": childBlockName, "child_parent_id_list": childParentsIDPairs})
+        self.logger.debug("Going to insert parentage for child_parent_id_list: %s",
+                          childParentsIDPairs)
+        return self.dbs.insertFileParents({"block_name": childBlockName,
+                                           "child_parent_id_list": childParentsIDPairs,
+                                           "missing_files": missingFiles})
 
     def listBlocksWithNoParents(self, childDataset):
         """
-        :param childDataset: child dataset for
+        Given a dataset name, list all its blocks, fetch their parentage
+        blocks and return a set of blocks without any parentage information.
+        :param childDataset: string with a dataset name
         :return: set of child blocks with no parentBlock
         """
         allBlocks = self.dbs.listBlocks(dataset=childDataset)
@@ -916,29 +924,11 @@ class DBS3Reader(object):
         self.logger.info("Found %d blocks without parentage information", len(blocks))
         for blockName in blocks:
             try:
-                self.logger.info("Fixing parentage for block: %s", blockName)
-                childFlatData = self.getChildBlockTrio(blockName)
-                listChildParent = []
-
-                # first resolve parentage for all common runLumi pairs between childBlock and parentDataset
-                for runLumi in childFlatData.keys() & parentFlatData.keys():
-                    childFileId = childFlatData[runLumi]
-                    parentFileId = parentFlatData[runLumi]
-                    listChildParent.append([childFileId, parentFileId])
-
-                # then add all run lumi pairs which are missing at the parent Dataset by appending None as parentage information
-                for runLumi in childFlatData.keys() - parentFlatData.keys():
-                    childFileId = childFlatData[runLumi]
-                    parentFileId = None
-                    listChildParent.append([childFileId, parentFileId])
-                    msg = "Child file id: %s, with run/lumi: %s, has no match in the parent dataset. "
-                    msg += "Adding it with null parentage information to DBS."
-                    self.logger.warning(msg, childFileId, runLumi)
-
+                listChildParent, countMissingFiles = self._compileParentageList(blockName, parentFlatData)
                 # insert block parentage information to DBS
                 if insertFlag and any(listChildParent):
-                    self.insertFileParents(blockName, listChildParent)
-                    self.logger.info("Parentage information successfuly added to DBS for block %s", blockName)
+                    self.insertFileParents(blockName, listChildParent, countMissingFiles)
+                    self.logger.info("Parentage information successfully added to DBS for block %s", blockName)
                 else:
                     self.logger.warning("No parentage information added to DBS for block %s", blockName)
             except Exception as ex:
@@ -947,6 +937,54 @@ class DBS3Reader(object):
                 failedBlocks.append(blockName)
 
         return failedBlocks
+
+    def _compileParentageList(self, blockName, parentRunLumi):
+        """
+        Method to find out child and parent file relationship based
+        on their run/lumi tuples.
+        :param blockName: string with the child block name
+        :param parentRunLumi: a set like {(1, 53): 3077147397, (1, 54): 3077147397, (1, 27): 3077147397
+        :return: a list of child/parent file id tuples and a set of children files
+            that are missing parent files, e.g.
+            [[3077147917, 3077148037], [3077147917, 3077148037], 123
+        """
+        self.logger.info("Compiling parentage list for block: %s", blockName)
+        # fetch run/lumi and file ids for the child block name
+        childFlatData = self.getChildBlockTrio(blockName)
+
+        self.logger.debug("Block name: %s has this run/lumi/file id information: %s",
+                          blockName, childFlatData)
+        listChildParent = []
+
+        # first resolve parentage for all common runLumi pairs between childBlock and parentDataset
+        withParents = set()
+        for runLumi in childFlatData.keys() & parentRunLumi.keys():
+            childFileId = childFlatData[runLumi]
+            withParents.add(childFileId)
+            parentFileId = parentRunLumi[runLumi]
+            listChildParent.append([childFileId, parentFileId])
+
+        # the next for loop will finds all the children files with missing parents
+        # and set their parent file id to -1 instead.
+        missingParents = set()
+        for runLumi in childFlatData.keys() - parentRunLumi.keys():
+            childFileId = childFlatData[runLumi]
+            missingParents.add(childFileId)
+            listChildParent.append([childFileId, -1])
+            msg = "Child file id: %s, with run/lumi: %s, has no match in the parent dataset."
+            msg += "Adding it with -1 parentage information to DBS."
+            self.logger.warning(msg, childFileId, runLumi)
+        self.logger.debug("Files with parent: %s, without: %s, non-unique tuples: %d",
+                         withParents, missingParents, len(listChildParent))
+
+        # now find out files missing parent that do not have any other parent
+        missingParents = missingParents - withParents
+        # and make it a unique list of child/parent file ids
+        listChildParent = makeListElementsUnique(listChildParent)
+
+        self.logger.info("Block: %s has %d child/parent tuples and it is missing %d files",
+                         blockName, len(listChildParent), len(missingParents))
+        return listChildParent, len(missingParents)
 
     def getParentDatasetTrio(self, childDataset):
         """

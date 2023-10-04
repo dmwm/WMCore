@@ -1,3 +1,7 @@
+2.2.4rc9 to 2.2.4rc10:
+  - Fix if statement for CMS_CampaignName classad (Alan Malta Rodrigues) #11760
+
+
 2.2.4rc8 to 2.2.4rc9:
   - Add CMSSW metrics to FJR (Valentin Kuznetsov) #11663
   - Add CMSSW performance metrics to WMArchvie document (Valentin Kuznetsov) #11696

@@ -1,3 +1,6 @@
+2.2.4rc10 to 2.2.4:
+  - Final stable release
+
 2.2.4rc9 to 2.2.4rc10:
   - Fix if statement for CMS_CampaignName classad (Alan Malta Rodrigues) #11760
 

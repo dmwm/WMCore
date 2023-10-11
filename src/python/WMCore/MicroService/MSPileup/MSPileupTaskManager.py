@@ -37,11 +37,13 @@ class MSPileupTaskManager(MSCore):
         self.rucioAuthUrl = msConfig['rucioAuthUrl']  # aligned with MSCore init
         self.cleanupDaysThreshold = msConfig.get('cleanupDaysThreshold', 15)
         dryRun = msConfig.get('dryRun', False)
+        rucioScope = msConfig.get('rucioScope', 'cms')
+        customRucioScope = msConfig.get('customRucioScope', 'group.wmcore')
         self.rucioClient = self.rucio  # set in MSCore init
         self.dataManager = MSPileupData(msConfig)
         self.monitManager = MSPileupMonitoring(msConfig)
         self.mgr = MSPileupTasks(self.dataManager, self.monitManager, self.logger,
-                                 self.rucioAccount, self.rucioClient, dryRun)
+                                 self.rucioAccount, self.rucioClient, rucioScope, customRucioScope, dryRun)
 
     def status(self):
         """

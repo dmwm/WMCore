@@ -120,7 +120,7 @@ class MSPileupData():
         # insert document into underlying DB
         try:
             self.dbColl.insert_one(doc)
-            self.logger.info("Pileup object %s successfully created", doc.get("pileupName"))
+            self.logger.info("Pileup object '%s' (custom name '%s') successfully created", doc.get("pileupName"), doc.get('customName'))
         except errors.DuplicateKeyError:
             msg = f"Failed to insert: {doc}, it already exist in DB"
             self.logger.exception(msg)
@@ -140,8 +140,12 @@ class MSPileupData():
         :return: list of MSPileupError or empty list
         """
         rseList = rseList or []
-        pname = doc.get('pileupName', '')
-        spec = {'pileupName': pname}
+        pname = doc.get('customName', '')
+        spec = {'customName': pname}
+        if pname == '':
+            pname = doc.get('pileupName', '')
+            spec = {'pileupName': pname}
+        self.logger.info("Fetching pileup document with the following spec: %s", spec)
         # if validate=True, then try to load the original document from the
         # database and perform full validation on the updated doc
         if validate:
@@ -184,7 +188,7 @@ class MSPileupData():
         # we do not need to create MSPileupObj and validate it since our doc comes directly from DB
         try:
             self.dbColl.update_one(spec, {"$set": doc})
-            self.logger.info("Pileup object %s successfully updated", spec.get("pileupName"))
+            self.logger.info("Pileup object '%s' (custom name '%s') successfully updated", spec.get("pileupName"), spec.get('customName'))
         except Exception as exp:
             msg = f"Failed to insert: {doc}, error {exp}"
             self.logger.exception(msg)
@@ -253,7 +257,7 @@ class MSPileupData():
         """
         try:
             self.dbColl.delete_one(spec)
-            self.logger.info("Pileup object %s successfully deleted", spec.get("pileupName"))
+            self.logger.info("Pileup object '%s' (custom name '%s') successfully deleted", spec.get("pileupName"), spec.get('cusomName'))
         except Exception as exp:
             msg = f"Unable to delete with spec {spec}, error {exp}"
             self.logger.exception(msg)

@@ -18,6 +18,7 @@ Description: MSPileupObj module provides MSPileup data structure:
     "deactivatedOn": int, seconds since epoch in GMT timezone (service-based)
     "active": boolean, (mandatory)
     "pileupSize": integer, current size of the pileup in bytes (service-based)
+    "customName": string, custom container DID (optional)
     "ruleIds: list of strings (rules) used to lock the pileup id (service-based)
 }
 
@@ -59,6 +60,7 @@ class MSPileupObj():
             'deactivatedOn': pdict.get('deactivatedOn', gmtimeSeconds()),
             'active': pdict['active'],
             'pileupSize': pdict.get('pileupSize', 0),
+            'customName': pdict.get('customName', ''),
             'ruleIds': pdict.get('ruleIds', [])}
         valid, msg = self.validate(self.data)
         if not valid:
@@ -107,11 +109,11 @@ class MSPileupObj():
                 msg = f"Failed to validate: {key}, expect data-type {stype} got type {dtype}"
                 self.logger.error(msg)
                 return False, msg
-            if key == 'pileupName':
+            if key == 'pileupName' or (key == 'customName' and val != ''):
                 try:
                     dataset(val)
                 except AssertionError:
-                    msg = f"pileupName value {val} does not match dataset pattern"
+                    msg = f"{key} value {val} does not match dataset pattern"
                     self.logger.error(msg)
                     return False, msg
             if key == "pileupType" and val not in ['classic', 'premix']:
@@ -174,5 +176,6 @@ def schema():
            'deactivatedOn': (0, int),
            'active': (False, bool),
            'pileupSize': (0, int),
+           'customName': ('', str),
            'ruleIds': ([], list)}
     return doc

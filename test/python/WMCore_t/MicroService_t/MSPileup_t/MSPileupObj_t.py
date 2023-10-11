@@ -39,6 +39,7 @@ class MSPileupObjTest(unittest.TestCase):
             'replicationGrouping': "ALL",
             'active': True,
             'pileupSize': 0,
+            'customName': '',
             'ruleIds': []}
         obj = MSPileupObj(data, validRSEs=expectedRSEs)
         for key in ['insertTime', 'lastUpdateTime', 'activatedOn', 'deactivatedOn']:

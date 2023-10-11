@@ -50,6 +50,7 @@ class MockRucioApi(object):
         configDict = configDict or {}
         self.dataBlocks = DataBlockGenerator()
         self.subRequests = {}
+        self.rucioParams = {}
 
     def sitesByBlock(self, block):
         """

@@ -1403,6 +1403,17 @@
   "name": "/MinimumBias/ComissioningHI-v1/RAW",
   "account": "ms-pileup"
  }],
+ "listDataRules:[('account', 'ms-pileup'), ('scope', 'group.wmcore')]": [{
+  "state": "OK",
+  "id": "123",
+  "rse_expression": "T2_XX_CERN",
+  "locks_ok_cnt": 2,
+  "locks_replicating_cnt": 2,
+  "locks_stuck_cnt": 2,
+  "scope": "cms",
+  "name": "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
+  "account": "ms-pileup"
+ }],
  "evaluateRSEExpression": ["T2_XX_CERN"],
  "evaluateRSEExpression:[('useCache', True)]": ["rse1", "rse2"],
  "deleteRule": true,

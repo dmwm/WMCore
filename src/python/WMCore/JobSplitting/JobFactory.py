@@ -14,6 +14,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File as WMBSFile
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 class JobFactory(WMObject):
@@ -121,7 +122,7 @@ class JobFactory(WMObject):
         list([x.startGroup(self.currentGroup) for x in self.generators])
         return
 
-    def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
+    def newJob(self, name=None, files=None, failedJob=False, failedReason=None, failedErrCode=None):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
@@ -142,6 +143,7 @@ class JobFactory(WMObject):
         if failedJob:
             self.currentJob["failedOnCreation"] = True
             self.currentJob["failedReason"] = failedReason
+            self.currentJob["failedErrCode"] = failedErrCode
 
         # Decides how the pileup data will be handled in runtime
         if self.trustPUSitelists:
@@ -200,9 +202,24 @@ class JobFactory(WMObject):
 
                     job['possiblePSN'] = locSet
                     if len(job['possiblePSN']) == 0:
+                        # NOTE: If we have no place to execute a single job we mark it as failedOnCreation.
+                        #       We have two options:
+                        #       * Either propagate the job state to 'createdfailed' here immediately
+                        #       * Or we let JobCreatorPoller later catch the marker and do it for us
+                        #         when moving the jobs from state 'new' to 'created'
+                        #       For the time being we opt for the later
+                        job["failedOnCreation"] = True
+                        job["failedErrCode"] = 71101
+                        job["failedReason"] = WM_JOB_ERROR_CODES[job["failedErrCode"]]
+                        msg = "Found job with an empty list of possiblePSN. JobId: %s from JobGroup: %s and task: %s."
+                        msg += WM_JOB_ERROR_CODES[job["failedErrCode"]]
+                        msg += " Marking it as FailedOnCreation"
+                        logging.warning(msg, job['id'], job['jobgroup'], job['task'] )
+
                         job["fileLocations"] = fileLocations
                         job["siteWhitelist"] = self.siteWhitelist
                         job["siteBlacklist"] = self.siteBlacklist
+
                 # now after the jobs are created, remove input file locations
                 # they are no longer needed and just take up space
                 for job in jobGroup.newjobs:

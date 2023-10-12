@@ -692,8 +692,8 @@ class JobCreatorPoller(BaseWorkerThread):
         fjrsToSave = []
         for failedJob in createFailedJobs:
             report = Report()
-            report.addError("CreationFailure", 99305, "CreationFailure",
-                            failedJob.get("failedReason", WM_JOB_ERROR_CODES[99305]))
+            report.addError("CreationFailure", failedJob["failedErrCode"], "CreationFailure",
+                            failedJob.get("failedReason", WM_JOB_ERROR_CODES[failedJob["failedErrCode"]]))
             jobCache = failedJob.getCache()
             try:
                 fjrPath = os.path.join(jobCache, "Report.0.pkl")

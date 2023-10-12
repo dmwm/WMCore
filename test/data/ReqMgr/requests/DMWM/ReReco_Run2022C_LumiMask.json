@@ -1,0 +1,84 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": "ProcessingString-OVERRIDE-ME",
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "Run2022C",
+        "CMSSWVersion": "CMSSW_12_4_14_patch1",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": "ReReco workflow; ReReco with lumiMask input; ReReco multicore; ReReco harvesting",
+            "WorkFlowDesc": "ReReco with lumi list, total of 4 runs, 67 lumis; 4 cores/10GB"
+        },
+        "ConfigCacheID": "a8fc2cf8e27cd8dd50cfde908ca8115f",
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMConfigCacheID": "a8fc2cf8e27cd8dd50cfde908ca913f5",
+        "DQMHarvestUnit": "byRun",
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "EnableHarvesting": true,
+        "EventStreams": 0,
+        "GPUParams": "null",
+        "GlobalTag": "124X_dataRun3_v15",
+        "IncludeParents": false,
+        "InputDataset": "/MuonEG/Run2022C-v1/RAW",
+        "LumiList": {
+            "355862": [
+                [
+                    121,
+                    133
+                ]
+            ],
+            "355863": [
+                [
+                    1,
+                    14
+                ]
+            ],
+            "355865": [
+                [
+                    1,
+                    287
+                ]
+            ],
+            "355870": [
+                [
+                    31,
+                    67
+                ]
+            ]
+        },
+        "Memory": 10000,
+        "Multicore": 4,
+        "PrepID": "TEST-ReReco-Run2022C-MuonEG-testlumi-00001",
+        "ProcessingString": "testlumi",
+        "ProcessingVersion": 1,
+        "RequestPriority": 610000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "ReReco",
+        "RequiresGPU": "forbidden",
+        "Scenario": "pp",
+        "ScramArch": [
+            "el8_amd64_gcc10"
+        ],
+        "SizePerEvent": 1,
+        "SplittingAlgo": "EventAwareLumiBased",
+        "TimePerEvent": 2
+    }
+}

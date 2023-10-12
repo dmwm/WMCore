@@ -24,7 +24,7 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 2.2.3.1 -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 2.2.5 -t production -n 30
 ### Usage: Example: sh deploy-wmagent.sh -w 2.1.4-b954b0745339a347ea28afd5b5767db4 -t testbed-vocms001 -p "11001" -r comp=comp.amaltaro
 ### Usage:
 
@@ -373,7 +373,7 @@ echo "Done!" && echo
 echo "*** Setting up US opportunistic resources ***"
 if [[ "$HOSTNAME" == *fnal.gov ]]; then
   sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
-  for resourceName in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil,T3_US_Lancium,T3_ES_PIC_BSC};
+  for resourceName in {T3_US_NERSC,T3_US_OSG,T3_US_PSC,T3_US_SDSC,T3_US_TACC,T3_US_Anvil,T3_US_Lancium,T3_ES_PIC_BSC,T3_US_Ookami};
   do
     ./manage execute-agent wmagent-resource-control --plugin=SimpleCondorPlugin --opportunistic \
       --pending-slots=$HPC_PEND_JOBS --running-slots=$HPC_RUNN_JOBS --add-one-site $resourceName

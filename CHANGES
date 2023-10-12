@@ -1,3 +1,7 @@
+2.2.4 to 2.2.5:
+  - Bump deploy-wmagent script to version 2.2.5; insert T3_US_Ookami (Alan Malta Rodrigues) #11766
+
+
 2.2.4rc10 to 2.2.4:
   - Final stable release
 

@@ -360,6 +360,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         Find all blocks; make sure they're in the cache
         """
+        logging.info("Executing loadBlocks method...")
         openBlocks = self.dbsUtil.findOpenBlocks()
         logging.info("Found %d open blocks.", len(openBlocks))
         logging.debug("These are the openblocks: %s", openBlocks)
@@ -372,6 +373,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # Now load the blocks
         try:
+            logging.info("Now loading %d open blocks not yet cached...", len(blocksToLoad))
             loadedBlocks = self.dbsUtil.loadBlocks(blocksToLoad)
             logging.info("Loaded %d blocks from the database.", len(loadedBlocks))
         except WMException:
@@ -384,6 +386,7 @@ class DBSUploadPoller(BaseWorkerThread):
             raise DBSUploadException(msg) from None
 
         for blockInfo in loadedBlocks:
+            logging.info("Creating DBSBufferBlock object for: %s", blockInfo['block_name'])
             block = DBSBufferBlock(name=blockInfo['block_name'],
                                    location=blockInfo['origin_site_name'],
                                    datasetpath=blockInfo['datasetpath'],
@@ -428,6 +431,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Load all files that need to be loaded.  I will do this by DatasetPath
         to break the monstrous calls down into smaller chunks.
         """
+        logging.info("Executing loadFiles method...")
         dspList = self.dbsUtil.findUploadableDAS()
 
         readyBlocks = []
@@ -497,6 +501,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         Mark Open blocks as Pending if they have timed out or their workflows have completed
         """
+        logging.info("Executing checkBlockCompletion method...")
         completedWorkflows = self.dbsUtil.getCompletedWorkflows()
         for block in viewvalues(self.blockCache):
             if block.status == "Open":
@@ -606,6 +611,7 @@ class DBSUploadPoller(BaseWorkerThread):
          Open, in DBSBuffer - Newly created block that has already been
            written to DBSBuffer.  We don't have to do anything with it.
         """
+        logging.info("Executing inputBlocks method...")
         if not self.blockCache:
             return
 
@@ -638,10 +644,12 @@ class DBSUploadPoller(BaseWorkerThread):
             try:
                 myThread.transaction.begin()
                 if createInDBSBuffer:
+                    logging.info("Creating %d new blocks in DBSBuffer", len(createInDBSBuffer))
                     self.createBlocksDAO.execute(blocks=createInDBSBuffer,
                                                  conn=myThread.transaction.conn,
                                                  transaction=True)
                 if updateInDBSBuffer:
+                    logging.info("Updating %d blocks in DBSBuffer", len(updateInDBSBuffer))
                     self.updateBlocksDAO.execute(blocks=updateInDBSBuffer,
                                                  conn=myThread.transaction.conn,
                                                  transaction=True)
@@ -668,6 +676,7 @@ class DBSUploadPoller(BaseWorkerThread):
         if self.filesToUpdate:
             try:
                 myThread.transaction.begin()
+                logging.info("Associating %d files to blocks in DBSBuffer", len(self.filesToUpdate))
                 self.setBlockFilesDAO.execute(binds=self.filesToUpdate,
                                               conn=myThread.transaction.conn,
                                               transaction=True)
@@ -726,6 +735,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         To do this, the result queue needs to pass back the blockname
         """
+        logging.info("Executing retrieveBlocks method...")
         myThread = threading.currentThread()
 
         blocksToClose = []
@@ -775,10 +785,12 @@ class DBSUploadPoller(BaseWorkerThread):
 
         if loadedBlocks:
             try:
+                logging.info("Updating database record with files injected into DBS")
                 myThread.transaction.begin()
                 self.updateFilesDAO.execute(blocks=loadedBlocks, status="InDBS",
                                             conn=myThread.transaction.conn,
                                             transaction=True)
+                logging.info("Updating %d blocks successfully injected into DBS", len(loadedBlocks))
                 self.updateBlocksDAO.execute(blocks=loadedBlocks,
                                              conn=myThread.transaction.conn,
                                              transaction=True)
@@ -827,6 +839,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Check with DBS3 if the blocks marked as check are
         uploaded or not.
         """
+        logging.info("Checking for blocks potentially uploaded but not marked as such in the database.")
         myThread = threading.currentThread()
 
         blocksUploaded = []
@@ -836,12 +849,14 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.debug("Checking block existence: %s", block)
             # Check in DBS if the block was really inserted
             try:
+                # FIXME: is it still an empty list for blocks not available?
                 result = self.dbsApi.listBlocks(block_name=block)
                 # it is an empty list if block cannot be found
                 if result:
                     loadedBlock = self.blockCache.get(block)
                     loadedBlock.status = 'InDBS'
                     blocksUploaded.append(loadedBlock)
+                    logging.info("Block '%s' will be marked as '%s'", block, loadedBlock.status)
             except Exception as ex:
                 msg = "Error trying to check block %s through DBS. Error: %s" % (block, str(ex))
                 logging.exception(msg)
@@ -849,6 +864,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Update the status of those blocks that were truly inserted
         if blocksUploaded:
             try:
+                logging.info("Marking bulk of blocks as 'InDBS'")
                 myThread.transaction.begin()
                 self.updateBlocksDAO.execute(blocks=blocksUploaded,
                                              conn=myThread.transaction.conn,
@@ -868,6 +884,8 @@ class DBSUploadPoller(BaseWorkerThread):
                 raise DBSUploadException(msg) from None
             else:
                 myThread.transaction.commit()
+                logging.info("A total of %d blocks have been successfully updated to 'InDBS'",
+                             len(blocksUploaded))
 
         for block in blocksUploaded:
             # Clean things up

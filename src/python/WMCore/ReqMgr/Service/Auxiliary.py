@@ -12,22 +12,14 @@ import cherrypy
 
 import WMCore
 from WMCore.Database.CMSCouch import Document, CouchNotFoundError, CouchError
-from WMCore.REST.Error import RESTError, NoSuchInstance, APINotSpecified
+from WMCore.REST.Error import (NoSuchInstance, APINotSpecified,
+                               MissingBodyData, InvalidUnifiedSchema)
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
+from WMCore.ReqMgr.Utils.AuxValidation import validateUnifiedConfig
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
-
-
-class MissingPostData(RESTError):
-    "The specified object is invalid."
-    http_code = 400
-    app_code = 1201
-
-    def __init__(self):
-        RESTError.__init__(self)
-        self.message = "Empty data has passed"
 
 
 class Info(RESTEntity):
@@ -157,6 +149,17 @@ class AuxBaseAPI(RESTEntity):
 
     def validate(self, apiobj, method, api, param, safe):
         args_length = len(param.args)
+        if method in ["PUT", "POST"]:
+            data = json.loads(cherrypy.request.body.read())
+            if not data:
+                raise MissingBodyData()
+            if api == "unifiedconfig":
+                try:
+                    validateUnifiedConfig(data)
+                except Exception as exc:
+                    raise InvalidUnifiedSchema(str(exc)) from None
+            # this variable is used as a kwarg for the put/post methods
+            safe.kwargs["docData"] = data
         if args_length == 1:
             safe.kwargs["subName"] = param.args.pop(0)
             return
@@ -180,7 +183,7 @@ class AuxBaseAPI(RESTEntity):
             del sw["_id"]
             del sw["_rev"]
         except CouchNotFoundError:
-            raise NoSuchInstance
+            raise NoSuchInstance()
 
         return rows([sw])
 
@@ -199,41 +202,30 @@ class AuxBaseAPI(RESTEntity):
         return listvalues(allDocs)
 
     @restcall(formats=[('application/json', JSONFormat())])
-    def post(self, subName=None):
+    def post(self, subName=None, docData=None):
         """
         Inserts a new document into the database
         """
-        data = cherrypy.request.body.read()
-        if not data:
-            raise MissingPostData()
-        else:
-            doc = json.loads(data)
         if subName:
             docName = "%s_%s" % (self.name, subName)
         else:
             docName = self.name
 
-        doc["ConfigType"] = self.name
-        doc = Document(docName, doc)
+        docData["ConfigType"] = self.name
+        doc = Document(docName, docData)
         result = self.reqmgr_aux_db.commitOne(doc)
         return result
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
-    def put(self, subName=None):
+    def put(self, subName=None, docData=None):
         """
         Update document for the given self.name and subName.
         It assumes the client has provided the entire entity, i.e., the old
         content gets completely replaced by the new one.
 
-        Given that the each couch document contains a revision number, these PUT calls
+        Given that each couch document contains a revision number, these PUT calls
         are not going to be idempotent.
         """
-        data = cherrypy.request.body.read()
-        if not data:
-            raise MissingPostData()
-        else:
-            propertyDict = json.loads(data)
-
         result = None
         if subName:
             docName = "%s_%s" % (self.name, subName)
@@ -245,11 +237,11 @@ class AuxBaseAPI(RESTEntity):
             # replace original document
             newDoc = Document(existDoc['_id'], inputDict={'_rev': existDoc['_rev'],
                                                           'ConfigType': existDoc['ConfigType']})
-            newDoc.update(propertyDict)
+            newDoc.update(docData)
             result = self.reqmgr_aux_db.commitOne(newDoc)
         except CouchNotFoundError:
             cherrypy.log("Document %s not found. Creating one." % docName)
-            doc = Document(docName, propertyDict)
+            doc = Document(docName, docData)
             doc.update({'ConfigType': self.name})
             result = self.reqmgr_aux_db.commitOne(doc)
 

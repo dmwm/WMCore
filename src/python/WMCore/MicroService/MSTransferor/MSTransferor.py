@@ -99,7 +99,6 @@ class MSTransferor(MSCore):
 
         self.cric = CRIC(logger=self.logger)
         self.pileupDocs = []
-        self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
         self.pnn2psnMap = {}
@@ -129,13 +128,10 @@ class MSTransferor(MSCore):
         self.dsetCounter = 0
         self.blockCounter = 0
         self.pileupDocs = getPileupDocs(self.msConfig['mspileupUrl'], self.pileupQuery)
-        self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
         self.psn2pnnMap = self.cric.PSNtoPNNMap()
         self.pnn2psnMap = self.cric.PNNtoPSNMap()
-        if not self.uConfig:
-            raise RuntimeWarning("Failed to fetch the unified configuration")
-        elif not campaigns:
+        if not campaigns:
             raise RuntimeWarning("Failed to fetch the campaign configurations")
         elif not self.psn2pnnMap:
             raise RuntimeWarning("Failed to fetch PSN x PNN map from CRIC")

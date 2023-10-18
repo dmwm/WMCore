@@ -11,7 +11,7 @@ used in service config.py as following
     # REST interface
     data = views.section_('data')
     data.object = 'WMCore.MicroService.Service.RestApiHub.RestApiHub'
-    data.manager = 'WMCore.MicroService.Unified.MSManager.MSManager'
+    data.manager = 'WMCore.MicroService.MSManager.MSManager'
     data.reqmgr2Url = "%s/reqmgr2" % BASE_URL
     data.limitRequestsPerCycle = 500
     data.enableStatusTransition = False
@@ -217,8 +217,9 @@ class MSManager(object):
     def transferor(self, reqStatus):
         """
         MSManager transferor function.
-        It performs Unified logic for data subscription and
-        transfers requests from assigned to staging/staged state of ReqMgr2.
+        It performs input data placement logic for workflows that have
+        been assigned in the system. Successful workflows will be moved
+        to the staging status in ReqMgr2.
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """

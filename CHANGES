@@ -1,3 +1,12 @@
+2.2.5 to 2.2.6rc1:
+  - Script to create a default Unified configuration (Alan Malta Rodrigues) #11770
+  - Remove unused Unified configuration and code; add schema and validation (Alan Malta Rodrigues) #11770
+  - Bin script to fix a single workflow parentage information (Alan Malta Rodrigues) #11694
+  - Refactor StepChainParentage thread to resolve by workflow (Alan Malta Rodrigues) #11694
+  - Update test json templates with MINIAODSIM; fix DQMHarvest ; GPU StepChain; ReReco 2022C; etc (Alan Malta Rodrigues) #11238
+  - Inherit siteLists from upper level task while creating WMBS subscriptions (Todor Trendafilov Ivanov) #11724
+
+
 2.2.4 to 2.2.5:
   - Bump deploy-wmagent script to version 2.2.5; insert T3_US_Ookami (Alan Malta Rodrigues) #11766
 

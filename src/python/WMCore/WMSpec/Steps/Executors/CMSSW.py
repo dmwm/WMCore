@@ -15,7 +15,7 @@ import time
 from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
 
 from Utils.PythonVersion import PY3
-from Utils.Utilities import encodeUnicodeToBytesConditional
+from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicodeConditional
 from WMCore.FwkJobReport.Report import addAttributesToFile
 from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 from WMCore.WMRuntime.Tools.Scram import Scram
@@ -212,6 +212,9 @@ class CMSSW(Executor):
             logging.info("    Invoking command:\n%s", invokeCommand)
             scriptProcess.stdin.write(encodeUnicodeToBytesConditional(invokeCommand, condition=PY3))
             stdout, stderr = scriptProcess.communicate()
+            stdout = decodeBytesToUnicodeConditional(stdout, condition=PY3)
+            stderr = decodeBytesToUnicodeConditional(stderr, condition=PY3)
+            logging.info("stdout: %s\nstderr: %s", stdout, stderr)
             retCode = scriptProcess.returncode
             if retCode > 0:
                 msg = "Error running command\n%s\n" % invokeCommand

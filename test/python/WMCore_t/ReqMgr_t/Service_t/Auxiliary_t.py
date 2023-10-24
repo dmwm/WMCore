@@ -2,6 +2,9 @@ from __future__ import print_function
 
 from builtins import range
 from future import standard_library
+
+from WMCore.REST.Error import InvalidUnifiedSchema
+
 standard_library.install_aliases()
 
 import unittest
@@ -145,13 +148,22 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
     def testUnifiedConfig(self):
         """Test the `unifiedconfig` REST API"""
         docName = "uni1"
+        # post incorrect data schema
         myDoc = {"key1": "value1"}
+        with self.assertRaises(HTTPException):  # should be InvalidUnifiedSchema
+            self.jsonSender.post("data/unifiedconfig/%s" % docName, myDoc)
+
+        # post correct data schema
+        myDoc = {"tiers_to_DDM": {"value": [""], "description": ""},
+                 "tiers_no_DDM": {"value": [""], "description": ""},
+                 "tiers_with_no_custodial": {"value": [""], "description": ""}}
         res = self.jsonSender.post("data/unifiedconfig/%s" % docName, myDoc)
         self.assertTrue(res)
 
         res = self.jsonSender.get("data/unifiedconfig/%s" % docName)
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "UNIFIED_CONFIG")
-        self.assertItemsEqual(list(res[0]["result"][0]), ["key1", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]),
+                              ["tiers_to_DDM", "tiers_no_DDM", "tiers_with_no_custodial", "ConfigType"])
 
     @attr("integration")
     def testPutUnifiedConfig(self):

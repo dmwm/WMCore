@@ -90,6 +90,9 @@ calls = [['listDataTiers'],
           {'block_name': '/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0'}],
          ['listBlockParents',
           {'block_name': '/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0'}],
+         ['listParentDSTrio', {'dataset': '/HToAATo4L_H5000A10_TuneCP5_13TeV-pythia8/RunIISummer20UL16MiniAODAPVv2-106X_mcRun2_asymptotic_preVFP_v11-v2/MINIAODSIM'}],
+         ['listBlockTrio',
+          {'block_name': '/HToAATo4L_H5000A10_TuneCP5_13TeV-pythia8/RunIISummer20UL16MiniAODAPVv2-106X_mcRun2_asymptotic_preVFP_v11-v2/MINIAODSIM#bf137a20-65c5-4927-8f62-7733c3d9e017'}],
 
          # Exception throwing calls
 

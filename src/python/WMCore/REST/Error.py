@@ -226,6 +226,27 @@ class ExecutionError(RESTError):
     app_code = 403
     message = "Execution error"
 
+
+class MissingBodyData(RESTError):
+    """Exception for requests missing body data."""
+    http_code = 400
+    app_code = 1201
+
+    def __init__(self):
+        RESTError.__init__(self)
+        self.message = "User did not pass any body data with the request"
+
+
+class InvalidUnifiedSchema(RESTError):
+    """Exception for incorrect user data schema."""
+    http_code = 400
+    app_code = 1202
+
+    def __init__(self, message):
+        RESTError.__init__(self)
+        self.message = message
+
+
 def report_error_header(header, val):
     """If `val` is non-empty, set CherryPy response `header` to `val`.
     Replaces all newlines with "; " characters. If the resulting value is

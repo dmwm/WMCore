@@ -95,11 +95,6 @@ class RequestInfo(MSCore):
             will be a subset of the input records.
         """
         self.pileupDocs = pileupDocs
-        # obtain new unified Configuration
-        uConfig = self.unifiedConfig()
-        if not uConfig:
-            self.logger.warning("Failed to fetch the latest unified config. Skipping this cycle")
-            return []
         self.logger.info("Going to process %d requests.", len(reqRecords))
 
         # create a Workflow object representing the request, matching

@@ -148,7 +148,8 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.warning("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
         else:
             self.agentsNumByTeam = agentsByTeam.get(self.teamName, self.agentsNumByTeam)
-            logging.debug("Agents connected to the same team (not in DrainMode): %d", self.agentsNumByTeam)
+            logging.info("Found %d agents (not in DrainMode) connected to the team: '%s'",
+                         self.agentsNumByTeam, self.teamName)
         return
 
     def getInfoFromSSB(self):
@@ -221,6 +222,7 @@ class ResourceControlUpdater(BaseWorkerThread):
                 infoSSB[site]['slotsIO'] = max(infoSSB[site]['slotsIO'], self.minIOSlots)
             CPUBound = infoSSB[site]['slotsCPU']
             IOBound = infoSSB[site]['slotsIO']
+            logging.debug("Site name: %s with SSB information: %s", site, infoSSB[site])
 
             sitePending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsSitePercent / 100),
                               self.minCPUSlots)
@@ -320,19 +322,22 @@ class ResourceControlUpdater(BaseWorkerThread):
                              self.minCPUSlots)
         taskIOPending = max(int(IOBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100), self.minIOSlots)
 
-        updateTasks = False
-        if siteTaskSlots[0]['task_type'] in self.tasksCPU and siteTaskSlots[0]['task_pending_slots'] != taskCPUPending:
-            updateTasks = True
-        elif siteTaskSlots[0]['task_type'] in self.tasksIO and siteTaskSlots[0]['task_pending_slots'] != taskIOPending:
-            updateTasks = True
+        updateIO, updateCPU = False, False
+        # if either CPU or IO bound thresholds are different, update local db
+        for item in siteTaskSlots:
+            if item['task_type'] in self.tasksCPU and siteTaskSlots[0]['task_pending_slots'] != taskCPUPending:
+                updateCPU = True
+            elif item['task_type'] in self.tasksIO and siteTaskSlots[0]['task_pending_slots'] != taskIOPending:
+                updateIO = True
 
-        if updateTasks:
-            logging.info("Updating %s CPU tasks thresholds for pend/runn: %d/%d", siteName,
-                         taskCPUPending, CPUBound)
+        if updateCPU:
+            logging.info("Updating %s CPU task thresholds for pend/runn: %d/%d",
+                         siteName, taskCPUPending, CPUBound)
             self.resourceControl.insertThreshold(siteName, taskType=self.tasksCPU, maxSlots=CPUBound,
                                                  pendingSlots=taskCPUPending)
-            logging.info("Updating %s IO tasks thresholds for pend/runn: %d/%d", siteName,
-                         taskIOPending, IOBound)
+        if updateIO:
+            logging.info("Updating %s IO task thresholds for pend/runn: %d/%d",
+                         siteName, taskIOPending, IOBound)
             self.resourceControl.insertThreshold(siteName, taskType=self.tasksIO, maxSlots=IOBound,
                                                  pendingSlots=taskIOPending)
 

@@ -1,3 +1,9 @@
+2.2.4 to 2.2.4.1:
+  - Set parent file id to -1 when missing in the file parentage update (Alan Malta Rodrigues) #11774
+  - Refactor StepChainParentage thread to resolve by workflow (Alan Malta Rodrigues) #11774
+  - Remove unused Unified configuration and code; add schema and validation (Alan Malta Rodrigues) #11774
+
+
 2.2.4rc10 to 2.2.4:
   - Final stable release
 

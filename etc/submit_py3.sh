@@ -192,6 +192,14 @@ else
 fi
 echo -e "======== WMAgent Python bootstrap finished at $(TZ=GMT date) ========\n"
 
+echo -e "======= WMAgent token verification at $(TZ=GMT date) ========\n"
+echo "Content under _CONDOR_CREDS: ${_CONDOR_CREDS}"
+ls -l ${_CONDOR_CREDS}
+export BEARER_TOKEN_FILE=${_CONDOR_CREDS}/cms.use
+# this tool needs to become available in the job images
+httokendecode ${BEARER_TOKEN_FILE}
+# Unset X509 only to test reading data from the storage with token
+#unset X509_USER_PROXY
 
 echo "======== WMAgent Unpack the job starting at $(TZ=GMT date) ========"
 # Should be ready to unpack and run this

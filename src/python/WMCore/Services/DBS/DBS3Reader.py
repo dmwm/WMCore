@@ -964,14 +964,19 @@ class DBS3Reader(object):
             parentFileId = parentRunLumi[runLumi]
             listChildParent.append([childFileId, parentFileId])
 
-        # the next for loop will finds all the children files with missing parents
-        # and set their parent file id to -1 instead.
+        # the next for loop will find all the children files with missing parents
+        # and set their parent file id to -1 instead, unless that child id already has
+        # a valid parent file for other lumi(s)
         missingParents = set()
         for runLumi in childFlatData.keys() - parentRunLumi.keys():
             childFileId = childFlatData[runLumi]
+            msg = "Child file id: %s, with run/lumi: %s, has no match in the parent dataset. "
+            if childFileId in withParents:
+                msg += "It does have parent files for other run/lumis though."
+                self.logger.warning(msg, childFileId, runLumi)
+                continue
             missingParents.add(childFileId)
             listChildParent.append([childFileId, -1])
-            msg = "Child file id: %s, with run/lumi: %s, has no match in the parent dataset."
             msg += "Adding it with -1 parentage information to DBS."
             self.logger.warning(msg, childFileId, runLumi)
         self.logger.debug("Files with parent: %s, without: %s, non-unique tuples: %d",

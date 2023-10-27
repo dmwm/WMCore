@@ -135,6 +135,11 @@ class SimpleCondorPlugin(BasePlugin):
         proxy = Proxy({'logger': myThread.logger})
         self.x509userproxy = proxy.getProxyFilename()
 
+        # fetch the access token file
+        self.tokenPath = os.getenv('BEARER_TOKEN_FILE', None)
+        logging.info("Agent configured with X509: %s, and Token: %s",
+                     self.x509userproxy, self.tokenPath)
+
         # These are added now by the condor client
         #self.x509userproxysubject = proxy.getSubject()
         #self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
@@ -520,6 +525,9 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['Requirements'] = self.reqStr
 
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
+            if self.tokenPath:
+                ad['My.ScitokensFile'] = classad.quote(self.tokenPath)
+
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))

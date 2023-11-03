@@ -138,7 +138,7 @@ class SRMV2Impl(StageOutImplV2):
                 invalidPathCount = p2.communicate()[0]
                 logging.info("got this for SRM_INVALID_PATH: %s" % invalidPathCount)
                 if (invalidPathCount and (exitCode == '')):
-                    logging.warn("Directory doesn't exist in srmv2 stageout...creating and retrying")
+                    logging.warning("Directory doesn't exist in srmv2 stageout...creating and retrying")
                     self.createOutputDirectory(toPfn,stageOut)
                     continue
                 elif ( str(exitCode) != "0" ):

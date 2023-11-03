@@ -439,7 +439,7 @@ class SimpleCondorPlugin(BasePlugin):
         try:
             schedd.act(htcondor.JobAction.Remove, gridIds)
         except RuntimeError:
-            logging.warn("Error while killing jobs on the schedd: %s", gridIds)
+            logging.warning("Error while killing jobs on the schedd: %s", gridIds)
             if raiseEx:
                 raise
 
@@ -458,7 +458,7 @@ class SimpleCondorPlugin(BasePlugin):
         try:
             schedd.act(htcondor.JobAction.Remove, "WMAgent_RequestName == %s" % classad.quote(str(workflow)))
         except RuntimeError:
-            logging.warn("Error while killing jobs on the schedd: WMAgent_RequestName=%s", workflow)
+            logging.warning("Error while killing jobs on the schedd: WMAgent_RequestName=%s", workflow)
 
         return
 

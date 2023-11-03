@@ -413,7 +413,7 @@ def process_request_args(input_config_file, command_line_json, logger):
             if k in cli_json:
                 request_args[k].update(cli_json[k])
     else:
-        logger.warn("No request arguments to override (--json)? Some values will be wrong.")
+        logger.warning("No request arguments to override (--json)? Some values will be wrong.")
 
     # iterate over all items recursively and warn about those ending with
     # OVERRIDE-ME, hence not overridden

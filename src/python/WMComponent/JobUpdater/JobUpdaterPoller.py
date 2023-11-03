@@ -103,7 +103,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         except Exception as ex:
             errorStr = str(ex)
             if 'Connection refused' in errorStr or "timed out" in errorStr:
-                logging.warn("Failed to sync priorities. Trying in the next cycle")
+                logging.warning("Failed to sync priorities. Trying in the next cycle")
             else:
                 msg = "Caught unexpected exception in JobUpdater: %s\n" % errorStr
                 logging.exception(msg)

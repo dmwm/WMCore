@@ -244,7 +244,7 @@ class Requests(dict):
             setattr(e, 'result', str(ex))
             raise e from None
         except (socket.error, AttributeError):
-            self['logger'].warn("Http request failed, retrying once again..")
+            self['logger'].warning("Http request failed, retrying once again..")
             # AttributeError implies initial connection error - need to close
             # & retry. httplib2 doesn't clear httplib state before next request
             # if this is threaded this may spoil things

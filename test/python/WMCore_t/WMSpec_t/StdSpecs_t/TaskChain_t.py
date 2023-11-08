@@ -2480,6 +2480,55 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
         self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "MonteCarlo")
 
+    def testRunlist(self):
+        """
+        Check that the properly setup run white/black lists
+        """
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments['Task1']['RunWhiteList'] = ["111111", "222222"]
+        factory = TaskChainWorkloadFactory()
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+    def testCampaignNameTaskChainTasks(self):
+        """
+        Test campaign names in tasks
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(deepcopy(REQUEST_INPUT))
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+        arguments['Task1'].update({"Campaign": "Campaign_DIGI"})
+        arguments['Task2'].update({"Campaign": "Campaign_RECO"})
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+        taskObj = testWorkload.getTaskByName("DIGI")
+        self.assertEqual(taskObj.getCampaignName(), "Campaign_DIGI")
+        taskObj = testWorkload.getTaskByName("RECO")
+        self.assertEqual(taskObj.getCampaignName(), "Campaign_RECO")
+
+    def testSetPhysicsTypeTaskChainTasks(self):
+        """
+        Test campaign names in tasks
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(deepcopy(REQUEST_INPUT))
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+        taskObj = testWorkload.getTaskByName("DIGI")
+        taskObj.data.physicsTaskType = "DIGI"
+        self.assertEqual(taskObj.getPhysicsTaskType(), "DIGI")
+        taskObj = testWorkload.getTaskByName("RECO")
+        taskObj.data.physicsTaskType = "RECO"
+        self.assertEqual(taskObj.getPhysicsTaskType(), "RECO")
 
 if __name__ == '__main__':
     unittest.main()

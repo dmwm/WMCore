@@ -3,7 +3,6 @@
 Unittests for TemporaryEnvironment function(s)
 """
 
-from __future__ import division
 
 import os
 import unittest
@@ -21,9 +20,9 @@ class TemporaryEnvironmentTest(unittest.TestCase):
         Test the grouper function (returns chunk of an iterable)
         """
 
-        with tmpEnv(NEW_ENV_VAR=u'blah'):
+        with tmpEnv(NEW_ENV_VAR='blah'):
             self.assertTrue('NEW_ENV_VAR' in os.environ)
-            self.assertEqual(os.environ['NEW_ENV_VAR'], u'blah')
+            self.assertEqual(os.environ['NEW_ENV_VAR'], 'blah')
         self.assertFalse('NEW_ENV_VAR' in os.environ)
 
 

@@ -29,4 +29,31 @@ class GetSiteInfo(DBFormatter):
             sql = self.sql + " WHERE wl.site_name = :site"
             results = self.dbi.processData(sql, {'site': siteName},
                                        conn=conn, transaction=transaction)
-        return self.formatDict(results)
+        return self.format(results)
+
+    def format(self, result):
+        """
+        Format the DB results in a plain list of dictionaries, with one
+        dictionary for each site name, thus with a list of PNNs.
+        :param result: DBResult object
+        :return: a list of dictionaries
+        """
+        # first create a dictionary to make key look-up easier
+        resp = {}
+        for thisItem in DBFormatter.format(self, result):
+            # note that each item has 7 columns returned from the database
+            siteName = thisItem[0]
+            resp.setdefault(siteName, dict())
+            siteInfo = resp[siteName]
+            siteInfo['site_name'] = siteName
+            siteInfo.setdefault('pnn', [])
+            if thisItem[1] not in siteInfo['pnn']:
+                siteInfo['pnn'].append(thisItem[1])
+            siteInfo['ce_name'] = thisItem[2]
+            siteInfo['pending_slots'] = thisItem[3]
+            siteInfo['running_slots'] = thisItem[4]
+            siteInfo['plugin'] = thisItem[5]
+            siteInfo['cms_name'] = thisItem[6]
+            siteInfo['state'] = thisItem[7]
+        # now return a flat list of dictionaries
+        return list(resp.values())

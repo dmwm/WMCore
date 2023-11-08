@@ -180,9 +180,29 @@ class StdBase(object):
 
         return dataTier
 
+    def loadCouchID(self, configDoc=None, configCacheUrl=None, couchDBName=None):
+        """
+        Load a config document from couch db and return the object
+        :param configDoc: the config ID document
+        :param configCacheUrl: couch url for the config
+        :param couchDBName: couch database name
+        :return: config document object
+        """
+        # TODO: Evaluate if we should call validateConfigCacheExists here
+        configCache = None
+        if configDoc is not None and configDoc != "":
+            if (configCacheUrl, couchDBName) in self.config_cache:
+                configCache = self.config_cache[(configCacheUrl, couchDBName)]
+            else:
+                configCache = ConfigCache(configCacheUrl, couchDBName, True)
+                self.config_cache[(configCacheUrl, couchDBName)] = configCache
+
+            configCache.loadByID(configDoc)
+
+        return configCache
+
     def determineOutputModules(self, scenarioFunc=None, scenarioArgs=None,
-                               configDoc=None, couchDBName=None,
-                               configCacheUrl=None, cmsswVersion=None):
+                               configCache=None, cmsswVersion=None):
         """
         _determineOutputModules_
 
@@ -191,17 +211,8 @@ class StdBase(object):
         """
         # set default scenarioArgs to empty dictionary if it is None.
         scenarioArgs = scenarioArgs or {}
-
         outputModules = {}
-        if configDoc is not None and configDoc != "":
-            if (configCacheUrl, couchDBName) in self.config_cache:
-                configCache = self.config_cache[(configCacheUrl, couchDBName)]
-            else:
-                configCache = ConfigCache(configCacheUrl, couchDBName, True)
-                self.config_cache[(configCacheUrl, couchDBName)] = configCache
-            # TODO: need to change to DataCache
-            # configCache.loadDocument(configDoc)
-            configCache.loadByID(configDoc)
+        if configCache is not None:
             outputModules = configCache.getOutputModuleInfo()
         else:
             if 'outputs' in scenarioArgs and scenarioFunc in ["promptReco", "expressProcessing", "repack"]:
@@ -373,9 +384,11 @@ class StdBase(object):
         procStr = taskConf.get("ProcessingString") or self.processingString
         procVer = taskConf.get("ProcessingVersion") or self.processingVersion
         prepID = taskConf.get("PrepID") or self.prepID
+        campaignName = taskConf.get("Campaign") or self.campaign
         procTask.setAcquisitionEra(acqEra)
         procTask.setProcessingString(procStr)
         procTask.setProcessingVersion(procVer)
+        procTask.setCampaignName(campaignName)
 
         if taskType in ["Production", 'PrivateMC'] and totalEvents is not None:
             procTask.addGenerator(seeding)
@@ -442,10 +455,10 @@ class StdBase(object):
         if "events_per_lumi" in newSplitArgs:
             eventsPerLumi = newSplitArgs["events_per_lumi"]
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
-
+        configCache = self.loadCouchID(configDoc, configCacheUrl, couchDBName)
+        procTaskCmsswHelper.setPhysicsType(configCache)
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
-                                                   configDoc, couchDBName,
-                                                   configCacheUrl, cmsswVersion)
+                                                   configCache, cmsswVersion)
         outputModules = {}
         for outputModuleName in configOutput:
             outputModule = self.addOutputModule(procTask,
@@ -476,6 +489,9 @@ class StdBase(object):
         # has to be done in the very end such that child tasks are set too
         procTask.setPerformanceMonitor(softTimeout=taskConf.get("SoftTimeout", None),
                                        gracePeriod=taskConf.get("GracePeriod", None))
+
+        # Set procTask physics task type
+        procTask.setPhysicsTaskType()
 
         return outputModules
 
@@ -1232,9 +1248,9 @@ class StdBase(object):
                      'RequestNumEvents': {'null': False, 'optional': not generator, 'type': int,
                                           'validate': lambda x: x > 0},
                      'RunBlacklist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
-                                      'validate': lambda x: all([int(y) > 0 for y in x])},
+                                      'validate': lambda x: all([isinstance(y, int) and int(y) > 0 for y in x])},
                      'RunWhitelist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
-                                      'validate': lambda x: all([int(y) > 0 for y in x])},
+                                      'validate': lambda x: all([isinstance(y, int) and int(y) > 0 for y in x])},
                      'ScramArch': {'null': True, 'optional': True, 'type': makeNonEmptyList,
                                    'validate': lambda x: all([y in architectures() for y in x])},
                      'Seeding': {'default': 'AutomaticSeeding', 'null': False, 'optional': True, 'type': str,

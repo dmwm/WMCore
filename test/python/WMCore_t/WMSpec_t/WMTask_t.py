@@ -910,6 +910,17 @@ class WMTaskTest(unittest.TestCase):
             self.assertEqual(taskObj.getRequiresGPU(), "optional")
             self.assertItemsEqual(taskObj.getGPURequirements(), gpuParams["cmsRun1"])
 
+    def testSetCampaignName(self):
+        """
+        Test that we set the campaign name
+        """
+
+        testTask = makeWMTask("TestTask")
+        testTask.setCampaignName("Campaign1")
+
+        self.assertEqual(testTask.getCampaignName(), "Campaign1",
+                         "Wrong campaign name")
+        return
 
 if __name__ == '__main__':
     unittest.main()

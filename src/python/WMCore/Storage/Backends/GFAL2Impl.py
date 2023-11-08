@@ -27,6 +27,8 @@ class GFAL2Impl(StageOutImpl):
         self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '%s'"
         self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '
         self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
+        self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure %(checksum)s %(options)s %(source)s %(destination)s'
+        self.copyCommand = self.setups % ('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
 
     def createFinalPFN(self, pfn):
         """
@@ -87,6 +89,8 @@ class GFAL2Impl(StageOutImpl):
           -T   global timeout for the transfer operation
           -p   if the destination directory does not exist, create it
           -K   checksum algorithm to use, or algorithm:value
+          -v   enable the verbose mode (-v for warning level)
+          --abort-on-failure  abort the whole copy as soon as one failure is encountered
         """
         result = "#!/bin/bash\n"
 

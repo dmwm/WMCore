@@ -435,10 +435,26 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """Test the getParentDatasetTrio method"""
         self.dbs = DBSReader(self.endpoint)
         results = self.dbs.getParentDatasetTrio(DATASET_WITH_PARENTS)
-        self.assertTrue(frozenset({2, 180851}) in results)
-        self.assertEqual(int(results[frozenset({2, 180851})]), 36092526)
-        self.assertTrue(frozenset({1, 180851}) in results)
-        self.assertEqual(int(results[frozenset({2, 180851})]), 36092526)
+        self.assertTrue((180851, 2) in results)
+        self.assertEqual(int(results[(180851, 2)]), 36092526)
+        self.assertTrue((180851, 1) in results)
+        self.assertEqual(int(results[(180851, 1)]), 36092526)
+
+    def testCompileParentageList(self):
+        """Test the _compileParentageList method"""
+        self.dbs = DBSReader(self.endpoint)
+        # it contains 3 files
+        childDset = "/HToAATo4L_H5000A10_TuneCP5_13TeV-pythia8/RunIISummer20UL16MiniAODAPVv2-106X_mcRun2_asymptotic_preVFP_v11-v2/MINIAODSIM"
+        childBlock = "/HToAATo4L_H5000A10_TuneCP5_13TeV-pythia8/RunIISummer20UL16MiniAODAPVv2-106X_mcRun2_asymptotic_preVFP_v11-v2/MINIAODSIM#bf137a20-65c5-4927-8f62-7733c3d9e017"
+        parentRunLumi = self.dbs.getParentDatasetTrio(childDset)
+
+        expectRes = [['4013778997', '4005114237'], ['4013778997', '4005114277'], ['4013778997', '4005114357'],
+                     ['4013778997', '4005114397'], ['4013779037', '4005114157'], ['4013779037', '4005114197'],
+                     ['4013779037', '4005114317'], ['4013779037', '4005114357'], ['4013779077', '4005114437'],
+                     ['4013779077', '4005114477'], ['4013779077', '4005114517']]
+        childParent, missingFiles = self.dbs._compileParentageList(childBlock, parentRunLumi)
+        self.assertItemsEqual(expectRes, childParent)
+
 
 
 if __name__ == '__main__':

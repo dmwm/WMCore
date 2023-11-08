@@ -192,7 +192,7 @@ class Report(object):
         Convert the performance section of the FWJR into JSON.
         """
         jsonPerformance = {}
-        for reportSection in ["storage", "memory", "cpu", "multicore"]:
+        for reportSection in ["storage", "memory", "cpu", "multicore", "cmssw"]:
             jsonPerformance[reportSection] = {}
             if not hasattr(perfSection, reportSection):
                 continue
@@ -200,7 +200,9 @@ class Report(object):
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
             for key in jsonPerformance[reportSection]:
                 val = jsonPerformance[reportSection][key]
-                if isinstance(val, float):
+                if reportSection == 'cmssw' and isinstance(val, ConfigSection):
+                    jsonPerformance[reportSection][key] = val.dictionary_()
+                elif isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
                         jsonPerformance[reportSection][key] = None
 
@@ -221,6 +223,7 @@ class Report(object):
         jsonReport["Campaign"] = self.getCampaign()
         jsonReport["PrepID"] = self.getPrepID()
         jsonReport["EOSLogURL"] = self.getLogURL()
+        jsonReport["WMTiming"] = self.getWMTiming()
 
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
@@ -266,6 +269,7 @@ class Report(object):
             jsonStep["site"] = self.getSiteName()
             jsonStep["analysis"] = {}
             jsonStep["logs"] = {}
+            jsonStep["WMCMSSWSubprocess"] = self.getWMCMSSWSubprocess(stepName)
             jsonReport["steps"][stepName] = jsonStep
 
         return jsonReport
@@ -300,6 +304,18 @@ class Report(object):
         for stepName in self.listSteps():
             returnCodes.update(self.getStepExitCodes(stepName=stepName))
         return returnCodes
+
+    def getWMCMSSWSubprocess(self, stepName):
+        """
+        Returns a WMCMSSWSubprocess metrics for given step
+        :param stepName: string representing step name, e.g. cmsRun1
+        :return: dictionary of WMCMSSWSubprocess metrics
+        """
+        reportStep = self.retrieveStep(stepName)
+        data = getattr(reportStep, 'WMCMSSWSubprocess', {})
+        if isinstance(data, dict):
+            return data
+        return data.dictionary_()
 
     def getStepExitCodes(self, stepName):
         """
@@ -1323,6 +1339,21 @@ class Report(object):
 
         return
 
+    def updateSubprocessInfo(self, sysTime, userTime, startTime, endTime):
+        """
+        Add process information to WMCore FJR
+        :param sysTime: systtem time reported by subprocess job
+        :param userTime: user time reported by subprocess job
+        :param startTime: start time of subprocess (in seconds)
+        :param endTime: endtime time of subprocess (in seconds)
+        """
+        self.report.section_('WMCMSSWSubprocess')
+        self.report.WMCMSSWSubprocess.startTime = startTime
+        self.report.WMCMSSWSubprocess.endTime = endTime
+        self.report.WMCMSSWSubprocess.wallClockTime = endTime - startTime
+        self.report.WMCMSSWSubprocess.userTime = userTime
+        self.report.WMCMSSWSubprocess.sysTime = sysTime
+
     def setValidStatus(self, validStatus):
         """
         _setValidStatus_
@@ -1394,6 +1425,16 @@ class Report(object):
          Return the PrepID
         """
         return getattr(self.data, 'prep_id', "")
+
+    def getWMTiming(self):
+        """
+        Returns a WMTiming metrics
+        :return: dictionary of WMTiming metrics
+        """
+        data = getattr(self.data, 'WMTiming', {})
+        if isinstance(data, dict):
+            return data
+        return data.dictionary_()
 
     def setConfigURL(self, configURL):
         """

@@ -34,7 +34,7 @@ from WMCore.ReqMgr.DataStructs import RequestStatus
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.MicroService.Tools.Common import findParent, isRelVal
+from WMCore.MicroService.Tools.Common import findParent
 from Utils.Pipeline import Pipeline, Functor
 from Utils.CertTools import ckey, cert
 
@@ -308,14 +308,14 @@ class MSRuleCleaner(MSCore):
             msg = "Skipping workflow: %s - 'ParentageResolved' flag set to false." % wflow['RequestName']
             msg += " Will retry again in the next cycle."
             self.logger.info(msg)
-            self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+            self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
         elif wflow['RequestStatus'] == 'announced' and not wflow['TransferDone']:
             # NOTE: We skip workflows which have not yet finalised their TransferStatus
             #       in MSOutput, but we still need some proper logging for them.
             msg = "Skipping workflow: %s - 'TransferStatus' is 'pending' or 'TransferInfo' is missing in MSOutput." % wflow['RequestName']
             msg += " Will retry again in the next cycle."
             self.logger.info(msg)
-            self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+            self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
         elif wflow['RequestStatus'] == 'announced' and not wflow['TransferTape']:
             # NOTE: We skip workflows which have not yet finalised their tape transfers.
             #       (i.e. even if a single output which is supposed to be covered
@@ -325,7 +325,7 @@ class MSRuleCleaner(MSCore):
             msg = "Skipping workflow: %s - tape transfers are not yet completed." % wflow['RequestName']
             msg += " Will retry again in the next cycle."
             self.logger.info(msg)
-            self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+            self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
         elif wflow['RequestStatus'] in ['announced', 'rejected', 'aborted-completed']:
             for pline in self.cleanuplines:
                 try:
@@ -334,13 +334,13 @@ class MSRuleCleaner(MSCore):
                     msg = "%s: Parentage Resolve Error: %s. " % (pline.name, str(ex))
                     msg += "Will retry again in the next cycle."
                     self.logger.error(msg)
-                    self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+                    self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
                     continue
                 except Exception as ex:
                     msg = "%s: General error from pipeline. Workflow: %s. Error:  \n%s. " % (pline.name, wflow['RequestName'], str(ex))
                     msg += "\nWill retry again in the next cycle."
                     self.logger.exception(msg)
-                    self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+                    self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
                     continue
                 if wflow['CleanupStatus'][pline.name]:
                     self.wfCounters['cleaned'][pline.name] += 1
@@ -412,13 +412,14 @@ class MSRuleCleaner(MSCore):
             self.logger.error("Missing or broken status transition history for %s", wflow['RequestName'])
             return None
 
-    def _isStatusAdvanceExpired(self, wflow):
+    def _checkStatusAdvanceExpired(self, wflow, additionalInfo=""):
         """
         A method to check if a given status transition has timed out e.g. before
         an alarm being set. The timeout should be configurable and hence taken
-        from the instance attributes.
-        :param wflow:  A MSRuleCleanerWorkflow instance
-        :return:       Bool: True if status alarm time has expired False otherwise
+        from the instance attributes. Preserve any additional info inside the wflow object.
+        :param wflow:          A MSRuleCleanerWorkflow instance
+        :param additionalInfo: A string with additional info to be preserved within the workflow for later use by the alarm itself. (Default: "")
+        :return:               Bool: True if status alarm time has expired False otherwise
         """
         statusAdvanceExpired = False
         currentTime = int(time.time())
@@ -427,6 +428,9 @@ class MSRuleCleaner(MSCore):
 
         if transitionTime and (currentTime - transitionTime) > alarmThreshold:
             statusAdvanceExpired = True
+            if wflow['StatusAdvanceExpiredMsg']:
+                wflow['StatusAdvanceExpiredMsg'] += "\n"
+            wflow['StatusAdvanceExpiredMsg'] += additionalInfo
         return statusAdvanceExpired
 
     def _checkClean(self, wflow):
@@ -567,15 +571,18 @@ class MSRuleCleaner(MSCore):
         # Make all the needed checks before trying to archive
         if not (wflow['IsClean'] or wflow['ForceArchive']):
             msg = "Not properly cleaned workflow: %s" % wflow['RequestName']
-            self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+            if self._checkStatusAdvanceExpired(wflow, additionalInfo=msg):
+                self.alertStatusAdvanceExpired(wflow)
             raise MSRuleCleanerArchivalSkip(msg)
         if not wflow['TargetStatus']:
             msg = "Could not determine which archival status to target for workflow: %s" % wflow['RequestName']
-            self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+            if self._checkStatusAdvanceExpired(wflow, additionalInfo=msg):
+                self.alertStatusAdvanceExpired(wflow)
             raise MSRuleCleanerArchivalError(msg)
         if not wflow['IsLogDBClean']:
             msg = "LogDB records have not been cleaned for workflow: %s" % wflow['RequestName']
-            self.alertStatusAdvanceExpired(wflow, additionalInfo=msg)
+            if self._checkStatusAdvanceExpired(wflow, additionalInfo=msg):
+                self.alertStatusAdvanceExpired(wflow)
             raise MSRuleCleanerArchivalSkip(msg)
         if not wflow['IsArchivalDelayExpired']:
             msg = "Archival delay period has not yet expired for workflow: %s." % wflow['RequestName']
@@ -634,13 +641,14 @@ class MSRuleCleaner(MSCore):
             for mapRecord in transferInfo['OutputMap']:
                 if not mapRecord['TapeRuleID']:
                     continue
+
                 rucioRule = self.rucio.getRule(mapRecord['TapeRuleID'])
                 if not rucioRule:
-                    tapeRulesStatusList.append(False)
                     msg = "Tape rule: %s not found for workflow: %s "
                     msg += "Possible server side error."
                     self.logger.error(msg, mapRecord['TapeRuleID'], wflow['RequestName'])
-                    continue
+                    rucioRule = {'state': 'Missing'}
+
                 if rucioRule['state'] == 'OK':
                     tapeRulesStatusList.append(True)
                     msg = "Tape rule: %s in final state: %s for workflow: %s"
@@ -649,6 +657,9 @@ class MSRuleCleaner(MSCore):
                     tapeRulesStatusList.append(False)
                     msg = "Tape rule: %s in non final state: %s for workflow: %s"
                     self.logger.info(msg, mapRecord['TapeRuleID'], rucioRule['state'], wflow['RequestName'])
+
+                wflow['TapeRulesStatus'].append((mapRecord['TapeRuleID'], rucioRule['state'], mapRecord['Dataset']))
+
             if all(tapeRulesStatusList):
                 wflow['TransferTape'] = True
 
@@ -690,8 +701,7 @@ class MSRuleCleaner(MSCore):
 
         # Create the container list to the rucio account map and set the checkGlobalLocks flag.
         mapRuleType = {self.msConfig['rucioWmaAccount']: ["OutputDatasets"],
-                       self.msConfig['rucioMStrAccount']: ["InputDataset", "MCPileup",
-                                                           "DataPileup", "ParentDataset"]}
+                       self.msConfig['rucioMStrAccount']: ["InputDataset", "ParentDataset"]}
         if rucioAcct == self.msConfig['rucioMStrAccount']:
             checkGlobalLocks = True
         else:
@@ -711,13 +721,7 @@ class MSRuleCleaner(MSCore):
                     continue
                 if gran == 'container':
                     ruleIds = [rule['id'] for rule in self.rucio.listDataRules(dataCont, account=rucioAcct)]
-                    if ruleIds and dataType in ("MCPileup", "DataPileup"):
-                        msg = "Pileup container %s has the following container-level rules to be removed: %s."
-                        msg += " However, this component is no longer removing pileup rules."
-                        self.logger.info(msg, dataCont, ruleIds)
-                        if not isRelVal(wflow):
-                            self.alertDeletablePU(wflow['RequestName'], dataCont, ruleIds)
-                    elif ruleIds:
+                    if ruleIds:
                         wflow['RulesToClean'][currPline].extend(ruleIds)
                         msg = "Container %s has the following container-level rules to be removed: %s"
                         self.logger.info(msg, dataCont, ruleIds)
@@ -778,47 +782,26 @@ class MSRuleCleaner(MSCore):
         self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
         return requests
 
-    def alertDeletablePU(self, workflowName, containerName, ruleList):
-        """
-        Send alert notifying that there is a pileup dataset eligible for rule removal
-        :param workflowName: string with the workflow name
-        :param containerName: string with the container name
-        :param ruleList: list of strings with the rule ids
-        :return: none
-        """
-        alertName = "{}: PU eligible for deletion: {}".format(self.alertServiceName, containerName)
-        alertSeverity = "high"
-        alertSummary = "[MSRuleCleaner] Found pileup container no longer locked and available for rule deletion."
-        alertDescription = "Workflow: {} has the following pileup container ".format(workflowName)
-        alertDescription += "\n{}\n no longer in the global locks. ".format(containerName)
-        alertDescription += "These rules\n{}\nare eligible for deletion.".format(ruleList)
-
-        # Check if alarms are enabled for this service
-        # Alert expiration time defaults to 2 days
-        if self.msConfig["sendNotification"]:
-            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                           service=self.alertServiceName, endSecs=self.alertExpiration)
-        self.logger.critical(alertDescription)
-
-    def alertStatusAdvanceExpired(self, wflow, additionalInfo=None):
+    def alertStatusAdvanceExpired(self, wflow):
         """
         Send alert notifying that a workflow has spend too much time in a given status
         :param wflow: MSRuleCleanerWorkflow instance
         :additionalInfo: String with additional information.
         :return: none
         """
-        # Check if alarm threshold has expired:
-        if not self._isStatusAdvanceExpired(wflow):
-            return
         lastTransitionTime = self._getLastStatusTransitionTime(wflow)
         alertName = "{}: Not archived workflow: {}".format(self.alertServiceName, wflow['RequestName'])
-        alertSeverity = "high"
+        alertSeverity = "medium"
         alertDescription = "Found a workflow not archived since {}.".format(time.ctime(lastTransitionTime))
-        alertDescription += "\nWorkflow: {}".format(wflow['RequestName'])
+        alertDescription += "\nWorkflow: \n{}".format(pformat({wfKey: wflow[wfKey] for wfKey in ['RequestName',
+                                                                                                 'ParentageResolved',
+                                                                                                 'TransferDone',
+                                                                                                 'TransferTape',
+                                                                                                 'TapeRulesStatus']}))
         alertDescription += "\nHas exceeded the Status Advance Timeout of: {} hours".format(self.msConfig['archiveAlarmHours'])
         alertDescription += " for its current status: {}.".format(wflow['RequestStatus'])
-        if additionalInfo:
-            alertDescription += "\nAdditional info: {}".format(additionalInfo)
+        if wflow['StatusAdvanceExpiredMsg']:
+            alertDescription += "\nAdditional info: \n{}".format(wflow['StatusAdvanceExpiredMsg'])
         alertDescription += "\nActions need to be taken!"
         alertSummary = "[MSRuleCleaner] Found workflow: {} not archived since {}.".format(wflow['RequestName'], time.ctime(lastTransitionTime))
 

@@ -397,7 +397,7 @@ class WMWorkloadTest(unittest.TestCase):
         for task in [mergeTestTask, weirdTestTask]:
             self.assertEqual(len(task.siteWhitelist()), 0,
                              "Error: Wrong number of sites in white list.")
-            self.assertEqual(len(task.siteBlacklist()), 0,
+            self.assertEqual(len(task.siteBlacklist()), 1,
                              "Error: Wrong number of sites in black list.")
 
         for task in [procTestTask, weirdTestTask]:

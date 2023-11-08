@@ -693,12 +693,12 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         _setSiteBlacklist_
 
-        Set the site black list for the top level tasks in the workload.
+        Set the site black list for all tasks in the workload.
         """
         if not isinstance(siteBlacklist, type([])):
             siteBlacklist = [siteBlacklist]
 
-        taskIterator = self.taskIterator()
+        taskIterator = self.getAllTasks(cpuOnly=False)
 
         for task in taskIterator:
             task.setSiteBlacklist(siteBlacklist)

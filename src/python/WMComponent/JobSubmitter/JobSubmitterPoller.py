@@ -407,7 +407,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                        'allowOpportunistic': loadedJob.get('allowOpportunistic', False),
                        'requiresGPU': loadedJob.get('requiresGPU', "forbidden"),
                        'gpuRequirements': loadedJob.get('gpuRequirements', None),
+                       'campaignName': loadedJob.get('campaignName', None),
                        'requestType': loadedJob['requestType'],
+                       'physicsTaskType': loadedJob.get('physicsTaskType', None)
                        }
             # then update it with the info retrieved from the database
             jobInfo.update(newJob)

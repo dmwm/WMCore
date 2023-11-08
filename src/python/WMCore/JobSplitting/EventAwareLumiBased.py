@@ -264,7 +264,7 @@ class EventAwareLumiBased(JobFactory):
                                 msg += "with too many events %d and it woud take %d sec to run" \
                                        % (f['events'], timePerLumi)
                             self.lumiChecker.closeJob(self.currentJob)
-                            self.newJob(name=self.getJobName(), failedJob=failNextJob, failedReason=msg)
+                            self.newJob(name=self.getJobName(), failedJob=failNextJob, failedReason=msg, failedErrCode=99305)
                             if deterministicPileup:
                                 skipEvents = (self.nJobs - 1) * lumisPerJob * eventsPerLumiInDataset
                                 self.currentJob.addBaggageParameter("skipPileupEvents", skipEvents)

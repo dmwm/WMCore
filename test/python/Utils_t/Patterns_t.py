@@ -3,15 +3,13 @@ Patterns_t module provide unit tests for Patterns module
 Unittests for Utilities functions
 """
 
-from __future__ import division, print_function
 
 import time
 import unittest
-from future.utils import with_metaclass
 from Utils.Patterns import Singleton
 
 
-class Test(with_metaclass(Singleton, object)):
+class Test(object, metaclass=Singleton):#Test(with_metaclass(Singleton, object)):
     "Example of Singleton class"
     def __init__(self):
         self.time = time.time()

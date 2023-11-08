@@ -14,7 +14,7 @@ from builtins import object, map, range
 from past.builtins import basestring
 from future.utils import viewitems, viewvalues
 
-import imp
+import importlib
 import inspect
 import json
 import pickle
@@ -401,7 +401,8 @@ class PSetTweak(object):
             self.process.__dict__.update(unpickle.__dict__)
 
         if formatting == "python":
-            modRef = imp.load_source('tempTweak', filename)
+            modSpecs = importlib.util.spec_from_file_location('tempTweak', filename)
+            modRef = modSpecs.loader.load_module()
             lister = PSetLister()
             lister(modRef.process)
             for pset in lister.psets:

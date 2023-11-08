@@ -99,6 +99,12 @@ config.JobStateMachine.couchurl = couchURL
 config.JobStateMachine.couchDBName = jobDumpDBName
 config.JobStateMachine.jobSummaryDBName = jobSummaryDBName
 config.JobStateMachine.summaryStatsDBName = summaryStatsDBName
+# Amount of documents allowed in the ChangeState module for bulk commits
+config.JobStateMachine.maxBulkCommitDocs = 250
+# total allowed serialized size for the FJR document that is uploaded to wmagent_jobdump/fwjrs
+# NOTE: this needs to be in sync with CouchDB couchdb.max_document_size parameter
+# see: https://docs.couchdb.org/en/latest/config/couchdb.html#couchdb/max_document_size
+config.JobStateMachine.fwjrLimitSize = 8 * 1000**2  # default: 8 million bytes (not 8MB!!!)
 
 config.section_("ACDC")
 config.ACDC.couchurl = "https://cmsweb.cern.ch/couchdb"
@@ -145,7 +151,9 @@ config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for
 config.WorkQueueManager.queueParams["RowsPerSlice"] = 2500
 # maximum number of available elements rows to be evaluated when acquiring GQ to LQ work
 config.WorkQueueManager.queueParams["MaxRowsPerCycle"] = 50000
-config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"  # account for data locks
+# Rucio accounts for input data locks and secondary data locks
+config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"
+config.WorkQueueManager.queueParams["rucioAccountPU"] = "wmcore_pileup"
 
 
 config.component_("DBS3Upload")
@@ -161,6 +169,7 @@ config.DBS3Upload.primaryDatasetType = "mc"
 config.DBS3Upload.dumpBlockJsonFor = ""
 # set DbsApi requests to use gzip enconding, thus sending compressed data
 config.DBS3Upload.gzipEncoding = True
+config.DBS3Upload.uploaderName = "WMAgent"
 
 config.section_("DBSInterface")
 config.DBSInterface.DBSUrl = globalDBSUrl

@@ -14,8 +14,6 @@ Use like this:
 
 """
 
-from __future__ import print_function, division
-
 
 def trace_calls(frame, event, arg, to_be_traced=None):
     if event != 'call':

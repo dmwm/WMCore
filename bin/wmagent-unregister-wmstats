@@ -24,9 +24,8 @@ if __name__ == "__main__":
     else:
         agentUrl = args[0]
 
-    msg = "Are you sure you want to remove agent info record for %s from wmstats? Type 'yes' or 'no' (type quotes too!): "
-    answer = eval(input(msg % agentUrl))
-    if answer != "yes":
+    answer = input(f"Remove agent info record from wmstats for {agentUrl}? [y/n] ")
+    if answer.lower() not in ["y", "yes"]:
         print("Aborting... no changes were made.")
         sys.exit(1)
 

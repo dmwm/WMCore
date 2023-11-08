@@ -7,9 +7,6 @@ Description: Provides 2 basic classes:
                          pipelines for cumulative execution on an arbitrary object
 """
 
-# futures
-from __future__ import division, print_function
-
 from builtins import object
 from functools import reduce
 

@@ -3,9 +3,6 @@
 Unit testing base class with our extensions
 """
 
-from __future__ import (division, print_function)
-from future.utils import viewitems
-
 import copy
 import unittest
 
@@ -24,7 +21,7 @@ class ExtendedUnitTestCase(unittest.TestCase):
         """
 
         def traverse_dict(dictionary):
-            for key, value in viewitems(dictionary):
+            for key, value in list(dictionary.items()):
                 if isinstance(value, dict):
                     traverse_dict(value)
                 elif isinstance(value, list):

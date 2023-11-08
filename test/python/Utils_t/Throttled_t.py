@@ -4,7 +4,7 @@
 Unittests for Utilities functions
 """
 
-from __future__ import division, print_function
+
 import time
 import threading
 import unittest

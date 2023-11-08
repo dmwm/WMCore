@@ -1,0 +1,107 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "HLT_Collision22_v3": "AcquisitionEra-OVERRIDE-ME",
+            "RECO_Collision22_v3": "AcquisitionEra-OVERRIDE-ME"
+        },
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "HLT_Collision22_v3": "ProcessingString-OVERRIDE-ME",
+            "RECO_Collision22_v3": "ProcessingString-OVERRIDE-ME"
+        },
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_12_4_11_patch3",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": "TaskChain Data workflow; Taskchain data automatic harvesting; Taskchain runwhitelist; TaskChain LumiBased splitting",
+            "WorkFlowDesc": "TC processing RAW data with 1 run whitelisted, resulting in 2 blocks; harvesting enabled"
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMConfigCacheID": "099533a783c95e2ec8823ee2f23b41d4",
+        "DQMHarvestUnit": "byRun",
+        "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/relval",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "EnableHarvesting": true,
+        "EventStreams": 0,
+        "GPUParams": "null",
+        "GlobalTag": "124X_dataRun3_HLT_v7",
+        "IncludeParents": false,
+        "Memory": 3000,
+        "Multicore": 1,
+        "PrepID": "TEST-CMSSW_12_4_11_patch3__TSG-HLTNew-EphemeralHLTPhysics1Run2022G-00002",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 1,
+        "RequestPriority": 920000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "TaskChain",
+        "ScramArch": [
+            "el8_amd64_gcc10"
+        ],
+        "SizePerEvent": 100,
+        "SubRequestType": "RelVal",
+        "Task1": {
+            "AcquisitionEra": "CMSSW_12_4_11_patch3",
+            "CMSSWVersion": "CMSSW_12_4_11_patch3",
+            "Campaign": "CMSSW_12_4_11_patch3__TSG-1675106598",
+            "ConfigCacheID": "099533a783c95e2ec8823ee2f23ada95",
+            "EventStreams": 2,
+            "GlobalTag": "124X_dataRun3_HLT_v7",
+            "InputDataset": "/EphemeralHLTPhysics1/Run2022G-v1/RAW",
+            "KeepOutput": false,
+            "LumisPerJob": 3,
+            "Memory": 3000,
+            "Multicore": 4,
+            "ProcessingString": "Task1_WMCore_TEST",
+            "RunWhitelist": [
+                362439
+            ],
+            "ScramArch": [
+                "el8_amd64_gcc10"
+            ],
+            "SizePerEvent": 4129.5155,
+            "SplittingAlgo": "LumiBased",
+            "TaskName": "HLT_Collision22_v3",
+            "TimePerEvent": 1.5
+        },
+        "Task2": {
+            "AcquisitionEra": "CMSSW_12_4_11_patch3",
+            "CMSSWVersion": "CMSSW_12_4_11_patch3",
+            "Campaign": "CMSSW_12_4_11_patch3__TSG-1675106598",
+            "ConfigCacheID": "099533a783c95e2ec8823ee2f23b3a74",
+            "EventStreams": 2,
+            "GlobalTag": "124X_dataRun3_Prompt_v10",
+            "InputFromOutputModule": "FEVTDEBUGHLToutput",
+            "InputTask": "HLT_Collision22_v3",
+            "KeepOutput": true,
+            "LumisPerJob": 1,
+            "Memory": 9000,
+            "Multicore": 4,
+            "ProcessingString": "Task2_WMCore_TEST",
+            "ScramArch": [
+                "el8_amd64_gcc10"
+            ],
+            "SizePerEvent": 5139.5174,
+            "SplittingAlgo": "LumiBased",
+            "TaskName": "RECO_Collision22_v3",
+            "TimePerEvent": 21.0016
+        },
+        "TaskChain": 2,
+        "TimePerEvent": 20
+    }
+}

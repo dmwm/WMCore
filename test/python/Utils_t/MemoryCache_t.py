@@ -3,13 +3,12 @@
 Unittests for MemoryCache object
 """
 
-from __future__ import division, print_function
-
 import unittest
 from time import sleep
 
 from Utils.MemoryCache import MemoryCache, MemoryCacheException
-from Utils.PythonVersion import PY3
+#from Utils.PythonVersion import PY3
+
 
 class MemoryCacheTest(unittest.TestCase):
     """
@@ -17,8 +16,7 @@ class MemoryCacheTest(unittest.TestCase):
     """
 
     def setUp(self):
-        if PY3:
-            self.assertItemsEqual = self.assertCountEqual
+        self.assertItemsEqual = self.assertCountEqual
 
     def testBasics(self):
         cache = MemoryCache(1, [])

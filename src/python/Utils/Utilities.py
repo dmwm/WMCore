@@ -1,10 +1,6 @@
 #! /usr/bin/env python
 
-from __future__ import division, print_function
-from future.utils import viewitems
-
 from builtins import str, bytes
-from past.builtins import basestring
 
 import subprocess
 import os
@@ -21,7 +17,7 @@ def lowerCmsHeaders(headers):
     code check only cms headers in lower case, e.g. cms-xxx-yyy.
     """
     lheaders = {}
-    for hkey, hval in viewitems(headers): # perform lower-case
+    for hkey, hval in list(headers.items()): # perform lower-case
         # lower header keys since we check lower-case in headers
         if hkey.startswith('Cms-') or hkey.startswith('CMS-'):
             lheaders[hkey.lower()] = hval
@@ -39,7 +35,7 @@ def makeList(stringList):
     """
     if isinstance(stringList, list):
         return stringList
-    if isinstance(stringList, basestring):
+    if isinstance(stringList, str):
         toks = stringList.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
             return []

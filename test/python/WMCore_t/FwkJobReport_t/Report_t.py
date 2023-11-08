@@ -48,6 +48,7 @@ class ReportTest(unittest.TestCase):
         self.fallbackXmlPath = os.path.join(testData, "CMSSWInputFallback.xml")
         self.twoFileFallbackXmlPath = os.path.join(testData, "CMSSWTwoFileRemote.xml")
         self.pileupXmlPath = os.path.join(testData, "CMSSWPileup.xml")
+        self.mergeXmlPath = os.path.join(testData, "CMSSWMergeReport2.xml")
         self.withEventsXmlPath = os.path.join(testData, "CMSSWWithEventCounts.xml")
         self.noLocationReport = os.path.join(testData, "Report.0.pkl")
 
@@ -460,6 +461,26 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(report.getJobID(), 100)
 
         return
+
+    def test_SubprocessInfo(self):
+        """
+        _SubprocessInfo_
+
+        Check CMSSW subprocess metrics
+        """
+        report = Report("cmsRun1")
+        startTime = 0
+        endTime = 1
+        userTime = 1
+        sysTime = 1
+        report.updateSubprocessInfo(sysTime, userTime, startTime, endTime)
+        subinfo = report.retrieveStep("cmsRun1").WMCMSSWSubprocess
+        sdict = subinfo.dictionary_()
+        self.assertEqual(sdict['startTime'], startTime)
+        self.assertEqual(sdict['endTime'], endTime)
+        self.assertEqual(sdict['wallClockTime'], endTime-startTime)
+        self.assertEqual(sdict['userTime'], userTime)
+        self.assertEqual(sdict['sysTime'], sysTime)
 
     def test_PerformanceReport(self):
         """
@@ -1007,6 +1028,50 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(fileList[0]['outputModule'], "RAWSIMoutput")
         self.assertItemsEqual(fileList[1]['locations'], {"T2_CH_CSCS"})
         self.assertEqual(fileList[1]['outputModule'], "logArchive")
+
+    def testWMTiming(self):
+        """
+        test WMTiming metrics from FJR report
+        """
+        jobReport = Report()
+        data = jobReport.getWMTiming()
+        self.assertTrue(isinstance(data, dict))
+
+    def testWMCMSSWSubprocess(self):
+        """
+        test WMCMSSWSubprocess metrics from FJR report
+        """
+        xmlPath = os.path.join(getTestBase(),
+                               "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")
+        jobReport = Report("cmsRun1")
+        jobReport.parse(xmlPath)
+        data = jobReport.getWMCMSSWSubprocess("cmsRun1")
+        self.assertTrue(isinstance(data, dict))
+
+    def testCMSSWMetrics(self):
+        """
+        testCMSSWMetrics
+        Check CMSSW metrics
+        """
+        report = Report('cmsRun1')
+        report.parse(self.mergeXmlPath)
+        cmsRun = getattr(report.data, 'cmsRun1', {})
+        performance = getattr(cmsRun, 'performance', {})
+        cmssw = getattr(performance, 'cmssw', {})
+        obj = cmssw.dictionary_()
+        self.assertEqual(len(obj), 6)
+        procSummary = getattr(cmssw, 'ProcessingSummary', {}).dictionary_()
+        timing = getattr(cmssw, 'Timing', {}).dictionary_()
+        storage = getattr(cmssw, 'StorageStatistics', {}).dictionary_()
+        sysCPU = getattr(cmssw, 'SystemCPU', {}).dictionary_()
+        sysMem = getattr(cmssw, 'SystemMemory', {}).dictionary_()
+        appMem = getattr(cmssw, 'ApplicationMemory', {}).dictionary_()
+        self.assertEqual(appMem.get('HEAP_ARENA_N_UNUSED_CHUNKS'), 1)
+        self.assertEqual(sysMem.get('Active'), 13963076)
+        self.assertEqual(storage.get('Timing-file-close-maxMsecs'), 0.133386)
+        self.assertEqual(sysCPU.get('averageCoreSpeed'), 2659.96)
+        self.assertEqual(timing.get('TotalJobChildrenCPU'), 46.5806)
+        self.assertEqual(procSummary.get('NumberBeginLumiCalls'), 118)
 
 
 if __name__ == "__main__":

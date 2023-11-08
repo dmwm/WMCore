@@ -31,6 +31,7 @@ TRANSFEROR_REPORT = dict(start_time=0,
                          success_request_transition=0,
                          failed_request_transition=0,
                          problematic_requests=0,
+                         total_num_active_pileups=0,
                          num_datasets_subscribed=0,
                          num_blocks_subscribed=0)
 

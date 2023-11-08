@@ -24,11 +24,12 @@ from copy import deepcopy
 from Utils.IteratorTools import grouper
 from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
     TRANSFER_RECORD, TRANSFER_COUCH_DOC
-from WMCore.MicroService.Tools.Common import gigaBytes, teraBytes, isRelVal
+from WMCore.MicroService.Tools.Common import (teraBytes, isRelVal, getPileupDocs)
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
 from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
 
 
 def newTransferRec(dataIn):
@@ -85,6 +86,9 @@ class MSTransferor(MSCore):
         # make a container level rule for the whole container whenever the open running
         # timeout is larger than what is configured (or the default of 7 days below)
         self.msConfig.setdefault("openRunning", 7 * 24 * 60 * 60)
+        # define the pileup query to be executed through MSPileup
+        self.pileupQuery = self.msConfig.get("pileupQuery",
+                                             {"query": {"active": True}, "filters": ["expectedRSEs", "pileupName"]})
 
         quotaAccount = self.msConfig["rucioAccount"]
 
@@ -94,10 +98,7 @@ class MSTransferor(MSCore):
         self.reqInfo = RequestInfo(self.msConfig, self.rucio, self.logger)
 
         self.cric = CRIC(logger=self.logger)
-        self.inputMap = {"InputDataset": "primary",
-                         "MCPileup": "secondary",
-                         "DataPileup": "secondary"}
-        self.uConfig = {}
+        self.pileupDocs = []
         self.campaigns = {}
         self.psn2pnnMap = {}
         self.pnn2psnMap = {}
@@ -126,13 +127,11 @@ class MSTransferor(MSCore):
         self.logger.info("Updating all local caches...")
         self.dsetCounter = 0
         self.blockCounter = 0
-        self.uConfig = self.unifiedConfig()
+        self.pileupDocs = getPileupDocs(self.msConfig['mspileupUrl'], self.pileupQuery)
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
         self.psn2pnnMap = self.cric.PSNtoPNNMap()
         self.pnn2psnMap = self.cric.PNNtoPSNMap()
-        if not self.uConfig:
-            raise RuntimeWarning("Failed to fetch the unified configuration")
-        elif not campaigns:
+        if not campaigns:
             raise RuntimeWarning("Failed to fetch the campaign configurations")
         elif not self.psn2pnnMap:
             raise RuntimeWarning("Failed to fetch PSN x PNN map from CRIC")
@@ -168,6 +167,7 @@ class MSTransferor(MSCore):
 
         try:
             self.updateCaches()
+            self.updateReportDict(summary, "total_num_active_pileups", len(self.pileupDocs))
             self.updateReportDict(summary, "total_num_campaigns", len(self.campaigns))
             self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
         except RuntimeWarning as ex:
@@ -186,9 +186,8 @@ class MSTransferor(MSCore):
         for reqSlice in grouper(requestRecords, 100):
             self.logger.info("Processing workflows from %d to %d.",
                              counterWorkflows + 1, counterWorkflows + len(reqSlice))
-            # get complete requests information
-            # based on Unified Transferor logic
-            reqResults = self.reqInfo(reqSlice)
+            # execute data discovery
+            reqResults = self.reqInfo(reqSlice, self.pileupDocs)
             self.logger.info("%d requests information completely processed.", len(reqResults))
 
             for wflow in reqResults:
@@ -196,19 +195,19 @@ class MSTransferor(MSCore):
                     counterProblematicRequests += 1
                     continue
 
-                # first, check whether any pileup dataset is already in place
-                self.checkPUDataLocation(wflow)
-                if wflow.getSecondarySummary() and not wflow.getPURSElist():
-                    # then we still have pileup to be transferred, but with incorrect locations
+                if not self.passSecondaryCheck(wflow):
                     self.alertPUMisconfig(wflow.getName())
                     counterProblematicRequests += 1
                     continue
 
+                # find accepted RSEs for the workflow
+                rseList = self.getAcceptedRSEs(wflow)
+
                 # now check where input primary and parent blocks will need to go
-                self.checkDataLocation(wflow)
+                self.checkDataLocation(wflow, rseList)
 
                 try:
-                    success, transfers = self.makeTransferRequest(wflow)
+                    success, transfers = self.makeTransferRequest(wflow, rseList)
                 except Exception as ex:
                     success = False
                     self.alertUnknownTransferError(wflow.getName())
@@ -271,20 +270,57 @@ class MSTransferor(MSCore):
 
     def verifyCampaignExist(self, wflow):
         """
-        Check whether the campaigns associated to all the input datasets
-        exist in the database.
+        Check whether there is a campaign for the primary dataset.
         :param wflow: a workflow object
         :return: True if campaigns exist, False otherwise
         """
         for dataIn in wflow.getDataCampaignMap():
-            if dataIn['campaign'] not in self.campaigns:
-                msg = "Workflow: %s has to transfer dataset: %s under the campaign: %s. "
-                msg += "This campaign does not exist and needs to be created. Skipping this workflow!"
-                self.logger.warning(msg, wflow.getName(), dataIn['name'], dataIn['campaign'])
+            if dataIn["type"] == "primary":
+                if dataIn['campaign'] not in self.campaigns:
+                    msg = "Workflow: %s has to transfer dataset: %s under the campaign: %s. "
+                    msg += "This campaign does not exist and needs to be created. Skipping this workflow!"
+                    self.logger.warning(msg, wflow.getName(), dataIn['name'], dataIn['campaign'])
+                    return False
+        return True
+
+    def passSecondaryCheck(self, wflow):
+        """
+        Check if the workflow uses active pileup and with valid location.
+        :param wflow: workflow object
+        :return: boolean whether the workflow is good to go or not
+        """
+        pileupInput = wflow.getSecondarySummary()
+        if not pileupInput:
+            # nothing to be done here
+            return True
+        for puName, puData in pileupInput.items():
+            if puData['locations'] == []:
+                msg = f"Workflow {wflow.getName()} requires pileup dataset {puName} "
+                msg += "which is either not active or does not exist in MSPileup."
+                self.logger.warning(msg)
                 return False
         return True
 
-    def checkDataLocation(self, wflow):
+    def getAcceptedRSEs(self, wflow):
+        """
+        Given a workflow object, find it's final accepted list of
+        RSEs for input data placement. This is based on:
+         * TrustSitelists and TrustPUSitelists;
+         * Workflow SiteWhitelist and SiteBlacklist
+         * Pileup location(s)
+        Note that it does NOT account for RSEs out of quota.
+        :param wflow: wflow object
+        :return: a list with unique RSE names
+        """
+        # workflow level site lists. In case there is no pileup or SecAAA=True
+        wflowRSEs = self._getPNNsFromPSNs(wflow.getSitelist())
+        if wflow.getPileupDatasets() and not wflow.getReqParam("TrustPUSitelists"):
+            # otherwise, data needs to be placed where pileup is
+            wflowRSEs = wflowRSEs & wflow.getPURSElist()
+
+        return list(wflowRSEs)
+
+    def checkDataLocation(self, wflow, rseList):
         """
         Check which data is already in place (according to the site lists
         and pileup data location) and remove them from the data placement
@@ -292,17 +328,18 @@ class MSTransferor(MSCore):
         If workflow has XRootD/AAA enabled, data location can be outside of
         the SiteWhitelist.
         :param wflow: workflow object
+        :param rseList: list of RSE names allowed for a given workflow
         :return: None
         """
         if not wflow.getInputDataset():
             return
 
-        wflowPnns = self._getPNNsFromPSNs(wflow.getSitelist())
-        primaryAAA = wflow.getReqParam("TrustSitelists")
-        msg = "Checking data location for request: %s, TrustSitelists: %s, request white/black list PNNs: %s"
-        self.logger.info(msg, wflow.getName(), primaryAAA, wflowPnns)
-
-        wflowPnns = wflow.getPURSElist()
+        primAAA = wflow.getReqParam("TrustSitelists")
+        secAAA = wflow.getReqParam("TrustPUSitelists")
+        msg = f"Checking data location for request: {wflow.getName()}, "
+        msg += f"TrustSitelists: {primAAA}, TrustPUSitelists: {secAAA}, "
+        msg += f"and final accepted RSEs: {rseList}"
+        self.logger.info(msg)
 
         for methodName in ("getPrimaryBlocks", "getParentBlocks"):
             inputBlocks = getattr(wflow, methodName)()
@@ -311,100 +348,25 @@ class MSTransferor(MSCore):
 
             for block, blockDict in listitems(inputBlocks):  # dict can change size here
                 blockLocation = self._diskPNNs(blockDict['locations'])
-                if primaryAAA and blockLocation:
+                if not blockLocation:
+                    self.logger.info("Primary/parent block %s not available in any disk storage", block)
+                elif primAAA:
                     msg = "Primary/parent block %s already in place (via AAA): %s" % (block, blockLocation)
                     self.logger.info(msg)
                     inputBlocks.pop(block)
-                elif blockLocation:
-                    commonLocation = wflowPnns & set(blockLocation)
+                else:
+                    commonLocation = set(blockLocation) & rseList
                     if commonLocation:
                         self.logger.info("Primary/parent block %s already in place: %s", block, commonLocation)
                         inputBlocks.pop(block)
                     else:
                         self.logger.info("block: %s will need data placement!!!", block)
-                else:
-                    self.logger.info("Primary/parent block %s not available in any disk storage", block)
 
             self.logger.info("Request %s has %d final blocks from %s",
                              wflow.getName(), len(getattr(wflow, methodName)()), methodName)
 
-    def checkPUDataLocation(self, wflow):
-        """
-        Check the workflow pileup current location, compare it to what is defined
-        in the campaign configuration and ensure that each location defined in the
-        campaign gets a rule created, regardless whether AAA is enabled or not.
 
-        Use the workflow sitelists and the expected pileup(s) location(s) to decide
-        where primary and parent data must be placed.
-
-        :param wflow: workflow object
-        :return: None
-        """
-        pileupInput = wflow.getSecondarySummary()
-        if not pileupInput:
-            # nothing to be done here
-            return
-
-        psns = wflow.getSitelist()
-        wflowPnns = self._getPNNsFromPSNs(psns)
-        secAAA = wflow.getReqParam("TrustPUSitelists")
-        msg = "Checking secondary data location for request: {}, ".format(wflow.getName())
-        msg += "TrustPUSitelists: {}, request white/black list PNNs: {}".format(secAAA, wflowPnns)
-        self.logger.info(msg)
-
-        # this variable will contain a set of each pileup location, according
-        # to what has been defined in the campaign configuration. In the end,
-        # their intersection will be the final location for primary and parents
-        campBasedLocation = []
-        for dataIn in wflow.getDataCampaignMap():
-            if dataIn["type"] == "secondary":
-                dsetName = dataIn["name"]
-                campConfig = self.campaigns[dataIn['campaign']]
-                secSize = pileupInput[dsetName]['dsetSize']
-                secLocation = pileupInput[dsetName]['locations']
-                # and a special case for RelVal workflows, which do not define
-                # secondary datasets and their location
-                if isRelVal(wflow.data):
-                    campSecLocations = wflowPnns
-                else:
-                    campSecLocations = campConfig['Secondaries'].get(dsetName, [])
-                campBasedLocation.append(set(campSecLocations))
-
-                if not campSecLocations:
-                    msg = "Workflow has been incorrectly assigned: %s. The secondary dataset: %s, "
-                    msg += "belongs to the campaign: %s, which does not define the secondary "
-                    msg += "dataset or it has defined an empty location list."
-                    self.logger.error(msg, wflow.getName(), dsetName, dataIn['campaign'])
-                    return
-
-                # compare the expected locations against the current availability
-                missingDestinations = list(set(campSecLocations) - set(secLocation))
-                msg = "it has secondary pileup: %s, with a total size of: %s GB, "
-                msg += "currently at: %s, campaign expected at: %s and missing replicas at: %s"
-                self.logger.info(msg, dsetName, gigaBytes(secSize), secLocation,
-                                 campSecLocations, missingDestinations)
-                if missingDestinations:
-                    # then update this pileup location to get rule(s) on it
-                    self.logger.info("pileup %s will get container rules on: %s", dsetName, missingDestinations)
-                    pileupInput[dsetName]['locations'] = missingDestinations
-                else:
-                    self.logger.info("pileup %s already available at the expected locations", dsetName)
-                    # then remove it from the samples to get a data placement rule
-                    pileupInput.pop(dsetName)
-
-        # consider the workflow sitelist for this final location
-        if len(campBasedLocation) == 1:
-            # then there is only one pileup dataset in the workflow
-            wflowFinalLocation = campBasedLocation[0] & wflowPnns
-        else:
-            # then there are multiple pileups, meaning possibly different
-            # campaigns and expected locations. Use their location
-            # intersection as final workflow destination
-            wflowFinalLocation = campBasedLocation[0].intersection(*campBasedLocation)
-        self.logger.info("Final location for workflow: %s is: %s", wflow.getName(), wflowFinalLocation)
-        wflow.setPURSElist(wflowFinalLocation)
-
-    def makeTransferRequest(self, wflow):
+    def makeTransferRequest(self, wflow, rseList):
         """
         Checks which input data has to be transferred, select the final destination if needed,
         create the transfer record to be stored in Couch, and create the DM placement request.
@@ -422,56 +384,48 @@ class MSTransferor(MSCore):
           6. re-evaluate nodes with quota exceeded
           7. return the transfer record, with a list of transfer IDs
         :param wflow: workflow object
+        :param rseList: list of RSE names allowed for a given workflow
         :return: boolean whether it succeeded or not, and a list of transfer records
         """
         response = []
         success = True
-        if not (wflow.getParentBlocks() or wflow.getPrimaryBlocks() or wflow.getSecondarySummary()):
+        if not (wflow.getParentBlocks() or wflow.getPrimaryBlocks()):
             self.logger.info("Request %s does not have any further data to transfer", wflow.getName())
             return success, response
 
         self.logger.info("Handling data subscriptions for request: %s", wflow.getName())
 
         for dataIn in wflow.getDataCampaignMap():
-            dsetName = dataIn['name']
             if dataIn["type"] == "parent":
-                msg = "Skipping 'parent' data subscription (done with the 'primary' data), for: %s" % dataIn
+                msg = "Skipping 'parent' data placement (done with the 'primary' data), for: %s" % dataIn
                 self.logger.info(msg)
                 continue
-            elif dataIn["type"] == "secondary" and dsetName not in wflow.getSecondarySummary():
-                # secondary already in place
+            elif dataIn["type"] == "secondary":
+                # already performed by MSPileup
                 continue
 
-            if wflow.getPURSElist() and not isRelVal(wflow.data):
-                rses = list(wflow.getPURSElist() & self.rseQuotas.getAvailableRSEs())
+            if not isRelVal(wflow.data):
+                # enforce RSE quota
+                rses = list(set(rseList) & self.rseQuotas.getAvailableRSEs())
             else:
-                rses = self._getValidSites(wflow, dataIn)
+                rses = rseList
+
             if not rses:
-                msg = "Workflow: %s can only run in RSEs with no available space: %s. "
-                msg += "Skipping this workflow until space gets released"
-                self.logger.warning(msg, wflow.getName(), wflow.getPURSElist())
+                msg = f"Workflow: {wflow.getName()} could have data placed at: {rseList}, "
+                msg += "but those are all out of quota. Skipping it till next cycle"
+                self.logger.warning(msg)
                 return False, response
 
             # create a transfer record data structure
             transRec = newTransferRec(dataIn)
             # figure out dids, number of copies and which grouping to use
-            if dataIn["type"] == "primary":
-                dids, didsSize = wflow.getInputData()
-                grouping = wflow.getRucioGrouping()
-                copies = wflow.getReplicaCopies()
-                if not dids:
-                    # no valid files in any blocks, it will likely fail in global workqueue
-                    self.logger.warning("  found 0 primary/parent blocks for dataset: %s, moving on...", dataIn['name'])
-                    return success, response
-            # then it's secondary type
-            else:
-                # we can have multiple pileup datasets
-                puSummary = wflow.getSecondarySummary()
-                dids = [dsetName]
-                didsSize = puSummary[dsetName]['dsetSize']
-                grouping = "ALL"
-                # one replica for each RSE
-                copies = len(rses)
+            dids, didsSize = wflow.getInputData()
+            grouping = wflow.getRucioGrouping()
+            copies = wflow.getReplicaCopies()
+            if not dids:
+                # no valid files in any blocks, it will likely fail in global workqueue
+                self.logger.warning("  found 0 primary/parent blocks for dataset: %s, moving on...", dataIn['name'])
+                return success, response
 
             success, transferId = self.makeTransferRucio(wflow, dataIn, dids, didsSize,
                                                          grouping, copies, rses)
@@ -487,7 +441,7 @@ class MSTransferor(MSCore):
                     transRec['transferIDs'].add(transferId)
 
             # and update some instance caches
-            if dataIn["type"] == "secondary":
+            if grouping == GROUPING_ALL:
                 self.dsetCounter += 1
             else:
                 self.blockCounter += len(dids)

@@ -182,6 +182,28 @@ class CMSSWTemplateTest(unittest.TestCase):
         self.assertEqual(helper.getGPURequired(), "required")
         self.assertItemsEqual(helper.getGPURequirements(), {"key1": "value1", "key2": "value2"})
 
+    def testGetPhysicsTypeFromStepsArgs(self):
+        """
+        Test characterization of physics types from steps args at CMSSW template level
+        """
+        workload = newWorkload("UnitTests")
+        task = workload.newTask("CMSSWTemplate")
+        stepHelper = task.makeStep("TemplateTest")
+        step = stepHelper.data
+        template = CMSSWTemplate()
+        template(step)
+
+        helper = template.helper(step)
+        steps = "LHE,GEN,SIM"
+        self.assertEqual(helper.getPhysicsTypeFromStepsArg(steps), "GEN,SIM")
+        steps = "DIGI,DATAMIX,L1,DIGI2RAW,HLT:2022v14"
+        self.assertEqual(helper.getPhysicsTypeFromStepsArg(steps), "DIGI_nopileup")
+        self.assertEqual(helper.getPhysicsTypeFromStepsArg(steps, hasPileup=True,hasDatamix=True), "DIGI_premix")
+        self.assertEqual(helper.getPhysicsTypeFromStepsArg(steps, hasPileup=True,hasDatamix=False), "DIGI_classicalmix")
+        steps = "RAW2DIGI,L1Reco,RECO,RECOSIM"
+        self.assertEqual(helper.getPhysicsTypeFromStepsArg(steps), "RECO")
+        steps = "PAT,NANO"
+        self.assertEqual(helper.getPhysicsTypeFromStepsArg(steps), "MINIAOD,NANOAOD")
 
 if __name__ == '__main__':
     unittest.main()

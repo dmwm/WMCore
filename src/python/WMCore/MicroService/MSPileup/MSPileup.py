@@ -8,7 +8,7 @@ Description: MSPileup provides logic behind the pileup WMCore module.
 from threading import current_thread
 
 # WMCore modules
-from WMCore.REST.Auth import authz_match
+from WMCore.MicroService.MSCore.MSAuth import MSAuth
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.DataStructs.DefaultStructs import PILEUP_REPORT
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
@@ -20,19 +20,11 @@ class MSPileup(MSCore):
     """
 
     def __init__(self, msConfig, **kwargs):
-        # TODO: so far we are testing this service w/o Rucio access
-        super(MSPileup, self).__init__(msConfig, skipRucio=True)
-        # TODO: if more generic approach will be required we'll need to switch to
-        # super(MSPileup, self).__init__(msConfig, **kwargs)
-
-        # for authz we should provide relevant section in MS configuration
-        # if no role/group is provided then authz_match used in HTTP APIs
-        # will always return valid state. Therefore, for test purposes we can
-        # use empty role and group, while for production setup we should set thenm up
-        authzDefaults = msConfig.get('authz_defaults', {})
-        self.role = authzDefaults.get('role', [])
-        self.group = authzDefaults.get('group', [])
-        self.mgr = MSPileupData(msConfig)
+        super().__init__(msConfig)
+        self.dataMgr = MSPileupData(msConfig)
+        self.authMgr = MSAuth(msConfig)
+        # Get the RSE expression for Disk RSEs from the configuration
+        self.diskRSEExpr = msConfig.get("rucioDiskExpression", "")
 
     def status(self):
         """
@@ -69,7 +61,7 @@ class MSPileup(MSCore):
         projection = {}
         for key in kwargs.get('filters', []):
             projection[key] = 1
-        results = self.mgr.getPileup(spec, projection)
+        results = self.dataMgr.getPileup(spec, projection)
 
         return results
 
@@ -88,28 +80,30 @@ class MSPileup(MSCore):
         projection = {}
         for key in query.get('filters', []):
             projection[key] = 1
-        return self.mgr.getPileup(spec, projection)
+        return self.dataMgr.getPileup(spec, projection)
 
     def createPileup(self, pdict):
         """
         MSPileup create pileup API to create appropriate pileup document
         in underlying database.
 
-        :param pdict: input MSPilup data dictionary
+        :param pdict: input MSPileup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
-        authz_match(self.role, self.group)
-        return self.mgr.createPileup(pdict)
+        self.authMgr.authorizeApiAccess('ms-pileup', 'create')
+        rseNames = self.rucio.evaluateRSEExpression(self.diskRSEExpr, useCache=True)
+        return self.dataMgr.createPileup(pdict, rseNames)
 
     def updatePileup(self, pdict):
         """
-        MSPileup update API to update correspoding pileup document in data layer.
+        MSPileup update API to update corresponding pileup document in data layer.
 
         :param pdict: input MSPilup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
-        authz_match(self.role, self.group)
-        return self.mgr.updatePileup(pdict)
+        self.authMgr.authorizeApiAccess('ms-pileup', 'update')
+        rseNames = self.rucio.evaluateRSEExpression(self.diskRSEExpr, useCache=True)
+        return self.dataMgr.updatePileup(pdict, rseNames, validate=True)
 
     def deletePileup(self, spec):
         """
@@ -118,5 +112,5 @@ class MSPileup(MSCore):
         :param pdict: input MSPilup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
-        authz_match(self.role, self.group)
-        return self.mgr.deletePileup(spec)
+        self.authMgr.authorizeApiAccess('ms-pileup', 'delete')
+        return self.dataMgr.deletePileup(spec)

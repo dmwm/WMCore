@@ -439,7 +439,7 @@ class SimpleCondorPlugin(BasePlugin):
         try:
             schedd.act(htcondor.JobAction.Remove, gridIds)
         except RuntimeError:
-            logging.warn("Error while killing jobs on the schedd: %s", gridIds)
+            logging.warning("Error while killing jobs on the schedd: %s", gridIds)
             if raiseEx:
                 raise
 
@@ -458,7 +458,7 @@ class SimpleCondorPlugin(BasePlugin):
         try:
             schedd.act(htcondor.JobAction.Remove, "WMAgent_RequestName == %s" % classad.quote(str(workflow)))
         except RuntimeError:
-            logging.warn("Error while killing jobs on the schedd: WMAgent_RequestName=%s", workflow)
+            logging.warning("Error while killing jobs on the schedd: WMAgent_RequestName=%s", workflow)
 
         return
 
@@ -536,6 +536,14 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.CMS_JobType'] = classad.quote(job['task_type'])
             ad['My.CMS_Type'] = classad.quote(activityToType(job['activity']))
             ad['My.CMS_RequestType'] = classad.quote(job['requestType'])
+            if job.get('physicsTaskType', None):
+                ad['My.CMS_extendedJobType'] = classad.quote(job['physicsTaskType'])
+            else:
+                ad['My.CMS_extendedJobType'] = classad.quote(job['task_type'])
+            if job.get('campaignName') is None:
+                ad['My.CMS_CampaignName'] = undefined
+            else:
+                ad['My.CMS_CampaignName'] = classad.quote(job['campaignName'])
 
             # Handling for AWS, cloud and opportunistic resources
             ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))

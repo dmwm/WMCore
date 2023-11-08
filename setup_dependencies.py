@@ -36,7 +36,7 @@ dependencies = {
         'systems': ['wmc-base']
     },
     'wmc-database': {
-        'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs', 'WMCore.Database',
+        'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs+', 'WMCore.Database+',
                      'WMCore.Algorithms', 'WMCore.Services'],
         'modules': ['WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
         'systems': ['wmc-base']
@@ -188,7 +188,15 @@ dependencies = {
                      'WMCore.Services+', 'WMCore.WMSpec+',
                      'WMCore.WMBS+', 'WMCore.ResourceControl+'],
         'systems': ['wmc-web', 'wmc-database', 'global-workqueue', 'wmc-runtime'],
-        'statics': ['src/javascript/WMCore/WebTools/Agent',
+        'statics': ['bin+',
+                    'deploy+',
+                    'etc+',
+                    'src/couchapps/SummaryStats+',
+                    'src/couchapps/FWJRDump+',
+                    'src/couchapps/JobDump+',
+                    'src/couchapps/WMStatsAgent+',
+                    'src/couchapps/WorkQueue+',
+                    'src/javascript/WMCore/WebTools/Agent',
                     'src/javascript/WMCore/WebTools/WMBS',
                     'src/javascript/external/graphael',
                     'src/templates/WMCore/WebTools/WMBS'],

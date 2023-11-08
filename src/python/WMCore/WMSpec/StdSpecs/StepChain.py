@@ -14,12 +14,15 @@ to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
 from __future__ import division
+
+import json
+
 from future.utils import viewitems
 from builtins import range
 
 from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-from WMCore.Lexicon import primdataset, taskStepName
+from WMCore.Lexicon import primdataset, taskStepName, gpuParameters
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsCreate, parsePileupConfig,
                                            checkMemCore, checkEventStreams, checkTimePerEvent)
@@ -282,7 +285,7 @@ class StepChainWorkloadFactory(StdBase):
         chain the output between all three steps.
         """
         self.stepParentageMapping.setdefault(origArgs['Step1']['StepName'], {})
-
+        campaignNames = []
         for i in range(2, self.stepChain + 1):
             currentStepNumber = "Step%d" % i
             currentCmsRun = "cmsRun%d" % i
@@ -321,8 +324,16 @@ class StepChainWorkloadFactory(StdBase):
                 multicore = taskConf['Multicore']
             if taskConf.get("EventStreams") is not None and taskConf['EventStreams'] >= 0:
                 eventStreams = taskConf['EventStreams']
-
             currentCmsswStepHelper.setNumberOfCores(multicore, eventStreams)
+
+            # GPU settings
+            gpuRequired = self.requiresGPU
+            gpuParams = json.loads(taskConf.get('GPUParams', 'null'))
+            if taskConf.get('RequiresGPU', None):
+                gpuRequired = taskConf['RequiresGPU']
+            if "GPUParams" not in taskConf:
+                gpuParams = json.loads(self.gPUParams)
+            currentCmsswStepHelper.setGPUSettings(gpuRequired, gpuParams)
 
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
@@ -335,10 +346,32 @@ class StepChainWorkloadFactory(StdBase):
             parentCmsswStepHelper.keepOutput(parentKeepOutput)
             childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
             currentCmsswStepHelper.keepOutput(childKeepOutput)
-            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
+            configCache = self.loadCouchID(taskConf["ConfigCacheID"], self.configCacheUrl, self.couchDBName)
+            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput, configCache)
+            currentCmsswStepHelper.setPhysicsType(configCache)
+
+            # Get and append campaign name for each step
+            if taskConf.get("Campaign", None) is not None:
+                campaignNames.append(taskConf.get("Campaign"))
+            else:
+                # check if workload has a campaign name
+                if self.workload.getCampaign() is not None:
+                    campaignNames.append(self.workload.getCampaign())
 
         # Closing out the task configuration. The last step output must be saved/merged
         currentCmsswStepHelper.keepOutput(True)
+        # Since we added more cmssw steps to the task, update physics task type
+        task.setPhysicsTaskType()
+
+        # Set campaign name
+        if campaignNames:
+            # Add first task campaign name if it exists
+            if task.getCampaignName() is not None:
+                campaignNames = [task.getCampaignName()] + campaignNames
+            # Report only unique values and preserve original content order 
+            seen = set()
+            uniqueCampaignNames = [x for x in campaignNames if not (x in seen or seen.add(x))]
+            task.setCampaignName(",".join(uniqueCampaignNames))
 
         return
 
@@ -352,20 +385,21 @@ class StepChainWorkloadFactory(StdBase):
         else:
             return topLevelValue
 
-    def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput):
+    def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput, configCache):
         """
-        _setupOutputModules_
-
         Retrieves the outputModules from the step configuration and sets up
         a merge task for them. Only when KeepOutput is set to True.
+        :param task: WMTask object
+        :param taskConf: dict with task parameters
+        :param stepCmsRun: cms step name
+        :param keepOutput: bool
+        :param configCache: configCache object
         """
         taskConf = taskConf or {}
 
         outputMods = {}
+        configOutput = self.determineOutputModules(configCache=configCache)
 
-        configOutput = self.determineOutputModules(configDoc=taskConf["ConfigCacheID"],
-                                                   configCacheUrl=self.configCacheUrl,
-                                                   couchDBName=self.couchDBName)
         for outputModuleName in configOutput:
             outputModule = self.addOutputModule(task, outputModuleName,
                                                 self.inputPrimaryDataset,
@@ -484,7 +518,11 @@ class StepChainWorkloadFactory(StdBase):
                     "TimePerEvent": {"default": 12.0, "type": float, "validate": lambda x: x > 0},
                     "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                     "Multicore": {"default": 1, "type": int, "validate": checkMemCore},
-                    "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams}
+                    "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams},
+                    # no need for workload-level defaults, if task-level default is provided
+                    "RequiresGPU": {"default": None, "null": True,
+                                    "validate": lambda x: x in ("forbidden", "optional", "required")},
+                    "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
@@ -554,6 +592,11 @@ class StepChainWorkloadFactory(StdBase):
             msg += "You probably want to remove that step completely and try again."
             self.raiseValidationException(msg=msg)
 
+        try:
+            StdBase.validateGPUSettings(schema)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))
+
         outputModTier = []
         for i in range(1, numSteps + 1):
             stepNumber = "Step%s" % i
@@ -579,9 +622,8 @@ class StepChainWorkloadFactory(StdBase):
                                                getOutputModules=False)
             # we cannot save output of two steps using the same output module and datatier(s)
             if strToBool(step.get("KeepOutput", True)):
-                configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
-                                                           configCacheUrl=schema['ConfigCacheUrl'],
-                                                           couchDBName=schema["CouchDBName"])
+                configCache = self.loadCouchID(step["ConfigCacheID"], schema['ConfigCacheUrl'], schema["CouchDBName"])
+                configOutput = self.determineOutputModules(configCache=configCache)
                 for modName, values in viewitems(configOutput):
                     thisOutput = (modName, values['dataTier'])
                     if thisOutput in outputModTier:
@@ -603,6 +645,8 @@ class StepChainWorkloadFactory(StdBase):
         """
         try:
             validateArgumentsCreate(taskConf, taskArgumentDefinition, checkInputDset=False)
+            # Validate GPU-related spec parameters
+            StdBase.validateGPUSettings(taskConf)
         except WMSpecFactoryException:
             # just re-raise it to keep the error message clear
             raise

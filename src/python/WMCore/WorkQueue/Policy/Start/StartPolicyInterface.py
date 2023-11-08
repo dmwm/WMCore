@@ -42,6 +42,7 @@ class StartPolicyInterface(PolicyInterface):
         self.cric = CRIC()
         # FIXME: for the moment, it will always use the default value
         self.rucioAcct = self.args.get("rucioAcct", "wmcore_transferor")
+        self.rucioAcctPU = self.args.get("rucioAcctPU", "wmcore_pileup")
         if not self.rucio:
             self.rucio = Rucio(self.rucioAcct, configDict={'logger': self.logger})
 
@@ -256,7 +257,7 @@ class StartPolicyInterface(PolicyInterface):
         for dbsUrl in datasets:
             for datasetPath in datasets[dbsUrl]:
                 locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
-                                                                 account=self.rucioAcct)
+                                                                 account=self.rucioAcctPU)
                 result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result
 

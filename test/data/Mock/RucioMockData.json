@@ -1392,6 +1392,20 @@
   "scope": "cms",
   "type": "CONTAINER"
  },
+ "listDataRules:[('account', 'ms-pileup'), ('scope', 'cms')]": [{
+  "state": "OK",
+  "id": "123",
+  "rse_expression": "T2_XX_CERN",
+  "locks_ok_cnt": 2,
+  "locks_replicating_cnt": 2,
+  "locks_stuck_cnt": 2,
+  "scope": "cms",
+  "name": "/MinimumBias/ComissioningHI-v1/RAW",
+  "account": "ms-pileup"
+ }],
+ "evaluateRSEExpression": ["T2_XX_CERN"],
+ "evaluateRSEExpression:[('useCache', True)]": ["rse1", "rse2"],
+ "deleteRule": true,
  "isContainer:[('didName', '/Cosmics/ComissioningHI-PromptReco-v1/RECO#00ad285a-0d7b-11e1-9b6c-003048caaace')]": false,
  "isContainer:[('didName', '/Cosmics/ComissioningHI-PromptReco-v1/RECO#14ad7dfe-0acf-11e1-8347-003048caaace')]": false,
  "isContainer:[('didName', '/Cosmics/ComissioningHI-PromptReco-v1/RECO#1bb7b9b6-0d95-11e1-9b6c-003048caaace')]": false,

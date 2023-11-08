@@ -6,6 +6,9 @@
    "retrycount": 0,
    "fwjr": {
        "task": "/sryu_TaskChain_Task_Multicore_reqmgr1_160430_020832_2190/HLTD/HLTDMergeRAWoutput/RECODreHLT",
+       "WMTiming": {"WMJobStart": 1692712699.8846245,
+                    "WMJobEnd": 1692718964.7409143,
+                    "WMTotalWallClockTime": 6264.856289863586},
        "skippedFiles": [
        ],
        "fallbackFiles": [

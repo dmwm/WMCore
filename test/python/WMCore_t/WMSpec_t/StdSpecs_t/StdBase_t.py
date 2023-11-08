@@ -52,6 +52,20 @@ class StdBaseTest(unittest.TestCase):
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
         return
 
+    def testRunlist(self):
+        """
+        _testStdBaseValidation_
+
+        Check that the properly setup run white/black lists
+        """
+        arguments = StdBase.getTestArguments()
+        for k in sorted(arguments.keys()):
+            print(k, arguments[k])
+        arguments['RunWhiteList'] = ["111111", "222222"]
+        stdBaseInstance = StdBase()
+        with self.assertRaises(WMSpecFactoryException):
+            stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
+
     def testCalcEvtsPerJobLumi(self):
         """
         _testCalcEvtsPerJobLumi_

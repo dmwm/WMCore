@@ -189,6 +189,10 @@ class DBSUploadPoller(BaseWorkerThread):
         self.physicsGroup = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
         self.datasetType = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
         self.primaryDatasetType = getattr(self.config.DBS3Upload, "primaryDatasetType", "mc")
+        self.uploaderName = getattr(self.config.DBS3Upload, "uploaderName", "WMAgent")
+        if self.uploaderName not in ("WMAgent", "T0Prod", "T0Replay"):
+            raise DBSUploadException(f"Invalid value for attribute uploaderName: {self.uploaderName}")
+
         self.blockCount = 0
         self.gzipEncoding = getattr(self.config.DBS3Upload, 'gzipEncoding', False)
         self.dbsApi = DbsApi(url=self.dbsUrl)
@@ -382,7 +386,8 @@ class DBSUploadPoller(BaseWorkerThread):
         for blockInfo in loadedBlocks:
             block = DBSBufferBlock(name=blockInfo['block_name'],
                                    location=blockInfo['origin_site_name'],
-                                   datasetpath=blockInfo['datasetpath'])
+                                   datasetpath=blockInfo['datasetpath'],
+                                   uploader=self.uploaderName)
 
             parent = self.datasetParentageCache.get(blockInfo['datasetpath'])
             if parent:
@@ -552,7 +557,8 @@ class DBSUploadPoller(BaseWorkerThread):
         blockname = "%s#%s" % (datasetpath, makeUUID())
         newBlock = DBSBufferBlock(name=blockname,
                                   location=location,
-                                  datasetpath=datasetpath)
+                                  datasetpath=datasetpath,
+                                  uploader=self.uploaderName)
         # Now we load the dataset information
         self.setDatasetInfo(newBlock)
 

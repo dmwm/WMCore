@@ -1,4 +1,6 @@
 MYSQL_USER=
+MYSQL_PASS=
+MYSQL_HOST=127.0.0.1
 #ORACLE_USER=
 #ORACLE_PASS=
 #ORACLE_TNS=
@@ -23,3 +25,5 @@ GRAFANA_TOKEN=
 RUCIO_ACCOUNT=wma_prod
 RUCIO_HOST=http://cms-rucio.cern.ch
 RUCIO_AUTH=https://cms-rucio-auth.cern.ch
+TEAMNAME=
+AGENT_NUMBER=

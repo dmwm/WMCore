@@ -11,7 +11,7 @@ import nose
 from nose.plugins.attrib import attr
 import time
 import os
-import imp
+import importlib
 from functools import wraps
 
 # decorator around tests - record errors
@@ -70,8 +70,8 @@ class RequestLifeCycleBase_t(object):
         configCache.addConfig(os.path.join(configDir, label + '.py'))
         configCache.setLabel(label)
         configCache.setDescription(label)
-        modPath = imp.find_module(label, [configDir])
-        loadedConfig = imp.load_module(label, modPath[0], modPath[1], modPath[2])
+        modSpecs = importlib.machinery.PathFinder().find_spec(label, [configDir])
+        loadedConfig = modSpecs.loader.load_module()
         configCache.setPSetTweaks(makeTweak(loadedConfig.process).jsondictionary())
         configCache.save()
         return configCache.getIDFromLabel(label)

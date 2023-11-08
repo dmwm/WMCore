@@ -218,7 +218,18 @@ class WorkQueue(object):
         return availableSet - notAvailableSet
 
     def cancelWorkflow(self, wf):
-        """Cancel a workflow"""
+        """
+        Cancel a workflow in both workqueue and workqueue_inbox database.
+        :param wf: string with the workflow name
+        :return: the status code for the couchdb update call
+        """
+        # first, update the single workflow workqueue_inbox element, if needed
+        inboxData = self.getOpenRequests(inboxFlag=True, options={"key": wf})
+        if inboxData:
+            updateParams = {self.eleKey: {"OpenForNewData": False}}
+            self.inboxDB.updateBulkDocuments(inboxData, updateParams)
+
+        # now update all of the workqueue elements
         nonCancelableElements = ['Done', 'CancelRequested', 'Canceled', 'Failed']
         data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
                                 {'startkey': [wf], 'endkey': [wf, {}],
@@ -403,3 +414,17 @@ class WorkQueue(object):
                 result[x['key']].append(x['doc'])
 
         return result
+
+    def getOpenRequests(self, inboxFlag=False, options=None):
+        """
+        Return workflow names that are still opened for new
+        data in workqueue
+        :param inboxFlag: boolean to select the *_inbox db
+        :param options: a dictionary that supports a few view parameters
+        :return: a list with unique request names
+        """
+        options = options or {}
+        options.setdefault("stale", "update_after")
+        db = self.inboxDB if inboxFlag else self.db
+        data = db.loadView('WorkQueue', 'openRequests', options)
+        return [x['key'] for x in data.get('rows', [])]

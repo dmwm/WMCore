@@ -4,21 +4,21 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: MSPileupObj module provides MSPileup data structure:
 
 {
-    "pileupName": string with the pileup dataset
-    "pileupType": string with a constant value
-    "insertTime": int, seconds since epoch in GMT timezone
-    "lastUpdateTime": int, seconds since epoch in GMT timezone
-    "expectedRSEs": ["Disk1", "Disk2", etc],  # these values need to be validated against Rucio
-    "currentRSEs": ["Disk1", "Disk3"],  # values provided by the MS itself
-    "fullReplicas": integer,  # total number of replicas to keep on Disk
-    "campaigns": [ "name", ... ] # list of workflow campaigns using this pileup
-    "containerFraction": real number with the container fraction to be distributed (TBFD)
-    "replicationGrouping": string with a constant value (DATASET or ALL, to be in sync with Rucio)
-    "activatedOn": int, seconds since epoch in GMT timezone
-    "deactivatedOn": int, seconds since epoch in GMT timezone
-    "active": boolean,
-    "pileupSizeGB": integer, current size of the pileup in GB (integer)
-    "rulesList: list of strings (rules) used to lock the pileup id
+    "pileupName": string with the pileup dataset (madatory)
+    "pileupType": string with a constant value (mandatory)
+    "insertTime": int, seconds since epoch in GMT timezone (service-based)
+    "lastUpdateTime": int, seconds since epoch in GMT timezone (service-based)
+    "expectedRSEs": ["Disk1", "Disk2", etc], a non-empty list of strings with the RSE names (mandatory)
+    "currentRSEs": ["Disk1", "Disk3"], a list of strings with the RSE names (service-based)
+    "fullReplicas": integer,  # total number of replicas to keep on Disk (optional)
+    "campaigns": [ "name", ... ] # list of workflow campaigns using this pileup (optional)
+    "containerFraction": real number with the container fraction to be distributed (optional)
+    "replicationGrouping": string with a constant value (DATASET or ALL, (optional)
+    "activatedOn": int, seconds since epoch in GMT timezone (service-based)
+    "deactivatedOn": int, seconds since epoch in GMT timezone (service-based)
+    "active": boolean, (mandatory)
+    "pileupSize": integer, current size of the pileup in bytes (service-based)
+    "ruleIds: list of strings (rules) used to lock the pileup id (service-based)
 }
 
 The data flow should be done via list of objects, e.g.
@@ -29,12 +29,12 @@ The data flow should be done via list of objects, e.g.
 import json
 
 # WMCore modules
+from Utils.Timers import gmtimeSeconds
 from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.Lexicon import dataset
-from Utils.Timers import gmtimeSeconds
 
 
-class MSPileupObj(object):
+class MSPileupObj():
     """
     MSPileupObj defines MSPileup data stucture
     """
@@ -45,21 +45,21 @@ class MSPileupObj(object):
         self.validRSEs = validRSEs
 
         self.data = {
-            'pileupName': pdict.get('pileupName', ''),
-            'pileupType': pdict.get('pileupType', ''),
+            'pileupName': pdict['pileupName'],
+            'pileupType': pdict['pileupType'],
             'insertTime': pdict.get('insertTime', gmtimeSeconds()),
             'lastUpdateTime': pdict.get('lastUpdateTime', gmtimeSeconds()),
-            'expectedRSEs': pdict.get('expectedRSEs', []),
+            'expectedRSEs': pdict['expectedRSEs'],
             'currentRSEs': pdict.get('currentRSEs', []),
-            'fullReplicas': pdict.get('fullReplicas', 0),
+            'fullReplicas': pdict.get('fullReplicas', 1),
             'campaigns': pdict.get('campaigns', []),
             'containerFraction': pdict.get('containerFraction', 1.0),
-            'replicationGrouping': pdict.get('replicationGrouping', ""),
+            'replicationGrouping': pdict.get('replicationGrouping', 'ALL'),
             'activatedOn': pdict.get('activatedOn', gmtimeSeconds()),
             'deactivatedOn': pdict.get('deactivatedOn', gmtimeSeconds()),
-            'active': pdict.get('active', False),
+            'active': pdict['active'],
             'pileupSize': pdict.get('pileupSize', 0),
-            'ruleList': pdict.get('ruleList', [])}
+            'ruleIds': pdict.get('ruleIds', [])}
         valid, msg = self.validate(self.data)
         if not valid:
             msg = f'MSPileup input is invalid, {msg}'
@@ -126,8 +126,12 @@ class MSPileupObj(object):
                 msg = f"containerFraction value {val} outside [0,1] range"
                 self.logger.error(msg)
                 return False, msg
-            if (key == 'expectedRSEs' or key == 'currentRSEs') and not self.validateRSEs(val):
+            if key in ('expectedRSEs', 'currentRSEs') and not self.validateRSEs(val):
                 msg = f"{key} value {val} is not in validRSEs {self.validRSEs}"
+                self.logger.error(msg)
+                return False, msg
+            if key == 'expectedRSEs' and len(val) == 0:
+                msg = 'document require non-empty list of expectedRSEs'
                 self.logger.error(msg)
                 return False, msg
         return True, msg
@@ -170,5 +174,5 @@ def schema():
            'deactivatedOn': (0, int),
            'active': (False, bool),
            'pileupSize': (0, int),
-           'ruleList': ([], list)}
+           'ruleIds': ([], list)}
     return doc

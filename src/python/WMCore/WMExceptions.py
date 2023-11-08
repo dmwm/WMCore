@@ -160,6 +160,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       50662: "Application terminated by wrapper because using too much disk.",  # (CRAB3)
                       50664: "Application terminated by wrapper because using too much Wall Clock time.",  # (WMA, CRAB3)
                       50665: "Application terminated by wrapper because it stay idle too long.",  # (CRAB3)
+                      50666: "Job removed by condor for unknown reasons.", # (WMA, CRAB3)
                       50669: "Application terminated by wrapper for not defined reason.",  # (CRAB3)
                       60302: "Output file(s) not found.",  # (CRAB3)
                       60307: "General failure during files stage out.",  # (WMA, CRAB3)
@@ -266,62 +267,3 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
 # 70000: "Output_sandbox too big for WMS: output can not be retrieved.", Not used
 # 70500: "Warning: problem with ModifyJobReport.", # More details here: https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideCrabFaq#Exit_code_70500 Not used!
 # ======================================================================
-
-"""
-STAGEOUT_ERRORS
-key - exitCode which is also defined in WM_JOB_ERROR_CODES # TODO: to be used for reporting to dashboard and to end users in crab status command
-value - is a list, which has dictionaries with the following content:
-    regex - Error message which is exposed by gfal-copy/del.
-    error-msg - Error msg which will be shown to users in crab status output
-    isPermanent - True or False, which is used in CRAB3/ASO for following reasons:
-           a) CRAB3 decides should it submit a task to gridScheduler; If it is not permanent,
-              task will be submitted, but also error message will be shown in crab status output
-           b) CRAB3 Postjob decides should it retry job or not;
-           c) ASO decides should it resubmit transfer to FTS;
-"""
-STAGEOUT_ERRORS = {60317: [{"regex": ".*Cancelled ASO transfer after timeout.*",
-                            "error-msg": "ASO Transfer canceled due to timeout.",
-                            "isPermanent": True}
-                          ],
-                   60321: [{"regex": ".*reports could not open connection to.*",
-                            "error-msg": "Storage element is not accessible.",
-                            "isPermanent": False},
-                           {"regex": ".*451 operation failed\\: all pools are full.*",
-                            "error-msg": "Destination site does not have enough space on their storage.",
-                            "isPermanent": True},
-                           {"regex": ".*system error in connect\\: connection refused.*",
-                            "error-msg": "Destination site storage refused connection.",
-                            "isPermanent": False}
-                          ],
-                   60322: [{"regex": ".*permission denied.*",
-                            "error-msg": "Permission denied.",
-                            "isPermanent": True},
-                           {"regex": ".*Permission refused.*",
-                            "error-msg": "Permission denied.",
-                            "isPermanent": True},
-                           {"regex": ".*operation not permitted.*",
-                            "error-msg": "Operation not allowed.",
-                            "isPermanent": True},
-                           {"regex": ".*mkdir\\(\\) fail.*",
-                            "error-msg": "Can`t create directory.",
-                            "isPermanent": True},
-                           {"regex": ".*open/create error.*",
-                            "error-msg": "Can`t create directory/file on destination site.",
-                            "isPermanent": True},
-                           {"regex": ".*mkdir\\: cannot create directory.*",
-                            "error-msg": "Can`t create directory.",
-                            "isPermanent": True},
-                           {"regex": ".*530-login incorrect.*",
-                            "error-msg": "Permission denied to write to destination site.",
-                            "isPermanent": True},
-                          ],
-                   60323: [{"regex": ".*does not have enough space.*",
-                            "error-msg": "User quota exceeded.",
-                            "isPermanent": True},
-                           {"regex": ".*disk quota exceeded.*",
-                            "error-msg": "Disk quota exceeded.",
-                            "isPermanent": True},
-                           {"regex": ".*HTTP 507.*",
-                            "error-msg": "HTTP 507: Disk quota exceeded or Disk full.",
-                            "isPermanent": True},
-                          ]}

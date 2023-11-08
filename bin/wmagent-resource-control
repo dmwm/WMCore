@@ -207,7 +207,7 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots=None,
     Add a site to the resource control database if it doesn't exist.  Update
     information about sites in the database if it already exists.
     """
-    if resourceControl.listSiteInfo(siteName) is None:
+    if not resourceControl.listSiteInfo(siteName):
         if pendingSlots is None or runningSlots is None or ceName is None or pnn is None or plugin is None:
             print("You must specify the number of pending or running slots, the SE name,")
             print("the CE name and a plugin when adding a site.")
@@ -257,7 +257,7 @@ def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots=None, pend
 
     Add or update a task threshold in the database.
     """
-    if resourceControl.listSiteInfo(siteName) is None:
+    if not resourceControl.listSiteInfo(siteName):
         print("You must add the site to the database before you can add")
         print("thresholds.")
         print("Type --help for more information.")
@@ -294,7 +294,7 @@ def setSiteState(resourceControl, siteName, state):
 
     Set an specific state to a site
     """
-    if resourceControl.listSiteInfo(siteName) is None:
+    if not resourceControl.listSiteInfo(siteName):
         print("You must add the site to the database before you can change its state")
         print("Type --help for more information.")
         sys.exit(1)

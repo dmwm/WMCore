@@ -582,7 +582,8 @@ class DBSBufferFileTest(unittest.TestCase):
 
         newBlock = DBSBufferBlock(name="someblockname",
                                   location="se1.cern.ch",
-                                  datasetpath=None)
+                                  datasetpath=None,
+                                  uploader="WMAgent")
         newBlock.setDataset(dataset, 'data', 'VALID')
 
         createAction.execute(blocks=[newBlock])

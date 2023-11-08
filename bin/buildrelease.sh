@@ -55,45 +55,38 @@ echo "Building new release of WMCore $TAG on ${GITBRANCH}"
 echo "Updating version string ..."
 perl -p -i -e "s{__version__ =.*}{__version__ = '$TAG'}g" src/python/WMCore/__init__.py
 
-echo "Generating CHANGES file"
+# fetch the last tag's commit line (hash id plus tag name)
 LASTCOMMITLINE=$(git log -n1 --oneline -E --grep="^[0-9]+\.[0-9]+\.[0-9]+\.*(rc|patch)*[0-9]*$")
 LASTCOMMIT=$(echo ${LASTCOMMITLINE} | awk '{print $1}')
 LASTVERSION=$(echo ${LASTCOMMITLINE} | awk '{print $2}')
 
-TMP=$(mktemp -t wmcore.${LASTVERSION}.XXXXX)
-TMP_INFO=$(mktemp -t info.${LASTVERSION}.XXXXX)
-TMP_COMMIT_HASHES=$(mktemp -t hashes.${LASTVERSION}.XXXXX)
-TMP_PR=$(mktemp -t pr.${LASTVERSION}.XXXXX)
+echo "Generating CHANGES file"
+TMP_CHANGES=$(mktemp -t wmcore.${LASTVERSION}.XXXXX)
+echo "${LASTVERSION} to ${TAG}:" >> $TMP_CHANGES
 
-echo "${LASTVERSION} to ${TAG}:" >> $TMP
+# Grab all the commit hashes, subject and author since the last release
+TMP_HASHES_SUBJ_AUTHOR=$(mktemp -t wmcore_hashes.${LASTVERSION}.XXXXX)
+git log --no-merges  --pretty=format:'%H %s (%aN)' ${LASTCOMMIT}.. >> $TMP_HASHES_SUBJ_AUTHOR
+echo "" >> $TMP_HASHES_SUBJ_AUTHOR
 
-# Grab all the commit hashes since the last release
-git log --no-merges  --pretty=format:'%H' ${LASTCOMMIT}.. >> $TMP_COMMIT_HASHES
-echo "" >> $TMP_COMMIT_HASHES
+# Use github public API to fetch pull request # from commit hash
 
-# Grab all the commit messages and committers since the last release
-git log --no-merges  --pretty=format:'  - %s (%aN)' ${LASTCOMMIT}.. >> $TMP_INFO
-echo "" >> $TMP_INFO
-
-# Use gitub public API to fetch pull request # from commit hash
-cat $TMP_COMMIT_HASHES | while read line; do
-  PR=$(curl -s https://api.github.com/search/issues?q=sha:$line | grep -Po '\"html_url\": \"https://github.com/dmwm/WMCore/pull/\K[0-9]+' | sort | uniq)
-  # Commits should have an associated PR, but just in case...
-  if [[ $PR ]]
-    then
-    echo "#$PR" >> $TMP_PR
-  else
-    echo "" >> $TMP_PR
+cat $TMP_HASHES_SUBJ_AUTHOR | while read commitline; do
+  if [ -z "$commitline" ]
+  then
+      continue  # line is empty
   fi
+  HASH_ID=$(echo $commitline | awk '{print $1}')
+  PR=$(curl -s https://api.github.com/repos/dmwm/WMCore/commits/$HASH_ID/pulls | grep -Po '\"html_url\": \"https://github.com/dmwm/WMCore/pull/\K[0-9]+' | sort | uniq)
+  # remove hash_id from the commit line
+  commitline=$(echo $commitline | sed "s+$HASH_ID+  -+")
+  echo "$commitline #$PR" >> $TMP_CHANGES
 done
+echo -en '\n\n' >> $TMP_CHANGES
 
-# Paste info and PR files together
-paste -d " " $TMP_INFO $TMP_PR >> $TMP
-
-echo "" >> $TMP
-echo "" >> $TMP
-cat CHANGES >> $TMP
-cp $TMP CHANGES
+# append the original CHANGES content and swap the files
+cat CHANGES >> $TMP_CHANGES
+cp $TMP_CHANGES CHANGES
 ${EDITOR:-vi} CHANGES
 if [ $? -ne 0 ]; then
     echo "User cancelled CHANGES update"

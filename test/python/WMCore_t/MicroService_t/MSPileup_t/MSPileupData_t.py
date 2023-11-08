@@ -9,9 +9,9 @@ import time
 import unittest
 
 # WMCore modules
-from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys
+from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys, getNewTimestamp
 from WMCore.MicroService.MSPileup.MSPileupError import MSPILEUP_SCHEMA_ERROR
-from Utils.Timers import encodeTimestamp, decodeTimestamp
+from Utils.Timers import encodeTimestamp, decodeTimestamp, gmtimeSeconds
 
 
 class MSPileupTest(unittest.TestCase):
@@ -19,10 +19,12 @@ class MSPileupTest(unittest.TestCase):
 
     def setUp(self):
         """setup unit test class"""
+        self.validRSEs = ['rse1']
         msConfig = {'reqmgr2Url': 'http://localhost',
                     'rucioAccount': 'wmcore_mspileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
+                    'validRSEs': self.validRSEs,
                     'mongoDB': 'msPileupDB',
                     'mongoDBCollection': 'msPileupDBCollection',
                     'mongoDBServer': 'mongodb://localhost',
@@ -74,10 +76,10 @@ class MSPileupTest(unittest.TestCase):
         skeys = ['_id']
         pname = '/skldjflksdjf/skldfjslkdjf/PREMIX'
         now = int(time.mktime(time.gmtime()))
-        expectedRSEs = []
+        expectedRSEs = self.validRSEs
         fullReplicas = 1
         pileupSize = 1
-        ruleList = []
+        ruleIds = []
         campaigns = []
         containerFraction = 0.0
         replicationGrouping = "ALL"
@@ -97,10 +99,17 @@ class MSPileupTest(unittest.TestCase):
             'deactivatedOn': now,
             'active': True,
             'pileupSize': pileupSize,
-            'ruleList': ruleList}
+            'ruleIds': ruleIds}
 
-        out = self.mgr.createPileup(pdict)
+        out = self.mgr.createPileup(pdict, self.validRSEs)
         self.assertEqual(len(out), 0)
+
+        # now fail the RSE validation
+        out = self.mgr.createPileup(pdict, ['rse2'])[0]
+        self.assertEqual(out['error'], "MSPileupError")
+        self.assertEqual(out['code'], 7)
+        expect = "Failed to create MSPileupObj, MSPileup input is invalid, expectedRSEs value ['rse1'] is not in validRSEs ['rse2']"
+        self.assertEqual(out['message'], expect)
 
         spec = {'pileupName': pname}
         results = self.mgr.getPileup(spec)
@@ -109,7 +118,7 @@ class MSPileupTest(unittest.TestCase):
         self.assertDictEqual(pdict, doc)
 
         doc.update({'pileupSize': 2})
-        out = self.mgr.updatePileup(doc)
+        out = self.mgr.updatePileup(doc, self.validRSEs)
         self.assertEqual(len(out), 0)
         results = self.mgr.getPileup(spec)
         doc = results[0]
@@ -140,6 +149,29 @@ class MSPileupTest(unittest.TestCase):
         # and we should get zero results
         res = self.mgr.getPileup(spec)
         self.assertEqual(len(res), 0)
+
+    def testGetNewTimestamp(self):
+        """Test the getNewTimestamp function"""
+        timeNow = gmtimeSeconds()
+        resp = getNewTimestamp({})
+        self.assertEqual(len(resp), 1)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+
+        resp = getNewTimestamp({'lastUpdateTime': 1})
+        self.assertEqual(len(resp), 1)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+
+        resp = getNewTimestamp({'active': True})
+        self.assertEqual(len(resp), 2)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+        self.assertTrue(resp['activatedOn'] >= timeNow)
+        self.assertFalse('deactivatedOn' in resp)
+
+        resp = getNewTimestamp({'active': False})
+        self.assertEqual(len(resp), 2)
+        self.assertTrue(resp['lastUpdateTime'] >= timeNow)
+        self.assertTrue(resp['deactivatedOn'] >= timeNow)
+        self.assertFalse('activatedOn' in resp)
 
 
 if __name__ == '__main__':

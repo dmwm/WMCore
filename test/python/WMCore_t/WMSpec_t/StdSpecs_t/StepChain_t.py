@@ -5,6 +5,8 @@ _StepChain_t_
 """
 from __future__ import print_function
 
+import json
+
 from future.utils import viewitems, listvalues
 
 from builtins import range
@@ -2408,6 +2410,297 @@ class StepChainTests(EmulatedUnitTestCase):
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
         self.assertEqual(testWorkload.startPolicyParameters()['policyName'], "MonteCarlo")
 
+    def testRunlist(self):
+        """
+        Check that the properly setup run white/black lists
+        """
+        arguments = StepChainWorkloadFactory.getTestArguments()
+        arguments['Step1']['RunWhiteList'] = ["111111", "222222"]
+        factory = StepChainWorkloadFactory()
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("TestWorkload", arguments)
+
+    def testGPUStepChains(self):
+        """
+        Test GPU support in StepChains, top level settings only
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        self.assertIsNone(testArguments['RequiresGPU'])
+        self.assertEqual(testArguments['GPUParams'], json.dumps(None))
+        for stepKey in ['Step1', 'Step2', 'Step3']:
+            self.assertTrue("RequiresGPU" not in testArguments[stepKey])
+            self.assertTrue("GPUParams" not in testArguments[stepKey])
+
+        for taskName in testWorkload.listAllTaskNames():
+            taskObj = testWorkload.getTaskByName(taskName)
+            for stepName in taskObj.listAllStepNames():
+                stepHelper = taskObj.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW":
+                    self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "forbidden")
+                    self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
+                else:
+                    self.assertFalse(hasattr(stepHelper.data.application, "gpu"))
+
+        # test assignment with wrong Trust flags
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska"], "Team": "The-A-Team",
+                      "RequestStatus": "assigned"}
+        testWorkload.updateArguments(assignDict)
+
+        self.assertIsNone(testArguments['RequiresGPU'])
+        self.assertEqual(testArguments['GPUParams'], json.dumps(None))
+        for stepKey in ['Step1', 'Step2', 'Step3']:
+            self.assertTrue("RequiresGPU" not in testArguments[stepKey])
+            self.assertTrue("GPUParams" not in testArguments[stepKey])
+
+        for taskName in testWorkload.listAllTaskNames():
+            taskObj = testWorkload.getTaskByName(taskName)
+            for stepName in taskObj.listAllStepNames():
+                stepHelper = taskObj.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW":
+                    self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "forbidden")
+                    self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
+                else:
+                    self.assertFalse(hasattr(stepHelper.data.application, "gpu"))
+
+        # last but not least, test a failing case
+        testArguments['RequiresGPU'] = "required"
+        testArguments['GPUParams'] = json.dumps(None)
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("PullingTheChain", testArguments)
+
+    def testGPUStepChainsTasks(self):
+        """
+        Test GPU support in StepChains, with task-level settings
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
+        testArguments['Step1'].update({"RequiresGPU": "optional", "GPUParams": json.dumps(gpuParams)})
+        testArguments['Step2'].update({"RequiresGPU": "required", "GPUParams": json.dumps(gpuParams)})
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        # validate requires GPU
+        self.assertIsNone(testArguments['RequiresGPU'])
+        self.assertEqual(testArguments["Step1"]['RequiresGPU'], "optional")
+        self.assertEqual(testArguments["Step2"]['RequiresGPU'], "required")
+        self.assertTrue("RequiresGPU" not in testArguments["Step3"])
+
+        # validate GPU parameters
+        self.assertEqual(testArguments['GPUParams'], json.dumps(None))
+        self.assertEqual(testArguments["Step1"]['GPUParams'], json.dumps(gpuParams))
+        self.assertEqual(testArguments["Step2"]['GPUParams'], json.dumps(gpuParams))
+        self.assertTrue("GPUParams" not in testArguments["Step3"])
+
+        for taskName in testWorkload.listAllTaskNames():
+            taskObj = testWorkload.getTaskByName(taskName)
+            for stepName in taskObj.listAllStepNames():
+                stepHelper = taskObj.getStepHelper(stepName)
+                if taskObj.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+                    if stepHelper.stepType() == "CMSSW":
+                        self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "forbidden")
+                        self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
+                    else:
+                        self.assertFalse(hasattr(stepHelper.data.application, "gpu"))
+                elif stepHelper.stepType() == "CMSSW" and taskName == "GENSIM":
+                    if stepHelper.name() == "cmsRun1":
+                        self.assertEqual(stepHelper.data.application.gpu.gpuRequired, testArguments["Step1"]['RequiresGPU'])
+                        self.assertItemsEqual(stepHelper.data.application.gpu.gpuRequirements, gpuParams)
+                    elif stepHelper.name() == "cmsRun2":
+                        self.assertEqual(stepHelper.data.application.gpu.gpuRequired, testArguments["Step2"]['RequiresGPU'])
+                        self.assertItemsEqual(stepHelper.data.application.gpu.gpuRequirements, gpuParams)
+                    elif stepHelper.name() == "cmsRun3":
+                        self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "forbidden")
+                        self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
+                elif stepHelper.stepType() == "CMSSW":
+                    raise RuntimeError("Should not reach this code")
+                else:
+                    self.assertFalse(hasattr(stepHelper.data.application, "gpu"))
+
+        prodTask = testWorkload.getTask('GENSIM')
+        gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun1').getGPUSettings()
+        self.assertEqual(gpuRequired, testArguments["Step1"]['RequiresGPU'])
+        self.assertItemsEqual(gpuRequirements, gpuParams)
+
+        gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun2').getGPUSettings()
+        self.assertEqual(gpuRequired, testArguments["Step2"]['RequiresGPU'])
+        self.assertItemsEqual(gpuRequirements, gpuParams)
+
+        gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun3').getGPUSettings()
+        self.assertEqual(gpuRequired, testArguments["Step3"].get('RequiresGPU', "forbidden"))
+        self.assertIsNone(gpuRequirements)
+
+
+
+        # test assignment with wrong Trust flags
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska"], "Team": "The-A-Team",
+                      "RequestStatus": "assigned"}
+        testWorkload.updateArguments(assignDict)
+
+        # validate requires GPU
+        self.assertIsNone(testArguments['RequiresGPU'])
+        self.assertEqual(testArguments["Step1"]['RequiresGPU'], "optional")
+        self.assertEqual(testArguments["Step2"]['RequiresGPU'], "required")
+        self.assertTrue("RequiresGPU" not in testArguments["Step3"])
+
+        # validate GPU parameters
+        self.assertEqual(testArguments['GPUParams'], json.dumps(None))
+        self.assertEqual(testArguments["Step1"]['GPUParams'], json.dumps(gpuParams))
+        self.assertEqual(testArguments["Step2"]['GPUParams'], json.dumps(gpuParams))
+        self.assertTrue("GPUParams" not in testArguments["Step3"])
+
+        prodTask = testWorkload.getTask('GENSIM')
+        gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun1').getGPUSettings()
+        self.assertEqual(gpuRequired, testArguments["Step1"]['RequiresGPU'])
+        self.assertItemsEqual(gpuRequirements, gpuParams)
+
+        gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun2').getGPUSettings()
+        self.assertEqual(gpuRequired, testArguments["Step2"]['RequiresGPU'])
+        self.assertItemsEqual(gpuRequirements, gpuParams)
+
+        gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun3').getGPUSettings()
+        self.assertEqual(gpuRequired, testArguments["Step3"].get('RequiresGPU', "forbidden"))
+        self.assertIsNone(gpuRequirements)
+
+    def testCampaignNamesCaseA(self):
+        """
+        Check campaign names are properly set when al Steps have a campaign
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Step1'].update({"Campaign": "Campaign1"})
+        testArguments['Step2'].update({"Campaign": "Campaign2"})
+        testArguments['Step3'].update({"Campaign": "Campaign3"})
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "Campaign1,Campaign2,Campaign3")
+
+        return
+
+    def testCampaignNamesCaseB(self):
+        """
+        Check campaign names are properly set when the workload not all steps
+        have a campaign defined (hence defaulting to the workload campaign)
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Step1'].update({"Campaign": "Campaign1"})
+        testArguments['Step3'].update({"Campaign": "Campaign3"})
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "Campaign1,TaskForceUnitTest,Campaign3")
+
+        return
+
+    def testCampaignNamesCaseC(self):
+        """
+        Check campaign names are properly set when all step campaigns are the same
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        testArguments['Step1'].update({"Campaign": "Campaign"})
+        testArguments['Step2'].update({"Campaign": "Campaign"})
+        testArguments['Step3'].update({"Campaign": "Campaign"})
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "Campaign")
+
+        return
+
+    def testCampaignNamesCaseD(self):
+        """
+        Check campaign names are properly set to workload request campaign when
+        no steps have a campaign
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+
+        self.assertEqual(task.getCampaignName(), "TaskForceUnitTest")
+
+        return
+
+    def testSetPhysicsType(self):
+        """
+        Check step physics type is properly set at step level and reported
+        in WMTask
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+        self.assertEqual(task.getPhysicsTaskType(), "UNKNOWN,UNKNOWN,UNKNOWN")
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

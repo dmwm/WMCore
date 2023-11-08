@@ -39,7 +39,7 @@ class MSPileupObjTest(unittest.TestCase):
             'replicationGrouping': "ALL",
             'active': True,
             'pileupSize': 0,
-            'ruleList': []}
+            'ruleIds': []}
         obj = MSPileupObj(data, validRSEs=expectedRSEs)
         for key in ['insertTime', 'lastUpdateTime', 'activatedOn', 'deactivatedOn']:
             self.assertNotEqual(obj.data[key], 0)
@@ -90,7 +90,7 @@ class MSPileupObjTest(unittest.TestCase):
             'replicationGrouping': "",
             'active': True,
             'pileupSize': 0,
-            'ruleList': []}
+            'ruleIds': []}
         try:
             MSPileupObj(data)
             self.assertIsNone(1, msg="MSPileupObj should not be created")

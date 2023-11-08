@@ -364,8 +364,7 @@ class WMBSHelper(WMConnectionBase):
         siteInfo = self.getLocationInfo.execute(conn=self.getDBConn(),
                                                 transaction=self.existingTransaction())
         for site in siteInfo:
-            if site['pnn'] in self.commonLocation:
-                locations.add(site['pnn'])
+            locations.update(set(site['pnn']) & set(self.commonLocation))
 
         if not locations:
             msg = 'No locations to inject Monte Carlo work to, unable to proceed'

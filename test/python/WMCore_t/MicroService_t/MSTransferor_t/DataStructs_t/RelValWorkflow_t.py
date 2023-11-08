@@ -152,9 +152,8 @@ class RelValWorkflowTest(unittest.TestCase):
 
         # checking pileup data
         self.assertEqual(wflow.getSecondarySummary(), {})
-        wflow.setSecondarySummary(puName, dsetSize=123, locations=["Site_B"])
+        wflow.setSecondarySummary(puName, locations=["Site_B"])
         self.assertCountEqual(list(wflow.getSecondarySummary()), [puName])
-        self.assertEqual(wflow.getSecondarySummary()[puName]["dsetSize"], 123)
         self.assertCountEqual(wflow.getSecondarySummary()[puName]["locations"], ["Site_B"])
 
     def testRelValWflowWithParent(self):
@@ -209,16 +208,13 @@ class RelValWorkflowTest(unittest.TestCase):
 
         # checking pileup data
         self.assertEqual(wflow.getSecondarySummary(), {})
-        wflow.setSecondarySummary(puName1, dsetSize=123, locations=["Site_B"])
+        wflow.setSecondarySummary(puName1, locations=["Site_B"])
         self.assertCountEqual(list(wflow.getSecondarySummary()), [puName1])
-        self.assertEqual(wflow.getSecondarySummary()[puName1]["dsetSize"], 123)
         self.assertCountEqual(wflow.getSecondarySummary()[puName1]["locations"], ["Site_B"])
 
         # now set the second pileup
-        wflow.setSecondarySummary(puName2, dsetSize=12, locations=["Site_C"])
+        wflow.setSecondarySummary(puName2, locations=["Site_C"])
         self.assertCountEqual(list(wflow.getSecondarySummary()), [puName1, puName2])
-        self.assertEqual(wflow.getSecondarySummary()[puName1]["dsetSize"], 123)
-        self.assertEqual(wflow.getSecondarySummary()[puName2]["dsetSize"], 12)
         self.assertCountEqual(wflow.getSecondarySummary()[puName1]["locations"], ["Site_B"])
         self.assertCountEqual(wflow.getSecondarySummary()[puName2]["locations"], ["Site_C"])
 

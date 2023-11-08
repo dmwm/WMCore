@@ -1105,8 +1105,6 @@ class WMTaskHelper(TreeHelper):
 
     def setTaskType(self, taskType):
         """
-        _setTaskType_
-
         Set the type field of this task
         """
         self.data.taskType = taskType
@@ -1326,6 +1324,53 @@ class WMTaskHelper(TreeHelper):
             if ID:
                 IDs.append(ID)
         return IDs
+
+    def getPhysicsTaskType(self):
+        """
+        Return the physics Task type
+        :return: str
+        """
+        return getattr(self.data, 'physicsTaskType', None)
+
+    def getStepPhysicsTypes(self):
+        """
+        Get the physics types for all cmsRun steps
+        :return: list
+        """
+        types = []
+        for stepName in self.listAllStepNames(cmsRunOnly=True):
+           stepHelper = self.getStepHelper(stepName)
+           stepType = stepHelper.getPhysicsType()
+           if stepType:
+               types.append(stepType)
+           else:
+               types.append("UNKNOWN")
+        return types
+
+    def setPhysicsTaskType(self):
+        """
+        Set the physics task type based on the steps parameter
+        for a step.
+        We basically expand the standard "Production/Processing" taskType to
+        detail the process better. 
+        For MC: "Production" or "Processing" to ["GENSIM", "GEN", "DIGI", "RECO", "DIGIRECO", "MINIAOD"]
+        For Data: "Processing" to "Dataprocessing"
+        :return: str
+        """
+        physicsTaskType = "UNKNOWN"
+        if self.taskType() in ("Processing", "Production"):
+            stepTypes = self.getStepPhysicsTypes()
+            if "DataProcessing" in stepTypes:
+                # For data, return a single DataProcessing step
+                physicsTaskType = "DataProcessing"
+            else:
+                # For MC, join all physics steps
+                physicsTaskType = ",".join(stepTypes)
+        else:
+            # Other task types are not physics types
+            physicsTaskType = None
+
+        self.data.physicsTaskType = physicsTaskType
 
     def setProcessingVersion(self, procVer, parentProcessingVersion=0, stepChainMap=False):
         """
@@ -1615,6 +1660,20 @@ class WMTaskHelper(TreeHelper):
         Get the task acquisition era.
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
+
+    def setCampaignName(self, campaign):
+        """
+        Set the campaign name of this task
+        :param campaign: str, name of the campaign to be defined
+        """
+        self.data.campaignName = campaign
+
+    def getCampaignName(self):
+        """
+        Get the task campaign name
+        :return: str, campaign name value
+        """
+        return getattr(self.data, 'campaignName', None)
 
     def setLumiMask(self, lumiMask=None, override=True):
         """

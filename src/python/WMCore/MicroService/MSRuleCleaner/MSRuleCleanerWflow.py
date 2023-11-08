@@ -148,7 +148,7 @@ class MSRuleCleanerWflow(dict):
         # NOTE: Those are fields defined as strings in the original workflow
         #       representation, but may turn into lists during the recursive
         #       search and we will use them as lists for the rest of the code.
-        for key in ['DataPileup', 'MCPileup', 'ParentDataset']:
+        for key in ['ParentDataset']:
             if not isinstance(myDoc[key], list):
                 if myDoc[key] is None:
                     myDoc[key] = []
@@ -182,6 +182,8 @@ class MSRuleCleanerWflow(dict):
                               'plineAgentBlock': False},
             "TransferDone": False  # information - returned by the MSOutput REST call.
             "TransferTape": False  # information - fetched by Rucio about tape rules completion
+            "TapeRulesStatus": [('36805b823062415c8ee60300b0e60378', 'OK', '/AToZHToLLTTbar_MA-1900_MH-1200_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16RECO-106X_mcRun2_asymptotic_v13-v2/AODSIM'),
+                                ('5b75fb7503524449b0f304ea0e52f0de', 'STUCK', '/AToZHToLLTTbar_MA-1900_MH-1200_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16MiniAODv2-106X_mcRun2_asymptotic_v17-v2/MINIAODSIM')]
             'TargetStatus': 'normal-archived' || 'rejected-achived' || 'aborted-archived',
             'ParentageResolved': Bool,
             'PlineMarkers': None,
@@ -191,8 +193,6 @@ class MSRuleCleanerWflow(dict):
             'ForceArchive': False,
             'RequestTransition': [],
             'IncludeParents': False
-            'DataPileup': [],
-            'MCPileup': [],
             'InputDataset': None,
             'ParentDataset': []
             }
@@ -208,6 +208,7 @@ class MSRuleCleanerWflow(dict):
             ('CleanupStatus', {}, dict),
             ('TransferDone', False, bool),
             ('TransferTape', False, bool),
+            ('TapeRulesStatus', [], list),
             ('TargetStatus', None, (bytes, str)),
             ('ParentageResolved', True, bool),
             ('PlineMarkers', None, list),
@@ -217,10 +218,9 @@ class MSRuleCleanerWflow(dict):
             ('ForceArchive', False, bool),
             ('RequestTransition', [], list),
             ('IncludeParents', False, bool),
-            ('DataPileup', None, (bytes, str)),
-            ('MCPileup', None, (bytes, str)),
             ('InputDataset', None, (bytes, str)),
-            ('ParentDataset', None, (bytes, str))]
+            ('ParentDataset', None, (bytes, str)),
+            ('StatusAdvanceExpiredMsg', "", str)]
 
         # NOTE: ParentageResolved is set by default to True it will be False only if:
         #       - RequestType is StepChain

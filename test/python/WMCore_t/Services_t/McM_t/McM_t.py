@@ -4,15 +4,10 @@ Test case for McM service
 """
 
 import unittest
-
 from nose.plugins.attrib import attr
-
 from WMCore.Services.McM.McM import McM
 
 prepID = 'BTV-Upg2023SHCAL14DR-00002'
-
-cert = 'This must be a X509 certificate registered with CERN SSO with access to McM'
-key = 'This must be the corresponding key unprotected by a password'
 
 
 class McMTest(unittest.TestCase):
@@ -27,7 +22,7 @@ class McMTest(unittest.TestCase):
         """
 
         history = None
-        with McM(cert=cert, key=key) as mcm:
+        with McM() as mcm:
             history = mcm.getHistory(prepID=prepID)
 
         isAnnounced = False
@@ -43,7 +38,41 @@ class McMTest(unittest.TestCase):
         Test that the request URL is working
         """
         request = None
-        with McM(cert=cert, key=key) as mcm:
+        with McM() as mcm:
+            request = mcm.getRequest(prepID=prepID)
+
+        self.assertTrue('total_events' in request)
+
+    @attr("integration")
+    def testHistoryDevelopmentEnv(self):
+        """
+        Test that the history URL is working.
+        McM Development has been migrated to the new SSO
+        (Keycloak)
+        """
+
+        history = None
+        development_url: str = "https://cms-pdmv-dev.cern.ch/mcm"
+        with McM(url=development_url) as mcm:
+            history = mcm.getHistory(prepID=prepID)
+
+        isAnnounced = False
+        for entry in history:
+            if entry['action'] == 'set status' and entry['step'] == 'announced':
+                isAnnounced = True
+
+        self.assertTrue(isAnnounced)
+
+    @attr("integration")
+    def testRequestDevelopmentEnv(self):
+        """
+        Test that the request URL is working.
+        McM Development has been migrated to the new SSO
+        (Keycloak)
+        """
+        request = None
+        development_url: str = "https://cms-pdmv-dev.cern.ch/mcm"
+        with McM(url=development_url) as mcm:
             request = mcm.getRequest(prepID=prepID)
 
         self.assertTrue('total_events' in request)

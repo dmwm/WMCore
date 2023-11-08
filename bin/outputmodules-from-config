@@ -6,7 +6,7 @@ Pull output module metadata from a CMSSW config.
 """
 import urllib.request
 
-import imp
+import importlib
 import os
 import sys
 import tempfile
@@ -21,12 +21,9 @@ def loadConfig(configPath):
     """
     cfgBaseName = os.path.basename(configPath).replace(".py", "")
     cfgDirName = os.path.dirname(configPath)
-    modPath = imp.find_module(cfgBaseName, [cfgDirName])
-    
-    loadedConfig = imp.load_module(cfgBaseName, modPath[0],
-                                   modPath[1], modPath[2])
-    
-    return loadedConfig
+    modSpecs = importlib.machinery.PathFinder().find_spec(cfgBaseName, [cfgDirName])
+    module = modSpecs.loader.load_module()
+    return module
 
 def outputModulesFromConfig(configHandle):
     """
@@ -55,7 +52,10 @@ def outputModulesFromConfig(configHandle):
             
     return outputModules
 
-if __name__ == "__main__":
+def main():
+    """
+    Main function of the module
+    """
     try:
         jsonDecoder = JSONDecoder()
         jsonEncoder = JSONEncoder()
@@ -102,3 +102,6 @@ if __name__ == "__main__":
     except Exception as ex:
         print(ex)
         sys.exit(1)
+
+if __name__ == "__main__":
+    main()

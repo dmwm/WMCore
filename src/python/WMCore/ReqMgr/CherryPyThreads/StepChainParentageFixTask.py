@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-from __future__ import (division, print_function)
-from future.utils import viewitems, viewvalues
-
 import time
-from collections import defaultdict
 
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
@@ -12,24 +8,25 @@ from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 def getChildDatasetsForStepChainMissingParent(reqmgrDB, status):
     """
-    :param status: workflow status
-    :return: set of child dataset
+    Fetches data from ReqMgr2/CouchDB for workflows that need to
+    have their parentage information fixed.
+    :param reqmgrDB: object instance of the RequestDBWriter class
+    :param status: string with the workflow status
+    :return: a flat list of dictionaries with request name and children datasets
     """
     results = reqmgrDB.getStepChainDatasetParentageByStatus(status)
-
-    requestsByChildDataset = defaultdict(set)
-
-    for reqName, info in viewitems(results):
-
-        for dsInfo in viewvalues(info):
-            for childDS in dsInfo["ChildDsets"]:
-                requestsByChildDataset[childDS].add(reqName)
-    return requestsByChildDataset
+    wflowChildrenDsets = []
+    for reqName, info in results.items():
+        childrenDsets = []
+        for _stepNum, dsetDict in info.items():
+            childrenDsets.extend(dsetDict['ChildDsets'])
+        wflowChildrenDsets.append({"workflowName": reqName, "childrenDsets": childrenDsets})
+    return wflowChildrenDsets
 
 
 class StepChainParentageFixTask(CherryPyPeriodicTask):
     """
-    Upldates StepChain parentage periodically
+    Updates StepChain parentage periodically
     """
 
     def __init__(self, rest, config):
@@ -51,52 +48,57 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         Fix the StepChain parentage and update the ParentageResolved flag to True
         """
         self.logger.info("Running fixStepChainParentage thread for statuses: %s", self.statusToCheck)
-        childDatasets = set()
-        requests = set()
-        requestsByChildDataset = {}
+        fixedCount = 0
         for status in self.statusToCheck:
-            reqByChildDS = getChildDatasetsForStepChainMissingParent(self.reqmgrDB, status)
-            self.logger.info("Retrieved %d datasets to fix parentage, in status: %s",
-                             len(reqByChildDS), status)
-            childDatasets = childDatasets.union(set(reqByChildDS.keys()))
-            # We need to just get one of the StepChain workflow if multiple workflow contains the same datasets. (i.e. ACDC)
-            requestsByChildDataset.update(reqByChildDS)
+            listWflowChildren = getChildDatasetsForStepChainMissingParent(self.reqmgrDB, status)
+            msg = f"Retrieved {len(listWflowChildren)} workflows to fix parentage in status {status}"
+            self.logger.info(msg)
 
-            for wfs in viewvalues(reqByChildDS):
-                requests = requests.union(wfs)
-
-        failedRequests = set()
-        totalChildDS = len(childDatasets)
-        fixCount = 0
-        for childDS in childDatasets:
-            self.logger.info("Resolving parentage for dataset: %s", childDS)
-            start = time.time()
-            try:
-                failedBlocks = self.dbsSvc.fixMissingParentageDatasets(childDS, insertFlag=True)
-            except Exception as exc:
-                self.logger.exception("Failed to resolve parentage data for dataset: %s. Error: %s",
-                                      childDS, str(exc))
-                failedRequests = failedRequests.union(requestsByChildDataset[childDS])
-            else:
-                if failedBlocks:
-                    self.logger.warning("These blocks failed to be resolved and will be retried later: %s",
-                                        failedBlocks)
-                    failedRequests = failedRequests.union(requestsByChildDataset[childDS])
+            # now resolve every dataset parentage for each workflow
+            while listWflowChildren:
+                wflowData = listWflowChildren.pop()
+                msg = f'Resolving parentage for workflow {wflowData["workflowName"]} '
+                msg += f'with a total of {len(wflowData["childrenDsets"])} datasets. '
+                msg += f'Still {len(listWflowChildren)} workflows left to be resolved.'
+                self.logger.info(msg)
+                # measure time taken to fix a workflow parentage
+                start = time.time()
+                parentageResolved = True
+                for childDS in wflowData["childrenDsets"]:
+                    self.logger.info("  Handling parentage for child dataset: %s", childDS)
+                    try:
+                        failedBlocks = self.dbsSvc.fixMissingParentageDatasets(childDS, insertFlag=True)
+                    except Exception as exc:
+                        self.logger.exception("  Failed to resolve parentage data for dataset: %s. Error: %s",
+                                              childDS, str(exc))
+                        parentageResolved = False
+                    else:
+                        if failedBlocks:
+                            self.logger.warning("  These blocks failed to be resolved and will be retried later: %s",
+                                                failedBlocks)
+                            parentageResolved = False
+                        else:
+                            self.logger.info("  Parentage for '%s' successfully updated.", childDS)
+                timeTaken = time.time() - start
+                self.logger.info(f"  time spent with workflow {wflowData['workflowName']} is: {timeTaken} secs")
+                if parentageResolved:
+                    fixedCount += 1
+                    # then we can update the request flag
+                    self.updateParentageFlag(wflowData['workflowName'])
                 else:
-                    fixCount += 1
-                    self.logger.info("Parentage for '%s' successfully updated. Processed %s out of %s datasets.",
-                                     childDS, fixCount, totalChildDS)
-            timeTaken = time.time() - start
-            self.logger.info("    spent %s secs on this dataset: %s", timeTaken, childDS)
+                    self.logger.warning(f" Workflow {wflowData['workflowName']} will be retried in the next cycle")
 
-        requestsToUpdate = requests - failedRequests
+        self.logger.info(f"Resolved a total of {fixedCount} workflows in this cycle\n")
 
-        for request in requestsToUpdate:
-            try:
-                self.reqmgrDB.updateRequestProperty(request, {"ParentageResolved": True})
-                self.logger.info("Marked ParentageResolved=True for request: %s", request)
-            except Exception as exc:
-                self.logger.error("Failed to update 'ParentageResolved' flag to True for request: %s", request)
-
-        msg = "A total of %d requests have been processed, where %d will have to be retried in the next cycle."
-        self.logger.info(msg, len(requestsToUpdate), len(failedRequests))
+    def updateParentageFlag(self, reqName):
+        """
+        Given a workflow name, update its ParentageResolved flag in
+        ReqMgr2.
+        :param reqName: string with the workflow name
+        :return: none
+        """
+        try:
+            self.reqmgrDB.updateRequestProperty(reqName, {"ParentageResolved": True})
+            self.logger.info("  Marked ParentageResolved=True for request: %s", reqName)
+        except Exception as exc:
+            self.logger.error("  Failed to update 'ParentageResolved' flag to True for request: %s", reqName)

@@ -14,6 +14,10 @@ from WMCore.DataStructs.Run import Run
 from WMCore.FwkJobReport import Report
 
 
+pat_int = re.compile(r'(^[0-9-]$|^[0-9-][0-9]*$)')
+pat_float = re.compile(r'(^[-]?\d+\.\d*$|^\d*\.{1,1}\d+$)')
+
+
 def reportBuilder(nodeStruct, report, target):
     """
     _reportBuilder_
@@ -310,8 +314,10 @@ def perfRepHandler(targets):
         perfRep.section_("cpu")
         perfRep.section_("memory")
         perfRep.section_("storage")
+        perfRep.section_("cmssw")
         for subnode in node.children:
             metric = subnode.attrs.get('Metric', None)
+            targets['PerformanceSummary'].send((perfRep.cmssw, subnode))
             if metric == "Timing":
                 targets['CPU'].send((perfRep.cpu, subnode))
             elif metric == "SystemMemory" or metric == "ApplicationMemory":
@@ -321,7 +327,6 @@ def perfRepHandler(targets):
             else:
                 targets['PerformanceSummary'].send((perfRep.summaries,
                                                     subnode))
-
 
 @coroutine
 def perfSummaryHandler():
@@ -334,17 +339,79 @@ def perfSummaryHandler():
     while True:
         report, node = (yield)
         summary = node.attrs.get('Metric', None)
+        module = node.attrs.get('Module', None)
         if summary is None:
             continue
+        site = None
+        if module == 'XrdSiteStatistics':
+            site = summary
+            summary = 'XrdSiteStatistics'
+
         # Add performance section if it doesn't exist
         if not hasattr(report, summary):
             report.section_(summary)
         summRep = getattr(report, summary)
 
         for subnode in node.children:
-            setattr(summRep, subnode.attrs['Name'],
-                    subnode.attrs['Value'])
+#             setattr(summRep, subnode.attrs['Name'],
+#                     subnode.attrs['Value'])
+            name = subnode.attrs['Name']
+            value = subnode.attrs['Value']
+            if module == 'XrdSiteStatistics':
+                value = castXrdSiteStatistics(summRep, name, site, value)
+            else:
+                value = castMetricValue(value)
+            setattr(summRep, name, value)
 
+
+def castMetricValue(value):
+    """
+    Perform casting of input value to proper data-type expected in MONIT
+    :param value: input value, can be in string or actual data type form, e.g. "1" vs 1
+    :return: value of proper data-type based on regexp pattern matching
+    """
+    if isinstance(value, str):
+        # strip off leading and trailing spaces from string values to allow proper data-type casting
+        value = value.lstrip().rstrip()
+    if value == 'false':
+        value = False
+    elif value == 'true':
+        value = True
+    elif pat_float.match(value):
+        value = float(value)
+    elif pat_int.match(value):
+        value = int(value)
+    return value
+
+
+def castXrdSiteStatistics(summRep, name, site, value):
+    """
+    Cast XrdSiteStatistics value from given summary report and name of the metric.
+
+    This is special case to be used for CMSSW XML report with the following performance module section
+
+    <PerformanceReport>
+      <PerformanceModule Metric="cern.ch"  Module="XrdSiteStatistics" >
+        <Metric Name="read-numOperations" Value="0"/>
+        ...
+      </PerformanceModule>
+    </PerformanceReport>
+
+    as it does not satisfies static schema and we should treat it separately
+
+    :param summRep: summary performance object
+    :param name: name of metric
+    :param site: name of the CMS site
+    :param value: value for given site
+    :return: list of site values in the form of the dictionary, e.g.
+    [{"site": "cern.ch", "value": 1}, {"site": "infn.it", "value": 2}]
+    """
+    cdict = summRep.dictionary_()
+    eValue = cdict.get(name, [])
+    vdict = {"site": site, "value": value}
+    eValue.append(vdict)
+    value = eValue
+    return value
 
 @coroutine
 def perfCPUHandler():
@@ -455,7 +522,7 @@ def perfStoreHandler():
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
             readCachOps = storageValues.get("Timing-tstoragefile-readViaCache-numSuccessfulOperations", 0) / \
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            readTotalT = storageValues.get("Timing-tstoragefile-read-totalMSecs", 0) / 1000
+            readTotalT = storageValues.get("Timing-tstoragefile-read-totalMsecs", 0) / 1000
             readNOps = storageValues.get("Timing-tstoragefile-read-numOperations", 0)
             writeTime = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) / 1000
             writeTotMB = storageValues.get("Timing-%s-write-totalMegabytes" % writeMethod, 0) \

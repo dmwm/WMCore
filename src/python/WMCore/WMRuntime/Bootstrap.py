@@ -59,7 +59,7 @@ def getSyncCE():
             host = host.split(":")[0]
             result = host
         except Exception:
-            logging.warn("Failed to extract SynCE from globus")
+            logging.warning("Failed to extract SynCE from globus")
         return result
 
     if 'NORDUGRID_CE' in os.environ:

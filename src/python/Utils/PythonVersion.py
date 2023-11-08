@@ -2,7 +2,7 @@
 Easily get the version of the python interpreter at runtime
 """
 
-from __future__ import division # Jenkins CI
+ # Jenkins CI
 
 import sys
 import pickle

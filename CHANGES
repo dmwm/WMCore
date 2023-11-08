@@ -1,3 +1,237 @@
+2.2.5 to 2.2.6rc1:
+  - Script to create a default Unified configuration (Alan Malta Rodrigues) #11770
+  - Remove unused Unified configuration and code; add schema and validation (Alan Malta Rodrigues) #11770
+  - Bin script to fix a single workflow parentage information (Alan Malta Rodrigues) #11694
+  - Refactor StepChainParentage thread to resolve by workflow (Alan Malta Rodrigues) #11694
+  - Update test json templates with MINIAODSIM; fix DQMHarvest ; GPU StepChain; ReReco 2022C; etc (Alan Malta Rodrigues) #11238
+  - Inherit siteLists from upper level task while creating WMBS subscriptions (Todor Trendafilov Ivanov) #11724
+
+
+2.2.4 to 2.2.5:
+  - Bump deploy-wmagent script to version 2.2.5; insert T3_US_Ookami (Alan Malta Rodrigues) #11766
+
+
+2.2.4rc10 to 2.2.4:
+  - Final stable release
+
+2.2.4rc9 to 2.2.4rc10:
+  - Fix if statement for CMS_CampaignName classad (Alan Malta Rodrigues) #11760
+
+
+2.2.4rc8 to 2.2.4rc9:
+  - Add CMSSW metrics to FJR (Valentin Kuznetsov) #11663
+  - Add CMSSW performance metrics to WMArchvie document (Valentin Kuznetsov) #11696
+
+
+2.2.4rc7 to 2.2.4rc8:
+  - Retry svn checkout in the CD pipeline up to 5 times (Alan Malta Rodrigues) #11752
+  - Update WMTiming metrics in given pkl file (Valentin Kuznetsov) #11726
+
+
+2.2.4rc6 to 2.2.4rc7:
+  - Add characterization and propagation of task type based on cmsDriver step arguments (Kenyi Hurtado Anampa) #11680
+  - Add additional variables to WMAgent.secrets needed for the docker container intialization process. (Todor Ivanov) #11717
+
+
+2.2.4rc5 to 2.2.4rc6:
+  - Just triggering a new build workflow
+
+
+2.2.4rc4 to 2.2.4rc5:
+  - Add campaign names support for stepchain workflows (Kenyi Hurtado Anampa) #11738
+
+
+2.2.4rc3 to 2.2.4rc4:
+  - Adds WMCMSSWSubprocess metrics to FJR document (Valentin Kuznetsov) #11716
+  - Add campaign name attribute to base WMTask object and propagate it to the job level as a classad (Kenyi Hurtado Anampa) #11710
+
+
+2.2.4rc2 to 2.2.4rc3:
+  - Provide timestamps metrics about WM job (Valentin Kuznetsov) #11656
+  - Provide in the FWJR the CPU and wallclock time for CMSSW subprocesses (Valentin Kuznetsov) #11665
+  - Add WMCMSSWSubprocess and WMTiming metrics to WMArchive document (Valentin Kuznetsov) #11692
+
+
+2.2.4rc1 to 2.2.4rc2:
+  - Update requirements for HTCondor 10.2.3 (Alan Malta Rodrigues) #11691
+
+
+2.2.2 to 2.2.4rc1:
+  - Fix use of input function in unregister-wmstats script (Alan Malta Rodrigues) #11688
+  - Adopt wmcore_pileup Rucio account in workqueue (Alan Malta Rodrigues) #11670
+  - Parse /proc/<pid>/smaps_rollup if present && Reduce string concatenation operations (Todor Ivanov) #11676
+  - Change default rucio pileup account (khurtado) #11673
+  - Update McM client (Geovanny Gonzalez-Rodriguez) #11672
+  - Committing changes for removing references to py2 portability (anpicci) #11618
+  - WMAgent deploy script: use latest stable release 2.2.3.1 (Alan Malta Rodrigues) #11662
+
+
+2.2.2rc12 to 2.2.2:
+  - Fix buildrelease for when there are no changes between releases (Alan Malta Rodrigues) #11650
+
+
+2.2.2rc11 to 2.2.2rc12:
+  - Refactor docker build/push workflow action (Alan Malta Rodrigues) #11653
+  - Upgrade pip-based HTCondor from 8.9.7 to 10.2.3 (Alan Malta Rodrigues) cmsdist#8582
+
+2.2.2rc10 to 2.2.2rc11:
+  - Rebuilding ms-unmerged
+
+2.2.2rc9 to 2.2.2rc10:
+  - Rename build_args in GH action workflow (Alan Malta Rodrigues) #11652
+
+
+2.2.2rc8 to 2.2.2rc9:
+  - Fix GH action to build/push docker image (Alan Malta Rodrigues) #11651
+
+
+2.2.2rc7 to 2.2.2rc8:
+  - Triggering builds once again
+
+2.2.2rc6 to 2.2.2rc7:
+
+
+2.2.2rc5 to 2.2.2rc6:
+  - Change GH api to build release notes; plus refactoring (Alan Malta Rodrigues) #11645
+  - Add new exception/error code for jobs removed by condor for unknown reasons. (khurtado) #11649
+  - Update GH action for docker image to use a build argument (Alan Malta Rodrigues) #11638
+
+
+2.2.2rc4 to 2.2.2rc5:
+  - Just triggering a new build workflow 
+
+
+2.2.2rc3 to 2.2.2rc4:
+  - Add Docker context path to docker/build-push-action@v1 (Todor Ivanov) #11642
+
+
+2.2.2rc2 to 2.2.2rc3:
+  - Substitute curl with svn in GH actions workflow (Todor Ivanov) #11639
+
+
+2.2.2rc1 to 2.2.2rc2:
+  - Explicitly enabled verbose and abort on failure for GFAL2 plugin (Alan Malta Rodrigues) #11636
+
+
+2.2.1 to 2.2.2rc1:
+  - New CouchDB view for WorkQueue OpenForNewData requests (Alan Malta Rodrigues) #11611
+  - Fix ResourceControl and GetSiteInfo modules (Alan Malta Rodrigues) #11599
+
+
+2.2.1rc5 to 2.2.1:
+  - Final stable tag
+
+2.2.1rc4 to 2.2.1rc5:
+  - Updadte dmwm-base image to pypi-20230525, fixing process_exporter 
+
+
+2.2.1rc3 to 2.2.1rc4:
+  - created GPU-related unit tests for StepChain (Alan Malta Rodrigues) #11588
+  - Add GPU support to the StepChain spec (Alan Malta Rodrigues) #11588
+  - Gracefully parse cpu performance metrics in SummaryDB (Alan Malta Rodrigues) #11590
+
+
+2.2.1rc2 to 2.2.1rc3:
+  - Fix missing sublevel areas of packages in the wm-database module (#11592) (Todor Ivanov) #11592
+  - Use previous existStatus code instead of default 99108 (Valentin Kuznetsov) #11581
+
+
+2.2.1rc1 to 2.2.1rc2:
+  - Fix broken module path and module name during import (#11587) (Todor Ivanov) #11587
+  - Fix missing static dependencies for wmagent package (Todor Ivanov) #11586
+  - MSPileup: detect active containers with no wmcore_trasnferor rules (Alan Malta Rodrigues) #11579
+  - Fix manage path in the restartComponent script (Alan Malta Rodrigues) #11572
+  - Add new CMSCouch exception for Request Entity Too Large (Alan Malta Rodrigues) #11502
+
+
+2.2.0.2 to 2.2.1rc1:
+  - Remove postToAMQ (post_to_amq) and fix typo in doc_type_amq (Valentin Kuznetsov) #11573
+  - Add validateRunlist (Valentin Kuznetsov) #11535
+  - New production dump with unique pileups (Alan Malta Rodrigues) #11543
+  - MSPileup: consider Neutrino PDs as premix (Alan Malta Rodrigues) #11543
+  - Fix racing condition in unit test with CouchDB (Valentin Kuznetsov) #11540
+  - Replace imp by importlib (Valentin Kuznetsov) #11530
+
+
+2.2.0.1 to 2.2.0.2:
+  - Couple pileup activatedOn/deactivatedOn to its active state change (Alan Malta Rodrigues) #11553
+
+
+2.2.0 to 2.2.0.1:
+  - MSPileup: fix logic for deleting old inactive pileup documents (Alan Malta Rodrigues) #11549
+  - Protect rule and document deletion with the dryRun option (Alan Malta Rodrigues) #11545
+  - Track rule ids not created by MSPileup (Alan Malta Rodrigues) #11545
+  - Make MSPileupTasks log more friendly (Alan Malta Rodrigues) #11545
+
+
+2.2.0rc9 to 2.2.0:
+
+
+2.2.0rc8 to 2.2.0rc9:
+  - Set rseList for RelVal workflows (Todor Ivanov) #11542
+
+
+2.2.0rc7 to 2.2.0rc8:
+  - Remove _id attribute from pileup mongo objects (Alan Malta Rodrigues) #11539
+  - Fix a typo in the XMLParser (Todor Ivanov) #11533
+
+
+2.2.0rc6 to 2.2.0rc7:
+  - Add TapeRulesStatus to the alarm message && Decrease alarm severity. (Todor Ivanov) #11528
+  - Do not strip anything from MSPileup docs when fetching them and use pileupName for query in clean-up task (Valentin Kuznetsov) #11529
+
+
+2.2.0rc5 to 2.2.0rc6:
+  - refactor to use MSPileup data location (Alan Malta Rodrigues) #11519
+  - Final tweaks to MSPileup (Alan Malta Rodrigues) #11526
+  - Dump of production pileup configurations; pileup json for dev cluster (Alan Malta Rodrigues) #11521
+  - Script to parse campaigns and extract pileup configuration (Alan Malta Rodrigues) #11521
+  - Support logger object in the CodeTimer class (Alan Malta Rodrigues) #11519
+
+
+2.2.0rc4 to 2.2.0rc5:
+  - Adding Null parentage information for RunLumi pairs missing at the parent Dataset. (Todor Ivanov) #11520
+  - Add uploaderName as DBS3Upload config parameter (German Giraldo) #11497
+  - Remove MS/DataPileup from MSRuleCleanerWflow && Remove Pilup logic from MSRuleCleaner. (Todor Ivanov) #11441
+
+
+2.2.0rc3 to 2.2.0rc4:
+  - New MSMonitoring module (Valentin Kuznetsov) #11478
+  - Implement MSPileup clean-up task (Valentin Kuznetsov) #11517
+
+
+2.2.0rc2 to 2.2.0rc3:
+  - there is no changes to WMCore, but we updated dmwm-base image to pypi-20230314 tag to fix monitor.sh script in order to allow Prometheus to scrape metrics from MS services
+ 
+
+
+2.2.0rc1 to 2.2.0rc2:
+  - Fix error message in MSPileup (Valentin Kuznetsov) #11512
+ 
+
+
+2.1.8 to 2.2.0rc1:
+  - Mock Rucio in MSCore module (Alan Malta Rodrigues) #11510
+  - Only add data to the cache in Rucio wrapper when requested for (Alan Malta Rodrigues) #11510
+  - MSPileup: validate list of RSEs in both create/update calls (Alan Malta Rodrigues) #11510
+  - Integrate MSAuth into MSPileup (Valentin Kuznetsov) #11509
+
+
+2.1.8rc2 to 2.1.8:
+
+
+2.1.8rc1 to 2.1.8rc2:
+  - Second round of changes for MSPileup data placement logic (Valentin Kuznetsov) #11499
+  - MSpileup integration with MSManager (Valentin Kuznetsov) #11504
+  - Added optional client to ctor; added getRSEUsage to wrap get_rse_usage rucio API (Valentin Kuznetsov) #11487
+  - First draft implementation of MSPileup tasks (Valentin Kuznetsov) #11487
+  - MSAuth module for authorization (Valentin Kuznetsov) #11476
+
+
+2.1.7 to 2.1.8rc1:
+  - Run all MSRuleCleaner pipelines for rejected/aborted requests (anehnis) #11489
+
+
 2.1.7rc7 to 2.1.7:
   - fix NameError import in the REST package (Thanayut Seethongchuen) #11485
 

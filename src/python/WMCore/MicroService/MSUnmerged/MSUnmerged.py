@@ -14,6 +14,7 @@ from __future__ import division, print_function
 
 from pprint import pformat
 from time import time
+from datetime import datetime
 
 import random
 import re
@@ -355,8 +356,7 @@ class MSUnmerged(MSCore):
 
                 if self.msConfig['enableRealMode']:
                     # execute the actual deletion in bulk - full list of files per directory
-
-                    deletedSuccess = 0
+                    filesDeletedSuccess = 0
                     for pfnSlice in list(grouper(pfnList, self.msConfig["filesToDeleteSliceSize"])):
                         try:
                             delResult = ctx.unlink(pfnSlice)
@@ -366,7 +366,7 @@ class MSUnmerged(MSCore):
                                               rse['name'], dirLfn, pformat(delResult))
                             for gfalErr in delResult:
                                 if gfalErr is None:
-                                    deletedSuccess += 1
+                                    filesDeletedSuccess += 1
                                 else:
                                     errMessage = os.strerror(gfalErr.code)
                                     rse['counters']['gfalErrors'].setdefault(errMessage, 0)
@@ -377,13 +377,30 @@ class MSUnmerged(MSCore):
                             self.logger.exception(msg, rse['name'], str(ex))
 
                     self.logger.info("RSE: %s, Dir: %s, filesDeletedSuccess: %s",
-                                      rse['name'], dirLfn, deletedSuccess)
-                    rse['counters']['filesDeletedSuccess'] += deletedSuccess
+                                      rse['name'], dirLfn, filesDeletedSuccess)
+                    rse['counters']['filesDeletedSuccess'] += filesDeletedSuccess
 
-                    # Now clean the whole branch
-                    self.logger.debug("Purging dirEntry: %s:\n", dirPfn)
-                    purgeSuccess = self._purgeTree(ctx, dirPfn)
-                    if purgeSuccess:
+                    # Now delete the whole branch
+                    # First try to delete the base directory:
+                    rmdirSuccess = False
+                    purgeSuccess = False
+                    try:
+                        self.logger.info("Trying to remove directory: %s", dirPfn)
+                        # NOTE: For gfal2 rmdir() exit status of 0 is success
+                        rmdirSuccess = ctx.rmdir(dirPfn) == 0
+                    except gfal2.GError as gfalExc:
+                        if gfalExc.code == errno.ENOENT:
+                            self.logger.warning("MISSING directory: %s", dirPfn)
+                            rmdirSuccess = True
+                        else:
+                            self.logger.error("FAILED to remove directory: %s: GFAL exception: %s", dirPfn, str(gfalExc))
+
+                    # Then if unable to delete the base directory due to nonEmpty err or similar, try with _purgeTree() recursively
+                    if not rmdirSuccess:
+                        self.logger.info("Trying to recursively purge directory: %s:\n", dirPfn)
+                        purgeSuccess = self._purgeTree(ctx, dirPfn)
+
+                    if purgeSuccess or rmdirSuccess:
                         rse['dirs']['deletedSuccess'].add(dirLfn)
                         rse['counters']['dirsDeletedSuccess'] = len(rse['dirs']['deletedSuccess'])
                         # if dirLfn in rse['dirs']['toDelete']:
@@ -401,6 +418,10 @@ class MSUnmerged(MSCore):
                 msg = "RSE: %s reached limit of files per RSE to be deleted. Skipping directory: %s. It will be retried on the next cycle."
                 self.logger.warning(msg, rse['name'], dirLfn)
         rse['isClean'] = self._checkClean(rse)
+
+        # Explicitly release all internal resources used by the gfal2 context instance
+        if ctx:
+            ctx.free()
 
         return rse
 
@@ -843,6 +864,7 @@ class MSUnmerged(MSCore):
                     "name": True,
                     "isClean": True,
                     "rucioConMonStatus": True,
+                    "timestamps": True,
                     "counters": {
                         "gfalErrors": True,
                         "dirsToDelete": True,
@@ -867,6 +889,14 @@ class MSUnmerged(MSCore):
                 for rseName in rseList:
                     mongoFilter = {'name': rseName}
                     data["rseData"].append(self.msUnmergedColl.find_one(mongoFilter, projection=mongoProjection))
+
+                # Rewrite all timestamps in ISO 8601 format
+                for rse in data['rseData']:
+                    if 'timestamps' in rse:
+                        for dateField, dateValue in rse['timestamps'].items():
+                            dateValue = datetime.utcfromtimestamp(dateValue)
+                            dateValue = dateValue.isoformat()
+                            rse['timestamps'][dateField] = dateValue
         return data
 
     # @profile

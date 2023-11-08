@@ -14,10 +14,11 @@ import os
 import logging
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
-from WMCore.Storage.TrivialFileCatalog import getCatalogString, tfcFilename, tfcProtocol, readTFC, rseName, lfnPrefix
+from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC
+from WMCore.Storage.RucioFileCatalog import readRFC,rseName
 
 
-def loadSiteLocalConfig(useTFC=False):
+def loadSiteLocalConfig():
     """
     _loadSiteLocalConfig_
 
@@ -33,7 +34,7 @@ def loadSiteLocalConfig(useTFC=False):
             m = ("Using site-local-config.xml override due to set %s env. variable, "
                  "loading: '%s'" % (overVarName, overridePath))
             logging.log(logging.DEBUG, m)
-            config = SiteLocalConfig(overridePath,useTFC)
+            config = SiteLocalConfig(overridePath)
             return config
         else:
             msg = "%s env. var. provided but not pointing to an existing file, ignoring." % overVarName
@@ -51,11 +52,19 @@ def loadSiteLocalConfig(useTFC=False):
         msg += actualPath
         raise SiteConfigError(msg)
 
-    config = SiteLocalConfig(actualPath,useTFC)
+    config = SiteLocalConfig(actualPath)
     return config
 
 def makeStorageAttribute(siteName,subSiteName,storageSiteName,volume,protocol):
     return {'site':siteName,'subSite':subSiteName,'storageSite':storageSiteName,'volume':volume,'protocol':protocol}
+
+#return a string of a stage out
+def stageOutStr(stageOut):
+    msg = ""
+    for sTmp in ['storageSite','volume','protocol','command','options']:
+        msg += sTmp + ': ' + str(stageOut.get(sTmp)) + ', '
+    msg += 'phedex-node: ' + str(stageOut.get('phedex-node'))
+    return msg
 
 class SiteConfigError(Exception):
     """
@@ -72,8 +81,7 @@ class SiteLocalConfig(object):
     Readonly API object for getting info out of the SiteLocalConfig file
 
     """
-    def __init__(self, siteConfigXML, useTFC):
-        self.useTFC = useTFC #switch to use old TFC or new Rucio
+    def __init__(self, siteConfigXML):
         self.siteConfigFile = siteConfigXML
         self.siteName = None
         self.subSiteName = None
@@ -83,36 +91,11 @@ class SiteLocalConfig(object):
         self.frontierServers = []
 
         self.localStageOut = {}
+        self.stageOuts = []
         self.fallbackStageOut = []
 
         self.read()
         return
-
-    def trivialFileCatalog(self):
-        """
-        _trivialFileCatalog_
-
-        Return an instance of FwkJobRep.TrivialFileCatalog
-
-        """
-        tfcUrl = self.localStageOut.get('catalog', None)
-        if tfcUrl is None:
-            return None
-        try:
-            tfcFile = tfcFilename(tfcUrl)
-            tfcProto = tfcProtocol(tfcUrl,self.useTFC)
-            storageAtt = None
-            if not self.useTFC:
-                aVolume = tfcUrl.split('?')[1].split('&')[1].replace('volume=','') 
-                storageAtt = makeStorageAttribute(self.siteName,self.subSiteName,self.localStageOut.get('storageSite',None),aVolume,tfcProto)
-            tfcInstance = readTFC(tfcFile,storageAtt,self.useTFC)
-            tfcInstance.preferredProtocol = tfcProto
-        except Exception as ex:
-            msg = "Unable to load TrivialFileCatalog:\n"
-            msg += "URL = %s\n" % tfcUrl
-            msg += str(ex)
-            raise SiteConfigError(msg)
-        return tfcInstance
 
     def localStageOutCommand(self):
         """
@@ -140,7 +123,6 @@ class SiteLocalConfig(object):
         """
         return self.localStageOut['phedex-node']
 
-
     def read(self):
         """
         _read_
@@ -154,8 +136,8 @@ class SiteLocalConfig(object):
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
             raise SiteConfigError(msg)
-
-        nodeResult = nodeReader(node,self.useTFC)
+        
+        nodeResult = nodeReader(node)
 
         if 'siteName' not in nodeResult:
             msg = "Unable to find site name in SiteConfigFile:\n"
@@ -166,10 +148,12 @@ class SiteLocalConfig(object):
             msg += self.siteConfigFile
             raise SiteConfigError(msg)
         if 'localStageOut' not in nodeResult:
-            if self.useTFC:
-                msg = "Error:Unable to find any local-stage-out"
-            else:
-                msg = "Error:Unable to find any stage-out"
+            msg = "Error:Unable to find any local-stage-out"
+            msg += " information in:\n"
+            msg += self.siteConfigFile
+            raise SiteConfigError(msg)
+        if 'stageOuts' not in nodeResult:
+            msg = "Error:Unable to find any stage-out"
             msg += " information in:\n"
             msg += self.siteConfigFile
             raise SiteConfigError(msg)
@@ -178,6 +162,7 @@ class SiteLocalConfig(object):
         self.subsiteName          = nodeResult.get('subSiteName', None)
         self.eventData['catalog'] = nodeResult.get('catalog', None)
         self.localStageOut        = nodeResult.get('localStageOut', [])
+        self.stageOuts            = nodeResult.get('stageOuts', [])
         self.fallbackStageOut     = nodeResult.get('fallbackStageOut', [])
         self.frontierServers      = nodeResult.get('frontierServers', [])
         self.frontierProxies      = nodeResult.get('frontierProxies', [])
@@ -196,9 +181,7 @@ def coroutine(func):
         return cr
     return start
 
-
-
-def nodeReader(node,useTFC):
+def nodeReader(node):
     """
     _nodeReader_
 
@@ -207,6 +190,7 @@ def nodeReader(node,useTFC):
     processSiteInfo = {
         'event-data': processEventData(),
         'local-stage-out': processLocalStageOut(),
+        'stage-out': processStageOut(),
         'calib-data': processCalibData(),
         'fallback-stage-out': processFallbackStageOut()
         }
@@ -214,7 +198,7 @@ def nodeReader(node,useTFC):
     report = {}
     sProcess = processSite(processSiteInfo)
     processor = processNode(sProcess)
-    processor.send((report, node, useTFC))
+    processor.send((report, node))
 
     return report
 
@@ -224,13 +208,12 @@ def processNode(target):
     Starts at the top of the tree and finds the site
     """
     while True:
-        report, node, useTFC = (yield)
+        report, node = (yield)
         for subnode in node.children:
             if subnode.name == 'site-local-config':
                 for child in subnode.children:
                     if child.name == 'site':
-                        target.send((report, child, useTFC))
-
+                        target.send((report, child))
 
 @coroutine
 def processSite(targets):
@@ -240,7 +223,7 @@ def processSite(targets):
     """
 
     while True:
-        report, node, useTFC = (yield)
+        report, node = (yield)
         #Get the name first
         report['siteName'] = node.attrs.get('name', None)
         for subnode in node.children:
@@ -250,14 +233,12 @@ def processSite(targets):
                 targets['event-data'].send((report, subnode))
             elif subnode.name == 'calib-data':
                 targets['calib-data'].send((report, subnode))
-            elif useTFC and subnode.name == 'local-stage-out':
-                targets['local-stage-out'].send((report,subnode,useTFC))
-            elif not useTFC and subnode.name == 'stage-out':
-                targets['local-stage-out'].send((report,subnode,useTFC))
-                targets['fallback-stage-out'].send((report,subnode,useTFC))
-            elif useTFC and subnode.name == 'fallback-stage-out':
-                targets['fallback-stage-out'].send((report,subnode,useTFC))
-
+            elif subnode.name == 'local-stage-out':
+                targets['local-stage-out'].send((report,subnode))
+            elif subnode.name == 'stage-out':
+                targets['stage-out'].send((report,subnode))
+            elif subnode.name == 'fallback-stage-out':
+                targets['fallback-stage-out'].send((report,subnode))
 
 @coroutine
 def processEventData():
@@ -278,43 +259,16 @@ def processLocalStageOut():
     Find the local-stage-out directory
 
     """
-
     while True:
-        report, node, useTFC = (yield)
+        report, node = (yield)
         localReport = {}
-        if useTFC:
-            for subnode in node.children:
-                if subnode.name in ['phedex-node', 'command', 'option']:
-                    localReport[subnode.name] = subnode.attrs.get('value', None)
-                elif subnode.name == 'catalog':
-                    localReport[subnode.name] = subnode.attrs.get('url', None)
-        else:
-            for subnode in node.children:
-                #now construct an url as used in trivial file catalog
-                subSiteName = None
-                if 'subSiteName' in report.keys():
-                    subSiteName = report['subSiteName']
-                aStorageSite = subnode.attrs.get('site', None)
-                if aStorageSite is None: aStorageSite = report['siteName']
-                aProtocol = subnode.attrs.get('protocol', None)
-                aVolume = subnode.attrs.get('volume', None)
-                storageAtt = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol) 
-                #localReport['catalog'] = 'trivialcatalog_file:'+tfcFilename(None,storageAtt,False)+'?protocol='+aProtocol+'&volume='+aVolume
-                localReport['catalog'] = getCatalogString(storageAtt)
-                localReport['command'] = subnode.attrs.get('command', None)
-                #use default command='gfal2' when 'command' is not specified 
-                if localReport['command'] is None: localReport['command'] = 'gfal2'
-                localReport['option'] = subnode.attrs.get('option', None)
-                localReport['phedex-node'] = rseName(storageAtt)
-                localReport['storageSite'] = aStorageSite
-                break #only take the first stageOut, others are in fallbacks
-        
+        for subnode in node.children:
+            if subnode.name in ['phedex-node', 'command', 'option']:
+                localReport[subnode.name] = subnode.attrs.get('value', None)
+            elif subnode.name == 'catalog':
+                localReport[subnode.name] = subnode.attrs.get('url', None)
         report['localStageOut'] = localReport
 
-#This method is not used currently, for future development
-#<stage-out>
-#     <method volume="CERN_EOS_T0" protocol="XRootD" command="xrdcp" option="--wma-diablewriterecovery"/>
-#</stage-out>
 @coroutine
 def processStageOut():
     """
@@ -323,18 +277,24 @@ def processStageOut():
     """
     while True:
         report, node = (yield)
-        #store multiple stage-out instances in <stage-out> of site-local-config.xml
-        localReport = []
+        report['stageOuts'] = []
         for subnode in node.children:
-            tmp = {}
-            tmp['site'] = subnode.attrs.get('site', None)
-            tmp['volume'] = subnode.attrs.get('volume', None)
-            tmp['protocol'] = subnode.attrs.get('protocol', None)
-            tmp['command'] = subnode.attrs.get('command', None)
-            tmp['option'] = subnode.attrs.get('option', None)
-            localReport.append(tmp)
-        report['stageOut'] = localReport
-
+            subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
+            aStorageSite = subnode.attrs.get('site', None)
+            if aStorageSite is None: aStorageSite = report['siteName']
+            aProtocol = subnode.attrs.get('protocol', None)
+            aVolume = subnode.attrs.get('volume', None)
+            
+            localReport = {}
+            localReport['storageSite'] = aStorageSite
+            localReport['command'] = subnode.attrs.get('command', None)
+            #use default command='gfal2' when 'command' is not specified 
+            if localReport['command'] is None: localReport['command'] = 'gfal2'
+            localReport['option'] = subnode.attrs.get('option', None)
+            localReport['volume'] = aVolume 
+            localReport['protocol'] = aProtocol 
+            localReport['phedex-node'] = rseName(report["siteName"],subSiteName,aStorageSite,aVolume)
+            report['stageOuts'].append(localReport)
 
 @coroutine
 def processFallbackStageOut():
@@ -344,33 +304,13 @@ def processFallbackStageOut():
     """
 
     while True:
-        report, node, useTFC = (yield)
-        if useTFC:
-            localReport = {}
-            for subnode in node.children:
-                if subnode.name in ['phedex-node', 'command', 'option', 'lfn-prefix']:
-                    localReport[subnode.name] = subnode.attrs.get('value', None)
-            report['fallbackStageOut'] = [localReport]
-        else:
-            #fallback stageOut starts from the second method
-            report['fallbackStageOut'] = []
-            for subnode in node.children[1:]:
-                subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
-                aStorageSite = subnode.attrs.get('site', None)
-                if aStorageSite is None: aStorageSite = report['siteName']
-                aProtocol = subnode.attrs.get('protocol', None)
-                aVolume = subnode.attrs.get('volume', None)
-                storageAtt = makeStorageAttribute(report['siteName'],subSiteName,aStorageSite,aVolume,aProtocol)
-                lfnPrefixes = lfnPrefix(storageAtt)
-                for pre in lfnPrefixes:
-                    localReport = {}
-                    localReport['command'] = subnode.attrs.get('command', None)
-                    #use default command='gfal2' when 'command' is not specified 
-                    if localReport['command'] is None: localReport['command'] = 'gfal2'
-                    localReport['option'] = subnode.attrs.get('option', None)
-                    localReport['phedex-node'] = rseName(storageAtt)
-                    localReport['lfn-prefix'] = pre
-                    report['fallbackStageOut'].append(localReport)
+        report, node = (yield)
+        localReport = {}
+        for subnode in node.children:
+            if subnode.name in ['phedex-node', 'command', 'option', 'lfn-prefix']:
+                localReport[subnode.name] = subnode.attrs.get('value', None)
+        report['fallbackStageOut'] = [localReport]
+
 
 @coroutine
 def processCalibData():

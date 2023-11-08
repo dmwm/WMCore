@@ -35,7 +35,8 @@ class SiteLocalConfigTest(unittest.TestCase):
                                           "T1_US_FNAL_SiteLocalConfig.xml")
         #fnalConfigFileName = '/cvmfs/cms.cern.ch/SITECONF/T1_DE_KIT/KIT-HOREKA/JobConfig/site-local-config.xml'
         #switch between old TFC and new Rucio data catalog by changing the last parameter, need to set SITECONFIG_PATH when this is False 
-        mySiteConfig = SiteLocalConfig(fnalConfigFileName,False) #set False to use new Rucio storage descriptions with storage.json
+        #mySiteConfig = SiteLocalConfig(fnalConfigFileName,False) #set False to use new Rucio storage descriptions with storage.json
+        mySiteConfig = SiteLocalConfig(fnalConfigFileName)
         #print(mySiteConfig.localStageOut)
         #print(mySiteConfig.fallbackStageOut)
         #tfcInstance = mySiteConfig.trivialFileCatalog()
@@ -71,10 +72,17 @@ class SiteLocalConfigTest(unittest.TestCase):
             assert frontierProxy in goldenProxies, \
                    "Error: Unknown proxy: %s" % frontierProxy
             goldenProxies.remove(frontierProxy)
-
+        
         assert len(goldenProxies) == 0, \
                 "Error: Missing proxy servers."
-
+        
+        assert mySiteConfig.stageOuts[0]["command"] == "xrdcp", \
+                "Error: Wrong stage out command."
+        assert mySiteConfig.stageOuts[0]["protocol"] == "XRootD",\
+                "Error: Protocol is not correct."
+        assert mySiteConfig.stageOuts[0]["option"] == "-p",\
+                "Error: option is not correct."
+        '''
         if mySiteConfig.useTFC:
             assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
                 "Error: Wrong stage out command."
@@ -83,14 +91,13 @@ class SiteLocalConfigTest(unittest.TestCase):
             assert mySiteConfig.fallbackStageOut == [], \
                 "Error: Fallback config is incorrect."
         else:
-            assert mySiteConfig.localStageOut["command"] == "xrdcp", \
+            assert mySiteConfig.stageOuts[0]["command"] == "xrdcp", \
                 "Error: Wrong stage out command."
-            assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL/storage.json?protocol=XRootD&volume=FNAL_dCache_EOS", \
-                "Error: TFC catalog is not correct."
-            assert mySiteConfig.fallbackStageOut, \
-                "Error: Fallback config is incorrect."
-            mySiteConfig.trivialFileCatalog()
-          
+            assert mySiteConfig.stageOuts[0]["protocol"] == "XRootD",\
+                "Error: Protocol is not correct."
+            assert mySiteConfig.stageOuts[0]["option"] == "-p",\
+                "Error: option is not correct."
+        '''          
         #assert False
         return
 

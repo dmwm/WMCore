@@ -11,7 +11,7 @@ given a TFC file, invoke readTFC on it. This will return
 a TrivialFileCatalog instance that can be used to match LFNs
 to PFNs.
 
-Usage: Given a TFC contact string: trivialcatalog_file:/path?protocol=proto
+Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 
 
     filename = tfcFilename(tfcContactString)
@@ -33,8 +33,6 @@ standard_library.install_aliases()
 
 import os
 import re
-
-import json
 
 from urllib.parse import urlsplit
 from xml.dom.minidom import Document
@@ -175,56 +173,20 @@ class TrivialFileCatalog(dict):
                 result += "\n"
         return result
 
-def tfcProtocol(contactString,useTFC):
+
+def tfcProtocol(contactString):
     """
     _tfcProtocol_
 
-    Given a file catalog contact string, extract the
-    protocol from it. If useTFC=True, the Trivial File Catalog contact string is used (storage.xml or storage-disk.xml). Otherwise, it is the file catalog from Rucio definitions (storage.json) 
+    Given a Trivial File Catalog contact string, extract the
+    protocol from it.
 
     """
     args = urlsplit(contactString)[3]
     value = args.replace("protocol=", '')
-    if not useTFC:
-        value = value.split('&')[0]
     return value
 
-def getCatalogString(storageAttr):
-    """
-    Construct a catalog for storage.json from storage attributes. It is a string with the same format as old trivial catalog for storage.xml ('trivialcatalog_file:'+path+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']. "path" points to location of storage.json, '/abc/xyz/storage.json')  
-    :param storageAttr = {'site':siteName, 'subSite':subSiteName, 'storageSite':storageSiteName, 'volume':volume, 'protocol':protocol}
-    :return catalogString('trivialcatalog_file:/pathToStorageDescription/xyz?protocol=protocolName&volume=volumeName')
-    """
-    site = storageAttr['site']
-    subSite = storageAttr['subSite']
-    storageSite = storageAttr['storageSite']
-    #get site config
-    siteConfigPath = os.getenv('SITECONFIG_PATH',None)
-    if not siteConfigPath:
-        raise RuntimeError('SITECONFIG_PATH is not defined')
-    subPath = ''
-    #not a cross site, use local path given in SITECONFIG_PATH
-    if site == storageSite:
-        #it is a site (no defined subSite), use local path given in SITECONFIG_PATH
-        if subSite is None:
-            subPath = siteConfigPath
-        #it is a subsite, move one level up
-        else:
-            subPath = siteConfigPath + '/..'
-    #cross site
-    else:
-        #it is a site (no defined subSite), move one level up
-        if subSite is None:
-            subPath = siteConfigPath + '/../' + storageSite
-        #it is a subsite, move two levels up
-        else:
-            subPath = siteConfigPath + '/../../' + storageSite
-    pathToStorageDescription = subPath + '/storage.json'
-    pathToStorageDescription = os.path.normpath(os.path.realpath(pathToStorageDescription))#resolve symbolic link and relative path?
-    catalogString = 'trivialcatalog_file:'+pathToStorageDescription+'?protocol='+storageAttr['protocol']+'&volume='+storageAttr['volume']
-    return catalogString
 
-#TFC file name can be constructed using either contactString or storage attributes
 def tfcFilename(contactString):
     """
     _tfcFilename_
@@ -234,10 +196,11 @@ def tfcFilename(contactString):
     """
     value = contactString.replace("trivialcatalog_file:", "")
     value = _TFCArgSplit.split(value)[0]
-    path = os.path.normpath(value) #does this resolve relative and symbolic path?
+    path = os.path.normpath(value)
     return path
 
-def readTFC(filename, storageAttr, useTFC):
+
+def readTFC(filename):
     """
     _readTFC_
 
@@ -245,122 +208,33 @@ def readTFC(filename, storageAttr, useTFC):
     instance containing the details found in it
 
     """
+    if not os.path.exists(filename):
+        msg = "TrivialFileCatalog not found: %s" % filename
+        raise RuntimeError(msg)
+
+    try:
+        node = xmlFileToNode(filename)
+    except Exception as ex:
+        msg = "Error reading TrivialFileCatalog: %s\n" % filename
+        msg += str(ex)
+        raise RuntimeError(msg)
+
+    parsedResult = nodeReader(node)
+
     tfcInstance = TrivialFileCatalog()
-    if useTFC:
-        if not os.path.exists(filename):
-            msg = "TrivialFileCatalog not found: %s" % filename
-            raise RuntimeError(msg)
-        try:
-            node = xmlFileToNode(filename)
-        except Exception as ex:
-            msg = "Error reading TrivialFileCatalog: %s\n" % filename
-            msg += str(ex)
-            raise RuntimeError(msg)
-
-        parsedResult = nodeReader(node)
-
-      #tfcInstance = TrivialFileCatalog()
-        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
-            for entry in parsedResult[mapping]:
-                protocol = entry.get("protocol", None)
-                match = entry.get("path-match", None)
-                result = entry.get("result", None)
-                chain = entry.get("chain", None)
-                if True in (protocol, match == None):
-                    continue
-                tfcInstance.addMapping(str(protocol), str(match), str(result), chain, mapping)
-      #return tfcInstance
-    else:
-        try:
-            jsonFile = open(filename,encoding="utf-8")
-            jsElements = json.load(jsonFile)
-        except Exception as ex:
-            msg = "Error reading FileCatalog: %s\n" % filename
-            msg += str(ex)
-            raise RuntimeError(msg)
-        #now loop over elements, select the right one and fill lfn-to-pfn
-        for jsElement in jsElements:
-            if jsElement['site'] == storageAttr['site'] and jsElement['volume'] == storageAttr['volume']: 
-                #now loop over protocols
-                for proc in jsElement['protocols']:
-                    #check found match
-                    if proc['protocol'] == storageAttr['protocol']:
-                        chain = proc['chain'] if 'chain' in proc.keys() else None
-                        #check if prefix is in protocol block
-                        if 'prefix' in proc.keys():
-                            #lfn-to-pfn
-                            match = '(.*)' #match all
-                            result = proc['prefix']+'/$1'
-                            tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                            #pfn-to-lfn
-                            match = proc['prefix']+'/(.*)'
-                            result = '/$1'
-                            tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
-                        #here is rules  
-                        else:
-                            #loop over rules
-                            for rule in proc['rules']:
-                                match = rule['lfn']
-                                result = rule['pfn']
-                                tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                                #pfn-to-lfn: not sure about this!!!
-                                match = rule['pfn'].replace('$1','(.*)')
-                                result = rule['lfn'].replace('/+','/').replace('^/','/')
-                                #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
-                                result = re.sub('\(.*\)','$1',result)
-                                tfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
-    
+    for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
+        for entry in parsedResult[mapping]:
+            protocol = entry.get("protocol", None)
+            match = entry.get("path-match", None)
+            result = entry.get("result", None)
+            chain = entry.get("chain", None)
+            if True in (protocol, match == None):
+                continue
+            tfcInstance.addMapping(str(protocol), str(match), str(result), chain, mapping)
     return tfcInstance
 
-def rseName(storageAttr):
-    rse = None
-    catalog = getCatalogString(storageAttr)
-    storageJsonName = tfcFilename(catalog)
-    try:
-        with open(storageJsonName,encoding="utf-8") as jsonFile:
-            jsElements = json.load(jsonFile)
-    except Exception as ex:
-        msg = "TrivialFileCatalog.py:rseName() Error reading FileCatalog: %s\n" % storageJsonName 
-        msg += str(ex)
-        raise RuntimeError(msg)
-    for jsElement in jsElements:
-        if jsElement['site'] == storageAttr['storageSite'] and jsElement['volume'] == storageAttr['volume']:
-            rse = jsElement['rse']
-            break
-    return rse
 
-def lfnPrefix(storageAttr):
-    catalog = getCatalogString(storageAttr)
-    #now get lfn prefix
-    storageJsonName = tfcFilename(catalog)
-    try:
-        with open(storageJsonName,encoding="utf-8") as jsonFile:
-            jsElements = json.load(jsonFile)
-    except Exception as ex:
-        msg = "TrivialFileCatalog.py:lfnPrefix() Error reading FileCatalog: %s\n" % storageJsonName 
-        msg += str(ex)
-        raise RuntimeError(msg)
-    #now loop over elements, select the right one and fill lfn-to-pfn
-    lfnPrefixCol = []
-    for jsElement in jsElements:
-        if jsElement['site'] == storageAttr['storageSite'] and jsElement['volume'] == storageAttr['volume']: 
-            #now loop over protocols
-            for proc in jsElement['protocols']:
-                #check found match
-                if proc['protocol'] == storageAttr['protocol']:
-                    #check if prefix in protocol block
-                    if 'prefix' in proc.keys():
-                        lfnPrefixCol.append(proc['prefix'])
-                    #here is rules
-                    else:
-                        #loop over rules and keep all of them
-                        for rule in proc['rules']:
-                            lfnPrefixCol.append(rule['pfn'].replace('/$1','').replace('$1',''))
-                    break #protocol found, do not need to proceed
-            break
-    return lfnPrefixCol
-
-def loadTFC(contactString,storageAttr,useTFC):
+def loadTFC(contactString):
     """
     _loadTFC_
 
@@ -368,9 +242,9 @@ def loadTFC(contactString,storageAttr,useTFC):
     and the protocol and create a TFC instance
 
     """
-    protocol = tfcProtocol(contactString,useTFC)
-    tfcName = tfcFilename(contactString)
-    instance = readTFC(tfcName,storageAttr,useTFC)
+    protocol = tfcProtocol(contactString)
+    catalog = tfcFilename(contactString)
+    instance = readTFC(catalog)
     instance.preferredProtocol = protocol
     return instance
 

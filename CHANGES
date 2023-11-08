@@ -1,3 +1,6 @@
+2.2.4.3 to 2.2.4.4:
+  - Just cutting a new release to overcome CD pipeline errors
+
 2.2.4.2 to 2.2.4.3:
   - Try to remove the base directory first and avoid recursive operations (#11781) (Todor Ivanov) #11791
 

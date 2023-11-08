@@ -1,3 +1,7 @@
+2.2.4.2 to 2.2.4.3:
+  - Try to remove the base directory first and avoid recursive operations (#11781) (Todor Ivanov) #11791
+
+
 2.2.4.1 to 2.2.4.2:
   - Deal with partial block in the parentage fix - take 2 (Alan Malta Rodrigues) #11780
 

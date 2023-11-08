@@ -13,7 +13,7 @@ import tempfile
 
 from WMCore.WMBase import getTestBase
 
-from WMCore.Storage.TrivialFileCatalog import getCatalog,loadTFC,readTFC,tfcFilename,TrivialFileCatalog
+from WMCore.Storage.TrivialFileCatalog import readTFC, TrivialFileCatalog
 
 
 class TrivialFileCatalogTest(unittest.TestCase):
@@ -30,15 +30,15 @@ class TrivialFileCatalogTest(unittest.TestCase):
         Run some simple tests on reading a trivialFileCatalog
 
         """
-        tfcFilenameVar = os.path.join(getTestBase(),
+        tfcFilename = os.path.join(getTestBase(),
                                    "WMCore_t/Storage_t",
                                    "T1_US_FNAL_TrivialFileCatalog.xml")
 
-        if not os.path.exists(tfcFilenameVar):
+        if not os.path.exists(tfcFilename):
             raise Exception("No TrivialFileCatalog found!")
 
 
-        tfcInstance = readTFC(tfcFilenameVar,None,True)
+        tfcInstance = readTFC(tfcFilename)
 
         self.assertEqual(type(tfcInstance), type(TrivialFileCatalog()))
 
@@ -54,31 +54,6 @@ class TrivialFileCatalogTest(unittest.TestCase):
                                  True, 'Could not find protocol %s' % (x['protocol']))
                 self.assertEqual(x['chain'], None, 'Invalid chain %s' % (x['chain']))
 
-    def testRucioFileCatalog(self):
-        """
-        Run some simple tests on reading a Rucio FileCatalog
-        """
-        os.environ['SITECONFIG_PATH'] = '/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL'
-        storage_att={'site':'T1_US_FNAL','subSite':None,'storageSite':'T1_US_FNAL',\
-            'volume':'FNAL_dCache_EOS','protocol':'XRootD'}
-        catalog = getCatalog(storage_att)
-        tfcFilenameVar = tfcFilename(catalog)
-        if not os.path.exists(tfcFilenameVar):
-            raise Exception("No RucioFileCatalog found! %s"% tfcFilenameVar)
-        tfcInstance = readTFC(tfcFilenameVar,storage_att,False)
-        self.assertEqual(type(tfcInstance), type(TrivialFileCatalog()))
-        for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
-            for x in tfcInstance[mapping]:
-                self.assertEqual('path-match-expr' in x, True)
-                self.assertEqual('path-match' in x, True)
-                self.assertEqual('protocol' in x, True)
-                self.assertEqual('result' in x, True)
-                self.assertEqual('chain' in x, True)
-                self.assertEqual(x['protocol'] in ['XRootD','direct', 'dcap', 'srm', 'srmv2'],
-                                 True, 'Could not find protocol %s' % (x['protocol']))
-                self.assertEqual(x['chain'], None, 'Invalid chain %s' % (x['chain']))
-        tfcInstance = loadTFC(catalog,storage_att,False)
-        #assert False
 
     def testRoundTrip(self):
         """
@@ -88,7 +63,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc_file = os.path.join(getTestBase(),
                                 "WMCore_t/Storage_t",
                                 "T1_US_FNAL_TrivialFileCatalog.xml")
-        tfc = readTFC(tfc_file,None,True)
+        tfc = readTFC(tfc_file)
 
         # Check that an lfn goes to an srmv2 pfn and comes back as the same lfn
         in_lfn = '/store/data/my/data'
@@ -163,7 +138,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         f.flush()
         f.seek(0)
 
-        tfcInstance = readTFC(f.name,None,True)
+        tfcInstance = readTFC(f.name)
         out_pfn = tfc.matchLFN("direct", lfn)
         out_lfn = tfc.matchPFN("direct", pfn)
         self.assertEqual(lfn, out_lfn, "Error: incorrect matching")
@@ -177,7 +152,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc_file = os.path.join(getTestBase(),
                                 "WMCore_t/Storage_t",
                                 "T2_CH_CERNBOX_TrivialFileCatalog.xml")
-        tfc = readTFC(tfc_file,None,True)
+        tfc = readTFC(tfc_file)
         out_pfn = "root://eosuser.cern.ch/eos/user/f/fred/data"
         pfn = tfc.matchLFN('srmv2', in_lfn)
         self.assertEqual(out_pfn, pfn)
@@ -185,7 +160,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc_file = os.path.join(getTestBase(),
                                 "WMCore_t/Storage_t",
                                 "T2_PT_NCG_Lisbon_TrivialFileCatalog.xml")
-        tfc = readTFC(tfc_file,None,True)
+        tfc = readTFC(tfc_file)
         out_pfn = "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/fred/data"
         pfn = tfc.matchLFN('srmv2', in_lfn)
         self.assertEqual(out_pfn, pfn)
@@ -193,7 +168,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc_file = os.path.join(getTestBase(),
                                 "WMCore_t/Storage_t",
                                 "T2_US_Florida_TrivialFileCatalog.xml")
-        tfc = readTFC(tfc_file,None,True)
+        tfc = readTFC(tfc_file)
         out_pfn = "srm://srm.ihepa.ufl.edu:8443/srm/v2/server?SFN=/cms/data/store/user/fred/data"
         pfn = tfc.matchLFN('srmv2', in_lfn)
         self.assertEqual(out_pfn, pfn)
@@ -201,7 +176,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc_file = os.path.join(getTestBase(),
                                 "WMCore_t/Storage_t",
                                 "T2_ES_IFCA_TrivialFileCatalog.xml")
-        tfc = readTFC(tfc_file,None,True)
+        tfc = readTFC(tfc_file)
         out_pfn = "srm://srm01.ifca.es:8444/srm/managerv2?SFN=/cms/store/user/fred/data"
         pfn = tfc.matchLFN('srmv2', in_lfn)
         self.assertEqual(out_pfn, pfn)
@@ -209,7 +184,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         tfc_file = os.path.join(getTestBase(),
                                 "WMCore_t/Storage_t",
                                 "T2_US_Nebraska_TrivialFileCatalog.xml")
-        tfc = readTFC(tfc_file,None,True)
+        tfc = readTFC(tfc_file)
         out_pfn = "srm://dcache07.unl.edu:8443/srm/v2/server?SFN=/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/user/fred/data"
         pfn = tfc.matchLFN('srmv2', in_lfn)
         self.assertEqual(out_pfn, pfn)

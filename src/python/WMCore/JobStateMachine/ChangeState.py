@@ -82,6 +82,52 @@ def shrinkLargeFJR(couchDbInstance, sizeLimit):
     return
 
 
+def shrinkLargeSummary(couchDbInstance, sizeLimit):
+    """
+    Look at the CouchDB database queue and truncate/reset some potentially
+    large fields, in they are larger than the max CouchDB limit size.
+    :param couchDbInstance: couchdb database instance
+    :param sizeLimit: integer with the limit number of bytes
+    :return: None
+
+    NOTE that the 'errors' dictionary has the following format (with different
+    top level keys for different jobs):
+    {
+        "cmsRun1": [{
+            "type": "Misc. CMSSW error",
+            "details": "Error in CMSSW: 99109\n[Er...."
+            "exitCode": 99109}],
+        "logArch1"": [],
+        "stageOut1"": []},
+    """
+    for doc in couchDbInstance._queue:
+        if sys.getsizeof(json.dumps(doc)) < sizeLimit:
+            # document is within the size limits, go to the next one
+            continue
+        # otherwise, scan a few fields known-to-be-large and reduce/reset them
+        for innerAttr in ["errors", "inputfiles", "lumis"]:
+            fieldBytes = sys.getsizeof(json.dumps(doc[innerAttr]))
+            if fieldBytes > sizeLimit:
+                msg = f"Job summary id: {doc['_id']}, WMBS id: {doc['wmbsid']} "
+                msg += f"has {fieldBytes} bytes under the attr: {innerAttr}. Truncating it.."
+                logging.warning(msg)
+                if innerAttr == "errors":
+                    # keep only the first 5k characters of the error detail
+                    for stepName in doc[innerAttr]:
+                        for error in doc[innerAttr][stepName]:
+                            if "details" in error:
+                                error["details"] = error["details"][:5000]
+                                error["details"] += "... error message truncated ..."
+                elif innerAttr == "inputfiles" and len(doc[innerAttr]) > 500:
+                    # keep only the first 500 input files
+                    doc[innerAttr] = doc[innerAttr][:500]
+                elif innerAttr == "lumis":
+                    # keep the same data type, but reset it
+                    doc[innerAttr] = type(doc[innerAttr])()
+                else:
+                    logging.error("Unexpected data type: %s", type(doc[innerAttr]))
+
+
 def getDataFromSpecFile(specFile):
     workload = WMWorkloadHelper()
     workload.load(specFile)
@@ -242,7 +288,6 @@ class ChangeState(WMObject, WMConnectionBase):
         timestamp = int(time.time())
         couchRecordsToUpdate = []
 
-        countDocs = 0
         for job in jobs:
             couchDocID = job.get("couch_record", None)
 
@@ -304,7 +349,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})
-                if countDocs >= self.jobsdatabase.getQueueSize():
+                if self.jobsdatabase.getQueueSize() >= self.maxBulkCommit:
                     self.jobsdatabase.commit(callback=discardConflictingDocument)
                 self.jobsdatabase.queue(jobDocument, callback=discardConflictingDocument)
             else:
@@ -387,11 +432,9 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "archivestatus": archStatus,
                                 "fwjr": jsonFWJR,
                                 "type": "fwjr"}
-                if countDocs >= self.fwjrdatabase.getQueueSize():
+                if self.fwjrdatabase.getQueueSize() >= self.maxBulkCommit:
                     try:
-                        # TODO: CouchDB bulk insert may fail at any given document. That means, only by
-                        # parsing the response object we can actually see which documents succeeded or not.
-                        # https://docs.couchdb.org/en/stable/api/database/bulk-api.html#updating-documents-in-bulk
+                        # TODO FIXME: https://github.com/dmwm/WMCore/issues/11576
                         self.fwjrdatabase.commit(callback=discardConflictingDocument)
                     except CouchRequestTooLargeError as exc:
                         msg = "Failed to commit bulk of framework job report to CouchDB."
@@ -499,8 +542,19 @@ class ChangeState(WMObject, WMConnectionBase):
                                 jobSummary[prop] = jobSummary[prop] if jobSummary[prop] else currentJobDoc.get(prop, [])
                         except CouchNotFoundError:
                             pass
-                    if countDocs >= self.fwjrdatabase.getQueueSize():
-                        self.jsumdatabase.commit()
+
+                    if self.jsumdatabase.getQueueSize() >= self.maxBulkCommit:
+                        try:
+                            # TODO FIXME: https://github.com/dmwm/WMCore/issues/11576
+                            self.jsumdatabase.commit()
+                        except CouchRequestTooLargeError as exc:
+                            msg = "Failed to commit bulk of job summary documents to CouchDB."
+                            msg += f" Details: {str(exc)}"
+                            logging.warning(msg)
+                            shrinkLargeSummary(self.jsumdatabase, self.fwjrLimitSize)
+                            # now all the documents should fit in
+                            self.jsumdatabase.commit()
+
                     self.jsumdatabase.queue(jobSummary, timestamp=True)
 
         if len(couchRecordsToUpdate) > 0:
@@ -518,7 +572,15 @@ class ChangeState(WMObject, WMConnectionBase):
             # now all the documents should fit in
             self.fwjrdatabase.commit(callback=discardConflictingDocument)
         self.jobsdatabase.commit(callback=discardConflictingDocument)
-        self.jsumdatabase.commit()
+        try:
+            self.jsumdatabase.commit()
+        except CouchRequestTooLargeError as exc:
+            msg = "Failed to commit bulk of job summary documents to CouchDB."
+            msg += f" Details: {str(exc)}"
+            logging.warning(msg)
+            shrinkLargeSummary(self.jsumdatabase, self.fwjrLimitSize)
+            # now all the documents should fit in
+            self.jsumdatabase.commit()
         return
 
     def persist(self, jobs, newstate, oldstate):

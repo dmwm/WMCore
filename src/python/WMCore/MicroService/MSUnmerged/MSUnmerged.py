@@ -355,50 +355,60 @@ class MSUnmerged(MSCore):
                 self.logger.debug(msg, rse['name'], dirLfn, len(pfnList), twFormat(pfnList, maxLength=4))
 
                 if self.msConfig['enableRealMode']:
-                    # execute the actual deletion in bulk - full list of files per directory
-                    filesDeletedSuccess = 0
-                    for pfnSlice in list(grouper(pfnList, self.msConfig["filesToDeleteSliceSize"])):
-                        try:
-                            delResult = ctx.unlink(pfnSlice)
-                            # Count all the successfully deleted files (if a deletion was
-                            # successful a value of None is put in the delResult list):
-                            self.logger.debug("RSE: %s, Dir: %s, delResult: %s",
-                                              rse['name'], dirLfn, pformat(delResult))
-                            for gfalErr in delResult:
-                                if gfalErr is None:
-                                    filesDeletedSuccess += 1
-                                else:
-                                    errMessage = os.strerror(gfalErr.code)
-                                    rse['counters']['gfalErrors'].setdefault(errMessage, 0)
-                                    rse['counters']['gfalErrors'][errMessage] += 1
-                        except Exception as ex:
-                            msg = "Error while cleaning RSE: %s. "
-                            msg += "Will retry in the next cycle. Err: %s"
-                            self.logger.exception(msg, rse['name'], str(ex))
-
-                    self.logger.info("RSE: %s, Dir: %s, filesDeletedSuccess: %s",
-                                      rse['name'], dirLfn, filesDeletedSuccess)
-                    rse['counters']['filesDeletedSuccess'] += filesDeletedSuccess
-
-                    # Now delete the whole branch
-                    # First try to delete the base directory:
+                    # The following two bool flags are to track the success for directory removal
+                    # during all consecutive attempts/steps of cleaning the current branch.
                     rmdirSuccess = False
                     purgeSuccess = False
-                    try:
-                        self.logger.info("Trying to remove directory: %s", dirPfn)
-                        # NOTE: For gfal2 rmdir() exit status of 0 is success
-                        rmdirSuccess = ctx.rmdir(dirPfn) == 0
-                    except gfal2.GError as gfalExc:
-                        if gfalExc.code == errno.ENOENT:
-                            self.logger.warning("MISSING directory: %s", dirPfn)
-                            rmdirSuccess = True
-                        else:
-                            self.logger.error("FAILED to remove directory: %s: GFAL exception: %s", dirPfn, str(gfalExc))
+                    filesDeletedSuccess = 0
+                    filesDeletedFail = 0
 
-                    # Then if unable to delete the base directory due to nonEmpty err or similar, try with _purgeTree() recursively
-                    if not rmdirSuccess:
-                        self.logger.info("Trying to recursively purge directory: %s:\n", dirPfn)
-                        purgeSuccess = self._purgeTree(ctx, dirPfn)
+                    # Initially try to delete the whole directory even before emptying its content:
+                    self.logger.info("Trying to remove nonempty directory: %s", dirLfn)
+                    rmdirSuccess = self._rmDir(ctx, dirPfn)
+
+                    # If the directory was considered successfully removed, update the file counters with the length of the directory contents
+                    # If the above operation fails try to execute the directory contents deletion in bulk - full list of files per directory
+                    if rmdirSuccess:
+                        filesDeletedSuccess = len(pfnList)
+                    else:
+                        msg = "Trying to clean the contents of nonempty directory: %s "
+                        msg += "in slices of: %s files"
+                        self.logger.info(msg, dirLfn, self.msConfig["filesToDeleteSliceSize"])
+                        for pfnSlice in list(grouper(pfnList, self.msConfig["filesToDeleteSliceSize"])):
+                            try:
+                                delResult = ctx.unlink(pfnSlice)
+                                # Count all the successfully deleted files (if a deletion was
+                                # successful a value of None is put in the delResult list):
+                                self.logger.debug("RSE: %s, Dir: %s, delResult: %s",
+                                                  rse['name'], dirLfn, pformat(delResult))
+                                for gfalErr in delResult:
+                                    if gfalErr is None:
+                                        filesDeletedSuccess += 1
+                                    else:
+                                        filesDeletedFail += 1
+                                        errMessage = os.strerror(gfalErr.code)
+                                        rse['counters']['gfalErrors'].setdefault(errMessage, 0)
+                                        rse['counters']['gfalErrors'][errMessage] += 1
+                            except Exception as ex:
+                                msg = "Error while cleaning RSE: %s. "
+                                msg += "Will retry in the next cycle. Err: %s"
+                                self.logger.exception(msg, rse['name'], str(ex))
+
+                        self.logger.info("RSE: %s, Dir: %s, filesDeletedSuccess: %s",
+                                          rse['name'], dirLfn, filesDeletedSuccess)
+
+                        # Now delete the whole branch, which was previously cleaned file by file
+                        # First try to delete the base directory:
+                        rmdirSuccess = self._rmDir(ctx, dirPfn)
+
+                        # Then if unable to delete the base directory due to nonEmpty err or similar, try with _purgeTree() recursively
+                        if not rmdirSuccess:
+                            self.logger.info("Trying to recursively purge directory: %s:\n", dirLfn)
+                            purgeSuccess = self._purgeTree(ctx, dirPfn)
+
+                    # Updating the RSE counters with the newly successfully deleted files
+                    rse['counters']['filesDeletedSuccess'] += filesDeletedSuccess
+                    rse['counters']['filesDeletedFail'] += filesDeletedFail
 
                     if purgeSuccess or rmdirSuccess:
                         rse['dirs']['deletedSuccess'].add(dirLfn)
@@ -408,12 +418,12 @@ class MSUnmerged(MSCore):
                         if dirLfn in rse['dirs']['deletedFail']:
                             rse['dirs']['deletedFail'].remove(dirLfn)
                         msg = "RSE: %s  Success deleting directory: %s"
-                        self.logger.info(msg, rse['name'], dirPfn)
+                        self.logger.info(msg, rse['name'], dirLfn)
                     else:
                         rse['dirs']['deletedFail'].add(dirLfn)
                         rse['counters']['dirsDeletedFail'] = len(rse['dirs']['deletedFail'])
                         msg = "RSE: %s Failed to purge directory: %s"
-                        self.logger.error(msg, rse['name'], dirPfn)
+                        self.logger.error(msg, rse['name'], dirLfn)
             else:
                 msg = "RSE: %s reached limit of files per RSE to be deleted. Skipping directory: %s. It will be retried on the next cycle."
                 self.logger.warning(msg, rse['name'], dirLfn)
@@ -425,38 +435,72 @@ class MSUnmerged(MSCore):
 
         return rse
 
-    def _purgeTree(self, ctx, baseDirPfn):
+    def _rmDir(self, ctx, dirPfn):
+        """
+        Auxiliary method to be used for removing a single directory entry with gfal2
+        and handling eventual gfal errors raised.
+        :param ctx:    Gfal Context Manager object.
+        :param dirPfn: The Pfn of the directory to be removed
+        :return:       Bool: True if the removal was successful, False otherwise
+                       NOTE: An attempt to delete an already missing directory is considered a success
+        """
+        try:
+            # NOTE: For gfal2 rmdir() exit status of 0 is success
+            rmdirSuccess = ctx.rmdir(dirPfn) == 0
+        except gfal2.GError as gfalExc:
+            if gfalExc.code == errno.ENOENT:
+                self.logger.warning("MISSING directory: %s", dirPfn)
+                rmdirSuccess = True
+            else:
+                self.logger.error("FAILED to remove directory: %s: gfalException: %s, gfalErrorCode: %s", dirPfn, str(gfalExc), gfalExc.code)
+                rmdirSuccess = False
+        return rmdirSuccess
+
+
+    def _purgeTree(self, ctx, baseDirPfn, isDirEntry=False):
         """
         A method to be used for purging the tree bellow a specific branch.
         It deletes every empty directory bellow that branch + the origin at the end.
-        :param ctx:  The gfal2 context object
-        :return:     Bool: True if it managed to purge everything, False otherwise
+        :param ctx:        The gfal2 context object
+        :param baseDirPfn: The base entry for starting the recursion
+        :param isDirEntry: Bool flag to avoid extra `stat` operations
+                           NOTE: When called from inside a recursion, we have already checked if the entry point is a directory
+        :return:           Bool: True if it managed to purge everything, False otherwise
         """
         # NOTE: It deletes only directories and does not try to unlink any file.
 
-        # First test if baseDirPfn is actually a directory entry:
+        # First, test if baseDirPfn is actually a directory entry:
+        if not isDirEntry:
+            try:
+                entryStat = ctx.stat(baseDirPfn)
+                if not stat.S_ISDIR(entryStat.st_mode):
+                    self.logger.error("The base pfn: %s is not a directory entry.", baseDirPfn)
+                    return False
+            except gfal2.GError as gfalExc:
+                if gfalExc.code == errno.ENOENT:
+                    self.logger.warning("MISSING baseDir: %s", baseDirPfn)
+                    return True
+                else:
+                    self.logger.error("FAILED to open baseDir: %s: gfalException: %s, gfalErrorCode: %s", baseDirPfn, str(gfalExc), gfalExc.code)
+                    return False
+
+        # Second, recursively iterate down the tree:
+        successList = []
         try:
-            entryStat = ctx.stat(baseDirPfn)
-            if not stat.S_ISDIR(entryStat.st_mode):
-                self.logger.error("The base pfn: %s is not a directory entry.", baseDirPfn)
-                return False
+            dirEntryList = ctx.listdir(baseDirPfn)
         except gfal2.GError as gfalExc:
             if gfalExc.code == errno.ENOENT:
                 self.logger.warning("MISSING baseDir: %s", baseDirPfn)
                 return True
             else:
-                self.logger.error("FAILED to open baseDir: %s: gfalException: %s", baseDirPfn, str(gfalExc))
+                self.logger.error("FAILED to list dirEntry: %s: gfalException: %s, gfalErrorCode: %s", baseDirPfn, str(gfalExc), gfalExc.code)
                 return False
 
-        if baseDirPfn[-1] != '/':
-            baseDirPfn += '/'
-
-        # Second recursively iterate down the tree:
-        successList = []
-        for dirEntry in ctx.listdir(baseDirPfn):
+        for dirEntry in dirEntryList:
             if dirEntry in ['.', '..']:
                 continue
             dirEntryPfn = baseDirPfn + dirEntry
+            entryStat = None
             try:
                 entryStat = ctx.stat(dirEntryPfn)
             except gfal2.GError as gfalExc:
@@ -464,28 +508,18 @@ class MSUnmerged(MSCore):
                     self.logger.warning("MISSING dirEntry: %s", dirEntryPfn)
                     successList.append(True)
                 else:
-                    self.logger.error("FAILED to open dirEntry: %s: gfalException: %s", dirEntryPfn, str(gfalExc))
+                    self.logger.error("FAILED to open dirEntry: %s: gfalException: %s, gfalErrorCode: %s", dirEntryPfn, str(gfalExc), gfalExc.code)
                     successList.append(False)
+                continue
 
-            if stat.S_ISDIR(entryStat.st_mode):
-                successList.append(self._purgeTree(ctx, dirEntryPfn))
+            if entryStat and stat.S_ISDIR(entryStat.st_mode):
+                successList.append(self._purgeTree(ctx, dirEntryPfn, isDirEntry=True))
 
-        # Finally remove the baseDir:
-        try:
-            self.logger.debug("RM baseDir: %s", baseDirPfn)
-            success = ctx.rmdir(baseDirPfn)
-            # for gfal2 rmdir() exit status of 0 is success
-            if success == 0:
-                successList.append(True)
-            else:
-                successList.append(False)
-        except gfal2.GError as gfalExc:
-            if gfalExc.code == errno.ENOENT:
-                self.logger.warning("MISSING baseDir: %s", baseDirPfn)
-                successList.append(True)
-            else:
-                self.logger.error("FAILED to remove baseDir: %s: gfalException: %s", baseDirPfn, str(gfalExc))
-                successList.append(False)
+        # Finally, remove the baseDir:
+        self.logger.debug("RM baseDir: %s", baseDirPfn)
+        success = self._rmDir(ctx, baseDirPfn)
+        successList.append(success)
+
         return all(successList)
 
     def _checkClean(self, rse):
@@ -890,13 +924,13 @@ class MSUnmerged(MSCore):
                     mongoFilter = {'name': rseName}
                     data["rseData"].append(self.msUnmergedColl.find_one(mongoFilter, projection=mongoProjection))
 
-                # Rewrite all timestamps in ISO 8601 format
-                for rse in data['rseData']:
-                    if 'timestamps' in rse:
-                        for dateField, dateValue in rse['timestamps'].items():
-                            dateValue = datetime.utcfromtimestamp(dateValue)
-                            dateValue = dateValue.isoformat()
-                            rse['timestamps'][dateField] = dateValue
+            # Rewrite all timestamps in ISO 8601 format
+            for rse in data['rseData']:
+                if 'timestamps' in rse:
+                    for dateField, dateValue in rse['timestamps'].items():
+                        dateValue = datetime.utcfromtimestamp(dateValue)
+                        dateValue = dateValue.isoformat()
+                        rse['timestamps'][dateField] = dateValue
         return data
 
     # @profile

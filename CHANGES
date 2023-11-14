@@ -1,3 +1,15 @@
+2.2.6rc1 to 2.2.6rc2:
+  - Fix ChangeState logic for limiting number of docs to commit in bulk (Alan Malta Rodrigues) #11786
+  - Add MSPileup and refactor MongoDB in the WM Schematic (Alan Malta Rodrigues) #11789
+  - Try to remove the base directory first and avoid recursive operations (#11781) (Todor Ivanov) #11781
+  - remove STAGEOUT_ERRORS, only used in CRABServer/ServerUtilities (Stefano Belforte) #11787
+  - Fix for 11239: Replaced instances of logging.warn to logging.warning (Dennis Lee) #11785
+  - Deal with partial block in the parentage fix - take 2 (Alan Malta Rodrigues) #11779
+  - Fix logic for updating task-level site thresholds (Alan Malta Rodrigues) #11776
+  - Mock a few more DBS APIs for dataset parentage fix (Alan Malta Rodrigues) #11757
+  - Set parent file id to -1 when missing in the file parentage update (Alan Malta Rodrigues) #11757
+
+
 2.2.5 to 2.2.6rc1:
   - Script to create a default Unified configuration (Alan Malta Rodrigues) #11770
   - Remove unused Unified configuration and code; add schema and validation (Alan Malta Rodrigues) #11770

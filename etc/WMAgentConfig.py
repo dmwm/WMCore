@@ -385,3 +385,13 @@ config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&r
 config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"
+
+config.component_("WorkflowUpdater")
+config.WorkflowUpdater.namespace = "WMComponent.WorkflowUpdater.WorkflowUpdater"
+config.WorkflowUpdater.componentDir = config.General.workDir + "/WorkflowUpdater"
+config.WorkflowUpdater.logLevel = globalLogLevel
+config.WorkflowUpdater.pollInterval = 8 * 60 * 60  # every 8 hours
+config.WorkflowUpdater.rucioAccount = "wmcore_pileup"
+config.WorkflowUpdater.rucioUrl = "OVER_WRITE_BY_SECRETS"
+config.WorkflowUpdater.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"
+config.WorkflowUpdater.msPileupUrl = "OVER_WRITE_BY_SECRETS"

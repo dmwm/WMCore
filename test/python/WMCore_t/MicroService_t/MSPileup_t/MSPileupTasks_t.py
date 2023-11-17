@@ -248,6 +248,44 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         self.mgr.updatePileup(data)
         obj.cleanupTask(0)
 
+    def testMSPileupTasksWithCustomName(self):
+        """
+        Unit test for MSPileupTasks with RucioMockApi and customName DID
+        """
+        self.logger.info("---------- testMSPileupTasksWithCustomName ----------")
+        # we may take some mock data from
+        # https://github.com/dmwm/WMCore/blob/master/test/data/Mock/RucioMockData.json
+        # e.g. /Cosmics/ComissioningHI-PromptReco-v1/RECO dataset
+        pname = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
+        data = dict(self.data)
+        data['pileupName'] = self.pname+'CUSTOM'
+        data['customName'] = pname
+        self.mgr.createPileup(data, self.validRSEs)
+
+        # now create mock rucio client
+        rucioClient = MockRucioApi(self.rucioAccount, hostUrl=self.hostUrl, authUrl=self.authUrl)
+        obj = MSPileupTasks(self.mgr, self.monMgr, self.logger, self.rucioAccount, rucioClient)
+        obj.monitoringTask()
+        obj.activeTask()
+        obj.inactiveTask()
+        cmsDict, cusDict = obj.pileupSizeTask()
+
+        # we should have out pname in both cmsDict and cusDict maps
+        # the asserts are commented as we do not have customName records in mongoDB yet
+        # self.assertEqual(len(cusDict), 1)
+        # self.assertTrue(len(cmsDict) > 1)
+        # instead we'll only print their numbers such that we can verify it during integration tests
+        self.logger.info("pileupSizeTask has cmsDict=%s, cusDict=%s records", len(cmsDict), len(cusDict))
+
+        # we added new pileup document and should have update pileup message in report
+        report = obj.getReport()
+        found = False
+        for doc in report.getDocuments():
+            self.logger.info("### doc %s", doc)
+            if 'update pileup' in doc['entry']:
+                found = True
+        self.assertEqual(found, True)
+
 
 if __name__ == '__main__':
     unittest.main()

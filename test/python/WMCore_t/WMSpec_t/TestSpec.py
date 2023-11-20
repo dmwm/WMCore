@@ -5,10 +5,8 @@ _TestSpec_
 Test spec with known output modules used for testing.
 """
 
-
-
-
 from WMCore.WMSpec.WMWorkload import newWorkload
+
 
 class TestWorkloadFactory(object):
     """
@@ -16,6 +14,7 @@ class TestWorkloadFactory(object):
 
     Stamp out test workfloads.
     """
+
     def createWorkload(self):
         """
         _createWorkload_
@@ -24,7 +23,7 @@ class TestWorkloadFactory(object):
         """
         workload = newWorkload("TestWorkload")
         workload.setOwner("sfoulkes@fnal.gov")
-        workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
+        workload.setStartPolicy("DatasetBlock", SliceType="NumberOfFiles", SliceSize=1)
         workload.setEndPolicy("SingleShot")
         workload.setAcquisitionEra("WMAgentCommissioning10")
         return workload
@@ -56,21 +55,21 @@ class TestWorkloadFactory(object):
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskCmsswHelper.setGlobalTag("TestGlobalTag::All")
-        procTaskCmsswHelper.cmsswSetup("CMSSW_3_5_8_patch3", softwareEnvironment = "",
-                                       scramArch = "slc5_amd64_gcc434")
+        procTaskCmsswHelper.cmsswSetup("CMSSW_3_5_8_patch3", softwareEnvironment="",
+                                       scramArch="slc5_amd64_gcc434")
 
         procTaskCmsswHelper.setDataProcessingConfig("cosmics", "PromptReco")
 
         if self.emulation:
             procTaskStageOutHelper = procTaskStageOut.getTypeHelper()
-            procTaskLogArchHelper  = procTaskLogArch.getTypeHelper()
+            procTaskLogArchHelper = procTaskLogArch.getTypeHelper()
             procTaskCmsswHelper.data.emulator.emulatorName = "CMSSW"
             procTaskStageOutHelper.data.emulator.emulatorName = "StageOut"
             procTaskLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
         return procTask
 
-    def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
+    def addLogCollectTask(self, parentTask, taskName="LogCollect"):
         """
         _addLogCollecTask_
 
@@ -81,11 +80,11 @@ class TestWorkloadFactory(object):
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
-        logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job = 500)
+        logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job=500)
         logCollectTask.setTaskType("LogCollect")
 
         parentTaskLogArch = parentTask.getStep("logArch1")
-        logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
+        logCollectTask.setInputReference(parentTaskLogArch, outputModule="logArchive")
         return
 
     def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName):
@@ -100,26 +99,26 @@ class TestWorkloadFactory(object):
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModuleName,
-                                        primaryDataset = "MinimumBias",
-                                        processedDataset = "Commissioning10-v4",
-                                        dataTier = "RAW",
-                                        lfnBase = "/store/temp/WMAgent/unmerged",
-                                        mergedLFNBase = "/store/temp/WMAgent/merged")
+                                        primaryDataset="MinimumBias",
+                                        processedDataset="Commissioning10-v4",
+                                        dataTier="RAW",
+                                        lfnBase="/store/temp/WMAgent/unmerged",
+                                        mergedLFNBase="/store/temp/WMAgent/merged")
         cmsswStepHelper.addOutputModule(outputModuleName,
-                                        primaryDataset = "MinimumBias",
-                                        processedDataset = "Commissioning10-v4",
-                                        dataTier = "RECO",
-                                        lfnBase = "/store/temp/WMAgent/unmerged",
-                                        mergedLFNBase = "/store/temp/WMAgent/merged")
+                                        primaryDataset="MinimumBias",
+                                        processedDataset="Commissioning10-v4",
+                                        dataTier="RECO",
+                                        lfnBase="/store/temp/WMAgent/unmerged",
+                                        mergedLFNBase="/store/temp/WMAgent/merged")
         cmsswStepHelper.addOutputModule(outputModuleName,
-                                        primaryDataset = "MinimumBias",
-                                        processedDataset = "Commissioning10-v4",
-                                        dataTier = "DQM",
-                                        lfnBase = "/store/temp/WMAgent/unmerged",
-                                        mergedLFNBase = "/store/temp/WMAgent/merged")
+                                        primaryDataset="MinimumBias",
+                                        processedDataset="Commissioning10-v4",
+                                        dataTier="DQM",
+                                        lfnBase="/store/temp/WMAgent/unmerged",
+                                        mergedLFNBase="/store/temp/WMAgent/merged")
         return
 
-    def __call__(self, emulation = False):
+    def __call__(self, emulation=False):
         """
         _call_
 
@@ -136,14 +135,14 @@ class TestWorkloadFactory(object):
         self.addOutputModule(procTask, "TestOutputModule", "RECO", "SomeFilter")
         return workload
 
-def testWorkload(emulation = False):
-    """
-    _testWorkflow_
 
+def createTestWorkload(emulation=False):
+    """
     Instantiate the TestWorkloadFactory and create a workload.
     """
     myTestWorkloadFactory = TestWorkloadFactory()
-    return myTestWorkloadFactory(emulation = emulation)
+    return myTestWorkloadFactory(emulation=emulation)
+
 
 if __name__ == "__main__":
-    testWorkload()
+    createTestWorkload()

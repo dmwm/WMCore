@@ -18,7 +18,7 @@ import unittest
 
 from Utils.PythonVersion import PY3
 
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
 from nose.plugins.attrib import attr
 
 from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller, capResourceEstimates
@@ -160,12 +160,10 @@ class JobCreatorTest(EmulatedUnitTestCase):
 
     def createWorkload(self, workloadName='Test'):
         """
-        _createTestWorkload_
-
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload(workloadName)
+        workload = createTestWorkload(workloadName)
         rereco = workload.getTask("ReReco")
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
         rereco.addGenerator("PresetSeeder", **seederDict)

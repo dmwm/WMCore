@@ -18,7 +18,7 @@ import unittest
 
 from Utils.PythonVersion import PY3
 
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
 from nose.plugins.attrib import attr
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
@@ -307,14 +307,12 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         return config
 
-    def createTestWorkload(self, name='workloadTest'):
+    def setupTestWorkload(self, name='workloadTest'):
         """
-        _createTestWorkload_
-
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload()
+        workload = createTestWorkload()
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, name))
         taskMaker.skipSubscription = True
@@ -330,7 +328,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         Check to see that all the jobs were "submitted",
         don't care about thresholds
         """
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
 
@@ -409,7 +407,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         this requires checks on pending/running jobs globally
         at a site and per task/site
         """
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
 
@@ -530,10 +528,10 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         Test whether the correct job type, workflow and task id priorities
         are respected in the DAO
         """
-        workload1 = self.createTestWorkload(name='testWorkload1')
-        workload2 = self.createTestWorkload(name='testWorkload2')
-        workload3 = self.createTestWorkload(name='testWorkload3')
-        workload4 = self.createTestWorkload(name='testWorkload4')
+        workload1 = self.setupTestWorkload(name='testWorkload1')
+        workload2 = self.setupTestWorkload(name='testWorkload2')
+        workload3 = self.setupTestWorkload(name='testWorkload3')
+        workload4 = self.setupTestWorkload(name='testWorkload4')
 
         config = self.getConfig()
         changeState = ChangeState(config)
@@ -642,7 +640,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         Check that jobs are prioritized by job type and by oldest workflow
         """
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
 
@@ -740,7 +738,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         Check if jobs without a possible site to run at go to SubmitFailed
         """
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
 
@@ -772,7 +770,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         Test the behavior of the submitter in response to the different
         states of the sites
         """
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
         nSubs = 1
@@ -874,7 +872,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         Test the behavior of jobs pending to a single site that is in drain mode
         """
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         jobSubmitter = JobSubmitterPoller(config=config)
         myResourceControl = ResourceControl(config)
@@ -937,7 +935,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         them to actually be submitted
         """
 
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
 
@@ -991,7 +989,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         code has to be updated with decorators.
         NOTE: Never run it on jenkins
         """
-        workload = self.createTestWorkload()
+        workload = self.setupTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
         # myResourceControl = ResourceControl(config)

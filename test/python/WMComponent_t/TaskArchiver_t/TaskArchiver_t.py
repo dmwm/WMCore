@@ -16,7 +16,7 @@ import threading
 import time
 import unittest
 
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
 from nose.plugins.attrib import attr
 
 import WMCore.WMBase
@@ -175,12 +175,10 @@ class TaskArchiverTest(EmulatedUnitTestCase):
 
     def createWorkload(self, workloadName):
         """
-        _createTestWorkload_
-
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload(workloadName)
+        workload = createTestWorkload(workloadName)
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True

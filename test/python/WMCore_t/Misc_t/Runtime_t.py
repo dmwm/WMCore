@@ -16,7 +16,7 @@ import sys
 import unittest
 
 # from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
 from nose.plugins.attrib import attr
 
 import WMCore.WMBase
@@ -131,10 +131,8 @@ class RuntimeTest(unittest.TestCase):
 
         return
 
-    def createTestWorkload(self, workloadName='Test', emulator=True):
+    def setupTestWorkload(self, workloadName='Test', emulator=True):
         """
-        _createTestWorkload_
-
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
@@ -145,7 +143,7 @@ class RuntimeTest(unittest.TestCase):
         # workload = rerecoWorkload("Tier1ReReco", arguments)
         # rereco = workload.getTask("ReReco")
 
-        workload = testWorkload(emulation=emulator)
+        workload = createTestWorkload(emulation=emulator)
         rereco = workload.getTask("ReReco")
 
         # Set environment and site-local-config
@@ -334,7 +332,7 @@ class RuntimeTest(unittest.TestCase):
         """
 
         workloadName = 'basicWorkload'
-        workload = self.createTestWorkload(workloadName=workloadName)
+        workload = self.setupTestWorkload(workloadName=workloadName)
 
         self.createWMBSComponents(workload=workload)
 
@@ -387,7 +385,6 @@ class RuntimeTest(unittest.TestCase):
         # And we're done.
         # Assume if we got this far everything is good
 
-
         # At the end, copy the directory
         # if os.path.exists('tmpDir'):
         #    shutil.rmtree('tmpDir')
@@ -407,7 +404,7 @@ class RuntimeTest(unittest.TestCase):
 
         # Assume all this works, because we tested it in testA
         workloadName = 'basicWorkload'
-        workload = self.createTestWorkload(workloadName=workloadName)
+        workload = self.setupTestWorkload(workloadName=workloadName)
 
         self.createWMBSComponents(workload=workload)
 
@@ -423,7 +420,7 @@ class RuntimeTest(unittest.TestCase):
 
         # Now validate the report
         self.assertEqual(report.getSiteName(), {})
-        #self.assertEqual(report.data.hostName, socket.gethostname())
+        # self.assertEqual(report.data.hostName, socket.gethostname())
         self.assertTrue(report.data.completed)
 
         # Should have status 0 (emulator job)
@@ -437,7 +434,6 @@ class RuntimeTest(unittest.TestCase):
         self.assertEqual(cmsReport.output.TestOutputModule.files.fileCount, 1)
 
         # So, um, I guess we're done
-
 
         # At the end, copy the directory
         # if os.path.exists('tmpDir'):

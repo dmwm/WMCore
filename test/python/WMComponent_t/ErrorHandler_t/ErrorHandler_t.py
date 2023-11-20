@@ -15,7 +15,7 @@ import unittest
 
 from Utils.PythonVersion import PY3
 
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
 from nose.plugins.attrib import attr
 
 import WMCore.WMBase
@@ -130,12 +130,10 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
     def createWorkload(self, workloadName='Test'):
         """
-        _createTestWorkload_
-
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload(workloadName)
+        workload = createTestWorkload(workloadName)
 
         # Add RequestManager stuff
         workload.data.request.section_('schema')
@@ -266,7 +264,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
                 self.assertTrue(f['lfn'] in ["/this/is/a/lfnA", "/this/is/a/lfnB"])
                 self.assertEqual(f['events'], 10)
                 self.assertEqual(f['size'], 1024)
-                self.assertEqual(f['parents'], [u'/this/is/a/parent'])
+                self.assertEqual(f['parents'], ['/this/is/a/parent'])
                 self.assertTrue(f['runs'][0]['run_number'] == 10)
                 if f['lfn'] == "/this/is/a/lfnA":
                     self.assertItemsEqual(f['runs'][0]['lumis'], [12312])

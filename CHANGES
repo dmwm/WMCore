@@ -1,3 +1,6 @@
+2.2.4.5 to 2.2.4.6:
+ - Just trigerring a new build
+
 2.2.4.4 to 2.2.4.5:
   - Handle gfal exceptions while listing baseDirEntry && Avoid extra stat operations during recursion. (#11798) (Todor Ivanov) #11798
 

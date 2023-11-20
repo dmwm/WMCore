@@ -99,6 +99,7 @@ class MSPileupTest(unittest.TestCase):
             'deactivatedOn': now,
             'active': True,
             'pileupSize': pileupSize,
+            'customName': '',
             'ruleIds': ruleIds}
 
         out = self.mgr.createPileup(pdict, self.validRSEs)

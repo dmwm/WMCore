@@ -26,13 +26,17 @@ class MSPileupTasks():
     - active task to look-up pileup docs in active state
     """
 
-    def __init__(self, dataManager, monitManager, logger, rucioAccount, rucioClient, dryRun=False):
+    def __init__(self, dataManager, monitManager, logger,
+                 rucioAccount, rucioClient, rucioScope='cms',
+                 customRucioScope='group.wmcore', dryRun=False):
         """
         MSPileupTaskManager constructor
         :param dataManager: MSPileup Data Management layer instance
         :param logger: logger instance
         :param rucioAccount: rucio account name to use
         :param rucioClient: rucio client or WMCore Rucio wrapper class to use
+        :param rucioScope: rucio scope to use in rucio APIs
+        :param customRucioScope: custom rucio scope to use in rucio APIs for customName DID
         :param dryRun: dry-run mode of operations
         """
         self.mgr = dataManager
@@ -40,6 +44,8 @@ class MSPileupTasks():
         self.logger = logger
         self.rucioAccount = rucioAccount
         self.rucioClient = rucioClient
+        self.rucioScope = rucioScope
+        self.customRucioScope = customRucioScope
         self.report = MSPileupReport()
         self.dryRun = dryRun
         if dryRun:
@@ -48,28 +54,51 @@ class MSPileupTasks():
     def pileupSizeTask(self):
         """
         Execute pileup size update task
+        :return: a tuple (cmsDict, cusDict) which defines cms/custom containers and their
+        respective dataset sizes dicts.
         """
+        cmsDict = {}
+        cusDict = {}
         self.logger.info("====> Executing pileupSizeTask method...")
         try:
             # get pileup sizes and update them in DB
             spec = {}
             docs = self.mgr.getPileup(spec)
-            rucioAuthUrl = self.rucioClient.rucioParams['auth_host']
-            rucioHostUrl = self.rucioClient.rucioParams['rucio_host']
+            rucioAuthUrl = self.rucioClient.rucioParams.get('auth_host', '')
+            rucioHostUrl = self.rucioClient.rucioParams.get('rucio_host', '')
             rucioToken, _tokenValidity = getRucioToken(rucioAuthUrl, self.rucioAccount)
-            containers = [r['pileupName'] for r in docs]
-            msg = f"Fetching pileup size for {len(containers)} containers "
+            rucioScope = self.rucioScope
+            cmsContainers = []
+            customContainers = []
+            datasetSizes = {}
+            for doc in docs:
+                if doc.get('customName', '') != '':
+                    customContainers.append(doc['customName'])
+                else:
+                    cmsContainers.append(doc['pileupName'])
+            msg = f"Fetching pileup size for {len(cmsContainers)} cms containers "
+            msg += f"and {len(customContainers)} custom containers "
             msg += f"against rucio url: {rucioHostUrl}"
             self.logger.info(msg)
-            datasetSizes = getPileupContainerSizesRucio(containers, rucioHostUrl, rucioToken)
+            if len(cmsContainers) > 0:
+                datasetSizes = getPileupContainerSizesRucio(cmsContainers, rucioHostUrl, rucioToken)
+                cmsDict = datasetSizes
+            if len(customContainers) > 0:
+                rucioScope = spec.get('customRucioScope', 'group.wmcore')
+                cusDict = getPileupContainerSizesRucio(customContainers, rucioHostUrl, rucioToken, scope=rucioScope)
+                datasetSizes.update(cusDict)
             for doc in docs:
-                pileupSize = datasetSizes.get(doc['pileupName'], 0)
+                pileupName = doc.get('customName', '')
+                if pileupName == '':
+                    pileupName = doc['pileupName']
+                pileupSize = datasetSizes.get(pileupName, 0)
                 if pileupSize:
                     doc['pileupSize'] = pileupSize
                 self.mgr.updatePileup(doc, validate=False)
         except Exception as exp:
             msg = f"MSPileup pileup size task failed with error {exp}"
             self.logger.exception(msg)
+        return cmsDict, cusDict
 
     def cleanupTask(self, cleanupDaysThreshold):
         """
@@ -90,15 +119,18 @@ class MSPileupTasks():
         deleteDocs = 0
         seconds = cleanupDaysThreshold * 24 * 60 * 60  # convert to second
         for doc in docs:
+            pileupName = doc.get('customName', '')
+            if pileupName == '':
+                pileupName = doc['pileupName']
             if not doc['ruleIds'] and not doc['currentRSEs'] and \
                     time.time() > doc['deactivatedOn'] + seconds:
-                spec = {'pileupName': doc['pileupName']}
+                spec = {'pileupName': pileupName}
                 if not self.dryRun:
-                    self.logger.info("Cleanup task deleting pileup %s", doc['pileupName'])
+                    self.logger.info("Cleanup task deleting pileup %s", pileupName)
                     self.mgr.deletePileup(spec)
                     deleteDocs += 1
                 else:
-                    self.logger.info(f"DRY-RUN: should have deleted pileup document for {doc['pileupName']}")
+                    self.logger.info(f"DRY-RUN: should have deleted pileup document for {pileupName}")
         self.logger.info("Cleanup task deleted %d pileup objects", deleteDocs)
 
     def cmsMonitTask(self):
@@ -226,6 +258,7 @@ class MSPileupTasks():
         """Return task spec"""
         spec = {'manager': self.mgr, 'logger': self.logger, 'report': self.report,
                 'rucioClient': self.rucioClient, 'rucioAccount': self.rucioAccount,
+                'rucioScope': self.rucioScope, 'customRucioScope': self.customRucioScope,
                 'dryRun': self.dryRun}
         return spec
 
@@ -247,12 +280,17 @@ def monitoringTask(doc, spec):
     uuid = spec['uuid']
     rucioClient = spec['rucioClient']
     rucioAccount = spec['rucioAccount']
+    rucioScope = spec['rucioScope']
     report = spec['report']
     logger = spec['logger']
 
     # get list of existent rule ids
-    pname = doc['pileupName']
-    kwargs = {'scope': 'cms', 'account': rucioAccount}
+    pname = doc.get('customName', '')
+    if pname == '':
+        pname = doc['pileupName']
+    else:
+        rucioScope = spec.get('customRucioScope', 'group.wmcore')
+    kwargs = {'scope': rucioScope, 'account': rucioAccount}
     rules = rucioClient.listDataRules(pname, **kwargs)
     modify = False
 
@@ -328,11 +366,16 @@ def inactiveTask(doc, spec):
     uuid = spec['uuid']
     rucioClient = spec['rucioClient']
     rucioAccount = spec['rucioAccount']
+    rucioScope = spec['rucioScope']
     report = spec['report']
     logger = spec['logger']
     dryRun = spec['dryRun']
-    pname = doc['pileupName']
-    kwargs = {'scope': 'cms', 'account': rucioAccount}
+    pname = doc.get('customName', '')
+    if pname == '':
+        pname = doc['pileupName']
+    else:
+        rucioScope = spec.get('customRucioScope', 'group.wmcore')
+    kwargs = {'scope': rucioScope, 'account': rucioAccount}
     rules = rucioClient.listDataRules(pname, **kwargs)
     modify = False
 
@@ -388,6 +431,7 @@ def activeTask(doc, spec):
     logger = spec['logger']
     rucioClient = spec['rucioClient']
     rucioAccount = spec['rucioAccount']
+    rucioScope = spec['rucioScope']
     report = spec['report']
     marginSpace = spec['marginSpace']
     dryRun = spec['dryRun']
@@ -396,9 +440,13 @@ def activeTask(doc, spec):
     expectedRSEs = set(doc['expectedRSEs'])
     currentRSEs = set(doc['currentRSEs'])
     pileupSize = doc['pileupSize']
-    pname = doc['pileupName']
-    inputArgs = {'scope': 'cms', 'name': pname, 'account': rucioAccount}
-    kwargs = {'scope': 'cms', 'account': rucioAccount}
+    pname = doc.get('customName', '')
+    if pname == '':
+        pname = doc['pileupName']
+    else:
+        rucioScope = spec.get('customRucioScope', 'group.wmcore')
+    inputArgs = {'scope': rucioScope, 'name': pname, 'account': rucioAccount}
+    kwargs = {'scope': rucioScope, 'account': rucioAccount}
     modify = False
     localCopyOfCurrentRSEs = list(currentRSEs)
 
@@ -505,7 +553,9 @@ async def runTask(task, doc, spec):
     time0 = time.time()
     report = spec['report']
     logger = spec.get('logger', getMSLogger(False))
-    pname = doc['pileupName']
+    pname = doc.get('customName', '')
+    if pname == '':
+        pname = doc['pileupName']
 
     # set report hash
     uuid = makeUUID()

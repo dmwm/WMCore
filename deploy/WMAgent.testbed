@@ -27,3 +27,4 @@ RUCIO_HOST=http://cms-rucio-int.cern.ch
 RUCIO_AUTH=https://cms-rucio-auth-int.cern.ch
 TEAMNAME=
 AGENT_NUMBER=
+MSPILEUP_URL=https://cmsweb-testbed.cern.ch/ms-pileup/data/pileup

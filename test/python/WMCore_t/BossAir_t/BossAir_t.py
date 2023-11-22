@@ -29,7 +29,7 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Job import Job
 from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
 
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 
@@ -202,12 +202,10 @@ class BossAirTest(unittest.TestCase):
 
     def createTestWorkload(self, workloadName='Test', emulator=True):
         """
-        _createTestWorkload_
-
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload("Tier1ReReco")
+        workload = createTestWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))

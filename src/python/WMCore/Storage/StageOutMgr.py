@@ -92,7 +92,7 @@ class StageOutMgr(object):
 
     def __init__(self, **overrideParams):
         logging.info("StageOutMgr::__init__()")
-        self.overrideParams = overrideParams
+        self.overrideConf = overrideParams
 
         # Figure out if any of the override parameters apply to stage-out
         self.override = False
@@ -100,7 +100,7 @@ class StageOutMgr(object):
             logging.info("StageOutMgr::__init__(): Override: %s", overrideParams)
             checkParams = ["command", "option", "phedex-node", "lfn-prefix"]
             for param in checkParams:
-                if param in self.overrideParams:
+                if param in self.overrideConf:
                     self.override = True
             if not self.override:
                 logging.info("=======StageOut Override: These are not the parameters you are looking for")
@@ -108,8 +108,6 @@ class StageOutMgr(object):
         self.substituteGUID = True
         
         self.stageOuts_rfcs = [] #pairs of stageOut and Rucio file catalog
-
-        self.overrideConf = None
 
         self.numberOfRetries = 3
         self.retryPauseTime = 600
@@ -195,26 +193,27 @@ class StageOutMgr(object):
         Extract and verify that the Override parameters are all present
 
         """
-        self.overrideConf = {
+        overrideConf = {
             "command": None,
             "option": None,
             "phedex-node": None,
             "lfn-prefix": None,
         }
-
         try:
-            self.overrideConf['command'] = self.overrideParams['command']
-            self.overrideConf['phedex-node'] = self.overrideParams['phedex-node']
-            self.overrideConf['lfn-prefix'] = self.overrideParams['lfn-prefix']
+            overrideConf['command'] = self.overrideConf['command']
+            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
+            overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract override parameters from config:\n"
             msg += str(ex)
             raise StageOutInitError(msg)
-        if 'option' in self.overrideParams:
-            if len(self.overrideParams['option']) > 0:
-                self.overrideConf['option'] = self.overrideParams['option']
+        if 'option' in self.overrideConf and self.overrideConf['option'] is not None:
+            if len(self.overrideConf['option']) > 0:
+                overrideConf['option'] = self.overrideConf['option']
             else:
-                self.overrideConf['option'] = ""
+                overrideConf['option'] = ""
+
+        self.overrideConf = overrideConf
 
         msg = "=======StageOut Override Initialised:================\n"
         for key, val in viewitems(self.overrideConf):
@@ -242,7 +241,7 @@ class StageOutMgr(object):
             logging.info("===> Attempting %s Stage Outs", len(self.stageOuts))
             for stageOut_rfc in self.stageOuts_rfcs:
                 try:
-                    pfn = self.stageOut(lfn, fileToStage['PFN'],stageOut_rfc, fileToStage.get('Checksums'))
+                    pfn = self.stageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'), stageOut_rfc)
                     fileToStage['PFN'] = pfn
                     fileToStage['PNN'] = stageOut_rfc[0]['phedex-node']
                     fileToStage['StageOutCommand'] = stageOut_rfc[0]['command']
@@ -275,7 +274,7 @@ class StageOutMgr(object):
         else:
             logging.info("===> Attempting stage outs from override")
             try:
-                pfn = self.overrideStageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
+                pfn = self.stageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
                 fileToStage['PNN'] = self.overrideConf['phedex-node']
                 fileToStage['StageOutCommand'] = self.overrideConf['command']
@@ -295,86 +294,78 @@ class StageOutMgr(object):
         raise lastException
     
     
-    def stageOut(self, lfn, localPfn, stageOut_rfc, checksums):
+    def stageOut(self, lfn, localPfn, checksums, stageOut_rfc=None):
         """
         _stageOut_
 
-        Given the lfn and a pair of stage out and corresponding Rucio file catalog, invoke the stage out
-
-        """
-        command = stageOut_rfc[0]['command']
-        options = stageOut_rfc[0]['option']
-        pfn = searchRFC(stageOut_rfc[1],lfn)
-        protocol = stageOut_rfc[1].preferredProtocol
-        if pfn == None:
-            msg = "Unable to match lfn to pfn: \n  %s" % lfn
-            raise StageOutFailure(msg, LFN=lfn, StageOut=stageOutStr(stageOut_rfc[0]))
-        try:
-            impl = retrieveStageOutImpl(command)
-        except Exception as ex:
-            msg = "Unable to retrieve impl for local stage out:\n"
-            msg += "Error retrieving StageOutImpl for command named: %s\n" % (
-                command,)
-            raise StageOutFailure(msg, Command=command,
-                                  LFN=lfn, ExceptionDetail=str(ex))
-        impl.numRetries = self.numberOfRetries
-        impl.retryPause = self.retryPauseTime
-
-        try:
-            if not self.bypassImpl:
-                impl(protocol, localPfn, pfn, options, checksums)
-        except Exception as ex:
-            msg = "Failure for stage out:\n"
-            msg += str(ex)
-            try:
-                import traceback
-                msg += traceback.format_exc()
-            except AttributeError as ex:
-                msg += "Traceback unavailable\n"
-            raise StageOutFailure(msg, Command=command, Protocol=protocol,
-                                  LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
-
-        return pfn
-
-    def overrideStageOut(self, lfn, localPfn, checksums):
-        """
-        _overrideStageOut_
-
-        Given the lfn and parameters from self.overrideConf for a override stage out, invoke it
-
-        self.overrideConf should contain:
-
+        Given the lfn and a pair of stage out and corresponding Rucio file catalog, stageOut_rfc, or override configuration invoke the stage out
+        If use override configuration self.overrideConf should contain:
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
         phedex-node - the Name of the PNN to which the file is being xferred
-
         """
-        pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
+        if not self.override:
+            command = stageOut_rfc[0]['command']
+            options = stageOut_rfc[0]['option']
+            pfn = searchRFC(stageOut_rfc[1],lfn)
+            protocol = stageOut_rfc[1].preferredProtocol
+            if pfn == None:
+                msg = "Unable to match lfn to pfn: \n  %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn, StageOut=stageOutStr(stageOut_rfc[0]))
+            try:
+                impl = retrieveStageOutImpl(command)
+            except Exception as ex:
+                msg = "Unable to retrieve impl for local stage out:\n"
+                msg += "Error retrieving StageOutImpl for command named: %s\n" % (
+                    command,)
+                raise StageOutFailure(msg, Command=command,
+                                      LFN=lfn, ExceptionDetail=str(ex))
+            impl.numRetries = self.numberOfRetries
+            impl.retryPause = self.retryPauseTime
 
-        try:
-            impl = retrieveStageOutImpl(self.overrideConf['command'])
-        except Exception as ex:
-            msg = "Unable to retrieve impl for override stage out:\n"
-            msg += "Error retrieving StageOutImpl for command named: "
-            msg += "%s\n" % self.overrideConf['command']
-            raise StageOutFailure(msg, Command=self.overrideConf['command'],
-                                  LFN=lfn, ExceptionDetail=str(ex))
+            try:
+                if not self.bypassImpl:
+                    impl(protocol, localPfn, pfn, options, checksums)
+            except Exception as ex:
+                msg = "Failure for stage out:\n"
+                msg += str(ex)
+                try:
+                    import traceback
+                    msg += traceback.format_exc()
+                except AttributeError as ex:
+                    msg += "Traceback unavailable\n"
+                raise StageOutFailure(msg, Command=command, Protocol=protocol,
+                                      LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
+            return pfn
+      
+        else:
+          
+            pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
 
-        impl.numRetries = self.numberOfRetries
-        impl.retryPause = self.retryPauseTime
+            try:
+                impl = retrieveStageOutImpl(self.overrideConf['command'])
+            except Exception as ex:
+                msg = "Unable to retrieve impl for override stage out:\n"
+                msg += "Error retrieving StageOutImpl for command named: "
+                msg += "%s\n" % self.overrideConf['command']
+                raise StageOutFailure(msg, Command=self.overrideConf['command'],
+                                      LFN=lfn, ExceptionDetail=str(ex))
 
-        try:
-            if not self.bypassImpl:
-                impl(self.overrideConf['command'], localPfn, pfn, self.overrideConf["option"], checksums)
-        except Exception as ex:
-            msg = "Failure for override stage out:\n"
-            msg += str(ex)
-            raise StageOutFailure(msg, Command=self.overrideConf['command'],
-                                  LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
+            impl.numRetries = self.numberOfRetries
+            impl.retryPause = self.retryPauseTime
 
-        return pfn
+            try:
+                if not self.bypassImpl:
+                    impl(self.overrideConf['command'], localPfn, pfn, self.overrideConf["option"], checksums)
+            except Exception as ex:
+                msg = "Failure for override stage out:\n"
+                msg += str(ex)
+                raise StageOutFailure(msg, Command=self.overrideConf['command'],
+                                      LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
 
+            return pfn
+    
     def cleanSuccessfulStageOuts(self):
         """
         _cleanSucessfulStageOuts_
@@ -392,7 +383,7 @@ class StageOutMgr(object):
             msg += "Removing PFN: %s" % pfn
             msg += "Using command implementation: %s\n" % command
             logging.info(msg)
-            delManager = DeleteMgr(**self.overrideParams)
+            delManager = DeleteMgr(**self.overrideConf)
             delManager.bypassImpl = self.bypassImpl
             try:
                 delManager.deletePFN(pfn, lfn, command)

@@ -59,12 +59,10 @@ class RucioFileCatalog(dict):
 
     def _doMatch(self, protocol, path, style, caller):
         """
-        Generalised way of building up the mappings.
-        caller is the method from there this method was called, it's used
-        for resolving chained rules
-
-        Return None if no match
-
+        Generalised way of building up the mappings.         :param protocol: the name of a protocol, for example XRootD
+        :path: a LFN path, for example /store/abc/xyz.root
+        :style: type of conversion. lfn-to-pfn is to convert LFN to PFN and pfn-to-pfn is for PFN to LFN
+        :caller is the method from there this method was called. It's used for resolving chained rules
         """
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
@@ -183,38 +181,45 @@ def readRFC(filename, storageSite, volume, protocol):
         if jsElement['site'] == storageSite and jsElement['volume'] == volume: 
             #now loop over protocols
             #!!!!!!!!!!!!!!Maybe save all protocols so that chain works
-            for proc in jsElement['protocols']:
+            for prot in jsElement['protocols']:
                 #check found match
-                if proc['protocol'] == protocol:
+                if prot['protocol'] == protocol:
                     rfcInstance.preferredProtocol = protocol
-                    chain = proc['chain'] if 'chain' in proc.keys() else None
+                    chain = prot['chain'] if 'chain' in prot.keys() else None
                     #check if prefix is in protocol block
-                    if 'prefix' in proc.keys():
+                    if 'prefix' in prot.keys():
                         #lfn-to-pfn
                         match = '(.*)' #match all
-                        result = proc['prefix']+'/$1'
-                        rfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
+                        result = prot['prefix']+'/$1'
+                        rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
                         #pfn-to-lfn
-                        match = proc['prefix']+'/(.*)'
+                        match = prot['prefix']+'/(.*)'
                         result = '/$1'
-                        rfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
+                        rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
                     #here is rules  
                     else:
                         #loop over rules
-                        for rule in proc['rules']:
+                        for rule in prot['rules']:
                             match = rule['lfn']
                             result = rule['pfn']
-                            rfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
+                            rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
                             #pfn-to-lfn: not sure about this!!!
                             match = rule['pfn'].replace('$1','(.*)')
                             result = rule['lfn'].replace('/+','/').replace('^/','/')
                             #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
                             result = re.sub('\(.*\)','$1',result)
-                            rfcInstance.addMapping(str(proc['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
+                            rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
     
     return rfcInstance
 
 def rseName(currentSite,currentSubsite,storageSite,volume):
+    """
+    Return Rucio storage element name, for example https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L39
+    :currentSite is the site where jobs are executing
+    :currentSubsite is the sub site if jobs are running here
+    :storageSite is the site for storage
+    :volume is the volume name, for example https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L3
+    """
     rse = None
     storageJsonName = storageJsonPath(currentSite,currentSubsite,storageSite)
     try:

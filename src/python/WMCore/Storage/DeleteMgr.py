@@ -21,8 +21,7 @@ from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.WMException import WMException
 
 
-from WMCore.Storage.SiteLocalConfig import stageOutStr
-
+from WMCore.Storage.SiteLocalConfig import stageOutStr,loadSiteLocalConfig
 from WMCore.Storage.RucioFileCatalog import storageJsonPath,readRFC 
 
 class DeleteMgrError(WMException):
@@ -49,34 +48,29 @@ class DeleteMgr(object):
 
     def __init__(self, **overrideParams):
         
-        self.override = False
         self.logger = overrideParams.pop("logger", logging.getLogger())
-        self.overrideParams = overrideParams
-        if overrideParams != {}:
-            self.override = True
+        self.overrideConf = overrideParams
 
         self.bypassImpl = False
-
-        self.stageOuts_rfcs = [] #pairs of stageOut and Rucio file catalog
-
-        self.overrideConf = None #will be initialized later in initialiseOverride
-
+        
+        #pairs of stageOut and Rucio file catalog: [(stageOut1,rfc1),(stageOut2,rfc2), ...]
+        #a "stageOut" corresponds to a entry in the <stage-out> block in the site-local-config.xml, for example <method volume="KIT_dCache" protocol="WebDAV"/>
+        #a "rfc" is the correponding RucioFileCatalog instance (RucioFileCatalog.py) of this "stageOut"
+        self.stageOuts_rfcs = []
         self.numberOfRetries = 3
         self.retryPauseTime = 600
-
-        from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
         #  //
         # // If override isnt None, we dont need SiteCfg, if it is
         # //  then we need siteCfg otherwise we are dead.
 
-        if not self.override:
+        if not self.overrideConf:
             self.siteCfg = loadSiteLocalConfig()
 
-        if self.override:
-            self.initialiseOverride()
-        else:
+        if not self.overrideConf:
             self.initialiseSiteConf()
+        else:
+            self.initialiseOverride()
 
     def initialiseSiteConf(self):
         """
@@ -140,7 +134,8 @@ class DeleteMgr(object):
         Extract and verify that the Override parameters are all present
 
         """
-        self.overrideConf = {
+        
+        overrideConf = {
             "command": None,
             "option": None,
             "phedex-node": None,
@@ -148,24 +143,25 @@ class DeleteMgr(object):
         }
 
         try:
-            self.overrideConf['command'] = self.overrideParams['command']
-            self.overrideConf['phedex-node'] = self.overrideParams['phedex-node']
-            self.overrideConf['lfn-prefix'] = self.overrideParams['lfn-prefix']
+            overrideConf['command'] = self.overrideConf['command']
+            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
+            overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract override parameters from config:\n"
-            msg += str(ex)
+            msg += str(self.overrideConf)
             raise StageOutInitError(msg)
-        if 'option' in self.overrideParams:
-            if len(self.overrideParams['option']) > 0:
-                self.overrideConf['option'] = self.overrideParams['option']
+        if 'option' in self.overrideConf and self.overrideConf['option'] is not None:
+            if len(self.overrideConf['option']) > 0:
+                overrideConf['option'] = self.overrideConf['option']
             else:
-                self.overrideConf['option'] = ""
+                overrideConf['option'] = ""
+
+        self.overrideConf = overrideConf
 
         msg = "=======Delete Override Initialised:================\n"
-        for key, val in viewitems(self.overrideConf):
+        for key, val in viewitems(overrideConf):
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
-
         self.logger.info(msg)
         
         return
@@ -183,7 +179,7 @@ class DeleteMgr(object):
 
         deleteSuccess = False
         
-        if not self.override:
+        if not self.overrideConf:
             logging.info("===> Attempting to delete with %s stage outs", len(self.stageOuts))
             for stageOut_rfc in self.stageOuts_rfcs:
                 if not deleteSuccess:
@@ -198,7 +194,7 @@ class DeleteMgr(object):
             logging.info("===> Attempting stage outs from override")
             try:
                 fileToDelete['PNN'] = self.overrideConf['phedex-node']
-                fileToDelete['PFN'] = self.deleteLFN_override(lfn)
+                fileToDelete['PFN'] = self.deleteLFN(lfn)
                 deleteSuccess = True
             except Exception as ex:
                 self.logger.error("===> Local file deletion failure. Exception:\n%s", str(ex))
@@ -214,47 +210,39 @@ class DeleteMgr(object):
             msg += fileToDelete['LFN']
             raise StageOutFailure(msg, **fileToDelete)
     
-    def deleteLFN(self, lfn, stageOut_rfc):
+    def deleteLFN(self, lfn, stageOut_rfc=None):
         """
         deleteLFN
-
-        Given the lfn and an stageOut Rucio file catalog pair, invoke the delete
-
+        Given the lfn and an stageOut Rucio file catalog pair or override config, invoke the delete
+        lfn: logical file name
+        stageOut_rfc: a pair fo stageOut and correponding Rucio file catalog, required when no override provided 
+        self.overrideConf: the follwoing params should be defined for override
+            command - the stage out impl plugin name to be used
+            option - the option values to be passed to that command (None is allowed)
+            lfn-prefix - the LFN prefix to generate the PFN
+            phedex-node - the Name of the PNN to which the file is being xferred
         """
-        from WMCore.Storage.StageOutMgr import searchRFC 
-        command = stageOut_rfc[0]['command']
-        pfn = searchRFC(stageOut_rfc[1],lfn)
+        if not self.overrideConf:
+            from WMCore.Storage.StageOutMgr import searchRFC 
+            command = stageOut_rfc[0]['command']
+            pfn = searchRFC(stageOut_rfc[1],lfn)
 
-        if pfn == None:
-            msg = "Unable to match lfn to pfn: \n  %s" % lfn
-            raise StageOutFailure(msg, LFN=lfn, STAGEOUT=stageOutStr(stageOut_rfc[0]))
+            if pfn == None:
+                msg = "Unable to match lfn to pfn: \n  %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn, STAGEOUT=stageOutStr(stageOut_rfc[0]))
 
-        return self.deletePFN(pfn, lfn, command)
-    
+            return self.deletePFN(pfn, lfn, command)
+        else:
+            command = self.overrideConf['command']
+            pfn = None
+            if self.overrideConf['lfn-prefix'] is not None:
+                pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
 
-    def deleteLFN_override(self, lfn):
-        """
-        deleteLFN_override
+            if pfn is None:
+                msg = "Unable to match lfn to pfn using lfn-prefix: \n %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn, LFNPREFIX=self.overrideConf['lfn-prefix'])
 
-        Given the lfn invoke the delete using override config
-
-        the follwoing params should be defined for override
-        command - the stage out impl plugin name to be used
-        option - the option values to be passed to that command (None is allowed)
-        lfn-prefix - the LFN prefix to generate the PFN
-        phedex-node - the Name of the PNN to which the file is being xferred
-        """
-
-        command = self.overrideConf['command']
-        pfn = None
-        if self.overrideConf['lfn-prefix'] is not None:
-            pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
-
-        if pfn is None:
-            msg = "Unable to match lfn to pfn using lfn-prefix: \n %s" % lfn
-            raise StageOutFailure(msg, LFN=lfn, LFNPREFIX=self.overrideConf['lfn-prefix'])
-
-        return self.deletePFN(pfn, lfn, command)
+            return self.deletePFN(pfn, lfn, command)
 
     def deletePFN(self, pfn, lfn, command):
         """

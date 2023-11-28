@@ -81,7 +81,7 @@ class MSPileupTest(unittest.TestCase):
         pileupSize = 1
         ruleIds = []
         campaigns = []
-        containerFraction = 0.0
+        containerFraction = 1.0
         replicationGrouping = "ALL"
 
         pdict = {
@@ -100,6 +100,7 @@ class MSPileupTest(unittest.TestCase):
             'active': True,
             'pileupSize': pileupSize,
             'customName': '',
+            'transition': [],
             'ruleIds': ruleIds}
 
         out = self.mgr.createPileup(pdict, self.validRSEs)

@@ -51,7 +51,7 @@ class MSPileupTest(EmulatedUnitTestCase):
             'currentRSEs': expectedRSEs,
             'fullReplicas': fullReplicas,
             'campaigns': campaigns,
-            'containerFraction': 0.0,
+            'containerFraction': 1.0,
             'replicationGrouping': "ALL",
             'active': True,
             'pileupSize': 0,

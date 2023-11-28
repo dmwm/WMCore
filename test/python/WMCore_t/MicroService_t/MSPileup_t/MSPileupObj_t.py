@@ -5,6 +5,7 @@ Description: Unit tests for MicorService/MSPileup/DataStructs/MSPileupObj.py mod
 """
 
 # system modules
+import time
 import unittest
 
 # WMCore modules
@@ -35,11 +36,12 @@ class MSPileupObjTest(unittest.TestCase):
             'currentRSEs': expectedRSEs,
             'fullReplicas': fullReplicas,
             'campaigns': campaigns,
-            'containerFraction': 0.0,
+            'containerFraction': 1.0,
             'replicationGrouping': "ALL",
             'active': True,
             'pileupSize': 0,
             'customName': '',
+            'transition': [],
             'ruleIds': []}
         obj = MSPileupObj(data, validRSEs=expectedRSEs)
         for key in ['insertTime', 'lastUpdateTime', 'activatedOn', 'deactivatedOn']:
@@ -77,6 +79,69 @@ class MSPileupObjTest(unittest.TestCase):
         except Exception as exp:
             self.logger.warning("expected exception %s", str(exp))
 
+    def testTransitionRecord(self):
+        """
+        Unit test for transition record in MSPileupObj data
+        """
+        expectedRSEs = ['rse1', 'rse2']
+        fullReplicas = 0
+        campaigns = ['c1', 'c2']
+        data = {
+            'pileupName': '/lksjdfkls/lkjaslkdjlas/PREFIX',
+            'pileupType': 'classic',
+            'expectedRSEs': expectedRSEs,
+            'currentRSEs': expectedRSEs,
+            'fullReplicas': fullReplicas,
+            'campaigns': campaigns,
+            'containerFraction': 1.0,
+            'replicationGrouping': "ALL",
+            'active': True,
+            'pileupSize': 0,
+            'customName': '',
+            'transition': [{'bla': 1}],
+            'ruleIds': []}
+        # test incorrect transition record
+        try:
+            MSPileupObj(data, validRSEs=expectedRSEs)
+            self.assertIsNone(1, msg="MSPileupObj should not be created")
+        except Exception as exp:
+            self.logger.warning("expected exception %s", str(exp))
+
+        # test incorrect value in transition record
+        trec = {'DN': 'bla', 'containerFraction': 0, 'customDID': 'customDID', 'updateTime': int(time.time())}
+        data.update({'transition': [trec]})
+        try:
+            MSPileupObj(data, validRSEs=expectedRSEs)
+            self.assertIsNone(1, msg="MSPileupObj should not be created")
+        except Exception as exp:
+            self.logger.warning("expected exception %s", str(exp))
+
+        # test incorrect value in transition record
+        trec = {'DN': 123, 'containerFraction': 0.1, 'customDID': 'customDID', 'updateTime': int(time.time())}
+        data.update({'transition': [trec]})
+        try:
+            MSPileupObj(data, validRSEs=expectedRSEs)
+            self.assertIsNone(1, msg="MSPileupObj should not be created")
+        except Exception as exp:
+            self.logger.warning("expected exception %s", str(exp))
+
+        # test incorrect value in transition record
+        trec = {'DN': 'dn', 'containerFraction': 0.1, 'customDID': 'customDID', 'updateTime': 123}
+        data.update({'transition': [trec]})
+        try:
+            MSPileupObj(data, validRSEs=expectedRSEs)
+            self.assertIsNone(1, msg="MSPileupObj should not be created")
+        except Exception as exp:
+            self.logger.warning("expected exception %s", str(exp))
+
+        # test correct record
+        trec = {'DN': 'bla', 'containerFraction': 0.5, 'customDID': 'customDID', 'updateTime': int(time.time())}
+        data.update({'transition': [trec]})
+        try:
+            MSPileupObj(data, validRSEs=expectedRSEs)
+        except Exception as exp:
+            self.logger.warning("expected exception %s", str(exp))
+
     def testWrongMSPileupObj(self):
         """
         Unit test for incorrect MSPileupObj data
@@ -87,7 +152,7 @@ class MSPileupObjTest(unittest.TestCase):
             'expectedRSEs': 'expectedRSEs',
             'fullReplicas': 'fullReplicas',
             'campaigns': 'campaigns',
-            'containerFraction': 0,
+            'containerFraction': 1,
             'replicationGrouping': "",
             'active': True,
             'pileupSize': 0,

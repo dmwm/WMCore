@@ -25,7 +25,7 @@ class MSPileupMonitoringTest(unittest.TestCase):
             'currentRSEs': rses,
             'fullReplicas': 1,
             'campaigns': campaigns,
-            'containerFraction': 0.0,
+            'containerFraction': 1.0,
             'replicationGrouping': "ALL",
             'active': True,
             'pileupSize': 0,

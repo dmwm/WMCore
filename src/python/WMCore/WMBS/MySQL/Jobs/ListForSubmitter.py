@@ -9,6 +9,12 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 
 class ListForSubmitter(DBFormatter):
+    """
+    _ListForSubmitter_
+
+    List the available jobs in WMBS order by descending subscription priority,
+    descending workflow priority, and ascending workflow ID.
+    """
     sql = """SELECT wmbs_job.id AS id,
                     wmbs_job.name AS name,
                     wmbs_job.cache_dir AS cache_dir,
@@ -34,7 +40,7 @@ class ListForSubmitter(DBFormatter):
              ORDER BY
                wmbs_sub_types.priority DESC,
                wmbs_workflow.priority DESC,
-               wmbs_workflow.id DESC"""
+               wmbs_workflow.id ASC"""
 
     limit_sql = " limit %d"
 

@@ -139,7 +139,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
             'currentRSEs': self.validRSEs,
             'fullReplicas': fullReplicas,
             'campaigns': campaigns,
-            'containerFraction': 0.0,
+            'containerFraction': 1.0,
             'replicationGrouping': "ALL",
             'active': True,
             'pileupSize': 0,
@@ -258,7 +258,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         # e.g. /Cosmics/ComissioningHI-PromptReco-v1/RECO dataset
         pname = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
         data = dict(self.data)
-        data['pileupName'] = self.pname+'CUSTOM'
+        data['pileupName'] = self.pname + 'CUSTOM'
         data['customName'] = pname
         self.mgr.createPileup(data, self.validRSEs)
 

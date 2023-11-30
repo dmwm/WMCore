@@ -19,6 +19,8 @@ Description: MSPileupObj module provides MSPileup data structure:
     "active": boolean, (mandatory)
     "pileupSize": integer, current size of the pileup in bytes (service-based)
     "customName": string, custom container DID (optional)
+    "transition": [{'updateTime': 123, 'containerFraction': 0.5, 'customDID': 'blah', 'DN': 'blah2'}, ...]
+                  list of transition records for partial data placement
     "ruleIds: list of strings (rules) used to lock the pileup id (service-based)
 }
 
@@ -28,6 +30,7 @@ The data flow should be done via list of objects, e.g.
 
 # system modules
 import json
+import time
 
 # WMCore modules
 from Utils.Timers import gmtimeSeconds
@@ -61,6 +64,7 @@ class MSPileupObj():
             'active': pdict['active'],
             'pileupSize': pdict.get('pileupSize', 0),
             'customName': pdict.get('customName', ''),
+            'transition': pdict.get('transition', []),
             'ruleIds': pdict.get('ruleIds', [])}
         valid, msg = self.validate(self.data)
         if not valid:
@@ -124,8 +128,12 @@ class MSPileupObj():
                 msg = f"replicationGrouping value {val} is neither of ['DATASET', 'ALL']"
                 self.logger.error(msg)
                 return False, msg
-            if key == 'containerFraction' and (val > 1 or val < 0):
-                msg = f"containerFraction value {val} outside [0,1] range"
+            if key == 'containerFraction' and (val > 1 or val <= 0):
+                msg = f"containerFraction value {val} outside (0,1] range"
+                self.logger.error(msg)
+                return False, msg
+            if key == 'transition' and not self.validateTransitionRecord(val, pdict):
+                msg = f"transition record {val} is invalid"
                 self.logger.error(msg)
                 return False, msg
             if key in ('expectedRSEs', 'currentRSEs') and not self.validateRSEs(val):
@@ -137,6 +145,33 @@ class MSPileupObj():
                 self.logger.error(msg)
                 return False, msg
         return True, msg
+
+    def validateTransitionRecord(self, records, pdoc):
+        """
+        Validate given transition records
+
+        :param records: transition records
+        :param pdoct: pileup document
+        :return: boolean
+        """
+        for record in records:
+            keys = ['updateTime', 'customDID', 'DN', 'containerFraction']
+            for key in keys:
+                if key not in record:
+                    self.logger.error("key '%s' is not present in transition record %s", key, record)
+                    return False
+                val = record[key]
+                if key == 'updateTime' and (val < pdoc['insertTime'] or val > time.time()):
+                    # the update time should be in range between pileup insert time and now
+                    self.logger.error("wrong value '%s' for updateTime in transition record %s", val, record)
+                    return False
+                if key in ['customDID', 'DN'] and not isinstance(val, str):
+                    self.logger.error("wrong data-type of value '%s' for {key} in transition record %s", val, record)
+                    return False
+                if key == 'containerFraction' and (val > 1 or val <= 0):
+                    self.logger.error("wrong value '%s' for containerFraction in transition record %s", val, record)
+                    return False
+        return True
 
     def validateRSEs(self, rseList):
         """
@@ -177,5 +212,6 @@ def schema():
            'active': (False, bool),
            'pileupSize': (0, int),
            'customName': ('', str),
+           'transition': ([], list),
            'ruleIds': ([], list)}
     return doc

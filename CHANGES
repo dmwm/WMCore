@@ -1,3 +1,13 @@
+2.2.6rc3 to 2.2.6rc4:
+  - Introduce transition attribute in MSPileup record (Valentin Kuznetsov) #11802
+  - New test campaigns added to parseUnifiedCampaigns (Alan Malta Rodrigues) #11806
+  - Give priority to older workflows when fetching from database for JobSubmitter (German Giraldo) #11804
+  - Ignore hidden vscode directory - for VSCode IDE (Alan Malta Rodrigues) #11795
+  - Initial implementation for WorkflowUpdater component (Alan Malta Rodrigues) #11795
+  - Deployment related changes to support component WorkflowUpdater (Alan Malta Rodrigues) #11795
+  - Make DBS3Upload slightly more verbose (Alan Malta Rodrigues) #11768
+
+
 2.2.6rc2 to 2.2.6rc3:
   - Add support for customName in MSPileup (Valentin Kuznetsov) #11765
   - Handle gfal exceptions while listing baseDirEntry && Avoid extra stat operations during recursion. (#11794) (Todor Ivanov) #11794

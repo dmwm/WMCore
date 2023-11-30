@@ -35,6 +35,6 @@ class ListForSubmitter(MySQLListForSubmitter):
                ORDER BY
                  wmbs_sub_types.priority DESC,
                  wmbs_workflow.priority DESC,
-                 wmbs_workflow.id DESC)"""
+                 wmbs_workflow.id ASC)"""
 
     limit_sql = " WHERE ROWNUM <= %d"

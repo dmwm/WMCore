@@ -21,7 +21,7 @@ class MSPileupTest(unittest.TestCase):
         """setup unit test class"""
         self.validRSEs = ['rse1']
         msConfig = {'reqmgr2Url': 'http://localhost',
-                    'rucioAccount': 'wmcore_mspileup',
+                    'rucioAccount': 'wmcore_pileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
                     'validRSEs': self.validRSEs,

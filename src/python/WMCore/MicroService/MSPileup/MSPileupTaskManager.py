@@ -69,6 +69,8 @@ class MSPileupTaskManager(MSCore):
             self.mgr.activeTask(marginSpace=self.marginSpace)
         with CodeTimer("### inactiveTask", logger=self.logger):
             self.mgr.inactiveTask()
+        with CodeTimer("### partialPileupTask", logger=self.logger):
+            self.mgr.partialPileupTask()
         with CodeTimer("### cleanupTask", logger=self.logger):
             self.mgr.cleanupTask(self.cleanupDaysThreshold)
         with CodeTimer("### cmsMonitTask", logger=self.logger):

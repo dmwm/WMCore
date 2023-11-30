@@ -221,7 +221,7 @@ class Rucio(object):
                 for item in self.cli.list_dataset_replicas(kwargs["scope"], did["name"], deep=kwargs['deep']):
                     resultDict.setdefault(item['name'], [])
                     if item['state'].upper() == 'AVAILABLE':
-                        resultDict[item['name']].append(item['rse'])            
+                        resultDict[item['name']].append(item['rse'])
         else:
             for item in self.cli.list_dataset_replicas_bulk(inputDids):
                 resultDict.setdefault(item['name'], [])
@@ -244,7 +244,7 @@ class Rucio(object):
         See here for documentation of the upstream Rucio API: https://rucio.readthedocs.io/en/latest/api/rse.html
         :param site: a Rucio RSE, i.e. a site name in standard CMS format like 'T1_UK_RAL_Disk' or  'T2_CH_CERN'
         :param lfns: one LFN or a list of LFN's, does not need to correspond to actual files and could be a top level directory
-                      like ['/store/user/rucio/jdoe','/store/data',...] or the simple '/store/data' 
+                      like ['/store/user/rucio/jdoe','/store/data',...] or the simple '/store/data'
         :param protocol: If the RSE supports multiple access protocols, a preferred protocol can be selected via this,
                          otherwise the default one for the site will be selected. Example: 'gsiftp' or 'davs'
                          this is what is called "scheme" in the RUCIO API (we think protocol is more clear)
@@ -663,6 +663,22 @@ class Rucio(object):
             self.logger.error("Exception getting rule id: %s. Error: %s", ruleId, str(ex))
         return res
 
+    def updateRule(self, ruleId, opts):
+        """
+        Update rule information for a given rule id
+        :param ruleId: string with the rule id
+        :param opts: dictionary, rule id options passed to Rucio
+        :return: boolean status of update call
+        """
+        status = None
+        try:
+            status = self.cli.update_replication_rule(ruleId, opts)
+        except RuleNotFound:
+            self.logger.error("Cannot find any information for rule id: %s", ruleId)
+        except Exception as ex:
+            self.logger.error("Exception updating rule id: %s. Error: %s", ruleId, str(ex))
+        return status
+
     def deleteRule(self, ruleId, purgeReplicas=False):
         """
         _deleteRule_
@@ -757,7 +773,6 @@ class Rucio(object):
             msg = "Error retrieving attributes for RSE: {}. Error: {}".format(rse, str(exc))
             raise WMRucioException(msg)
         return attrs.get('requires_approval', False)
-
 
     def isContainer(self, didName, scope='cms'):
         """
@@ -925,17 +940,17 @@ class Rucio(object):
         rsesByBlocks = {}
         for block in blockNames:
             rsesByBlocks.setdefault(block, set())
-            ### FIXME: feature request made to the Rucio team to support bulk operations:
-            ### https://github.com/rucio/rucio/issues/3982
+            # FIXME: feature request made to the Rucio team to support bulk operations:
+            # https://github.com/rucio/rucio/issues/3982
             for blockLock in self.cli.get_dataset_locks(kwargs['scope'], block):
                 if not returnTape and isTapeRSE(blockLock['rse']):
                     continue
                 if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
                     rsesByBlocks[block].add(blockLock['rse'])
 
-        ### The question now is:
-        ###   1. do we want to have a full copy of the container in the same RSEs (grouping=A)
-        ###   2. or we want all locations holding at least one block of the container (grouping=D)
+        # The question now is:
+        #   1. do we want to have a full copy of the container in the same RSEs (grouping=A)
+        #   2. or we want all locations holding at least one block of the container (grouping=D)
         if kwargs.get('grouping') == 'A':
             firstRun = True
             for _block, rses in viewitems(rsesByBlocks):
@@ -1219,7 +1234,7 @@ class Rucio(object):
         else:
             finalRSEs = list(finalRSEs)
         self.logger.info("Container: %s with block-based location at: %s, and final location: %s",
-                          kwargs['name'], commonBlockRSEs, finalRSEs)
+                         kwargs['name'], commonBlockRSEs, finalRSEs)
         return finalRSEs
 
     def getRSEUsage(self, rse):

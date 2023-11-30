@@ -7,6 +7,7 @@ Description: perform different set of tasks over MSPileup data
 
 # system modules
 import time
+import math
 import asyncio
 
 # WMCore modules
@@ -15,6 +16,8 @@ from WMCore.MicroService.MSPileup.DataStructs.MSPileupReport import MSPileupRepo
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.MicroService.Tools.PycurlRucio import getPileupContainerSizesRucio, getRucioToken
 from WMCore.MicroService.MSPileup.MSPileupMonitoring import flatDocuments
+from WMCore.MicroService.MSPileup.MSPileupError import MSPileupSchemaError
+from Utils.Timers import gmtimeSeconds
 
 
 class MSPileupTasks():
@@ -66,7 +69,9 @@ class MSPileupTasks():
             docs = self.mgr.getPileup(spec)
             rucioAuthUrl = self.rucioClient.rucioParams.get('auth_host', '')
             rucioHostUrl = self.rucioClient.rucioParams.get('rucio_host', '')
-            rucioToken, _tokenValidity = getRucioToken(rucioAuthUrl, self.rucioAccount)
+            rucioToken, tokenValidity = getRucioToken(rucioAuthUrl, self.rucioAccount)
+            msg = f"Rucio token {rucioToken} with validity {tokenValidity}"
+            self.logger.info(msg)
             rucioScope = self.rucioScope
             cmsContainers = []
             customContainers = []
@@ -100,17 +105,131 @@ class MSPileupTasks():
             self.logger.exception(msg)
         return cmsDict, cusDict
 
+    def partialPileupTask(self):
+        """
+        Execute partial pileup placement according to the following logic:
+
+        - get rucio DIDs (datasets, in CMS name blocks) for our pileup document
+        - get portion of DIDs based on ceil(containerFraction * num_rucio_datasets)
+        - create new container DID in Rucio via Rucio wrapper createContainer API
+          which calls rucio CLI add_container
+        - update MSPileup JSON with
+          - create new custom Name as pileup+extention
+          - add new transition record and update MSPileup document
+        - we call attachDIDs Rucio wrapper API with our set of DIDs and rses from pileup document
+        - create new rules for custom DID via provided rseExpression
+        - set expiration date (to be 24h) for already existing ruleIds from pileup document
+        - add new ruleIds to pileup document
+
+        :return: None
+        """
+        spec = {'active': True}
+        docs = self.mgr.getPileup(spec)
+        for doc in docs:
+            self.logger.info("partialPileupTask process %s", doc)
+            fraction = doc['containerFraction']
+
+            # check previous fraction value and proceed only if has changed
+            previousFraction = 1.0
+            transition = doc.get('transition', [])
+            if transition:
+                previousFraction = transition[-1]['containerFraction']
+            if previousFraction == fraction:
+                # do nothing since there is no transition, i.e. skip this record
+                self.logger.info("Pileup name %s has no container fractions changes", doc['pileupName'])
+                continue
+
+            # get rucio DIDs (datasets, in CMS name blocks) for our pileup document as following:
+            # - when container fraction is decreasing: new container is a subset of customName
+            # - when container fraction is increasing: new container is a superset of customName + subset of pileupName
+
+            # usage of block names defined in this logic:
+            # https://github.com/dmwm/WMCore/pull/11807#pullrequestreview-1786778783
+            pname = doc['pileupName']
+            blockNames = self.rucioClient.getBlocksInContainer(pname)
+            if previousFraction < fraction:
+                # if it increasing
+                # use EVERY single block defined in the custom dataset plus blocks from the standard pileup
+                cname = doc.get('customName', '')
+                if cname:
+                    blockNames = self.rucioClient.getBlocksInContainer(cname) + blockNames
+            else:
+                # if it is decreasing
+                # instead of using random blocks from the standard pileup dataset (pileupName)
+                # we should use it from the custom dataset (customName) - if existent
+                cname = doc.get('customName', '')
+                if cname:
+                    blockNames = self.rucioClient.getBlocksInContainer(cname)
+
+            # get portion of DIDs based on ceil(containerFraction * num_rucio_datasets)
+            portion = blockNames[:math.ceil(fraction * len(blockNames))]
+            self.logger.info("For pileup document %s take portion %s", doc, portion)
+
+            # create new container DID in Rucio for our custom name
+            self.rucioClient.createContainer(doc['customName'], scope=self.customRucioScope)
+
+            # we call attachDIDs Rucio wrapper API with our set of DIDs
+            newRules = []
+            for rse in doc['currentRSEs']:
+                self.rucioClient.attachDIDs(rse, doc['customName'], portion, scope=self.customRucioScope)
+
+                # create new rule for custom DID using pileup document rse
+                newRules += self.rucioClient.createReplicationRules(portion, rse)
+
+            self.logger.info("newRules %s", newRules)
+            # set expiration date (to be 24h) for already existing ruleIds from pileup document
+            for rid in doc['ruleIds']:
+                # set expiration date to be 24h ahead of right now
+                opts = {'lifetime': 24 * 60 * 60}
+                self.rucioClient.updateRule(rid, opts)
+
+            # update pileup document
+            if newRules:
+                # remove duplicate rules
+                newRules = set(newRules)
+                try:
+                    # update rules
+                    doc['ruleIds'] += newRules
+
+                    # update transition record of the pileup document, see logic:
+                    # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+
+                    # we should always have transition record(s)
+                    transition = doc['transition']
+                    # take user DN from last record
+                    userDN = transition[-1]['DN']
+                    prevTranRecord = transition[-1]
+                    # generate new custom name
+                    cname = prevTranRecord['customDID']
+                    transitionRecord = {'containerFraction': fraction,
+                                        'customDID': cname,
+                                        'updateTime': gmtimeSeconds(),
+                                        'DN': userDN}
+                    prevTranRecord.update(transitionRecord)
+                    transition[-1] = prevTranRecord
+                    # add new transition record and update custom name
+                    doc['transition'] = transition
+                    doc['customName'] = cname
+                    self.logger.info("update pileup document %s", doc)
+
+                    # update MSPileup document in MongoDB
+                    self.mgr.updatePileup(doc, rseList=newRules)
+                    self.logger.info("Pileup name had its fraction updated in the partialPileupTask function. record=%s", doc)
+                except Exception as exp:
+                    msg = f"Failed to update MSPileup document, {exp}"
+                    self.logger.exception(msg)
+                    err = MSPileupSchemaError(doc, msg)
+                    self.logger.error(err)
+
     def cleanupTask(self, cleanupDaysThreshold):
         """
         Execute cleanup task according to the following logic:
-
         1. Fetch documents from backend database for the following conditions
            - active=False, and
            - empty ruleIds list; and
            - empty currentRSEs; and
            document has been deactivated for a while (deactivatedOn=XXX),
         2. For those documents which are fetched make delete call to backend database
-
         :param timeThreshold: time threshold in days which will determine document clean-up readiness
         """
         self.logger.info("====> Executing cleanupTask method...")

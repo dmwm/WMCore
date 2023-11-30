@@ -25,7 +25,7 @@ class MSPileupTest(EmulatedUnitTestCase):
         self.validRSEs = ['rse1', 'rse2']
         msConfig = {'reqmgr2Url': 'http://localhost',
                     'authz_key': '123',
-                    'rucioAccount': 'wmcore_mspileup',
+                    'rucioAccount': 'wmcore_pileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
                     'mongoDB': 'msPileupDB',

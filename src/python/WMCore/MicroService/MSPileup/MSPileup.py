@@ -12,6 +12,7 @@ from WMCore.MicroService.MSCore.MSAuth import MSAuth
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.DataStructs.DefaultStructs import PILEUP_REPORT
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
+from WMCore.MicroService.MSPileup.MSPileupError import MSPileupNoKeyFoundError
 
 
 class MSPileup(MSCore):
@@ -35,6 +36,15 @@ class MSPileup(MSCore):
         summary = dict(PILEUP_REPORT)
         summary.update({'thread_id': current_thread().name})
         return summary
+
+    def userDN(self):
+        """
+        Return user DN from authentication manager
+        :return: string
+        """
+        user = self.authMgr.userInfo()
+        dn = user.get('dn', 'Unknown')
+        return dn
 
     def getPileup(self, **kwargs):
         """
@@ -92,24 +102,34 @@ class MSPileup(MSCore):
         """
         self.authMgr.authorizeApiAccess('ms-pileup', 'create')
         rseNames = self.rucio.evaluateRSEExpression(self.diskRSEExpr, useCache=True)
-        return self.dataMgr.createPileup(pdict, rseNames)
+        return self.dataMgr.createPileup(pdict, rseNames, userDN=self.userDN())
 
     def updatePileup(self, pdict):
         """
         MSPileup update API to update corresponding pileup document in data layer.
 
-        :param pdict: input MSPilup data dictionary
+        :param pdict: input MSPileup data dictionary, e.g. partial pileup spec
+        {"containerFraction": float, "pileupName": string}.
         :return: results of MSPileup data layer (list of dicts)
         """
         self.authMgr.authorizeApiAccess('ms-pileup', 'update')
+        # fetch pileup doc and update it
+        records = self.queryDatabase({'pileupName': pdict['pileupName']})
+        if len(records) != 1:
+            err = MSPileupNoKeyFoundError(pdict, f'No document found for {pdict} query')
+            return [err.error()]
+        doc = records[0]
+
+        # update pilup data
+        doc.update(pdict)
         rseNames = self.rucio.evaluateRSEExpression(self.diskRSEExpr, useCache=True)
-        return self.dataMgr.updatePileup(pdict, rseNames, validate=True)
+        return self.dataMgr.updatePileup(doc, rseNames, validate=True, userDN=self.userDN())
 
     def deletePileup(self, spec):
         """
         MSPileup delete API to delete corresponding pileup document in data layer.
 
-        :param pdict: input MSPilup data dictionary
+        :param pdict: input MSPileup data dictionary
         :return: results of MSPileup data layer (list of dicts)
         """
         self.authMgr.authorizeApiAccess('ms-pileup', 'delete')

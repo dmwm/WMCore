@@ -98,7 +98,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         self.logger = logging.getLogger()
 
         # setup rucio client
-        self.rucioAccount = 'ms-pileup'
+        self.rucioAccount = 'wmcore-pileup'
         self.hostUrl = 'http://cms-rucio.cern.ch'
         self.authUrl = 'https://cms-rucio-auth.cern.ch'
         creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
@@ -114,7 +114,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
 
         # setup pileup data manager
         msConfig = {'reqmgr2Url': 'http://localhost',
-                    'rucioAccount': 'wmcore_mspileup',
+                    'rucioAccount': 'wmcore_pileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
                     'mongoDB': 'msPileupDB',

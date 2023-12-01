@@ -32,10 +32,6 @@ def getAverageStdDev(numList):
     standard deviation.
     """
 
-    if len(numList) < 0:
-        # Nothing to do here
-        return 0.0, 0.0
-
     total   = 0.0
     average = 0.0
     stdBase = 0.0

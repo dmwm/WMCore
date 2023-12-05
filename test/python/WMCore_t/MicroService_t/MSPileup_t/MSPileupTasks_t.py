@@ -6,6 +6,7 @@ Description: Unit tests for MicorService/MSPileup/MSPileupTasks.py module
 
 # system modules
 import os
+import time
 import logging
 import unittest
 
@@ -20,6 +21,7 @@ from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
 from WMCore.MicroService.MSPileup.MSPileupMonitoring import MSPileupMonitoring
 from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.Services.Rucio.Rucio import Rucio
+from Utils.Timers import gmtimeSeconds
 
 
 class TestRucioClient(Client):
@@ -98,9 +100,9 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         self.logger = logging.getLogger()
 
         # setup rucio client
-        self.rucioAccount = 'wmcore-pileup'
-        self.hostUrl = 'http://cms-rucio.cern.ch'
-        self.authUrl = 'https://cms-rucio-auth.cern.ch'
+        self.rucioAccount = 'wmcore_pileup'
+        self.hostUrl = 'http://cms-rucio-int.cern.ch'
+        self.authUrl = 'https://cms-rucio-auth-int.cern.ch'
         creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                  "client_key": os.getenv("X509_USER_KEY", "Unknown")}
         configDict = {'rucio_host': self.hostUrl, 'auth_host': self.authUrl,
@@ -223,6 +225,11 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         pname = '/MinimumBias/ComissioningHI-v1/RAW'
         data = dict(self.data)
         data['pileupName'] = pname
+
+        # add transition record as it now requires for update API
+        trec = {'DN': 'localhost-test', 'containerFraction': 1, 'customDID': 'customDID', 'updateTime': gmtimeSeconds()}
+        data.update({'transition': [trec]})
+
         self.mgr.createPileup(data, self.validRSEs)
 
         # now create mock rucio client
@@ -260,6 +267,11 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         data = dict(self.data)
         data['pileupName'] = self.pname + 'CUSTOM'
         data['customName'] = pname
+
+        # add transition record as it now requires for update API
+        trec = {'DN': 'localhost-test', 'containerFraction': 1, 'customDID': 'customDID', 'updateTime': gmtimeSeconds()}
+        data.update({'transition': [trec]})
+
         self.mgr.createPileup(data, self.validRSEs)
 
         # now create mock rucio client
@@ -285,6 +297,167 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
             if 'update pileup' in doc['entry']:
                 found = True
         self.assertEqual(found, True)
+
+    def testPartialPileupTask(self):
+        """
+        Unit test for partialPileupTask with RucioMockApi and customName DID
+        """
+        self.logger.info("---------- testPartialPileupTask ----------")
+
+        # clean up MongoDB for this test
+        for doc in self.mgr.getPileup({}):
+            self.mgr.deletePileup(doc)
+
+        # create mock rucio client
+        rucioClient = MockRucioApi(self.rucioAccount, hostUrl=self.hostUrl, authUrl=self.authUrl)
+
+        # create new pileup document
+        # step 1 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        pname = '/primary/processed-test/PREMIX'
+        self.logger.info("### step 1: create partial pileup document %s", pname)
+        data = dict(self.data)
+        data['pileupName'] = pname
+        self.mgr.createPileup(data, self.validRSEs)
+
+        # sleep a little bit between creation and updated document
+        time.sleep(1)
+
+        # at this point we should have a document with transition record
+        # step 2 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        spec = {'pileupName': pname}
+        res = self.mgr.getPileup(spec)
+        self.logger.info("### step 2: getPileup %s", res)
+        self.assertEqual(len(res), 1)
+        record = res[0]
+        self.assertEqual(record['customName'], '')
+        self.assertEqual(record['containerFraction'], 1.0)
+        self.assertEqual(len(record['transition']), 1)
+        trRec = record['transition'][0]
+        self.assertEqual(trRec['customDID'], pname)
+        self.assertEqual(trRec['containerFraction'], 1.0)
+
+        # step 3 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        obj = MSPileupTasks(self.mgr, self.monMgr, self.logger, self.rucioAccount, rucioClient)
+        obj.partialPileupTask()
+
+        # at this point nothing should changed with pileup document
+        res = self.mgr.getPileup(spec)
+        self.logger.info("### step 3: getPileup %s", res)
+        self.assertEqual(len(res), 1)
+        record = res[0]
+        self.assertEqual(record['customName'], '')
+        self.assertEqual(record['containerFraction'], 1.0)
+        self.assertEqual(len(record['transition']), 1)
+        trRec = record['transition'][0]
+        self.assertEqual(trRec['customDID'], pname)
+        self.assertEqual(trRec['containerFraction'], 1.0)
+
+        # step 4 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # add new spec with transition change
+        spec = {'pileupName': pname, 'containerFraction': 0.5}
+        res = self.mgr.updatePileup(spec)
+        self.logger.info("### step 4: updatePileup %s", res)
+        self.assertEqual(len(res), 0)
+
+        # step 5 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # after this step the last transition record should be updated
+
+        # at this point nothing should changed with pileup document
+        res = self.mgr.getPileup(spec)
+        self.logger.info("### step 5: getPileup %s", res)
+        self.assertEqual(len(res), 1)
+        record = res[0]
+
+        self.assertEqual(record['customName'], '')
+        self.assertEqual(record['containerFraction'], 0.5)
+        self.assertEqual(len(record['transition']), 2)
+        trRec = record['transition'][0]
+        self.assertEqual(trRec['customDID'], pname)
+        self.assertEqual(trRec['containerFraction'], 1.0)
+        trRec = record['transition'][1]
+        self.assertEqual(trRec['customDID'], pname + '-V1')
+        self.assertEqual(trRec['containerFraction'], 1.0)
+
+        # step 6 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # it should fetch new rules and update document accordingly since fraction has changed
+        obj.partialPileupTask()
+
+        # step 7 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # we should have updated customName, and last transition record fraction
+        spec = {'pileupName': pname}
+        res = self.mgr.getPileup(spec)
+        self.logger.info("### step 7: getPileup %s", res)
+        self.assertEqual(len(res), 1)
+        record = res[0]
+        self.assertEqual(record['customName'], pname + '-V1')
+        self.assertEqual(record['containerFraction'], 0.5)
+        self.assertEqual(len(record['transition']), 2)
+        trRec = record['transition'][0]
+        self.assertEqual(trRec['customDID'], pname)
+        self.assertEqual(trRec['containerFraction'], 1.0)
+        trRec = record['transition'][1]
+        self.assertEqual(trRec['customDID'], pname + '-V1')
+        self.assertEqual(trRec['containerFraction'], 0.5)
+
+        # step 8 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        spec = {'pileupName': pname, 'containerFraction': 0.75}
+        res = self.mgr.updatePileup(spec)
+        self.logger.info("### step 8: updatePileup %s", res)
+        self.assertEqual(len(res), 0)
+
+        # step 9 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # at this point we should have 3 transition records
+        res = self.mgr.getPileup(spec)
+        self.logger.info("### step 9: getPileup %s", res)
+        self.assertEqual(len(res), 1)
+        record = res[0]
+        self.assertEqual(record['customName'], pname + '-V1')
+        self.assertEqual(record['containerFraction'], 0.75)
+        self.assertEqual(len(record['transition']), 3)
+        trRec = record['transition'][0]
+        self.assertEqual(trRec['customDID'], pname)
+        self.assertEqual(trRec['containerFraction'], 1.0)
+        trRec = record['transition'][1]
+        self.assertEqual(trRec['customDID'], pname + '-V1')
+        self.assertEqual(trRec['containerFraction'], 0.5)
+        trRec = record['transition'][2]
+        self.assertEqual(trRec['customDID'], pname + '-V2')
+        self.assertEqual(trRec['containerFraction'], 0.5)
+
+        # step 10 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # it should fetch new rules and update document accordingly since fraction has changed
+        obj.partialPileupTask()
+
+        # step 11 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # here we should have new custom name, and updated contrainer fraction of last record
+        res = self.mgr.getPileup(spec)
+        self.logger.info("### step 11: getPileup %s", res)
+        self.assertEqual(len(res), 1)
+        record = res[0]
+        self.assertEqual(record['customName'], pname + '-V2')
+        self.assertEqual(record['containerFraction'], 0.75)
+        self.assertEqual(len(record['transition']), 3)
+        trRec = record['transition'][0]
+        self.assertEqual(trRec['customDID'], pname)
+        self.assertEqual(trRec['containerFraction'], 1.0)
+        trRec = record['transition'][1]
+        self.assertEqual(trRec['customDID'], pname + '-V1')
+        self.assertEqual(trRec['containerFraction'], 0.5)
+        trRec = record['transition'][2]
+        self.assertEqual(trRec['customDID'], pname + '-V2')
+        self.assertEqual(trRec['containerFraction'], 0.75)
+
+        # last check for transition records
+        for idx, rec in enumerate(record['transition']):
+            if idx == 0:
+                self.assertEqual(rec['customDID'], pname)
+                self.assertEqual(rec['containerFraction'], 1.0)
+            elif idx == 1:
+                self.assertEqual(rec['customDID'], pname + '-V1')
+                self.assertEqual(rec['containerFraction'], 0.5)
+            elif idx == 2:
+                self.assertEqual(rec['customDID'], pname + '-V2')
+                self.assertEqual(rec['containerFraction'], 0.75)
 
 
 if __name__ == '__main__':

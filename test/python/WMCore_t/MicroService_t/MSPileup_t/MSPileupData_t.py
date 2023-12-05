@@ -9,7 +9,7 @@ import time
 import unittest
 
 # WMCore modules
-from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys, getNewTimestamp
+from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys, getNewTimestamp, customDID
 from WMCore.MicroService.MSPileup.MSPileupError import MSPILEUP_SCHEMA_ERROR
 from Utils.Timers import encodeTimestamp, decodeTimestamp, gmtimeSeconds
 
@@ -21,7 +21,7 @@ class MSPileupTest(unittest.TestCase):
         """setup unit test class"""
         self.validRSEs = ['rse1']
         msConfig = {'reqmgr2Url': 'http://localhost',
-                    'rucioAccount': 'wmcore_pileup',
+                    'rucioAccount': 'wmcore_test',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
                     'validRSEs': self.validRSEs,
@@ -33,6 +33,20 @@ class MSPileupTest(unittest.TestCase):
                     'mongoDBPassword': None,
                     'mockMongoDB': True}
         self.mgr = MSPileupData(msConfig, skipRucio=True)
+
+    def testCustomDID(self):
+        """Test the customDID function"""
+        pname = "/abc/xyz/MINIAOD"
+        did = customDID(pname)
+        self.assertTrue(did == (pname + '-V1'))
+        did = customDID(did)
+        self.assertTrue(did == (pname + '-V2'))
+
+        # test more complex suffix
+        pname = "/abc/xyz/MINIAOD-V123"
+        did = customDID(pname)
+        expect = "/abc/xyz/MINIAOD-V124"
+        self.assertTrue(did == expect)
 
     def testStripKeys(self):
         """
@@ -117,6 +131,8 @@ class MSPileupTest(unittest.TestCase):
         results = self.mgr.getPileup(spec)
         doc = results[0]
         doc = stripKeys(doc, skeys)
+        # add transition record to original pdict document because it is added internally in createPileup API
+        pdict['transition'] = doc['transition']
         self.assertDictEqual(pdict, doc)
 
         doc.update({'pileupSize': 2})

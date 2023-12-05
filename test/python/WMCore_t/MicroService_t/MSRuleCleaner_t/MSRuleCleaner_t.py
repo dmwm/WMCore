@@ -333,6 +333,65 @@ class MSRuleCleanerTest(unittest.TestCase):
         with self.assertRaises(MSRuleCleanerArchivalSkip):
             self.msRuleCleaner.plineArchive.run(wflow)
 
+    def testPipelineArchiveStepChain(self):
+        # Test plineAgentCont
+        wflow = MSRuleCleanerWflow(self.stepChainReq)
+
+        # Try archival of a skipped workflow:
+        with self.assertRaises(MSRuleCleanerArchivalSkip):
+            self.msRuleCleaner.plineArchive.run(wflow)
+        self.msRuleCleaner.plineAgentBlock.run(wflow)
+        self.msRuleCleaner.plineAgentCont.run(wflow)
+
+        # Try archival of a cleaned workflow:
+        # NOTE: We should always expect an MSRuleCleanerArchivalSkip exception
+        #       here because the 'enableRealRunMode' flag is set to False
+        with self.assertRaises(MSRuleCleanerArchivalSkip):
+            self.msRuleCleaner.plineArchive.run(wflow)
+        expectedWflow = {'CleanupStatus': {'plineAgentBlock': True, 'plineAgentCont': True},
+                         'ForceArchive': False,
+                         'IncludeParents': False,
+                         'InputDataset': None,
+                         'IsArchivalDelayExpired': True,
+                         'IsClean': True,
+                         'IsLogDBClean': True,
+                        'OutputDatasets': [
+                            '/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/Integ_TestStep1-GENSIM_StepChain_Tasks_HG2011_Val_Todor_v1-v20/GEN-SIM',
+                            '/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/Integ_TestStep1-GENSIM_StepChain_Tasks_HG2011_Val_Todor_v1-v20/LHE',
+                            '/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/Integ_TestStep2-DIGI_StepChain_Tasks_HG2011_Val_Todor_v1-v20/GEN-SIM-RAW',
+                            '/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/Integ_TestStep3-RECO_StepChain_Tasks_HG2011_Val_Todor_v1-v20/AODSIM'],
+                         'ParentDataset': [],
+                         'ParentageResolved': False,
+                         'PlineMarkers': ['plineArchive',
+                                          'plineAgentBlock',
+                                          'plineAgentCont',
+                                          'plineArchive'],
+                         'RequestName': 'StepChain_Tasks_HG2011_Val_201029_112731_6371',
+                         'RequestStatus': 'aborted-completed',
+                         'RequestTransition': [{'DN': '', 'Status': 'new', 'UpdateTime': 1603967251},
+                                               {'DN': '', 'Status': 'assignment-approved', 'UpdateTime': 1603967253},
+                                               {'DN': '', 'Status': 'assigned', 'UpdateTime': 1603967254},
+                                               {'DN': '', 'Status': 'aborted', 'UpdateTime': 1604931587},
+                                               {'DN': '', 'Status': 'aborted-completed', 'UpdateTime': 1604931737}],
+                         'RequestType': 'StepChain',
+                         'SubRequestType': '',
+                         'RulesToClean': {'plineAgentBlock': [], 'plineAgentCont': []},
+                         'TargetStatus': 'aborted-archived',
+                         'TransferDone': False,
+                         'TransferTape': False,
+                         'TapeRulesStatus': [],
+                         'StatusAdvanceExpiredMsg': ("Not properly cleaned workflow: StepChain_Tasks_HG2011_Val_201029_112731_6371"
+                                                     " - 'ParentageResolved' flag set to false.\n"
+                                                     "Not properly cleaned workflow: StepChain_Tasks_HG2011_Val_201029_112731_6371\n"
+                                                     "Not properly cleaned workflow: StepChain_Tasks_HG2011_Val_201029_112731_6371"
+                                                     " - 'ParentageResolved' flag set to false.")}
+        self.assertDictEqual(wflow, expectedWflow)
+
+        # Try archival of an uncleaned workflow
+        wflow['CleanupStatus']['plineAgentBlock'] = False
+        with self.assertRaises(MSRuleCleanerArchivalSkip):
+            self.msRuleCleaner.plineArchive.run(wflow)
+
     def testRunning(self):
         result = self.msRuleCleaner._execute(self.reqRecords)
         self.assertEqual(result, (3, 2, 0, 0))

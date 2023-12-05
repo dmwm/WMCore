@@ -248,6 +248,7 @@ class MSRuleCleaner(MSCore):
                             number of properly cleaned requests
                             number of processed workflows
                             number of archived workflows
+                            number of forced archived workflows
         """
         # NOTE: The Input Cleanup, the Block Level Cleanup and the Archival
         #       Pipelines are executed sequentially in the above order.
@@ -302,13 +303,6 @@ class MSRuleCleaner(MSCore):
             msg = "Skipping cleanup step for workflow: %s - RequestType is %s."
             msg += " Will try to archive it directly."
             self.logger.info(msg, wflow['RequestName'], wflow['RequestType'])
-        elif wflow['RequestStatus'] == 'announced' and not wflow['ParentageResolved']:
-            # NOTE: We skip workflows which are not having 'ParentageResolved'
-            #       flag, but we still need some proper logging for them.
-            msg = "Skipping workflow: %s - 'ParentageResolved' flag set to false." % wflow['RequestName']
-            msg += " Will retry again in the next cycle."
-            self.logger.info(msg)
-            self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
         elif wflow['RequestStatus'] == 'announced' and not wflow['TransferDone']:
             # NOTE: We skip workflows which have not yet finalised their TransferStatus
             #       in MSOutput, but we still need some proper logging for them.
@@ -569,6 +563,10 @@ class MSRuleCleaner(MSCore):
         :return:            The workflow object
         """
         # Make all the needed checks before trying to archive
+        if not (wflow['ParentageResolved'] or wflow['ForceArchive']):
+            msg = f"Not properly cleaned workflow: {wflow['RequestName']} - 'ParentageResolved' flag set to false."
+            if self._checkStatusAdvanceExpired(wflow, additionalInfo=msg):
+                self.alertStatusAdvanceExpired(wflow)
         if not (wflow['IsClean'] or wflow['ForceArchive']):
             msg = "Not properly cleaned workflow: %s" % wflow['RequestName']
             if self._checkStatusAdvanceExpired(wflow, additionalInfo=msg):

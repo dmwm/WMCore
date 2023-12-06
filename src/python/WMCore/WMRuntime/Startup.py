@@ -36,6 +36,9 @@ if __name__ == '__main__':
     Bootstrap.createInitialReport(job=job, reportName=reportName)
     monitor = Bootstrap.setupMonitoring(logName=reportName)
 
+    logging.info("Creating WM runtime information json")
+    Bootstrap.createWMRuntimeJson(job)
+
     logging.info("Building task at directory: %s", os.getcwd())
     task.build(os.getcwd())
 

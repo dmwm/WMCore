@@ -13,6 +13,7 @@ import pickle
 import socket
 import sys
 import threading
+import json
 from logging.handlers import RotatingFileHandler
 
 import WMCore.FwkJobReport.Report as Report
@@ -23,7 +24,8 @@ from WMCore.WMRuntime import StepSpace
 from WMCore.WMRuntime import TaskSpace
 from WMCore.WMRuntime.Watchdog import Watchdog
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-
+from WMCore.WMRuntime.Tools.Scram import getPlatformMachine
+from  WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 
 class BootstrapException(WMException):
     """ An awesome exception """
@@ -206,6 +208,63 @@ def loadTask(job):
         raise BootstrapException(msg)
     return task
 
+def createWMRuntimeJson(path):
+    """
+    Create a json with runtime information in the following form below:
+    {
+     "workflow_type: "Stepchain",  # string with the request type
+     "number_of_cmsRuns": 2,  # an integer >= 0
+     "worker_arch": "X86_64",  # string with the architecture of the worker node
+     "worker_os": "rhel9",  # string with the OS of the worker node
+     "cmsRun_params": [{
+         "step": "cmsRun1",  # string with the relevant step
+         "input_files": [string of input LFNs or a single local file],
+         "output_files": [ordered string of output local files],
+         "output_datatiers": [ordered string of output local files datatiers],
+         "output_saved": [ordered boolean saying whether output files are announced in the workflow or not]
+         },
+         {
+         "step": "cmsRun2",  # string with the relevant step
+         # and so on...
+         },
+         # any new step appends step data to this list
+     ]
+     } 
+     :param path: path to write the json
+     :return
+    """
+    # Load workflow-level information
+    workload = loadWorkload()
+    job = loadJobDefinition()
+    task = loadTask(job)
+    # Create dictionary to collect runtime info
+    runtimeInfo = {}
+    runtimeInfo['workflow_type'] = workload.getRequestType()
+    runtimeInfo['number_of_cmsRuns'] = len(task.listAllStepNames(cmsRunOnly=True))
+    runtimeInfo['worker_arch'] = getPlatformMachine()
+    runtimeInfo['worker_os'] = BasePlugin.scramArchtoRequiredOS(task.getScramArch())
+    cmsRun_params = []
+    # Get information per cmsRun step
+    for cmsswStep in task.listAllStepNames(cmsRunOnly=True):
+        step = task.getStepHelper(cmsswStep)
+        output_modules = step.listOutputModules()
+        dataTiers = []
+        outputFilenames = []
+        inputFilenames = []
+        # Collect output files per module
+        for moduleName in output_modules:
+            outputModule = step.getOutputModule(moduleName)
+            dataTiers.append(outputModule.dataTier)
+            output_filename = "%s/%s.root".format(outputModule.lfnBase, moduleName)
+            outputFilenames.append(output_filename)
+        # Collect input files
+        #inputModule = step.data.input.inputOutputModule
+        #inputStepName = step.data.input.inputStepName
+        #inputFilenames.append("%s/%s.root".format(inputStepName, inputModule))
+    with open("runtimeInfo.json", "w") as f:
+        json.dump(runtimeInfo, f)
+
+    return
 
 def createInitialReport(job, reportName):
     """

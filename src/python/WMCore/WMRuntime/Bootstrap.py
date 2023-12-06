@@ -13,6 +13,7 @@ import pickle
 import socket
 import sys
 import threading
+import json
 from logging.handlers import RotatingFileHandler
 
 import WMCore.FwkJobReport.Report as Report
@@ -23,7 +24,8 @@ from WMCore.WMRuntime import StepSpace
 from WMCore.WMRuntime import TaskSpace
 from WMCore.WMRuntime.Watchdog import Watchdog
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-
+from WMCore.WMRuntime.Tools.Scram import getPlatformMachine
+from  WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 
 class BootstrapException(WMException):
     """ An awesome exception """
@@ -206,6 +208,101 @@ def loadTask(job):
         raise BootstrapException(msg)
     return task
 
+def createWMRuntimeJson(path):
+    """
+    Create a json with runtime information in the following form below:
+    {
+     "workflow_type: "Stepchain",  # string with the request type
+     "number_of_cmsRuns": 2,  # an integer >= 0
+     "worker_arch": "X86_64",  # string with the architecture of the worker node
+     "worker_os": "rhel9",  # string with the OS of the worker node
+     "job_type": "Production", # string with job type information: Production/Processing, Merge, LogCollect, etc.
+     "cmsRun_params": [{
+         "step": "cmsRun1",  # string with the relevant step
+         "input_files": [string of input LFNs or a single local file],
+         "output_files": [ordered string of output local files],
+         "output_datatiers": [ordered string of output local files datatiers],
+         "transient_output": [ordered boolean saying whether output files are announced in the workflow or not],
+         "output_files_unmerged_base": [ordered string with lfnBase],
+         "output_files_unmerged_base": [ordered string with mergedLFNBase info]
+         },
+         {
+         "step": "cmsRun2",  # string with the relevant step
+         # and so on...
+         },
+         # any new step appends step data to this list
+     ]
+     } 
+     :param path: path to write the json
+     :return
+    """
+    # Load workflow-level information
+    workload = loadWorkload()
+    job = loadJobDefinition()
+    task = loadTask(job)
+    # Create dictionary to collect runtime info
+    runtimeInfo = {}
+    runtimeInfo['workflow_type'] = workload.getRequestType()
+    runtimeInfo['number_of_cmsRuns'] = len(task.listAllStepNames(cmsRunOnly=True))
+    runtimeInfo['worker_arch'] = getPlatformMachine()
+    runtimeInfo['worker_os'] = BasePlugin.scramArchtoRequiredOS(task.getScramArch())
+    runtimeInfo['job_type'] = job.get('jobType', None)
+    cmsRun_params = []
+    # Jobs with MCFakeFile means no input files
+    MCFakeFile=False
+    if len(job['input_files']) == 1:
+        if job['input_files'][0]['lfn'].startswith("MCFakeFile"):
+            MCFakeFile=True
+    # Get information per cmsRun step
+    for cmsswStep in task.listAllStepNames(cmsRunOnly=True):
+        cmsRunParam = {}
+        step = task.getStepHelper(cmsswStep)
+        output_modules = step.listOutputModules()
+        keepOutput = getattr(step.data.output, 'keep')
+        # Collect input files
+        inputFileNames = []
+        if MCFakeFile:
+            # For chained processes, point to previous step output
+            chained = getattr(step.data.input, 'chainedProcessing', False)
+            if chained:
+                inputModule = getattr(step.data.input, 'inputOutputModule', None)
+                inputStepName = getattr(step.data.input, 'inputStepName', None)
+                inputFileNames.append("../{}/{}.root".format(inputStepName, inputModule))
+        else:
+            # Get input files from job package information
+            for inputFiles in job.get('input_files', []):
+                inputFileNames.append(inputFiles['lfn'])
+
+        # Collect output files per module
+        outputFileNames = []
+        outputFilesDataTiers = []
+        outputFilesTransient = []
+        outputFilesLFNBase = []
+        outputFilesMergedLFNBase = []
+        for moduleName in output_modules:
+            outputModule = step.getOutputModule(moduleName)
+            output_filename = "{}.root".format(moduleName)
+            outputFileNames.append(output_filename)
+            outputFilesDataTiers.append(getattr(outputModule, 'dataTier', None))
+            outputFilesTransient.append(getattr(outputModule, 'transient', None))
+            outputFilesLFNBase.append(getattr(outputModule, 'lfnBase', None))
+            outputFilesMergedLFNBase.append(getattr(outputModule, 'mergedLFNBase', None))
+
+        cmsRunParam['step'] = step.stepName()
+        cmsRunParam['keep_output'] = keepOutput
+        cmsRunParam['input_files'] = inputFileNames
+        cmsRunParam['output_files'] = outputFileNames
+        cmsRunParam['output_files_datatiers'] = outputFilesDataTiers
+        cmsRunParam['transient_output'] = outputFilesTransient
+        cmsRunParam['output_files_unmerged_base'] = outputFilesLFNBase
+        cmsRunParam['output_files_merged_base'] = outputFilesMergedLFNBase
+        cmsRun_params.append(cmsRunParam)
+    runtimeInfo['cmsRun_params'] = cmsRun_params
+
+    jsonPath = "{}/runtimeInfo.json".format(path)
+    with open(jsonPath, "w") as f:
+        json.dump(runtimeInfo, f, indent=4)
+    return jsonPath, runtimeInfo['job_type']
 
 def createInitialReport(job, reportName):
     """

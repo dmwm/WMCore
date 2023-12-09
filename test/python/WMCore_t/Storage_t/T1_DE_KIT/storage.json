@@ -1,0 +1,78 @@
+[
+   {  "site": "T1_DE_KIT",
+      "volume": "KIT_dCache",
+      "protocols": [
+         {  "protocol": "xrootd-module",
+            "access": "virtual",
+            "comment": "path translations for CMS xrootd module",
+            "rules": [
+               {  "lfn": "^/+store/test/xrootd/T1_DE_KIT/+(.*)",
+                  "pfn": "/pnfs/gridka.de/cms/disk-only/$1"
+               },
+               {  "lfn": "^/+(store/.*)",
+                  "pfn": "/pnfs/gridka.de/cms/disk-only/$1"
+               }
+            ]
+         },
+         {  "protocol": "XRootD",
+            "access": "global-ro",
+            "prefix": "root://cmsxrootd-kit-disk.gridka.de:1094/"
+         },
+         {  "protocol": "XRootDHoreKaGridKa",
+            "access": "global-ro",
+            "prefix": "root://172.26.19.197:1094//root://cmsxrootd-kit-disk.gridka.de:1094/"
+         },
+         {  "protocol": "XRootDHoreKaFallback",
+            "access": "global-ro",
+            "prefix": "root://172.26.19.197:1094//root://xrootd-cms.infn.it/"
+         },
+         {  "protocol": "WebDAV",
+            "access": "global-rw",
+            "prefix": "davs://cmswebdav-kit-disk.gridka.de:2880/pnfs/gridka.de/cms/disk-only"
+         }
+      ],
+      "type": "DISK",
+      "rse": "T1_DE_KIT_Disk",
+      "fts": [ "https://fts3-cms.cern.ch:8446", "https://lcgfts3.gridpp.rl.ac.uk:8446" ],
+      "loadtest": true
+   },
+
+   {  "site": "T1_DE_KIT",
+      "volume": "KIT_MSS",
+      "protocols": [
+         {  "protocol": "pnfs",
+            "access": "virtual",
+            "rules": [
+               {  "lfn": "/+(store/temp/user/.*)",
+                  "pfn": "/pnfs/gridka.de/cms/disk-only/$1"
+               },
+               {  "lfn": "/+(.*)",
+                  "pfn": "/pnfs/gridka.de/cms/tape/$1"
+               }
+            ],
+            "comment": "redirect temporary user files to disk instance"
+         },
+         {  "protocol": "SRMv2",
+            "access": "global-rw",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "srm://cmssrm-kit-tape.gridka.de:8443/srm/managerv2?SFN=/$1",
+                  "chain": "pnfs"
+               }
+            ]
+         },
+         {  "protocol": "WebDAV",
+            "access": "site-ro",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "davs://cmswebdav-kit-tape.gridka.de:2880/$1",
+                  "chain": "pnfs"
+               }
+            ]
+         }
+      ],
+      "type": "TAPE",
+      "rse": "T1_DE_KIT_Tape",
+      "fts": [ "https://fts3-cms.cern.ch:8446", "https://lcgfts3.gridpp.rl.ac.uk:8446" ]
+   }
+]

@@ -159,7 +159,7 @@ class SiteLocalConfig(object):
             raise SiteConfigError(msg)
 
         self.siteName             = nodeResult.get('siteName', None)
-        self.subsiteName          = nodeResult.get('subSiteName', None)
+        self.subSiteName          = nodeResult.get('subSiteName', None)
         self.eventData['catalog'] = nodeResult.get('catalog', None)
         self.localStageOut        = nodeResult.get('localStageOut', [])
         self.stageOuts            = nodeResult.get('stageOuts', [])

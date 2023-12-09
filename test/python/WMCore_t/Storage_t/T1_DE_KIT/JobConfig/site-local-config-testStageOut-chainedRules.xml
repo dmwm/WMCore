@@ -1,0 +1,55 @@
+<site-local-config>
+	<site name="T1_DE_KIT">
+		<event-data>
+			<catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/local/PhEDEx/storage_disk.xml?protocol=xrootd"/>
+			<catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/local/PhEDEx/storage_disk.xml?protocol=remote-xrootd"/>
+		</event-data>
+
+		<data-access>
+			<catalog volume="KIT_dCache" protocol="XRootD"/>
+			<catalog site="T1_IT_CNAF" volume="Eurasian_Federation" protocol="XRootD"/>
+		</data-access>
+
+		<source-config>
+			<cache-hint value="lazy-download" />
+			<read-hint value="read-ahead-buffered" />
+			<timeout-in-seconds value="10000" />
+			<statistics-destination name="cms-udpmon-collector.cern.ch:9331" />
+		</source-config>
+
+		<local-stage-out>
+			<command value="gfal2"/>
+			<catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/local/PhEDEx/storage_disk.xml?protocol=davs"/>
+			<se-name value="cmswebdav-kit-disk.gridka.de"/>
+			<phedex-node value="T1_DE_KIT_Disk"/>
+		</local-stage-out>
+
+		<fallback-stage-out>
+			<command value="gfal2"/>
+			<option value=""/>
+			<lfn-prefix value="davs://dcache-cms-webdav-wan.desy.de:2880/pnfs/desy.de/cms/tier2"/>
+			<se-name value="dcache-se-cms.desy.de"/>
+			<phedex-node value="T2_DE_DESY"/>
+		</fallback-stage-out>
+
+		<stage-out>
+			<method volume="KIT_MSS" protocol="WebDAV"/>
+		</stage-out>
+
+		<calib-data>
+			<frontier-connect>
+				<load balance="proxies"/>
+				<proxy url="http://frontier-sq1.gridka.de:3128"/>
+				<proxy url="http://frontier-sq2.gridka.de:3128"/>
+				<proxy url="http://frontier-sq3.gridka.de:3128"/>
+				<backupproxy url="http://cmsbpfrontier.cern.ch:3128"/>
+				<backupproxy url="http://cmsbproxy.fnal.gov:3128"/>
+				<prefer ipfamily="6"/>
+				<server url="http://cmsfrontier.cern.ch:8000/FrontierInt"/>
+				<server url="http://cmsfrontier1.cern.ch:8000/FrontierInt"/>
+				<server url="http://cmsfrontier2.cern.ch:8000/FrontierInt"/>
+				<server url="http://cmsfrontier3.cern.ch:8000/FrontierInt"/>
+			</frontier-connect>
+		</calib-data>
+	</site>
+</site-local-config>

@@ -12,7 +12,6 @@ a RucioFileCatalog instance that can be used to match LFNs to PFNs.
 """
 
 from builtins import next, str, range
-from future.utils import viewitems
 
 from future import standard_library
 standard_library.install_aliases()
@@ -21,11 +20,6 @@ import os
 import re
 
 import json
-
-from urllib.parse import urlsplit
-from xml.dom.minidom import Document
-
-from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
 
 class RucioFileCatalog(dict):
     """

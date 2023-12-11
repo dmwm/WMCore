@@ -26,7 +26,7 @@ from WMCore.Storage.SiteLocalConfig import stageOutStr
 from WMCore.Storage.RucioFileCatalog import storageJsonPath, readRFC 
 
 
-def stageoutPolicyReport(fileToStage, pnn, command, stageOutType, stageOutExit):
+def stageoutPolicyReport(fileToStage, rse, command, stageOutType, stageOutExit):
     """
     Prepare some extra information regarding the stage out step (for both prod/analysis jobs).
 
@@ -35,8 +35,8 @@ def stageoutPolicyReport(fileToStage, pnn, command, stageOutType, stageOutExit):
     """
     tempDict = {}
     tempDict['LFN'] = fileToStage['LFN'] if 'LFN' in fileToStage else None
-    tempDict['PNN'] = fileToStage['PNN'] if 'PNN' in fileToStage else None
-    tempDict['PNN'] = pnn if pnn else tempDict['PNN']
+    tempDict['RSE'] = fileToStage['RSE'] if 'RSE' in fileToStage else None
+    tempDict['RSE'] = rse if rse else tempDict['RSE']
     tempDict['StageOutCommand'] = fileToStage['command'] if 'command' in fileToStage else None
     tempDict['StageOutCommand'] = command if command else tempDict['StageOutCommand']
     tempDict['StageOutType'] = stageOutType
@@ -45,13 +45,16 @@ def stageoutPolicyReport(fileToStage, pnn, command, stageOutType, stageOutExit):
     return fileToStage
 
 
-def searchRFC(rfc, lfn):
+def getPFN(rfc, lfn):
     """
-    _searchRFC_
+    _getPFN_
 
-    Search the Rucio File Catalog for the lfn provided,
-    if a match is made, return the matched PFN
-
+    Get PFN for provided lfn using Rucio file catalog rfc
+    Parameters:
+    rfc: a Rucio file catalog
+    lfn: logical file name
+    Return:
+    pfn: logical file name, if no match found return None
     """
     if rfc == None:
         msg = "Rucio File Catalog not available to match LFN:\n"
@@ -98,7 +101,7 @@ class StageOutMgr(object):
         self.override = False
         if overrideParams != {}:
             logging.info("StageOutMgr::__init__(): Override: %s", overrideParams)
-            checkParams = ["command", "option", "phedex-node", "lfn-prefix"]
+            checkParams = ["command", "option", "rse", "lfn-prefix"]
             for param in checkParams:
                 if param in self.overrideConf:
                     self.override = True
@@ -126,6 +129,7 @@ class StageOutMgr(object):
         else:
             self.initialiseSiteConf()
         
+        #this is used for unittest only. Change value directly in the unittest
         self.bypassImpl = False
         self.failed = {}
         self.completedFiles = {}
@@ -142,7 +146,7 @@ class StageOutMgr(object):
 
         msg = "\nThere are %s stage out definitions." % len(self.stageOuts)
         for stageOut in self.stageOuts:
-            for k in ['phedex-node','command','storageSite','volume','protocol']:
+            for k in ['rse','command','storageSite','volume','protocol']:
                 v = stageOut.get(k)
                 if v is None:
                     amsg = ""
@@ -158,9 +162,9 @@ class StageOutMgr(object):
             volume = stageOut.get("volume")
             protocol = stageOut.get("protocol")
             command = stageOut.get("command")
-            pnn = stageOut.get("phedex-node")
+            rse = stageOut.get("rse")
             
-            msg += "\nStage out to : %s using: %s" % (pnn, command)
+            msg += "\nStage out to : %s using: %s" % (rse, command)
             
             try:
                 aPath = storageJsonPath(self.siteCfg.siteName,self.siteCfg.subSiteName,storageSite)
@@ -196,12 +200,12 @@ class StageOutMgr(object):
         overrideConf = {
             "command": None,
             "option": None,
-            "phedex-node": None,
+            "rse": None,
             "lfn-prefix": None,
         }
         try:
             overrideConf['command'] = self.overrideConf['command']
-            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
+            overrideConf['rse'] = self.overrideConf['rse']
             overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract override parameters from config:\n"
@@ -243,7 +247,7 @@ class StageOutMgr(object):
                 try:
                     pfn = self.stageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'), stageOut_rfc)
                     fileToStage['PFN'] = pfn
-                    fileToStage['PNN'] = stageOut_rfc[0]['phedex-node']
+                    fileToStage['RSE'] = stageOut_rfc[0]['rse']
                     fileToStage['StageOutCommand'] = stageOut_rfc[0]['command']
                     logging.info("attempting stageOut")
                     self.completedFiles[fileToStage['LFN']] = fileToStage
@@ -258,7 +262,7 @@ class StageOutMgr(object):
                     logging.info("===> Stage Out Failure for file:")
                     logging.info("======>  %s\n", fileToStage['LFN'])
                     logging.info("======>  %s\n using this stage out", stageOutStr(stageOut_rfc[0]))
-                    fileToStage = stageoutPolicyReport(fileToStage,stageOut_rfc[0]['phedex-node'],
+                    fileToStage = stageoutPolicyReport(fileToStage,stageOut_rfc[0]['rse'],
                                                       stageOut_rfc[0]['command'], 'LOCAL', 60311)
                     continue
                 except Exception as ex:
@@ -267,7 +271,7 @@ class StageOutMgr(object):
                     logging.info("===> Stage Out Failure for file:\n")
                     logging.info("======>  %s\n", fileToStage['LFN'])
                     logging.info("======>  %s\n using this stage out", stageOutStr(stageOut_rfc[0]))
-                    fileToStage = stageoutPolicyReport(fileToStage, stageOut_rfc[0]['phedex-node'],
+                    fileToStage = stageoutPolicyReport(fileToStage, stageOut_rfc[0]['rse'],
                                                       stageOut_rfc[0]['command'], 'LOCAL', 60311)
                     continue
         
@@ -276,7 +280,7 @@ class StageOutMgr(object):
             try:
                 pfn = self.stageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
-                fileToStage['PNN'] = self.overrideConf['phedex-node']
+                fileToStage['RSE'] = self.overrideConf['rse']
                 fileToStage['StageOutCommand'] = self.overrideConf['command']
                 logging.info("attempting override stage out")
                 self.completedFiles[fileToStage['LFN']] = fileToStage
@@ -287,7 +291,7 @@ class StageOutMgr(object):
                 fileToStage = stageoutPolicyReport(fileToStage, None, None, 'OVERRIDE', 0)
                 return fileToStage
             except Exception as ex:
-                fileToStage = stageoutPolicyReport(fileToStage, self.overrideConf['phedex-node'],\
+                fileToStage = stageoutPolicyReport(fileToStage, self.overrideConf['rse'],\
                     self.overrideConf['command'], 'OVERRIDE', 60310)
                 lastException = ex
 
@@ -303,12 +307,17 @@ class StageOutMgr(object):
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
-        phedex-node - the Name of the PNN to which the file is being xferred
+        rse - the Name of the Rucio storage element to which the file is being xferred
         """
         if not self.override:
-            command = stageOut_rfc[0]['command']
-            options = stageOut_rfc[0]['option']
-            pfn = searchRFC(stageOut_rfc[1],lfn)
+            try:
+                command = stageOut_rfc[0]['command']
+                options = stageOut_rfc[0]['option']
+            except Exception as ex:
+                msg = "Unable to retrieve command and options for stage out\n"
+                raise StageOutFailure(msg, LFN=lfn, ExceptionDetail=str(ex))
+
+            pfn = getPFN(stageOut_rfc[1],lfn)
             protocol = stageOut_rfc[1].preferredProtocol
             if pfn == None:
                 msg = "Unable to match lfn to pfn: \n  %s" % lfn

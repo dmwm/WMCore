@@ -14,8 +14,7 @@ import os
 import logging
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
-from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC
-from WMCore.Storage.RucioFileCatalog import readRFC,rseName
+from WMCore.Storage.RucioFileCatalog import rseName
 
 
 def loadSiteLocalConfig():
@@ -55,15 +54,12 @@ def loadSiteLocalConfig():
     config = SiteLocalConfig(actualPath)
     return config
 
-def makeStorageAttribute(siteName,subSiteName,storageSiteName,volume,protocol):
-    return {'site':siteName,'subSite':subSiteName,'storageSite':storageSiteName,'volume':volume,'protocol':protocol}
-
 #return a string of a stage out
 def stageOutStr(stageOut):
     msg = ""
     for sTmp in ['storageSite','volume','protocol','command','options']:
         msg += sTmp + ': ' + str(stageOut.get(sTmp)) + ', '
-    msg += 'phedex-node: ' + str(stageOut.get('phedex-node'))
+    msg += 'rse: ' + str(stageOut.get('rse'))
     return msg
 
 class SiteConfigError(Exception):
@@ -293,7 +289,7 @@ def processStageOut():
             localReport['option'] = subnode.attrs.get('option', None)
             localReport['volume'] = aVolume 
             localReport['protocol'] = aProtocol 
-            localReport['phedex-node'] = rseName(report["siteName"],subSiteName,aStorageSite,aVolume)
+            localReport['rse'] = rseName(report["siteName"],subSiteName,aStorageSite,aVolume)
             report['stageOuts'].append(localReport)
 
 @coroutine

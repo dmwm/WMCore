@@ -9,10 +9,7 @@ import unittest
 import os
 
 from WMCore.WMBase import getTestBase
-
 from WMCore.Storage.StageOutMgr import StageOutMgr
-from WMCore.Storage.SiteLocalConfig import SiteLocalConfig, SiteConfigError
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 
 class StageOutMgrTest(unittest.TestCase):
@@ -35,7 +32,7 @@ class StageOutMgrTest(unittest.TestCase):
         stageOutMgr.cleanSuccessfulStageOuts()
         
         #test override
-        stageOutMgr_override = StageOutMgr(**{"command":"gfal2","phedex-node":"T1_US_FNAL_Disk","lfn-prefix":"root://abc/xyz"})
+        stageOutMgr_override = StageOutMgr(**{"command":"gfal2","rse":"T1_US_FNAL_Disk","lfn-prefix":"root://abc/xyz"})
         stageOutMgr_override.bypassImpl = True
         fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
         stageOutMgr_override(fileToStage)

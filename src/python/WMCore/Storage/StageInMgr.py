@@ -20,7 +20,7 @@ from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig,stageOutStr
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.Registry import retrieveStageOutImpl
-from WMCore.Storage.StageOutMgr import searchRFC
+from WMCore.Storage.StageOutMgr import getPFN
 
 from WMCore.Storage.RucioFileCatalog import storageJsonPath,readRFC
 
@@ -48,9 +48,9 @@ class StageInMgr(object):
         if overrideParams != {}:
             self.override = True
         
-        #for testing only
-        self.bypassImpl = False 
-        
+        #this is used for unittest only. Change value directly in the unittest
+        self.bypassImpl = False
+
         #pairs of stageOut and Rucio file catalog
         self.stageOuts_rfcs = [] 
 
@@ -82,7 +82,7 @@ class StageInMgr(object):
 
         msg = "\nThere are %s stage out definitions." % len(self.stageOuts)
         for stageOut in self.stageOuts:
-            for k in ['phedex-node','command','storageSite','volume','protocol']:
+            for k in ['rse','command','storageSite','volume','protocol']:
                 v = stageOut.get(k)
                 if v is None:
                     amsg = ""
@@ -98,9 +98,9 @@ class StageInMgr(object):
             volume = stageOut.get("volume")
             protocol = stageOut.get("protocol")
             command = stageOut.get("command")
-            pnn = stageOut.get("phedex-node")
+            rse = stageOut.get("rse")
             
-            msg += "\nStage out to : %s using: %s" % (pnn, command)
+            msg += "\nStage out to : %s using: %s" % (rse, command)
             
             try:
                 aPath = storageJsonPath(self.siteCfg.siteName,self.siteCfg.subSiteName,storageSite)
@@ -134,13 +134,13 @@ class StageInMgr(object):
         overrideConf = {
             "command" : None,
             "option" : None,
-            "phedex-node" : None,
+            "rse" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideConf['command'] = self.overrideConf['command']
-            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
+            overrideConf['rse'] = self.overrideConf['rse']
             overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"
@@ -223,20 +223,17 @@ class StageInMgr(object):
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
-        phedex-node - the Name of the PNN to which the file is being xferred
         """
         localPfn = os.path.join(os.getcwd(), os.path.basename(lfn))
         if self.override:
-            pnn = self.overrideConf['phedex-node']
             command = self.overrideConf['command']
             options = self.overrideConf['option']
             pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
             protocol = command
         else:
-            pnn = stageOut_rfc[0]['phedex-node']
             command = stageOut_rfc[0]['command']
             options = stageOut_rfc[0]['option']
-            pfn = searchRFC(stageOut_rfc[1],lfn)
+            pfn = getPFN(stageOut_rfc[1],lfn)
             protocol = stageOut_rfc[1].preferredProtocol
 
         if pfn == None:

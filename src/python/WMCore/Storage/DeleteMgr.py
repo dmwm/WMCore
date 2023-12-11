@@ -50,9 +50,9 @@ class DeleteMgr(object):
         
         self.logger = overrideParams.pop("logger", logging.getLogger())
         self.overrideConf = overrideParams
+        #this is used for unittest only. Change value directly in the unittest
+        self.bypassImpl = False 
 
-        self.bypassImpl = False
-        
         #pairs of stageOut and Rucio file catalog: [(stageOut1,rfc1),(stageOut2,rfc2), ...]
         #a "stageOut" corresponds to a entry in the <stage-out> block in the site-local-config.xml, for example <method volume="KIT_dCache" protocol="WebDAV"/>
         #a "rfc" is the correponding RucioFileCatalog instance (RucioFileCatalog.py) of this "stageOut"
@@ -87,7 +87,7 @@ class DeleteMgr(object):
         
         for stageOut in self.stageOuts:
             msg = ""
-            for k in ['phedex-node','command','storageSite','volume','protocol']:
+            for k in ['rse','command','storageSite','volume','protocol']:
                 v = stageOut.get(k)
                 if v is None:
                     msg += "Unable to retrieve "+k+" of this stageOut: \n"
@@ -101,9 +101,9 @@ class DeleteMgr(object):
             volume = stageOut.get("volume")
             protocol = stageOut.get("protocol")
             command = stageOut.get("command")
-            pnn = stageOut.get("phedex-node")
+            rse = stageOut.get("rse")
             
-            msg += "\tStage out to : %s using: %s \n" % (pnn, command)
+            msg += "\tStage out to : %s using: %s \n" % (rse, command)
             
             try:
                 aPath = storageJsonPath(self.siteCfg.siteName,self.siteCfg.subSiteName,storageSite)
@@ -138,13 +138,13 @@ class DeleteMgr(object):
         overrideConf = {
             "command": None,
             "option": None,
-            "phedex-node": None,
+            "rse": None,
             "lfn-prefix": None,
         }
 
         try:
             overrideConf['command'] = self.overrideConf['command']
-            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
+            overrideConf['rse'] = self.overrideConf['rse']
             overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract override parameters from config:\n"
@@ -184,7 +184,7 @@ class DeleteMgr(object):
             for stageOut_rfc in self.stageOuts_rfcs:
                 if not deleteSuccess:
                     try:
-                        fileToDelete['PNN'] = stageOut_rfc[0]['phedex-node']
+                        fileToDelete['RSE'] = stageOut_rfc[0]['rse']
                         fileToDelete['PFN'] = self.deleteLFN(lfn, stageOut_rfc)
                         deleteSuccess = True
                         break
@@ -193,7 +193,7 @@ class DeleteMgr(object):
         else:
             logging.info("===> Attempting stage outs from override")
             try:
-                fileToDelete['PNN'] = self.overrideConf['phedex-node']
+                fileToDelete['RSE'] = self.overrideConf['rse']
                 fileToDelete['PFN'] = self.deleteLFN(lfn)
                 deleteSuccess = True
             except Exception as ex:
@@ -202,7 +202,7 @@ class DeleteMgr(object):
             msg = "===> Delete Successful:\n"
             msg += "====> LFN: %s\n" % fileToDelete['LFN']
             msg += "====> PFN: %s\n" % fileToDelete['PFN']
-            msg += "====> PNN:  %s\n" % fileToDelete['PNN']
+            msg += "====> RSE:  %s\n" % fileToDelete['RSE']
             self.logger.info(msg)
             return fileToDelete
         else:
@@ -220,12 +220,12 @@ class DeleteMgr(object):
             command - the stage out impl plugin name to be used
             option - the option values to be passed to that command (None is allowed)
             lfn-prefix - the LFN prefix to generate the PFN
-            phedex-node - the Name of the PNN to which the file is being xferred
+            rse - the Name of the Rucio storage element to which the file is being xferred
         """
         if not self.overrideConf:
-            from WMCore.Storage.StageOutMgr import searchRFC 
+            from WMCore.Storage.StageOutMgr import getPFN 
             command = stageOut_rfc[0]['command']
-            pfn = searchRFC(stageOut_rfc[1],lfn)
+            pfn = getPFN(stageOut_rfc[1],lfn)
 
             if pfn == None:
                 msg = "Unable to match lfn to pfn: \n  %s" % lfn

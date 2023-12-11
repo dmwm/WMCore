@@ -421,8 +421,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                                              assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         for task in Tier1ReRecoWorkload.taskIterator():
             policyInstance(Tier1ReRecoWorkload, task)
-            outputs = policyInstance.getDatasetLocations(
-                {'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader': Tier1ReRecoWorkload.listInputDatasets()})
+            outputs = policyInstance.getDatasetLocations(Tier1ReRecoWorkload.listInputDatasets())
             for dataset in outputs:
                 self.assertItemsEqual(outputs[dataset], ['T2_XX_SiteA', 'T2_XX_SiteB'])
         return

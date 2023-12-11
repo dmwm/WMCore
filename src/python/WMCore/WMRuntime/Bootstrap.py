@@ -25,7 +25,7 @@ from WMCore.WMRuntime import TaskSpace
 from WMCore.WMRuntime.Watchdog import Watchdog
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMRuntime.Tools.Scram import getPlatformMachine
-from  WMCore.BossAir.Plugins.BasePlugin import BasePlugin
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 
 class BootstrapException(WMException):
     """ An awesome exception """
@@ -208,7 +208,7 @@ def loadTask(job):
         raise BootstrapException(msg)
     return task
 
-def createWMRuntimeJson(path):
+def createWMRuntimeJson(outputPath, jobTypes=("Production", "Processing")):
     """
     Create a json with runtime information in the following form below:
     {
@@ -219,9 +219,10 @@ def createWMRuntimeJson(path):
      "job_type": "Production", # string with job type information: Production/Processing, Merge, LogCollect, etc.
      "cmsRun_params": [{
          "step": "cmsRun1",  # string with the relevant step
+         "keek_output": boolean saying whether we keep output or not,
          "input_files": [string of input LFNs or a single local file],
          "output_files": [ordered string of output local files],
-         "output_datatiers": [ordered string of output local files datatiers],
+         "output_files_datatiers": [ordered string of output local files datatiers],
          "transient_output": [ordered boolean saying whether output files are announced in the workflow or not],
          "output_files_unmerged_base": [ordered string with lfnBase],
          "output_files_unmerged_base": [ordered string with mergedLFNBase info]
@@ -233,7 +234,8 @@ def createWMRuntimeJson(path):
          # any new step appends step data to this list
      ]
      } 
-     :param path: path to write the json
+     :param outputPath: path to write the json
+     :param jobTypes: tuple of job types to send to logging. E.g.: ("Production", "Processing", "Merge", "LogCollect")
      :return
     """
     # Load workflow-level information
@@ -249,10 +251,10 @@ def createWMRuntimeJson(path):
     runtimeInfo['job_type'] = job.get('jobType', None)
     cmsRun_params = []
     # Jobs with MCFakeFile means no input files
-    MCFakeFile=False
+    mcFakeFile=False
     if len(job['input_files']) == 1:
         if job['input_files'][0]['lfn'].startswith("MCFakeFile"):
-            MCFakeFile=True
+            mcFakeFile=True
     # Get information per cmsRun step
     for cmsswStep in task.listAllStepNames(cmsRunOnly=True):
         cmsRunParam = {}
@@ -261,7 +263,7 @@ def createWMRuntimeJson(path):
         keepOutput = getattr(step.data.output, 'keep')
         # Collect input files
         inputFileNames = []
-        if MCFakeFile:
+        if mcFakeFile:
             # For chained processes, point to previous step output
             chained = getattr(step.data.input, 'chainedProcessing', False)
             if chained:
@@ -299,10 +301,15 @@ def createWMRuntimeJson(path):
         cmsRun_params.append(cmsRunParam)
     runtimeInfo['cmsRun_params'] = cmsRun_params
 
-    jsonPath = "{}/runtimeInfo.json".format(path)
-    with open(jsonPath, "w") as f:
-        json.dump(runtimeInfo, f, indent=4)
-    return jsonPath, runtimeInfo['job_type']
+    jsonPath = "{}/runtimeInfo.json".format(outputPath)
+    with open(jsonPath, "w", encoding="utf-8") as f:
+        json.dump(runtimeInfo, f, indent=4, sort_keys=True)
+
+    # Log Production/Processing
+    if runtimeInfo['job_type'] in jobTypes:
+        logging.info('runtime json = {}'.format(json.dumps(runtimeInfo, indent=4, sort_keys=True)))
+
+    return
 
 def createInitialReport(job, reportName):
     """

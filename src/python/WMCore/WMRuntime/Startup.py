@@ -13,9 +13,9 @@ Just a FYI, there are basically 3 important directories:
 import logging
 import os
 import sys
-import json
 
 import WMCore.WMRuntime.Bootstrap as Bootstrap
+from Utils.Timers import CodeTimer
 
 if __name__ == '__main__':
     logging.info("This log line goes to a parallel universe, but ... setting up logging")
@@ -38,13 +38,8 @@ if __name__ == '__main__':
     monitor = Bootstrap.setupMonitoring(logName=reportName)
 
     logging.info("Creating WM runtime information json")
-    jsonPath, jobType = Bootstrap.createWMRuntimeJson(os.getcwd())
-
-    if jobType in ("Production", "Processing"):
-        # Dump json from runtime information
-        with open(jsonPath, 'r') as f:
-            runtimeInfo = json.load(f)
-        logging.info('runtime json = {}'.format(json.dumps(runtimeInfo, indent=4)))
+    with CodeTimer("Creating WM runtime information json", logger=logging.getLogger()):
+        Bootstrap.createWMRuntimeJson(outputPath=os.getcwd())
 
     logging.info("Building task at directory: %s", os.getcwd())
     task.build(os.getcwd())

@@ -20,10 +20,16 @@ class StageOutMgrTest(unittest.TestCase):
         os.putenv('SITECONFIG_PATH', os.getcwd())
 
     def testStageOutMgr(self):
+        
+        configFileName = os.path.join(getTestBase(),
+                                           "WMCore_t/Storage_t/T1_DE_KIT/JobConfig",
+                                           "site-local-config.xml")
+        os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = configFileName
         os.environ['SITECONFIG_PATH'] = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_DE_KIT")
         os.system('cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T1_DE_KIT.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
+
         stageOutMgr = StageOutMgr()
         stageOutMgr.bypassImpl = True
         fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
@@ -58,6 +64,10 @@ class StageOutMgrTest(unittest.TestCase):
         stageOutMgr.cleanSuccessfulStageOuts()
         
         #test subsite
+        configFileName = os.path.join(getTestBase(),
+                                           "WMCore_t/Storage_t/T1_DE_KIT/KIT-T3/JobConfig",
+                                           "site-local-config.xml")
+        os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = configFileName
         os.environ['SITECONFIG_PATH'] = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_DE_KIT/KIT-T3")
@@ -77,6 +87,7 @@ class StageOutMgrTest(unittest.TestCase):
         stageOutMgr(fileToStage)
         assert fileToStage['PFN']=="davs://dcache-cms-webdav-wan.desy.de:2880/pnfs/desy.de/cms/tier2/store/abc/xyz.root"
         stageOutMgr.cleanSuccessfulStageOuts()
+        
         return
 
 if __name__ == "__main__":

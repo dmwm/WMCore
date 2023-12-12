@@ -1,3 +1,13 @@
+2.2.6rc4 to 2.2.6rc5:
+  - Do not fail workflows due to empty location in global workqueue (Valentin Kuznetsov) #11810
+  - Add runtime information json. (Kenyi Hurtado) #11812
+  - Add a generic script for deploying wmagent inside a virtual environment. (Todor Ivanov) #11624
+  - Added aborted-completed to the state transition diagram (Alan Malta Rodrigues) #11809
+  - Moved ParentageResolved check from dispatch to archive (Dennis Lee) #11805
+  - Fixed Inappropriate Logical Expression (fabihatasneem) #11808
+  - Add loging and decode output of pre-scripts (German Giraldo) #11803
+
+
 2.2.6rc3 to 2.2.6rc4:
   - Introduce transition attribute in MSPileup record (Valentin Kuznetsov) #11802
   - New test campaigns added to parseUnifiedCampaigns (Alan Malta Rodrigues) #11806

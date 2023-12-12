@@ -15,6 +15,7 @@ import os
 import sys
 
 import WMCore.WMRuntime.Bootstrap as Bootstrap
+from Utils.Timers import CodeTimer
 
 if __name__ == '__main__':
     logging.info("This log line goes to a parallel universe, but ... setting up logging")
@@ -35,6 +36,10 @@ if __name__ == '__main__':
 
     Bootstrap.createInitialReport(job=job, reportName=reportName)
     monitor = Bootstrap.setupMonitoring(logName=reportName)
+
+    logging.info("Creating WM runtime information json")
+    with CodeTimer("Creating WM runtime information json", logger=logging.getLogger()):
+        Bootstrap.createWMRuntimeJson(outputPath=os.getcwd())
 
     logging.info("Building task at directory: %s", os.getcwd())
     task.build(os.getcwd())

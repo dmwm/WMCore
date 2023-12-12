@@ -138,7 +138,12 @@ class StartPolicyInterface(PolicyInterface):
         ele = WorkQueueElement(**args)
         for data, sites in viewitems(ele['Inputs']):
             if not sites:
-                raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
+                # make call to rucio to get list of replicas for this input data
+                locations = self.getDatasetLocations(data, account=self.rucioAcct)
+                # we comment out raising exception due to issue-11784 and allow WQ element creation
+                # but we would like to monitor when and how often it happens
+                self.logger.warning('Input data has no location, spec=%s, data=%s, locations=%s', self.wmspec, data, locations)
+                # raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
 
         # catch infinite splitting loops
         if len(self.workQueueElements) > self.args.get('maxRequestSize', 1e8):
@@ -157,7 +162,9 @@ class StartPolicyInterface(PolicyInterface):
         try:
             pileupDatasets = self.wmspec.listPileupDatasets()
             if pileupDatasets:
-                self.pileupData = self.getDatasetLocations(pileupDatasets)
+                # unwrap {"url":[datasets]} structure into list of datasets
+                datasets = [d for prec in pileupDatasets.values() for d in prec]
+                self.pileupData = self.getDatasetLocations(datasets)
             self.split()
         # For known exceptions raise custom error that will fail the workflow.
         except dbsClientException as ex:
@@ -245,20 +252,23 @@ class StartPolicyInterface(PolicyInterface):
         """
         raise NotImplementedError("This can't be called on a base StartPolicyInterface object")
 
-    def getDatasetLocations(self, datasets):
+    def getDatasetLocations(self, datasets, account=None):
         """
         Returns a dictionary with the location of the datasets according to Rucio
         The definition of "location" here is a union of all sites holding at least
         part of the dataset (defined by the DATASET grouping).
-        :param datasets: dictionary with a list of dataset names (key'ed by the DBS URL)
+        :param datasets: list of datasets
+        :param account: rucio account to use, if it is not provided we fallback to
+        pileup account for backward compatibility
         :return: a dictionary of dataset locations, key'ed by the dataset name
         """
+        if not account:
+            account = self.rucioAcctPU
         result = {}
-        for dbsUrl in datasets:
-            for datasetPath in datasets[dbsUrl]:
-                locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
-                                                                 account=self.rucioAcctPU)
-                result[datasetPath] = self.cric.PNNstoPSNs(locations)
+        for datasetPath in datasets:
+            locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
+                                                             account=account)
+            result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result
 
     def blockLocationRucioPhedex(self, blockName):

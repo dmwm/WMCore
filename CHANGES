@@ -1,5 +1,5 @@
 2.2.4.6 to 2.2.4.7:
-- Backport PR#11810: ad-hoc fix for failed workflow in WQE creation
+- ad-hoc fix for failed workflow in WQE creation (Valentin Kuznetsov) #11810
 
 2.2.4.5 to 2.2.4.6:
  - Just trigerring a new build

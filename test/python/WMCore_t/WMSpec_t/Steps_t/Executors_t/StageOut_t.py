@@ -196,7 +196,7 @@ class StageOutTest(unittest.TestCase):
         helper = StageOutTemplate.StageOutStepHelper(self.stepdata)
         helper.addOverride(override='command', overrideValue='test-win')
         helper.addOverride(override='option', overrideValue='')
-        helper.addOverride(override='phedex-node', overrideValue='charlie.sheen.biz')
+        helper.addOverride(override='rse', overrideValue='charlie.sheen.biz')
         helper.addOverride(override='lfn-prefix', overrideValue='test-win')
 
         executor.initialise(self.stepdata, self.job)
@@ -216,7 +216,7 @@ class StageOutTest(unittest.TestCase):
         helper = StageOutTemplate.StageOutStepHelper(self.stepdata)
         helper.addOverride(override='command', overrideValue='test-win')
         helper.addOverride(override='option', overrideValue='')
-        helper.addOverride(override='phedex-node', overrideValue='charlie.sheen.biz')
+        helper.addOverride(override='rse', overrideValue='charlie.sheen.biz')
         helper.addOverride(override='lfn-prefix', overrideValue='test-win')
         helper.setNewStageoutOverride(True)
 
@@ -232,7 +232,7 @@ class StageOutTest(unittest.TestCase):
         step.override.command = 'cp'
         step.override.option = ''
         step.override.__setattr__('lfn-prefix', self.testDir + "/")
-        step.override.__setattr__('phedex-node', 'DUMMYPNN')
+        step.override.__setattr__('rse', 'DUMMYPNN')
 
 
 class otherStageOutTexst(unittest.TestCase):
@@ -506,7 +506,7 @@ class otherStageOutTexst(unittest.TestCase):
         step.override.command = 'cp'
         step.override.option = ''
         step.override.__setattr__('lfn-prefix', self.testDir + "/")
-        step.override.__setattr__('phedex-node', 'DUMMYPNN')
+        step.override.__setattr__('rse', 'DUMMYPNN')
 
 
 if __name__ == "__main__":

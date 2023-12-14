@@ -38,7 +38,8 @@ class StageOutMgrTest(unittest.TestCase):
         stageOutMgr.cleanSuccessfulStageOuts()
         
         #test override
-        stageOutMgr_override = StageOutMgr(**{"command":"gfal2","rse":"T1_US_FNAL_Disk","lfn-prefix":"root://abc/xyz"})
+        #keep using 'phedex-node' for overrideParams (to be compatible with the whole DMWM structure?)
+        stageOutMgr_override = StageOutMgr(**{"command":"gfal2","phedex-node":"T1_US_FNAL_Disk","lfn-prefix":"root://abc/xyz"})
         stageOutMgr_override.bypassImpl = True
         fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
         stageOutMgr_override(fileToStage)

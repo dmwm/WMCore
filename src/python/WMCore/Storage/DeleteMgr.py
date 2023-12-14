@@ -138,13 +138,13 @@ class DeleteMgr(object):
         overrideConf = {
             "command": None,
             "option": None,
-            "rse": None,
+            "phedex-node": None,
             "lfn-prefix": None,
         }
 
         try:
             overrideConf['command'] = self.overrideConf['command']
-            overrideConf['rse'] = self.overrideConf['rse']
+            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
             overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract override parameters from config:\n"
@@ -193,7 +193,7 @@ class DeleteMgr(object):
         else:
             logging.info("===> Attempting stage outs from override")
             try:
-                fileToDelete['RSE'] = self.overrideConf['rse']
+                fileToDelete['RSE'] = self.overrideConf['phedex-node']
                 fileToDelete['PFN'] = self.deleteLFN(lfn)
                 deleteSuccess = True
             except Exception as ex:

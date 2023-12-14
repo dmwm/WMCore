@@ -134,13 +134,14 @@ class StageInMgr(object):
         overrideConf = {
             "command" : None,
             "option" : None,
-            "rse" : None,
+            "phedex-node" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideConf['command'] = self.overrideConf['command']
-            overrideConf['rse'] = self.overrideConf['rse']
+            #**overrideParams uses 'phedex-node'
+            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
             overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"

@@ -101,7 +101,8 @@ class StageOutMgr(object):
         self.override = False
         if overrideParams != {}:
             logging.info("StageOutMgr::__init__(): Override: %s", overrideParams)
-            checkParams = ["command", "option", "rse", "lfn-prefix"]
+            #overrideParams uses 'phedex-node'
+            checkParams = ["command", "option", "phedex-node", "lfn-prefix"]
             for param in checkParams:
                 if param in self.overrideConf:
                     self.override = True
@@ -200,12 +201,12 @@ class StageOutMgr(object):
         overrideConf = {
             "command": None,
             "option": None,
-            "rse": None,
+            "phedex-node": None,
             "lfn-prefix": None,
         }
         try:
             overrideConf['command'] = self.overrideConf['command']
-            overrideConf['rse'] = self.overrideConf['rse']
+            overrideConf['phedex-node'] = self.overrideConf['phedex-node']
             overrideConf['lfn-prefix'] = self.overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract override parameters from config:\n"
@@ -280,7 +281,7 @@ class StageOutMgr(object):
             try:
                 pfn = self.stageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
-                fileToStage['RSE'] = self.overrideConf['rse']
+                fileToStage['RSE'] = self.overrideConf['phedex-node']
                 fileToStage['StageOutCommand'] = self.overrideConf['command']
                 logging.info("attempting override stage out")
                 self.completedFiles[fileToStage['LFN']] = fileToStage
@@ -291,7 +292,7 @@ class StageOutMgr(object):
                 fileToStage = stageoutPolicyReport(fileToStage, None, None, 'OVERRIDE', 0)
                 return fileToStage
             except Exception as ex:
-                fileToStage = stageoutPolicyReport(fileToStage, self.overrideConf['rse'],\
+                fileToStage = stageoutPolicyReport(fileToStage, self.overrideConf['phedex-node'],\
                     self.overrideConf['command'], 'OVERRIDE', 60310)
                 lastException = ex
 

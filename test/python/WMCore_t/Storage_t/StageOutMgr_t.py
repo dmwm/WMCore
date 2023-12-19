@@ -23,6 +23,10 @@ class StageOutMgrTest(unittest.TestCase):
         os.putenv('SITECONFIG_PATH', os.getcwd())
 
     def testStageOutMgr(self):
+        configFileName = os.path.join(getTestBase(),
+                                           "WMCore_t/Storage_t/T1_DE_KIT/JobConfig",
+                                           "site-local-config.xml")
+        os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = configFileName
         os.environ['SITECONFIG_PATH'] = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_DE_KIT")
@@ -61,6 +65,10 @@ class StageOutMgrTest(unittest.TestCase):
         stageOutMgr.cleanSuccessfulStageOuts()
         
         #test subsite
+        configFileName = os.path.join(getTestBase(),
+                                           "WMCore_t/Storage_t/T1_DE_KIT/KIT-T3/JobConfig",
+                                           "site-local-config.xml")
+        os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = configFileName
         os.environ['SITECONFIG_PATH'] = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_DE_KIT/KIT-T3")

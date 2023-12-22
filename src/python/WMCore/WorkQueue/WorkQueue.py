@@ -349,7 +349,7 @@ class WorkQueue(WorkQueueBase):
                 except Exception as ex:
                     msg = "%s, %s: \n" % (wmspec.name(), list(match['Inputs']))
                     msg += "failed to retrieve data from DBS/Rucio in LQ: \n%s" % str(ex)
-                    self.logger.error(msg)
+                    self.logger.exception(msg)
                     self.logdb.post(wmspec.name(), msg, 'error')
                     continue
 
@@ -387,22 +387,27 @@ class WorkQueue(WorkQueueBase):
         return DBSReader(dbsUrl)
 
     def _getDBSDataset(self, match):
-        """Get DBS info for this dataset"""
-        tmpDsetDict = {}
+        """
+        Given a workqueue element with Dataset start policy, find all blocks
+        with valid files and resolve their location in Rucio.
+        :param match: workqueue element dictionary
+        :return: a tuple of the dataset name and its files and RSEs
+        """
+        dbsDatasetDict = {'Files': [], 'PhEDExNodeNames': []}
         dbs = self._getDbs(match['Dbs'])
         datasetName = list(match['Inputs'])[0]
 
         blocks = dbs.listFileBlocks(datasetName)
         for blockName in blocks:
             blockSummary = dbs.getFileBlock(blockName)
+            if not blockSummary['Files']:
+                self.logger.warning("Block name %s has no valid files. Skipping it.", blockName)
+                continue
             blockSummary['PhEDExNodeNames'] = self.rucio.getDataLockedAndAvailable(name=blockName,
                                                                                    account=self.params['rucioAccount'])
-            tmpDsetDict[blockName] = blockSummary
+            dbsDatasetDict['Files'].extend(blockSummary['Files'])
+            dbsDatasetDict['PhEDExNodeNames'].extend(blockSummary['PhEDExNodeNames'])
 
-        dbsDatasetDict = {'Files': [], 'PhEDExNodeNames': []}
-        dbsDatasetDict['Files'] = [f for block in listvalues(tmpDsetDict) for f in block['Files']]
-        dbsDatasetDict['PhEDExNodeNames'].extend(
-                [f for block in listvalues(tmpDsetDict) for f in block['PhEDExNodeNames']])
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
         return datasetName, dbsDatasetDict

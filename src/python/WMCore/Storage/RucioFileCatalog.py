@@ -59,8 +59,7 @@ class RucioFileCatalog(dict):
 
     def _doMatch(self, protocol, path, style, caller):
         """
-        Generalised way of building up the mappings.         
-        :param protocol: the name of a protocol, for example XRootD
+        Generalised way of building up the mappings.         :param protocol: the name of a protocol, for example XRootD
         :path: a LFN path, for example /store/abc/xyz.root
         :style: type of conversion. lfn-to-pfn is to convert LFN to PFN and pfn-to-pfn is for PFN to LFN
         :caller is the method from there this method was called. It's used for resolving chained rules
@@ -180,35 +179,36 @@ def readRFC(filename, storageSite, volume, protocol):
     for jsElement in jsElements:
         #check to see if the storageSite and volume matchs with "site" and "volume" in storage.json
         if jsElement['site'] == storageSite and jsElement['volume'] == volume: 
-            rfcInstance.preferredProtocol = protocol
-            #now loop over protocols to add all mappings (needed for chained rule cases)
+            #now loop over protocols
+            #!!!!!!!!!!!!!!Maybe save all protocols so that chain works
             for prot in jsElement['protocols']:
-                #check if prefix is in protocol block
-                if 'prefix' in prot.keys():
-                    #lfn-to-pfn
-                    match = '/(.*)' #match all
-                    result = prot['prefix']+'/$1'
-                    #prefix case should not be chained
-                    chain = None 
-                    rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                    #pfn-to-lfn
-                    match = prot['prefix']+'/(.*)'
-                    result = '/$1'
-                    rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
-                #here is rules  
-                else:
-                    #loop over rules
-                    for rule in prot['rules']:
-                        match = rule['lfn']
-                        result = rule['pfn']
-                        chain = rule['chain'] if 'chain' in rule.keys() else None
+                #check found match
+                if prot['protocol'] == protocol:
+                    rfcInstance.preferredProtocol = protocol
+                    chain = prot['chain'] if 'chain' in prot.keys() else None
+                    #check if prefix is in protocol block
+                    if 'prefix' in prot.keys():
+                        #lfn-to-pfn
+                        match = '(.*)' #match all
+                        result = prot['prefix']+'/$1'
                         rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                        #pfn-to-lfn: not sure about this!!!
-                        match = rule['pfn'].replace('$1','(.*)')
-                        result = rule['lfn'].replace('/+','/').replace('^/','/')
-                        #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
-                        result = re.sub('\(.*\)','$1',result)
+                        #pfn-to-lfn
+                        match = prot['prefix']+'/(.*)'
+                        result = '/$1'
                         rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
+                    #here is rules  
+                    else:
+                        #loop over rules
+                        for rule in prot['rules']:
+                            match = rule['lfn']
+                            result = rule['pfn']
+                            rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
+                            #pfn-to-lfn: not sure about this!!!
+                            match = rule['pfn'].replace('$1','(.*)')
+                            result = rule['lfn'].replace('/+','/').replace('^/','/')
+                            #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
+                            result = re.sub('\(.*\)','$1',result)
+                            rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
     
     return rfcInstance
 

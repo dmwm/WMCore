@@ -33,7 +33,18 @@ class SiteLocalConfigTest(unittest.TestCase):
         fnalConfigFileName = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_US_FNAL_SiteLocalConfig.xml")
+        #fnalConfigFileName = '/cvmfs/cms.cern.ch/SITECONF/T1_DE_KIT/KIT-HOREKA/JobConfig/site-local-config.xml'
+        #switch between old TFC and new Rucio data catalog by changing the last parameter, need to set SITECONFIG_PATH when this is False 
+        #mySiteConfig = SiteLocalConfig(fnalConfigFileName,False) #set False to use new Rucio storage descriptions with storage.json
+        print(">>>>>>>>>>>",fnalConfigFileName)
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
+        #print(mySiteConfig.localStageOut)
+        #print(mySiteConfig.fallbackStageOut)
+        #tfcInstance = mySiteConfig.trivialFileCatalog()
+        #print(tfcInstance)
+        #for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
+        #    for x in tfcInstance[mapping]:
+        #      print(x)
 
         assert mySiteConfig.siteName == "T1_US_FNAL", "Error: Wrong site name."
         assert len(list(mySiteConfig.eventData)) == 1, "Error: Wrong number of event data keys."

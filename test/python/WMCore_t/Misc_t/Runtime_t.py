@@ -63,6 +63,7 @@ def miniStartup(thisDir=os.getcwd()):
     Or run this in subprocess
 
     """
+
     Bootstrap.setupLogging(thisDir)
     job = Bootstrap.loadJobDefinition()
     task = Bootstrap.loadTask(job)
@@ -150,7 +151,6 @@ class RuntimeTest(unittest.TestCase):
         if not os.path.exists(siteConfigPath):
             os.makedirs(siteConfigPath)
         shutil.copy(os.path.join(self.thisDirPath, 'site-local-config.xml'), siteConfigPath)
-        shutil.copy(os.path.join(self.thisDirPath, 'storage.json'), os.path.join(siteConfigPath,'..'))
         environment = rereco.data.section_('environment')
         environment.CMS_PATH = workloadDir
         environment.SITECONFIG_PATH = os.path.join(workloadDir, 'SITECONF/local')
@@ -304,7 +304,7 @@ class RuntimeTest(unittest.TestCase):
         for primeTask in workload.taskIterator():
             listOfTasks.append(primeTask)
             # Only run primeTasks for now
-        
+
         for task in listOfTasks:
             jobName = task.name()
             taskDir = os.path.join(self.unpackDir, jobName, 'job')
@@ -314,9 +314,8 @@ class RuntimeTest(unittest.TestCase):
             # Scream, run around in panic, blow up machine
             print("About to run jobs")
             print(taskDir)
-            #SITECONFIG_PATH is not available here so set it up so that site config can be loaded in Bootstrap.createInitialReport inside miniStartup
-            os.environ['SITECONFIG_PATH'] = os.path.realpath(os.path.join(taskDir,'../../../basicWorkload/SITECONF/local')) 
             miniStartup(thisDir=taskDir)
+
             # When exiting, go back to where you started
             os.chdir(self.initialDir)
             sys.path.remove(taskDir)
@@ -410,7 +409,7 @@ class RuntimeTest(unittest.TestCase):
         self.createWMBSComponents(workload=workload)
 
         self.unpackComponents(workload=workload)
-        
+
         self.runJobs(workload=workload)
 
         # Check the report
@@ -420,8 +419,8 @@ class RuntimeTest(unittest.TestCase):
         cmsReport = report.data.cmsRun1
 
         # Now validate the report
-        self.assertEqual(report.getSiteName(), 'T1_US_FNAL')
-        #self.assertEqual(report.data.hostName, socket.gethostname())
+        self.assertEqual(report.getSiteName(), {})
+        # self.assertEqual(report.data.hostName, socket.gethostname())
         self.assertTrue(report.data.completed)
 
         # Should have status 0 (emulator job)

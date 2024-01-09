@@ -29,22 +29,11 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         Verify that the FNAL site config file is parsed correctly.
         """
-        os.environ['SITECONFIG_PATH'] = '/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL'
         fnalConfigFileName = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_US_FNAL_SiteLocalConfig.xml")
-        #fnalConfigFileName = '/cvmfs/cms.cern.ch/SITECONF/T1_DE_KIT/KIT-HOREKA/JobConfig/site-local-config.xml'
-        #switch between old TFC and new Rucio data catalog by changing the last parameter, need to set SITECONFIG_PATH when this is False 
-        #mySiteConfig = SiteLocalConfig(fnalConfigFileName,False) #set False to use new Rucio storage descriptions with storage.json
-        print(">>>>>>>>>>>",fnalConfigFileName)
+
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
-        #print(mySiteConfig.localStageOut)
-        #print(mySiteConfig.fallbackStageOut)
-        #tfcInstance = mySiteConfig.trivialFileCatalog()
-        #print(tfcInstance)
-        #for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
-        #    for x in tfcInstance[mapping]:
-        #      print(x)
 
         assert mySiteConfig.siteName == "T1_US_FNAL", "Error: Wrong site name."
         assert len(list(mySiteConfig.eventData)) == 1, "Error: Wrong number of event data keys."
@@ -73,46 +62,29 @@ class SiteLocalConfigTest(unittest.TestCase):
             assert frontierProxy in goldenProxies, \
                    "Error: Unknown proxy: %s" % frontierProxy
             goldenProxies.remove(frontierProxy)
-        
+
         assert len(goldenProxies) == 0, \
                 "Error: Missing proxy servers."
-        
-        assert mySiteConfig.stageOuts[0]["command"] == "xrdcp", \
-                "Error: Wrong stage out command."
-        assert mySiteConfig.stageOuts[0]["protocol"] == "XRootD",\
-                "Error: Protocol is not correct."
-        assert mySiteConfig.stageOuts[0]["option"] == "-p",\
-                "Error: option is not correct."
-        '''
-        if mySiteConfig.useTFC:
-            assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
-                "Error: Wrong stage out command."
-            assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
-                "Error: TFC catalog is not correct."
-            assert mySiteConfig.fallbackStageOut == [], \
-                "Error: Fallback config is incorrect."
-        else:
-            assert mySiteConfig.stageOuts[0]["command"] == "xrdcp", \
-                "Error: Wrong stage out command."
-            assert mySiteConfig.stageOuts[0]["protocol"] == "XRootD",\
-                "Error: Protocol is not correct."
-            assert mySiteConfig.stageOuts[0]["option"] == "-p",\
-                "Error: option is not correct."
-        '''          
-        #assert False
+
+        assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
+               "Error: Wrong stage out command."
+        assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
+               "Error: TFC catalog is not correct."
+
+        assert mySiteConfig.fallbackStageOut == [], \
+               "Error: Fallback config is incorrect."
         return
-    #There is no T3_US_Vanderbilt so turn this test off
-    '''
+
     def testVanderbiltSiteLocalConfig(self):
         """
-        _testVanderbiltSiteLocalConfig_
+        _testFNALSiteLocalConfig_
 
         Verify that the FNAL site config file is parsed correctly.
         """
         vandyConfigFileName = os.path.join(getTestBase(),
                                            "WMCore_t/Storage_t",
                                            "T3_US_Vanderbilt_SiteLocalConfig.xml")
-        #still using legacy trivial catalog
+
         mySiteConfig = SiteLocalConfig(vandyConfigFileName)
 
         assert mySiteConfig.siteName == "T3_US_Vanderbilt", \
@@ -158,7 +130,8 @@ class SiteLocalConfigTest(unittest.TestCase):
         assert mySiteConfig.fallbackStageOut[0]["lfn-prefix"] == "srm://se1.accre.vanderbilt.edu:6288/srm/v2/server?SFN=", \
                "Error: Incorrect fallback LFN prefix."
         return
-    '''
+
+
     def testLoadingConfigFromOverridenEnvVarriable(self):
         """
         test SiteLocalConfig module method loadSiteLocalConfig when loading
@@ -168,13 +141,11 @@ class SiteLocalConfigTest(unittest.TestCase):
         """
         vandyConfigFileName = os.path.join(getTestBase(),
                                            "WMCore_t/Storage_t",
-                                           "T1_US_FNAL_SiteLocalConfig.xml")
+                                           "T3_US_Vanderbilt_SiteLocalConfig.xml")
         os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = vandyConfigFileName
-        os.environ["SITECONFIG_PATH"] = "/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL"
 
-        #still using legacy trivial catalog
         mySiteConfig = loadSiteLocalConfig()
-        self.assertEqual(mySiteConfig.siteName, "T1_US_FNAL",
+        self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt",
                          "Error: Wrong site name.")
 
     # this test requires access to CVMFS
@@ -185,16 +156,15 @@ class SiteLocalConfigTest(unittest.TestCase):
         site-local-config.xml is the same as the one returned by the PhEDEx api.
         """
         os.environ["CMS_PATH"] = "/cvmfs/cms.cern.ch"
+        os.environ["SITECONFIG_PATH"] = "/cvmfs/cms.cern.ch/SITECONF/local"
 
         nodes = ['FIXME']
 
         for d in os.listdir("/cvmfs/cms.cern.ch/SITECONF/"):
             # Only T0_, T1_... folders are needed
             if d[0] == "T":
-                os.environ["SITECONFIG_PATH"] = "/cvmfs/cms.cern.ch/SITECONF/%s" % (d)
                 os.environ['WMAGENT_SITE_CONFIG_OVERRIDE'] ='/cvmfs/cms.cern.ch/SITECONF/%s/JobConfig/site-local-config.xml' % (d)
                 try:
-                    #still using legacy trivial catalog
                     slc = loadSiteLocalConfig()
                 except SiteConfigError as e:
                     print(e.args[0])

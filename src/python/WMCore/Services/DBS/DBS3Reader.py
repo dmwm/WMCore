@@ -484,6 +484,7 @@ class DBS3Reader(object):
         We need to clean code up when dbs2 is completely deprecated.
         calling lumis for run number is expensive.
         """
+        result = []
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.listFilesInBlock(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName) from None
@@ -496,10 +497,13 @@ class DBS3Reader(object):
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg) from None
 
+        if not files:
+            # there are no valid files in this block, stop here!
+            return result
+
         if lumis:
             lumiDict = self._getLumiList(blockName=fileBlockName, validFileOnly=validFileOnly)
 
-        result = []
         for fileInfo in files:
             if lumis:
                 fileInfo["LumiList"] = lumiDict[fileInfo['logical_file_name']]

@@ -422,6 +422,13 @@ class MSTransferor(MSCore):
             dids, didsSize = wflow.getInputData()
             grouping = wflow.getRucioGrouping()
             copies = wflow.getReplicaCopies()
+            # we cannot ask Rucio to make more copies than the number of RSEs, so check first
+            if copies > len(rses):
+                msg = f"Found only {len(rses)} RSEs listed, hence we need to lower "
+                msg += f"the number of copies from {copies} to {len(rses)}"
+                self.logger.warning(msg)
+                copies = len(rses)
+
             if not dids:
                 # no valid files in any blocks, it will likely fail in global workqueue
                 self.logger.warning("  found 0 primary/parent blocks for dataset: %s, moving on...", dataIn['name'])

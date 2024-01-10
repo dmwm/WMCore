@@ -38,15 +38,10 @@ jobs:
           CERN_REGISTRY: registry.cern.ch
         run: |
           echo "Building service: ${SERVICE_NAME}, with tag: ${PYPI_TAG}"
-          for i in 1 2 3 4 5; do
-            svn checkout https://github.com/dmwm/CMSKubernetes/trunk/docker/pypi/${SERVICE_NAME}
-            if [ $? -eq 0 ]; then
-              break
-            fi
-            echo "Retry $i: SVN failed to fetch files. Sleeping 60 seconds..."
-            sleep 60
-          done
-          cd ${SERVICE_NAME}
+          git clone --filter=blob:none --no-checkout https://github.com/dmwm/CMSKubernetes.git \
+            && cd CMSKubernetes && git sparse-checkout set --cone && git checkout master \
+            && git sparse-checkout set docker/pypi/${SERVICE_NAME}
+          cd docker/pypi/${SERVICE_NAME}
           echo "Retrieved Dockerfile with content:"
           cat Dockerfile
           echo "Sleeping 5min to ensure that PyPi packages are available..."

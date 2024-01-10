@@ -30,7 +30,7 @@ class WorkflowUpdater(Harness):
         """
         pollInterval = self.config.WorkflowUpdater.pollInterval
         logging.info("Starting %s with configuration:\n%s", self.__class__.__name__,
-                     pformat(self.config.WorkflowUpdaterPoller.dictionary_()))
+                     pformat(self.config.WorkflowUpdater.dictionary_()))
 
         myThread = threading.currentThread()
         myThread.workerThreadManager.addWorker(WorkflowUpdaterPoller(self.config),

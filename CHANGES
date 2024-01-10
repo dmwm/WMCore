@@ -1,3 +1,7 @@
+2.2.6rc6 to 2.2.6rc7:
+  - Replace svn by git in GitHub actions (Alan Malta Rodrigues) #11858
+
+
 2.2.6rc5 to 2.2.6rc6:
   - Revert "stage out implementation for the new Rucio storage description (storage.json)" (Alan Malta Rodrigues) #11857
   - Ensure MSTransferor does not request more copies than RSEs available (Alan Malta Rodrigues) #11844

@@ -264,8 +264,12 @@ class StartPolicyInterface(PolicyInterface):
         """
         if not account:
             account = self.rucioAcctPU
+        if isinstance(datasets, str):
+            datasets = [datasets]
         result = {}
         for datasetPath in datasets:
+            msg = f"Fetching Rucio locks for account: {account} and dataset: {datasetPath}"
+            self.logger.info(msg)
             locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
                                                              account=account)
             result[datasetPath] = self.cric.PNNstoPSNs(locations)

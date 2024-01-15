@@ -20,7 +20,7 @@ from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj, schema
 from WMCore.MicroService.MSPileup.MSPileupError import MSPileupUniqueConstrainError, \
     MSPileupDatabaseError, MSPileupNoKeyFoundError, MSPileupDuplicateDocumentError, \
-    MSPileupSchemaError, MSPileupGenericError
+    MSPileupSchemaError, MSPileupGenericError, MSPileupFractionError
 from WMCore.MicroService.Tools.Common import getMSLogger
 
 
@@ -159,7 +159,9 @@ class MSPileupData():
 
     def updatePileup(self, doc, rseList=None, validate=True, userDN=''):
         """
-        Update pileup data with provided input
+        Update pileup data with provided input. The given doc should be either
+        full pileup document or contains mandatory fields like pileupName
+        and containerFraction in case of partial pileup data-placement.
 
         :param doc: a dictionary of pieleup data to be updated
         :param rseList: a list of valid RSE names
@@ -171,87 +173,64 @@ class MSPileupData():
         self.logger.info("Updating pileup document %s", doc)
         rseList = rseList or []
 
-        # what logic should we use to lookup document when we are given
-        # both pileupName and customName, there are different use-cases here:
-        # when someone created custom name and when we use partail pileup placement
-
-        # I commented out original logic below
-#         pname = doc.get('customName', '')
-#         spec = {'customName': pname}
-#         if pname == '':
-#             pname = doc.get('pileupName', '')
-#             spec = {'pileupName': pname}
-
-        # check if either pileup or custom name exist
-        if doc.get('pileupName', '') == '' and doc.get('customName', '') == '':
-            err = MSPileupNoKeyFoundError(doc, 'Neither pileup or custom name are provided')
+        # check if either pileup
+        if doc.get('pileupName', '') == '':
+            err = MSPileupNoKeyFoundError(doc, 'pileup name is not provided')
             self.logger.error(err)
             return [err.error()]
+
+        # check that spec should not allow customName without pileupName
+        if doc.get('customName', '') != '' and 'pileupName' not in doc:
+            err = MSPileupNoKeyFoundError(doc, 'custom name is not allowed in spec without pileup name')
+            self.logger.error(err)
+            return [err.error()]
+
 
         # it is replaced with partial pileup placement one, see
         # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
 
-        pname = doc.get('customName', '')
-        if pname == '':
-            pname = doc.get('pileupName', '')
+        # get document with pileup name
+        pname = doc['pileupName']
+        spec = {'pileupName': pname}
 
-        # find first document with custom name
-        results = []
-        if doc.get('customName', '') != '':
-            spec = {'pileupName': doc['customName']}
-            results = self.getPileup(spec)
-            if len(results) == 0:
-                # get document with pileup name
-                spec = {'pileupName': doc['pileupName']}
-                results = self.getPileup(spec)
-        else:
-            # get document with pileup name
-            spec = {'pileupName': doc['pileupName']}
-            results = self.getPileup(spec)
-
-        # we should always have record before its update
+        # look-up pileup document in underlying DB
+        self.logger.info("Fetching pileup document with the following spec: %s", spec)
+        results = self.getPileup(spec)
         if not results:
             err = MSPileupNoKeyFoundError(spec, f'No document found for {spec} query')
             self.logger.error(err)
             return [err.error()]
 
-        # perform check of input doc, is it partial pileup spec or not
-        partialPileupSpec = False
-        if len(doc.keys()) == 2:
-            partialPileupSpec = True
-            self.logger.info("##### partial pileup spec: %s", doc)
+        # we should have a single document corresponding to given pileup name
+        if len(results) != 1:
+            msg = f"Unique constraint violated for {pname}"
+            err = MSPileupUniqueConstrainError(spec, msg)
+            self.logger.error(err)
+            return [err.error()]
+
+        # Based on the document retrieved from the database, apply the user-related
+        # updates and run this new data structure through the usual validation
+        dbDoc = results[0]
 
         # get fraction value of provided document spec
         fraction = doc.get('containerFraction', 1.0)
 
-        self.logger.info("Fetching pileup document with the following spec: %s", spec)
-        # if validate=True, then try to load the original document from the
-        # database and perform full validation on the updated doc
+        # perform check of input doc, is it partial pileup spec or not
+        partialPileupSpec = False
+        if set(doc.keys()) == set(["pileupName", "containerFraction"]):
+            partialPileupSpec = True
+            # check if given containerFraction is differ from existing document one
+            if fraction == dbDoc.get('containerFraction', 1.0):
+                msg = f"container fraction in provided spec {spec} is identical to one in MongoDB"
+                err = MSPileupFractionError(spec, msg)
+                self.logger.error(err)
+                return [err.error()]
+            self.logger.info("partial pileup spec: %s", doc)
+
+        # Based on the document retrieved from the database, apply the user-related
+        # updates and run this new data structure through the usual validation
+        dbDoc.update(doc)
         if validate:
-            # check if given document contains pileup Name (unique key)
-            if not pname:
-                err = MSPileupNoKeyFoundError(doc, f'No document found for {pname}')
-                self.logger.error(err)
-                return [err.error()]
-
-            # look-up pileup document in underlying DB
-            results = self.getPileup(spec)
-            if not results:
-                err = MSPileupNoKeyFoundError(spec, f'No document found for {spec} query')
-                self.logger.error(err)
-                return [err.error()]
-
-            # we should have a single document corresponding to given pileup name
-            if len(results) != 1:
-                msg = f"Unique constraint violated for {pname}"
-                err = MSPileupUniqueConstrainError(spec, msg)
-                self.logger.error(err)
-                return [err.error()]
-
-            # Based on the document retrieved from the database, apply the user-related
-            # updates and run this new data structure through the usual validation
-            dbDoc = results[0]
-            dbDoc.update(doc)
             try:
                 # when input doc spec is partial pileup we do not have rseList
                 if partialPileupSpec:

@@ -118,8 +118,8 @@ class MSPileupTasks():
           - add new transition record and update MSPileup document
         - we call attachDIDs Rucio wrapper API with our set of DIDs and rses from pileup document
         - create new rules for custom DID via provided rseExpression
-        - set expiration date (to be 24h) for already existing ruleIds from pileup document
         - add new ruleIds to pileup document
+        - set expiration date (to be 24h) for already existing ruleIds from pileup document
 
         :return: None
         """
@@ -163,25 +163,33 @@ class MSPileupTasks():
 
             # get portion of DIDs based on ceil(containerFraction * num_rucio_datasets)
             portion = blockNames[:math.ceil(fraction * len(blockNames))]
-            self.logger.info("For pileup document %s take portion %s", doc, portion)
+            self.logger.info("Using %d out of %d blocks in the original pileup", len(blockNames), len(portion))
 
             # create new container DID in Rucio for our custom name
             self.rucioClient.createContainer(doc['customName'], scope=self.customRucioScope)
+            self.logger.info("Create container %s with scope %s", doc['customName'], self.customRucioScope)
 
             # we call attachDIDs Rucio wrapper API with our set of DIDs
             newRules = []
+            # NOTE:
+            # a) can we attach the same DID but against a different RSE?
+            # b) I know the Rucio wrapper does not accept a list at the moment. But does Rucio server accept it?
+            # c) depending on increasing/decreasing, we will likely have to call this attachment twice.
+            #    i) for blocks that we know their current location/RSE;
+            #    ii) for blocks that are potentially nowhere on Disk (hence, rse=None).
             for rse in doc['currentRSEs']:
                 self.rucioClient.attachDIDs(rse, doc['customName'], portion, scope=self.customRucioScope)
 
                 # create new rule for custom DID using pileup document rse
-                newRules += self.rucioClient.createReplicationRules(portion, rse)
+                newRules += self.rucioClient.createReplicationRule(doc['customName'], rse)
 
-            self.logger.info("newRules %s", newRules)
+            self.logger.info("Custom pileup: %s has the following new rules created: %s for RSEs: %s", doc['customName'], newRules)
             # set expiration date (to be 24h) for already existing ruleIds from pileup document
             for rid in doc['ruleIds']:
                 # set expiration date to be 24h ahead of right now
                 opts = {'lifetime': 24 * 60 * 60}
                 self.rucioClient.updateRule(rid, opts)
+                self.logger.info("Custom pileup %s has new lifetime %s", doc['customName'], opts['lifetime'])
 
             # update pileup document
             if newRules:
@@ -194,26 +202,25 @@ class MSPileupTasks():
                     # update transition record of the pileup document, see logic:
                     # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
 
-                    # we should always have transition record(s)
-                    transition = doc['transition']
-                    # take user DN from last record
-                    userDN = transition[-1]['DN']
-                    prevTranRecord = transition[-1]
-                    # generate new custom name
+                    # get previous transition record
+                    prevTranRecord = doc['transition'][-1]
+
+                    # keep custom name value from this record as we'll update it later
                     cname = prevTranRecord['customDID']
-                    transitionRecord = {'containerFraction': fraction,
-                                        'customDID': cname,
-                                        'updateTime': gmtimeSeconds(),
-                                        'DN': userDN}
-                    prevTranRecord.update(transitionRecord)
-                    transition[-1] = prevTranRecord
-                    # add new transition record and update custom name
-                    doc['transition'] = transition
+
+                    # update previous transition record in place, i.e. it will be updated
+                    # within doc['transition'] directly after these assingments
+                    prevTranRecord['containerFraction'] = fraction
+                    prevTranRecord['customDID'] = cname
+                    prevTranRecord['updateTime'] = gmtimeSeconds()
+
+                    # update custom name from value of previous transition record
                     doc['customName'] = cname
                     self.logger.info("update pileup document %s", doc)
 
                     # update MSPileup document in MongoDB
-                    self.mgr.updatePileup(doc, rseList=newRules)
+                    self.mgr.updatePileup(doc, rseList=doc['currentRSEs'])
+#                     self.mgr.updatePileup(doc, rseList=doc['expectedRSEs'])
                     self.logger.info("Pileup name had its fraction updated in the partialPileupTask function. record=%s", doc)
                 except Exception as exp:
                     msg = f"Failed to update MSPileup document, {exp}"

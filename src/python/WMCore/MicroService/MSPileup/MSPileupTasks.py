@@ -177,9 +177,8 @@ class MSPileupTasks():
             # c) depending on increasing/decreasing, we will likely have to call this attachment twice.
             #    i) for blocks that we know their current location/RSE;
             #    ii) for blocks that are potentially nowhere on Disk (hence, rse=None).
+            self.rucioClient.attachDIDs(None, doc['customName'], portion, scope=self.customRucioScope)
             for rse in doc['currentRSEs']:
-                self.rucioClient.attachDIDs(rse, doc['customName'], portion, scope=self.customRucioScope)
-
                 # create new rule for custom DID using pileup document rse
                 newRules += self.rucioClient.createReplicationRule(doc['customName'], rse)
 

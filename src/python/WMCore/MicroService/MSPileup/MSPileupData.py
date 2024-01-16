@@ -185,7 +185,6 @@ class MSPileupData():
             self.logger.error(err)
             return [err.error()]
 
-
         # it is replaced with partial pileup placement one, see
         # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
 
@@ -232,14 +231,12 @@ class MSPileupData():
         dbDoc.update(doc)
         if validate:
             try:
-                # when input doc spec is partial pileup we do not have rseList
+                # NOTE: MSPileupObj calls validate in its ctor with provided validRSEs
+                # therefore, for partial pileup we take expectedRSEs for validation
+                # while for generic update case we use rseList passed to this API as is
                 if partialPileupSpec:
                     rseList = dbDoc['expectedRSEs']
-                    self.logger.info("#### partialPileupSpec obj")
-                    obj = MSPileupObj(dbDoc, validRSEs=rseList)
-                else:
-                    self.logger.info("#### full pileup obj")
-                    obj = MSPileupObj(dbDoc, validRSEs=rseList)
+                obj = MSPileupObj(dbDoc, validRSEs=rseList)
                 doc = obj.getPileupData()
             except Exception as exp:
                 msg = f"Failed to update MSPileupObj, {exp}"

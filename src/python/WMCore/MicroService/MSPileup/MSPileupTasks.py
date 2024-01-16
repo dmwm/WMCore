@@ -105,6 +105,60 @@ class MSPileupTasks():
             self.logger.exception(msg)
         return cmsDict, cusDict
 
+    def getPileupBlocks(self, doc, previousFraction, fraction):
+        """
+        Return list of blocks for increase/decrease scenarios of partial pileup
+        according to logic outlined in
+        https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5#logic-for-increasingdecreasing-container-fraction
+        :return: list of blocks
+        """
+        if previousFraction < fraction:
+            return self.getIncreasingBlocks(doc, fraction)
+        return self.getDecreasingBlocks(doc, fraction)
+
+    def getIncreasingBlocks(self, doc, fraction):
+        """
+        Return list of blocks for increase scenarios of partial pileup
+        according to logic outlined in
+        https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5#logic-for-increasingdecreasing-container-fraction
+        NOTE: in order to increaee pileup fraction we already should have
+        in place transition record since MSPilupeObj always created with container fraction 1
+
+        :param doc: pileup document
+        :param fraction: container fraction
+        :return: list of blocks
+        """
+        pname = doc['pileupName']
+        lastTransition = doc['transition'][-1]
+        cname = lastTransition['customDID']
+        totalBlocks = self.rucioClient.getBlocksInContainer(pname)
+        customBlocks = self.rucioClient.getBlocksInContainer(cname)
+        portion = math.ceil(fraction * len(totalBlocks))
+        blockList = customBlocks + [b for b in totalBlocks if b not in customBlocks]
+        self.logger.info("increase scenario: use %d blocks out of %d custom blocks from %s and %d from %s", len(blockList), len(customBlocks), cname, len(totalBlocks), pname)
+        return blockList[:portion]
+
+    def getDecreasingBlocks(self, doc, fraction):
+        """
+        Return list of blocks for decrease scenarios of partial pileup
+        according to logic outlined in
+        https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5#logic-for-increasingdecreasing-container-fraction
+
+        :param doc: pileup document
+        :param fraction: container fraction
+        :return: list of blocks
+        """
+        pname = doc['pileupName']
+        cname = doc['customName']
+        totalBlocks = self.rucioClient.getBlocksInContainer(pname)
+        portion = math.ceil(fraction * len(totalBlocks))
+        if cname == '':
+            self.logger.info("decrease scenario: use %d blocks out of pileup %s with %d blocks", len(totalBlocks[:portion]), pname, len(totalBlocks))
+            return totalBlocks[:portion]
+        customBlocks = self.rucioClient.getBlocksInContainer(cname)
+        self.logger.info("decrease scenario: use %d blocks out of custom container %s", len(customBlocks[:portion]), cname)
+        return customBlocks[:portion]
+
     def partialPileupTask(self):
         """
         Execute partial pileup placement according to the following logic:
@@ -146,39 +200,16 @@ class MSPileupTasks():
             # usage of block names defined in this logic:
             # https://github.com/dmwm/WMCore/pull/11807#pullrequestreview-1786778783
             pname = doc['pileupName']
-            blockNames = self.rucioClient.getBlocksInContainer(pname)
-            if previousFraction < fraction:
-                # if it increasing
-                # use EVERY single block defined in the custom dataset plus blocks from the standard pileup
-                cname = doc.get('customName', '')
-                if cname:
-                    blockNames = self.rucioClient.getBlocksInContainer(cname) + blockNames
-            else:
-                # if it is decreasing
-                # instead of using random blocks from the standard pileup dataset (pileupName)
-                # we should use it from the custom dataset (customName) - if existent
-                cname = doc.get('customName', '')
-                if cname:
-                    blockNames = self.rucioClient.getBlocksInContainer(cname)
-
-            # get portion of DIDs based on ceil(containerFraction * num_rucio_datasets)
-            portion = blockNames[:math.ceil(fraction * len(blockNames))]
-            self.logger.info("Using %d out of %d blocks in the original pileup", len(blockNames), len(portion))
+            customBlocks = self.getPileupBlocks(doc, previousFraction, fraction)
 
             # create new container DID in Rucio for our custom name
             self.rucioClient.createContainer(doc['customName'], scope=self.customRucioScope)
             self.logger.info("Create container %s with scope %s", doc['customName'], self.customRucioScope)
 
-            # we call attachDIDs Rucio wrapper API with our set of DIDs
+            # call rucio APIs to attach custom blocks to our custom container (DID)
             newRules = []
-            # NOTE:
-            # a) can we attach the same DID but against a different RSE?
-            # b) I know the Rucio wrapper does not accept a list at the moment. But does Rucio server accept it?
-            # c) depending on increasing/decreasing, we will likely have to call this attachment twice.
-            #    i) for blocks that we know their current location/RSE;
-            #    ii) for blocks that are potentially nowhere on Disk (hence, rse=None).
-            self.rucioClient.attachDIDs(None, doc['customName'], portion, scope=self.customRucioScope)
-            for rse in doc['currentRSEs']:
+            self.rucioClient.attachDIDs(None, doc['customName'], customBlocks, scope=self.customRucioScope)
+            for rse in doc['expectedRSEs']:
                 # create new rule for custom DID using pileup document rse
                 newRules += self.rucioClient.createReplicationRule(doc['customName'], rse)
 
@@ -219,7 +250,6 @@ class MSPileupTasks():
 
                     # update MSPileup document in MongoDB
                     self.mgr.updatePileup(doc, rseList=doc['currentRSEs'])
-#                     self.mgr.updatePileup(doc, rseList=doc['expectedRSEs'])
                     self.logger.info("Pileup name had its fraction updated in the partialPileupTask function. record=%s", doc)
                 except Exception as exp:
                     msg = f"Failed to update MSPileup document, {exp}"

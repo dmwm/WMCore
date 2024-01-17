@@ -135,7 +135,8 @@ class MSPileupTasks():
         customBlocks = self.rucioClient.getBlocksInContainer(cname)
         portion = math.ceil(fraction * len(totalBlocks))
         blockList = customBlocks + [b for b in totalBlocks if b not in customBlocks]
-        self.logger.info("increase scenario: use %d blocks out of %d custom blocks from %s and %d from %s", len(blockList), len(customBlocks), cname, len(totalBlocks), pname)
+        self.logger.info("increase scenario: use %d blocks out of %d custom blocks from %s and %d from %s",
+                         len(blockList), len(customBlocks), cname, len(totalBlocks), pname)
         return blockList[:portion]
 
     def getDecreasingBlocks(self, doc, fraction):
@@ -153,10 +154,12 @@ class MSPileupTasks():
         totalBlocks = self.rucioClient.getBlocksInContainer(pname)
         portion = math.ceil(fraction * len(totalBlocks))
         if cname == '':
-            self.logger.info("decrease scenario: use %d blocks out of pileup %s with %d blocks", len(totalBlocks[:portion]), pname, len(totalBlocks))
+            self.logger.info("decrease scenario: use %d blocks out of pileup %s with %d blocks",
+                             len(totalBlocks[:portion]), pname, len(totalBlocks))
             return totalBlocks[:portion]
         customBlocks = self.rucioClient.getBlocksInContainer(cname)
-        self.logger.info("decrease scenario: use %d blocks out of custom container %s", len(customBlocks[:portion]), cname)
+        self.logger.info("decrease scenario: use %d blocks out of custom container %s",
+                         len(customBlocks[:portion]), cname)
         return customBlocks[:portion]
 
     def partialPileupTask(self):
@@ -199,7 +202,6 @@ class MSPileupTasks():
 
             # usage of block names defined in this logic:
             # https://github.com/dmwm/WMCore/pull/11807#pullrequestreview-1786778783
-            pname = doc['pileupName']
             customBlocks = self.getPileupBlocks(doc, previousFraction, fraction)
 
             # create new container DID in Rucio for our custom name
@@ -213,7 +215,8 @@ class MSPileupTasks():
                 # create new rule for custom DID using pileup document rse
                 newRules += self.rucioClient.createReplicationRule(doc['customName'], rse)
 
-            self.logger.info("Custom pileup: %s has the following new rules created: %s for RSEs: %s", doc['customName'], newRules)
+            self.logger.info("Custom pileup: %s has the following new rules created: %s for RSEs: %s",
+                             doc['customName'], newRules, doc['expectedRSEs'])
             # set expiration date (to be 24h) for already existing ruleIds from pileup document
             for rid in doc['ruleIds']:
                 # set expiration date to be 24h ahead of right now

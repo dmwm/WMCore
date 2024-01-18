@@ -110,6 +110,9 @@ class MSPileupTasks():
         Return list of blocks for increase/decrease scenarios of partial pileup
         according to logic outlined in
         https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5#logic-for-increasingdecreasing-container-fraction
+        :param doc: pileup document
+        :param previousFraction: container fraction of previous step transition
+        :param fraction: current container fraction
         :return: list of blocks
         """
         if previousFraction < fraction:
@@ -136,7 +139,7 @@ class MSPileupTasks():
         portion = math.ceil(fraction * len(totalBlocks))
         blockList = customBlocks + [b for b in totalBlocks if b not in customBlocks]
         self.logger.info("increase scenario: use %d blocks out of %d custom blocks from %s and %d from %s",
-                         len(blockList), len(customBlocks), cname, len(totalBlocks), pname)
+                         len(blockList), len(customBlocks), cname, abs(portion-len(customBlocks)), pname)
         return blockList[:portion]
 
     def getDecreasingBlocks(self, doc, fraction):
@@ -159,7 +162,7 @@ class MSPileupTasks():
             return totalBlocks[:portion]
         customBlocks = self.rucioClient.getBlocksInContainer(cname)
         self.logger.info("decrease scenario: use %d blocks out of custom container %s",
-                         len(customBlocks[:portion]), cname)
+                         portion, cname)
         return customBlocks[:portion]
 
     def partialPileupTask(self):
@@ -183,14 +186,15 @@ class MSPileupTasks():
         spec = {'active': True}
         docs = self.mgr.getPileup(spec)
         for doc in docs:
-            self.logger.info("partialPileupTask process %s", doc)
+            self.logger.info("partialPileupTask process pileup name %s", doc['pileupName'])
             fraction = doc['containerFraction']
 
             # check previous fraction value and proceed only if has changed
-            previousFraction = 1.0
             transition = doc.get('transition', [])
             if transition:
                 previousFraction = transition[-1]['containerFraction']
+            else:
+                previousFraction = doc['containerFraction']
             if previousFraction == fraction:
                 # do nothing since there is no transition, i.e. skip this record
                 self.logger.info("Pileup name %s has no container fractions changes", doc['pileupName'])
@@ -204,16 +208,23 @@ class MSPileupTasks():
             # https://github.com/dmwm/WMCore/pull/11807#pullrequestreview-1786778783
             customBlocks = self.getPileupBlocks(doc, previousFraction, fraction)
 
-            # create new container DID in Rucio for our custom name
-            self.rucioClient.createContainer(doc['customName'], scope=self.customRucioScope)
-            self.logger.info("Create container %s with scope %s", doc['customName'], self.customRucioScope)
+            # create new container DID in Rucio for transition custom name
+            cname = doc['transition'][-1]['customDID']
+            self.logger.info("Create container %s with scope %s", cname, self.customRucioScope)
+            status = self.rucioClient.createContainer(cname, scope=self.customRucioScope)
+            if not status:
+                self.logger.error("Failed to create container %s with scope %s", cname, self.customRucioScope)
+                continue
 
             # call rucio APIs to attach custom blocks to our custom container (DID)
             newRules = []
-            self.rucioClient.attachDIDs(None, doc['customName'], customBlocks, scope=self.customRucioScope)
+            self.logger.info("Attaching %d blocks to custom pileup name: %s", len(customBlocks), cname)
+            self.rucioClient.attachDIDs(None, cname, customBlocks, scope=self.customRucioScope)
             for rse in doc['expectedRSEs']:
                 # create new rule for custom DID using pileup document rse
-                newRules += self.rucioClient.createReplicationRule(doc['customName'], rse)
+                ruleIds = self.rucioClient.createReplicationRule(cname, rse)
+                self.logger.info("Rule ids: %s created for custom pileup: %s for RSE: %s", ruleIds, cname, rse)
+                newRules += ruleIds
 
             self.logger.info("Custom pileup: %s has the following new rules created: %s for RSEs: %s",
                              doc['customName'], newRules, doc['expectedRSEs'])
@@ -222,15 +233,15 @@ class MSPileupTasks():
                 # set expiration date to be 24h ahead of right now
                 opts = {'lifetime': 24 * 60 * 60}
                 self.rucioClient.updateRule(rid, opts)
-                self.logger.info("Custom pileup %s has new lifetime %s", doc['customName'], opts['lifetime'])
+                self.logger.info("Rule id: %s has been updated with lifetime: %s", rid, opts['lifetime'])
 
             # update pileup document
             if newRules:
                 # remove duplicate rules
-                newRules = set(newRules)
+                newRules = list(set(newRules))
                 try:
                     # update rules
-                    doc['ruleIds'] += newRules
+                    doc['ruleIds'] = newRules
 
                     # update transition record of the pileup document, see logic:
                     # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
@@ -244,16 +255,15 @@ class MSPileupTasks():
                     # update previous transition record in place, i.e. it will be updated
                     # within doc['transition'] directly after these assingments
                     prevTranRecord['containerFraction'] = fraction
-                    prevTranRecord['customDID'] = cname
                     prevTranRecord['updateTime'] = gmtimeSeconds()
 
                     # update custom name from value of previous transition record
                     doc['customName'] = cname
-                    self.logger.info("update pileup document %s", doc)
+                    self.logger.info("Finally, updating the pileup document for pileup name: %s", doc['pileupName'])
 
                     # update MSPileup document in MongoDB
                     self.mgr.updatePileup(doc, rseList=doc['currentRSEs'])
-                    self.logger.info("Pileup name had its fraction updated in the partialPileupTask function. record=%s", doc)
+                    self.logger.info("Pileup name %s had its fraction updated in the partialPileupTask function", doc['pileupName'])
                 except Exception as exp:
                     msg = f"Failed to update MSPileup document, {exp}"
                     self.logger.exception(msg)

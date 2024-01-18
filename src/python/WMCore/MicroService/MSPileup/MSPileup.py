@@ -113,17 +113,8 @@ class MSPileup(MSCore):
         :return: results of MSPileup data layer (list of dicts)
         """
         self.authMgr.authorizeApiAccess('ms-pileup', 'update')
-        # fetch pileup doc and update it
-        records = self.queryDatabase({'pileupName': pdict['pileupName']})
-        if len(records) != 1:
-            err = MSPileupNoKeyFoundError(pdict, f'No document found for {pdict} query')
-            return [err.error()]
-        doc = records[0]
-
-        # update pilup data
-        doc.update(pdict)
         rseNames = self.rucio.evaluateRSEExpression(self.diskRSEExpr, useCache=True)
-        return self.dataMgr.updatePileup(doc, rseNames, validate=True, userDN=self.userDN())
+        return self.dataMgr.updatePileup(pdict, rseNames, validate=True, userDN=self.userDN())
 
     def deletePileup(self, spec):
         """

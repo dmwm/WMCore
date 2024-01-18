@@ -19,6 +19,7 @@ MSPILEUP_NOTFOUND_ERROR = 4
 MSPILEUP_DATABASE_ERROR = 5
 MSPILEUP_UNIQUE_ERROR = 6
 MSPILEUP_SCHEMA_ERROR = 7
+MSPILEUP_FRACTION_ERROR = 8
 
 
 class MSPileupError(WMException):
@@ -86,6 +87,16 @@ class MSPileupSchemaError(MSPileupError):
         super().__init__(data, msg)
         msg = self.msg if self.msg else "schema error"
         self.assign(msg=msg, code=MSPILEUP_SCHEMA_ERROR)
+
+
+class MSPileupFractionError(MSPileupError):
+    """
+    Schema MSPileup exception
+    """
+    def __init__(self, data, msg=""):
+        super().__init__(data, msg)
+        msg = self.msg if self.msg else "container fraction error"
+        self.assign(msg=msg, code=MSPILEUP_FRACTION_ERROR)
 
 
 class MSPileupInvalidDataError(MSPileupError):

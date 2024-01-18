@@ -106,6 +106,56 @@ class MockRucioApi(object):
 
         return genericLookup
 
+    def getBlocksInContainer(self, container, scope='cms'):
+        """
+        Returns list of block names for given container
+        """
+        cname = self.__class__.__name__
+        blockNames = [container + '#123', container + '#456']
+        logging.info("%s getBlocksInContainer %s", cname, blockNames)
+        return blockNames
+
+    def listDataRules(self, name, **kwargs):
+        """
+        Emulate listDataRules Rucio API
+        :return: list of dictionary records
+        """
+        cname = self.__class__.__name__
+        logging.info("%s listDataRules name=%s kwargs=%s", cname, name, kwargs)
+        return [{'rse_expression': 'T1_XX_ABC', 'id': 123, 'state': 'OK'}]
+
+    def createContainer(self, name, scope='cms', **kwargs):
+        """
+        Create a CMS dataset (Rucio container) in a given scope.
+        """
+        cname = self.__class__.__name__
+        logging.info("%s createContainer for name=%s scope=%s", cname, name, scope)
+        return True
+
+    def attachDIDs(self, rse, superDID, portion, scope='cms'):
+        """
+        Emulate attachDIDs Rucio API
+        """
+        cname = self.__class__.__name__
+        logging.info("%s attachDID rse=%s, suportDID=%s, portion=%s, scope=%s", cname, rse, superDID, portion, scope)
+        return True
+
+    def createReplicationRule(self, portion, rseExpression):
+        """
+        Emulate createReplicationRule Rucio API
+        """
+        cname = self.__class__.__name__
+        logging.info("%s createReplicationRule portion=%s, rseExpression=%s", cname, portion, rseExpression)
+        return [rseExpression]
+
+    def updateRule(self, rid, opts):
+        """
+        Emulate updateRule(rid, opts) Rucio API
+        """
+        cname = self.__class__.__name__
+        logging.info("%s updateRule rid=%s, opts=%s", cname, rid, opts)
+        return True
+
     def getReplicaInfoForBlocks(self, **args):
         """
         Returns a mocked location for data.

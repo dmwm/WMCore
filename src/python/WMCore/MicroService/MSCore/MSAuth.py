@@ -89,21 +89,43 @@ class MSAuth():
                 with open(authFile, 'rb') as istream:
                     self.authzKey = istream.read()
 
-    def authorizeApiAccess(self, service, action, method=None):
+    def userInfo(self):
         """
-        Check auth role.
-        :return: boolean
+        Read incoming HTTP request headers and return user info
+        :return: user dict structure with HTTP headers key:value pairs, like
+        {'dn': string, 'method': string, 'login': string, 'name': string, 'roles': {...}}
         """
         # skip authorization on localhost or if no remote address is provided
         # this is only valid if no cms auth headers is set, i.e. in unit tests
         headers = lowerCmsHeaders(cherrypy.request.headers)
         if 'cms-auth-status' not in headers:
             remoteAddr = headers.get('Remote-Addr', '')
-            if remoteAddr == '127.0.0.1' or remoteAddr == '':
-                return
+            if remoteAddr in ['127.0.0.1', '']:
+                user = {'dn': 'localhost-user', 'method': None, 'login': None, 'name': None, 'roles': {}}
+                return user
 
         # get user information
         user = user_info_from_headers(key=self.authzKey)
+        return user
+
+    def authorizeApiAccess(self, service, action, method=None):
+        """
+        Check auth role based CMS HTTP AUTH headers: cms-auth-status,
+        cms-authn, cms-authz, cms-authn-hmac, cms-authn-name, cms-authn-dn.
+        It throws cherrypy HTTPError if user is not authorized
+
+        :param service: service name (string)
+        :param action: action name (string
+        :param method: method name (string)
+        :return: none
+        """
+        # get user information
+        user = self.userInfo()
+        if user.get('dn', '') == 'localhost-user':
+            # we allow localhost-user to perform any actions (unit test scenario)
+            # see userInfo method which generates localhost-user DN. This fixes
+            # (403, 'You are not authorized to access this resource.') error in unit tests
+            return
 
         # CMS AUTH headers
         # cms-auth-status, cms-authn, cms-authz, cms-authn-hmac, cms-authn-name, cms-authn-dn

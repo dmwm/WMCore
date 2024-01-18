@@ -10,8 +10,11 @@ import unittest
 
 # WMCore modules
 from WMCore.MicroService.MSPileup.MSPileup import MSPileup
+from WMCore.MicroService.MSPileup.MSPileupData import customDID
 from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj
+from WMCore.MicroService.Tools.Common import getMSLogger
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from Utils.Timers import gmtimeSeconds
 
 
 class MSPileupTest(EmulatedUnitTestCase):
@@ -20,12 +23,13 @@ class MSPileupTest(EmulatedUnitTestCase):
         """
         set up unit test generic objects
         """
+        self.logger = getMSLogger(False)
         super(MSPileupTest, self).setUp()
         cherrypy.request.user = "test"
         self.validRSEs = ['rse1', 'rse2']
         msConfig = {'reqmgr2Url': 'http://localhost',
                     'authz_key': '123',
-                    'rucioAccount': 'wmcore_mspileup',
+                    'rucioAccount': 'wmcore_pileup',
                     'rucioUrl': 'http://cms-rucio-int.cern.ch',
                     'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
                     'mongoDB': 'msPileupDB',
@@ -100,12 +104,68 @@ class MSPileupTest(EmulatedUnitTestCase):
         # update doc
         doc = dict(self.doc)
         doc["pileupType"] = "premix"
+        # add transition record as it now requires for update API
+        customName = customDID(doc['pileupName'])
+        trec = {'DN': 'localhost-test', 'containerFraction': 1, 'customDID': customName, 'updateTime': gmtimeSeconds()}
+        doc.update({'transition': [trec]})
+
         res = self.mgr.updatePileup(doc)
         self.assertEqual(len(res), 0)
 
         # get doc
         res = self.mgr.getPileup(**self.spec)
         self.assertEqual(res[0]['pileupType'], "premix")
+
+    def testMSPileupUpdateTransition(self):
+        """Test MSPileup updatePileup API with transition logic"""
+        self.assertEqual(len(self.createDoc()), 0)
+        self.assertEqual(self.doc['pileupType'], "classic")
+
+        # update doc
+        doc = dict(self.doc)
+        doc["pileupType"] = "premix"
+        # add transition record as it now requires for update API
+        # note: for first transition record we do not change custom name
+        # see https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        customName = doc['pileupName']
+        trec = {'DN': 'localhost-test', 'containerFraction': 1, 'customDID': customName, 'updateTime': gmtimeSeconds()}
+        doc.update({'transition': [trec]})
+
+        res = self.mgr.updatePileup(doc)
+        self.assertEqual(len(res), 0)
+        self.logger.info("updatePileup %s", res)
+
+        # get doc
+        res = self.mgr.getPileup(**self.spec)
+        self.assertEqual(res[0]['pileupType'], "premix")
+        self.logger.info("getPileup %s", res)
+
+        # now we'll perform check for transition records according to logic outlined in
+        # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        # Please note: we can only change steps 1-5 since there is no MSPileupTasks is involved
+
+        # add new spec with transition change
+        spec = {'pileupName': doc['pileupName'], 'containerFraction': 0.5}
+        res = self.mgr.updatePileup(spec)
+        self.logger.info("updatePileup %s", res)
+        self.assertEqual(len(res), 0)
+
+        # get doc
+        res = self.mgr.getPileup(**self.spec)
+        self.assertEqual(res[0]['pileupType'], "premix")
+        self.logger.info("getPileup %s", res)
+        record = res[0]
+        self.assertEqual(len(record['transition']), 2)
+        self.assertEqual(record['customName'], '')
+
+        # check transition records
+        for idx, rec in enumerate(record['transition']):
+            if idx == 0:
+                self.assertEqual(rec['customDID'], doc['pileupName'])
+                self.assertEqual(rec['containerFraction'], 1.0)
+            elif idx == 1:
+                self.assertEqual(rec['customDID'], doc['pileupName'] + '-V1')
+                self.assertEqual(rec['containerFraction'], 1.0)
 
     def testMSPileupDelete(self):
         """Test MSPileup createPileup and deletePileup API"""

@@ -30,7 +30,6 @@ The data flow should be done via list of objects, e.g.
 
 # system modules
 import json
-import time
 
 # WMCore modules
 from Utils.Timers import gmtimeSeconds
@@ -114,6 +113,11 @@ class MSPileupObj():
                 self.logger.error(msg)
                 return False, msg
             if key == 'pileupName' or (key == 'customName' and val != ''):
+                if key == 'customName':
+                    # we may have additional suffix which we should strip off
+                    # before validation, see customDID definition in
+                    # WMCore/MicroService/MSPileup/MSPileupData.py
+                    val = val.split('-V')[:-1][0]
                 try:
                     dataset(val)
                 except AssertionError:
@@ -161,7 +165,7 @@ class MSPileupObj():
                     self.logger.error("key '%s' is not present in transition record %s", key, record)
                     return False
                 val = record[key]
-                if key == 'updateTime' and (val < pdoc['insertTime'] or val > time.time()):
+                if key == 'updateTime' and (val < pdoc['insertTime'] or val > gmtimeSeconds()):
                     # the update time should be in range between pileup insert time and now
                     self.logger.error("wrong value '%s' for updateTime in transition record %s", val, record)
                     return False

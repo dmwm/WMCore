@@ -7,6 +7,7 @@ Description: perform different set of tasks over MSPileup data
 
 # system modules
 import time
+import math
 import asyncio
 
 # WMCore modules
@@ -15,6 +16,8 @@ from WMCore.MicroService.MSPileup.DataStructs.MSPileupReport import MSPileupRepo
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.MicroService.Tools.PycurlRucio import getPileupContainerSizesRucio, getRucioToken
 from WMCore.MicroService.MSPileup.MSPileupMonitoring import flatDocuments
+from WMCore.MicroService.MSPileup.MSPileupError import MSPileupSchemaError
+from Utils.Timers import gmtimeSeconds
 
 
 class MSPileupTasks():
@@ -66,7 +69,9 @@ class MSPileupTasks():
             docs = self.mgr.getPileup(spec)
             rucioAuthUrl = self.rucioClient.rucioParams.get('auth_host', '')
             rucioHostUrl = self.rucioClient.rucioParams.get('rucio_host', '')
-            rucioToken, _tokenValidity = getRucioToken(rucioAuthUrl, self.rucioAccount)
+            rucioToken, tokenValidity = getRucioToken(rucioAuthUrl, self.rucioAccount)
+            msg = f"Rucio token {rucioToken} with validity {tokenValidity}"
+            self.logger.info(msg)
             rucioScope = self.rucioScope
             cmsContainers = []
             customContainers = []
@@ -100,17 +105,180 @@ class MSPileupTasks():
             self.logger.exception(msg)
         return cmsDict, cusDict
 
+    def getPileupBlocks(self, doc, previousFraction, fraction):
+        """
+        Return list of blocks for increase/decrease scenarios of partial pileup
+        according to logic outlined in
+        https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5#logic-for-increasingdecreasing-container-fraction
+        :param doc: pileup document
+        :param previousFraction: container fraction of previous step transition
+        :param fraction: current container fraction
+        :return: list of blocks
+        """
+        if previousFraction < fraction:
+            return self.getIncreasingBlocks(doc, fraction)
+        return self.getDecreasingBlocks(doc, fraction)
+
+    def getIncreasingBlocks(self, doc, fraction):
+        """
+        Return list of blocks for increase scenarios of partial pileup
+        according to logic outlined in
+        https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5#logic-for-increasingdecreasing-container-fraction
+        NOTE: in order to increaee pileup fraction we already should have
+        in place transition record since MSPilupeObj always created with container fraction 1
+
+        :param doc: pileup document
+        :param fraction: container fraction
+        :return: list of blocks
+        """
+        pname = doc['pileupName']
+        lastTransition = doc['transition'][-1]
+        cname = lastTransition['customDID']
+        totalBlocks = self.rucioClient.getBlocksInContainer(pname)
+        customBlocks = self.rucioClient.getBlocksInContainer(cname)
+        portion = math.ceil(fraction * len(totalBlocks))
+        blockList = customBlocks + [b for b in totalBlocks if b not in customBlocks]
+        self.logger.info("increase scenario: use %d blocks out of %d custom blocks from %s and %d from %s",
+                         len(blockList), len(customBlocks), cname, abs(portion-len(customBlocks)), pname)
+        return blockList[:portion]
+
+    def getDecreasingBlocks(self, doc, fraction):
+        """
+        Return list of blocks for decrease scenarios of partial pileup
+        according to logic outlined in
+        https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5#logic-for-increasingdecreasing-container-fraction
+
+        :param doc: pileup document
+        :param fraction: container fraction
+        :return: list of blocks
+        """
+        pname = doc['pileupName']
+        cname = doc['customName']
+        totalBlocks = self.rucioClient.getBlocksInContainer(pname)
+        portion = math.ceil(fraction * len(totalBlocks))
+        if cname == '':
+            self.logger.info("decrease scenario: use %d blocks out of pileup %s with %d blocks",
+                             len(totalBlocks[:portion]), pname, len(totalBlocks))
+            return totalBlocks[:portion]
+        customBlocks = self.rucioClient.getBlocksInContainer(cname)
+        self.logger.info("decrease scenario: use %d blocks out of custom container %s",
+                         portion, cname)
+        return customBlocks[:portion]
+
+    def partialPileupTask(self):
+        """
+        Execute partial pileup placement according to the following logic:
+
+        - get rucio DIDs (datasets, in CMS name blocks) for our pileup document
+        - get portion of DIDs based on ceil(containerFraction * num_rucio_datasets)
+        - create new container DID in Rucio via Rucio wrapper createContainer API
+          which calls rucio CLI add_container
+        - update MSPileup JSON with
+          - create new custom Name as pileup+extention
+          - add new transition record and update MSPileup document
+        - we call attachDIDs Rucio wrapper API with our set of DIDs and rses from pileup document
+        - create new rules for custom DID via provided rseExpression
+        - add new ruleIds to pileup document
+        - set expiration date (to be 24h) for already existing ruleIds from pileup document
+
+        :return: None
+        """
+        spec = {'active': True}
+        docs = self.mgr.getPileup(spec)
+        for doc in docs:
+            self.logger.info("partialPileupTask process pileup name %s", doc['pileupName'])
+            fraction = doc['containerFraction']
+
+            # check previous fraction value and proceed only if has changed
+            transition = doc.get('transition', [])
+            if transition:
+                previousFraction = transition[-1]['containerFraction']
+            else:
+                previousFraction = doc['containerFraction']
+            if previousFraction == fraction:
+                # do nothing since there is no transition, i.e. skip this record
+                self.logger.info("Pileup name %s has no container fractions changes", doc['pileupName'])
+                continue
+
+            # get rucio DIDs (datasets, in CMS name blocks) for our pileup document as following:
+            # - when container fraction is decreasing: new container is a subset of customName
+            # - when container fraction is increasing: new container is a superset of customName + subset of pileupName
+
+            # usage of block names defined in this logic:
+            # https://github.com/dmwm/WMCore/pull/11807#pullrequestreview-1786778783
+            customBlocks = self.getPileupBlocks(doc, previousFraction, fraction)
+
+            # create new container DID in Rucio for transition custom name
+            cname = doc['transition'][-1]['customDID']
+            self.logger.info("Create container %s with scope %s", cname, self.customRucioScope)
+            status = self.rucioClient.createContainer(cname, scope=self.customRucioScope)
+            if not status:
+                self.logger.error("Failed to create container %s with scope %s", cname, self.customRucioScope)
+                continue
+
+            # call rucio APIs to attach custom blocks to our custom container (DID)
+            newRules = []
+            self.logger.info("Attaching %d blocks to custom pileup name: %s", len(customBlocks), cname)
+            self.rucioClient.attachDIDs(None, cname, customBlocks, scope=self.customRucioScope)
+            for rse in doc['expectedRSEs']:
+                # create new rule for custom DID using pileup document rse
+                ruleIds = self.rucioClient.createReplicationRule(cname, rse)
+                self.logger.info("Rule ids: %s created for custom pileup: %s for RSE: %s", ruleIds, cname, rse)
+                newRules += ruleIds
+
+            self.logger.info("Custom pileup: %s has the following new rules created: %s for RSEs: %s",
+                             doc['customName'], newRules, doc['expectedRSEs'])
+            # set expiration date (to be 24h) for already existing ruleIds from pileup document
+            for rid in doc['ruleIds']:
+                # set expiration date to be 24h ahead of right now
+                opts = {'lifetime': 24 * 60 * 60}
+                self.rucioClient.updateRule(rid, opts)
+                self.logger.info("Rule id: %s has been updated with lifetime: %s", rid, opts['lifetime'])
+
+            # update pileup document
+            if newRules:
+                # remove duplicate rules
+                newRules = list(set(newRules))
+                try:
+                    # update rules
+                    doc['ruleIds'] = newRules
+
+                    # update transition record of the pileup document, see logic:
+                    # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+
+                    # get previous transition record
+                    prevTranRecord = doc['transition'][-1]
+
+                    # keep custom name value from this record as we'll update it later
+                    cname = prevTranRecord['customDID']
+
+                    # update previous transition record in place, i.e. it will be updated
+                    # within doc['transition'] directly after these assingments
+                    prevTranRecord['containerFraction'] = fraction
+                    prevTranRecord['updateTime'] = gmtimeSeconds()
+
+                    # update custom name from value of previous transition record
+                    doc['customName'] = cname
+                    self.logger.info("Finally, updating the pileup document for pileup name: %s", doc['pileupName'])
+
+                    # update MSPileup document in MongoDB
+                    self.mgr.updatePileup(doc, rseList=doc['currentRSEs'])
+                    self.logger.info("Pileup name %s had its fraction updated in the partialPileupTask function", doc['pileupName'])
+                except Exception as exp:
+                    msg = f"Failed to update MSPileup document, {exp}"
+                    self.logger.exception(msg)
+                    err = MSPileupSchemaError(doc, msg)
+                    self.logger.error(err)
+
     def cleanupTask(self, cleanupDaysThreshold):
         """
         Execute cleanup task according to the following logic:
-
         1. Fetch documents from backend database for the following conditions
            - active=False, and
            - empty ruleIds list; and
            - empty currentRSEs; and
            document has been deactivated for a while (deactivatedOn=XXX),
         2. For those documents which are fetched make delete call to backend database
-
         :param timeThreshold: time threshold in days which will determine document clean-up readiness
         """
         self.logger.info("====> Executing cleanupTask method...")

@@ -8,17 +8,20 @@ The data flow should be done via list of objects, e.g.
 [<pileup object 1>, <pileup object 2>, ..., <pileup object n>]
 """
 
+# system modules
+import re
+
 # third party modules
 from pymongo import IndexModel, errors
 
 # WMCore modules
+from Utils.Timers import gmtimeSeconds
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj, schema
 from WMCore.MicroService.MSPileup.MSPileupError import MSPileupUniqueConstrainError, \
     MSPileupDatabaseError, MSPileupNoKeyFoundError, MSPileupDuplicateDocumentError, \
-    MSPileupSchemaError, MSPileupGenericError
+    MSPileupSchemaError, MSPileupGenericError, MSPileupFractionError
 from WMCore.MicroService.Tools.Common import getMSLogger
-from Utils.Timers import gmtimeSeconds
 
 
 def stripKeys(docs, skeys=None):
@@ -60,6 +63,22 @@ def getNewTimestamp(doc):
     return subDoc
 
 
+def customDID(pname):
+    """
+    Helper function to create custom Name from given pileup one
+    """
+    pat = re.compile(".*-V[0-9]+$")
+    if re.match(pat, pname):
+        arr = pname.split("-")
+        lastSuffix = arr[-1]
+        ver = int(lastSuffix[-1])
+        suffix = f"{ver + 1}"
+        pname = ''.join(pname[:-1]) + suffix
+    else:
+        pname += "-V1"
+    return pname
+
+
 class MSPileupData():
     """
     MSPileupData provides logic behind data used and stored by MSPileup module
@@ -97,12 +116,13 @@ class MSPileupData():
         self.msDB = getattr(mongoDB, self.msConfig['mongoDB'])
         self.dbColl = self.msDB[collection]
 
-    def createPileup(self, pdict, rseList):
+    def createPileup(self, pdict, rseList, userDN=''):
         """
         Create and return pileup data from campaigns dictionary
 
         :param pdict: a dictionary representing MSPileup data
         :param rseList: a list of RSE names
+        :param userDN: a string, user DN used in HTTP PUT request
         :return: list of MSPileupError or empty list
         """
         # first, create MSPileupObj which will be validated against its schema
@@ -117,6 +137,14 @@ class MSPileupData():
             self.logger.error(err)
             return [err.error()]
 
+        # add initial transtition record according to logic:
+        # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        transitionRecord = {'containerFraction': doc.get('containerFraction', 1.0),
+                            'customDID': doc['pileupName'],
+                            'updateTime': gmtimeSeconds(),
+                            'DN': userDN}
+        doc['transition'] = [transitionRecord]
+
         # insert document into underlying DB
         try:
             self.dbColl.insert_one(doc)
@@ -129,51 +157,85 @@ class MSPileupData():
             return [err.error()]
         return []
 
-    def updatePileup(self, doc, rseList=None, validate=True):
+    def updatePileup(self, doc, rseList=None, validate=True, userDN=''):
         """
-        Update pileup data with provided input
+        Update pileup data with provided input. The given doc should be either
+        full pileup document or contains mandatory fields like pileupName
+        and containerFraction in case of partial pileup data-placement.
 
         :param doc: a dictionary of pieleup data to be updated
         :param rseList: a list of valid RSE names
         :param validate: boolean defining whether the doc needs
                          to be validated or not
+        :param userDN: a string, user DN used in HTTP PUT request
         :return: list of MSPileupError or empty list
         """
+        self.logger.info("Updating pileup document %s", doc)
         rseList = rseList or []
-        pname = doc.get('customName', '')
-        spec = {'customName': pname}
-        if pname == '':
-            pname = doc.get('pileupName', '')
-            spec = {'pileupName': pname}
+
+        # check if either pileup
+        if doc.get('pileupName', '') == '':
+            err = MSPileupNoKeyFoundError(doc, 'pileup name is not provided')
+            self.logger.error(err)
+            return [err.error()]
+
+        # check that spec should not allow customName without pileupName
+        if doc.get('customName', '') != '' and 'pileupName' not in doc:
+            err = MSPileupNoKeyFoundError(doc, 'custom name is not allowed in spec without pileup name')
+            self.logger.error(err)
+            return [err.error()]
+
+        # it is replaced with partial pileup placement one, see
+        # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+
+        # get document with pileup name
+        pname = doc['pileupName']
+        spec = {'pileupName': pname}
+
+        # look-up pileup document in underlying DB
         self.logger.info("Fetching pileup document with the following spec: %s", spec)
-        # if validate=True, then try to load the original document from the
-        # database and perform full validation on the updated doc
+        results = self.getPileup(spec)
+        if not results:
+            err = MSPileupNoKeyFoundError(spec, f'No document found for {spec} query')
+            self.logger.error(err)
+            return [err.error()]
+
+        # we should have a single document corresponding to given pileup name
+        if len(results) != 1:
+            msg = f"Unique constraint violated for {pname}"
+            err = MSPileupUniqueConstrainError(spec, msg)
+            self.logger.error(err)
+            return [err.error()]
+
+        # Based on the document retrieved from the database, apply the user-related
+        # updates and run this new data structure through the usual validation
+        dbDoc = results[0]
+
+        # get fraction value of provided document spec
+        fraction = doc.get('containerFraction', 1.0)
+
+        # perform check of input doc, is it partial pileup spec or not
+        partialPileupSpec = False
+        if set(doc.keys()) == set(["pileupName", "containerFraction"]):
+            partialPileupSpec = True
+            # check if given containerFraction is differ from existing document one
+            if fraction == dbDoc.get('containerFraction', 1.0):
+                msg = f"container fraction in provided spec {spec} is identical to one in MongoDB"
+                err = MSPileupFractionError(spec, msg)
+                self.logger.error(err)
+                return [err.error()]
+            self.logger.info("partial pileup spec: %s", doc)
+
+        # Based on the document retrieved from the database, apply the user-related
+        # updates and run this new data structure through the usual validation
+        dbDoc.update(doc)
         if validate:
-            # check if given document contains pileup Name (unique key)
-            if not pname:
-                err = MSPileupNoKeyFoundError(doc, f'No document found for {pname}')
-                self.logger.error(err)
-                return [err.error()]
-
-            # look-up pileup document in underlying DB
-            results = self.getPileup(spec)
-            if not results:
-                err = MSPileupNoKeyFoundError(spec, f'No document found for {spec} query')
-                self.logger.error(err)
-                return [err.error()]
-
-            # we should have a single document corresponding to given pileup name
-            if len(results) != 1:
-                msg = f"Unique constraint violated for {pname}"
-                err = MSPileupUniqueConstrainError(spec, msg)
-                self.logger.error(err)
-                return [err.error()]
-
-            # Based on the document retrieved from the database, apply the user-related
-            # updates and run this new data structure through the usual validation
-            dbDoc = results[0]
-            dbDoc.update(doc)
             try:
+                # NOTE: MSPileupObj calls validate in its ctor with provided validRSEs
+                # therefore, for partial pileup we take expectedRSEs for validation
+                # while for generic update case we use rseList passed to this API as is
+                if partialPileupSpec:
+                    rseList = dbDoc['expectedRSEs']
                 obj = MSPileupObj(dbDoc, validRSEs=rseList)
                 doc = obj.getPileupData()
             except Exception as exp:
@@ -183,10 +245,34 @@ class MSPileupData():
                 self.logger.error(err)
                 return [err.error()]
 
+        # add transition record if doc contains new fraction
+        transition = doc.get('transition', [])
+        if not transition:
+            msg = f"To update pileup {pname} document we should already have transition record in place"
+            err = MSPileupUniqueConstrainError(spec, msg)
+            self.logger.error(err)
+            return [err.error()]
+
+        # check previous fraction value and add new transition record if it is
+        # differ from current one or does not exist, see logic:
+        # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+        prevTranRecord = transition[-1]
+        if prevTranRecord['containerFraction'] != fraction:
+            customName = customDID(prevTranRecord['customDID'])
+            # preserve previous container fraction
+            transitionRecord = {'containerFraction': prevTranRecord['containerFraction'],
+                                'customDID': customName,
+                                'updateTime': gmtimeSeconds(),
+                                'DN': userDN}
+            transition.append(transitionRecord)
+            doc['transition'] = transition
+            self.logger.info("Added transition record for pileup %s", pname)
+
         # mandatory timestamp updates
         doc.update(getNewTimestamp(doc))
         # we do not need to create MSPileupObj and validate it since our doc comes directly from DB
         try:
+            self.logger.info("Updating pileup document: spec=%s doc=%s", spec, doc)
             self.dbColl.update_one(spec, {"$set": doc})
             self.logger.info("Pileup object '%s' (custom name '%s') successfully updated", spec.get("pileupName"), spec.get('customName'))
         except Exception as exp:

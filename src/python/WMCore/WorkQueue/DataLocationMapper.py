@@ -12,11 +12,11 @@ import logging
 from urllib.parse import urlparse
 
 from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 
 # TODO: Combine with existing dls so DBSreader can do this kind of thing transparently
 # TODO: Known Issue: Can't have same item in multiple dbs's at the same time.
-
 
 
 def isGlobalDBS(dbs):
@@ -76,7 +76,9 @@ class DataLocationMapper(object):
 
         for dbs, dataItems in viewitems(dataByDbs):
             # if global use Rucio, else use dbs
-            if isGlobalDBS(dbs):
+            if "pileup" in rucioAcct:
+                output = self.locationsFromMSPileup(dataItems, dbs)
+            elif isGlobalDBS(dbs):
                 output = self.locationsFromRucio(dataItems, rucioAcct)
             else:
                 output = self.locationsFromDBS(dbs, dataItems)
@@ -123,6 +125,34 @@ class DataLocationMapper(object):
             psns = set()
             psns.update(self.cric.PNNstoPSNs(nodes))
             result[name] = list(psns)
+
+        return result
+
+    def locationsFromMSPileup(self, dataItems, dbsUrl):
+        """
+        Get data location from MSPileup.
+
+        :param dataItems: list, list of pileup names to query
+        :param dbsUrl: str, dbs url to check which dbs server
+        :return: dict, dict of pileup name keys with location set values
+        """
+        self.logger.info(f'Fetching locations from MSPileup for {len(dataItems)}')
+
+        result = defaultdict(set)
+        # TODO: Fetch multiple pileups in single request
+        for dataItem in dataItems:
+            try:
+                queryDict = {'query': {'pileupName': dataItem},
+                             'filters': ['currentRSEs', 'pileupName', 'containerFraction', 'ruleIds']}
+                pileupInstance = '-testbed' if 'cmsweb-testbed' in dbsUrl else '-prod'
+                msPileupUrl = f"https://cmsweb{pileupInstance}.cern.ch/ms-pileup/data/pileup"
+                doc = getPileupDocs(msPileupUrl, queryDict, method='POST')[0]
+                self.logger.info(f'locationsFromPileup - name: {dataItem}, currentRSEs: {doc["currentRSEs"]}, containerFraction: {doc["containerFraction"]}')
+                result[dataItem] = doc['currentRSEs']
+            except IndexError:
+                self.logger.error('Did not find any pileup document for query: %s', queryDict['query'])
+            except Exception as ex:
+                self.logger.error('Error getting block location from MSPileup for %s: %s', dataItem, str(ex))
 
         return result
 

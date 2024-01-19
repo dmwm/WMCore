@@ -66,8 +66,6 @@ class DeleteMgr(object):
 
         if not self.overrideConf:
             self.siteCfg = loadSiteLocalConfig()
-
-        if not self.overrideConf:
             self.initialiseSiteConf()
         else:
             self.initialiseOverride()
@@ -86,7 +84,7 @@ class DeleteMgr(object):
         msg += "There are %s stage out definitions.\n" % len(self.stageOuts)
         
         for stageOut in self.stageOuts:
-            msg = ""
+            foundNoneAttr = False
             for k in ['phedex-node','command','storageSite','volume','protocol']:
                 v = stageOut.get(k)
                 if v is None:
@@ -94,9 +92,10 @@ class DeleteMgr(object):
                     msg += stageOutStr(stageOut) + "\n"
                     msg += "From site config file.\n"
                     msg += "Continue to the next stageOut.\n"
-                    logging.info(msg)
-                    continue
-
+                    logging.error(msg)
+                    foundNoneAttr = True
+                    break
+            if foundNoneAttr: continue
             storageSite = stageOut.get("storageSite")
             volume = stageOut.get("volume")
             protocol = stageOut.get("protocol")
@@ -116,7 +115,7 @@ class DeleteMgr(object):
                 msg += "This stage out will not be attempted:\n"
                 msg += stageOutStr(stageOut) + '\n'
                 msg += str(ex)
-                logging.info(msg)
+                logging.exception(msg)
                 continue
 
         #no Rucio file catalog is initialized
@@ -222,27 +221,23 @@ class DeleteMgr(object):
             lfn-prefix - the LFN prefix to generate the PFN
             phedex-node - the Name of the PNN to which the file is being xferred
         """
-        if not self.overrideConf:
+        if not self.overrideConf: 
+            if stageOut_rfc is None:
+                msg = "Can not delete lfn because of missing stage out information (stageOut_rfc is None): \n %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn)
             from WMCore.Storage.StageOutMgr import searchRFC 
             command = stageOut_rfc[0]['command']
             pfn = searchRFC(stageOut_rfc[1],lfn)
-
-            if pfn == None:
+            if pfn is None:
                 msg = "Unable to match lfn to pfn: \n  %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn, STAGEOUT=stageOutStr(stageOut_rfc[0]))
-
-            return self.deletePFN(pfn, lfn, command)
         else:
+            if self.overrideConf['lfn-prefix'] is None:
+                msg = "Unable to match lfn to pfn during lfn deletion because override lfn-prefix is None: \n %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn)
             command = self.overrideConf['command']
-            pfn = None
-            if self.overrideConf['lfn-prefix'] is not None:
-                pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
-
-            if pfn is None:
-                msg = "Unable to match lfn to pfn using lfn-prefix: \n %s" % lfn
-                raise StageOutFailure(msg, LFN=lfn, LFNPREFIX=self.overrideConf['lfn-prefix'])
-
-            return self.deletePFN(pfn, lfn, command)
+            pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
+        return self.deletePFN(pfn, lfn, command)
 
     def deletePFN(self, pfn, lfn, command):
         """

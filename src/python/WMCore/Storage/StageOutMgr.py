@@ -120,11 +120,9 @@ class StageOutMgr(object):
 
         if self.override == False:
             self.siteCfg = loadSiteLocalConfig()
-
-        if self.override:
-            self.initialiseOverride()
-        else:
             self.initialiseSiteConf()
+        else:
+            self.initialiseOverride()
         
         self.bypassImpl = False
         self.failed = {}
@@ -142,6 +140,7 @@ class StageOutMgr(object):
 
         msg = "\nThere are %s stage out definitions." % len(self.stageOuts)
         for stageOut in self.stageOuts:
+            foundNoneAttr = False
             for k in ['phedex-node','command','storageSite','volume','protocol']:
                 v = stageOut.get(k)
                 if v is None:
@@ -150,10 +149,11 @@ class StageOutMgr(object):
                     amsg+= stageOutStr(stageOut) + "\n"
                     amsg+= "From site config file.\n"
                     amsg+= "Continue to the next stageOut.\n"
-                    logging.info(amsg)
+                    logging.error(amsg)
                     msg += amsg
-                    continue
-
+                    foundNoneAttr = True
+                    break
+            if foundNoneAttr: continue
             storageSite = stageOut.get("storageSite")
             volume = stageOut.get("volume")
             protocol = stageOut.get("protocol")
@@ -173,7 +173,7 @@ class StageOutMgr(object):
                 amsg += '\t'+stageOutStr(stageOut) + '\n'
                 amsg += str(ex)
                 msg += amsg
-                logging.info(amsg)
+                logging.exception(amsg)
                 continue
         
         #no Rucio file catalog is initialized
@@ -306,6 +306,9 @@ class StageOutMgr(object):
         phedex-node - the Name of the PNN to which the file is being xferred
         """
         if not self.override:
+            if stageOut_rfc is None:
+                msg = "Can not perform stage out for this lfn because of missing stage out information (stageOut_rfc is None): \n %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn)
             command = stageOut_rfc[0]['command']
             options = stageOut_rfc[0]['option']
             pfn = searchRFC(stageOut_rfc[1],lfn)
@@ -340,7 +343,10 @@ class StageOutMgr(object):
             return pfn
       
         else:
-          
+            if self.overrideConf['lfn-prefix'] is None:
+                msg = "Unable to match lfn to pfn during stage out because override lfn-prefix is None: \n %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn)
+ 
             pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
 
             try:

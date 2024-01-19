@@ -12,10 +12,6 @@ a RucioFileCatalog instance that can be used to match LFNs to PFNs.
 """
 
 from builtins import next, str, range
-from future.utils import viewitems
-
-from future import standard_library
-standard_library.install_aliases()
 
 import os
 import re
@@ -63,7 +59,7 @@ class RucioFileCatalog(dict):
         :param protocol: the name of a protocol, for example XRootD
         :path: a LFN path, for example /store/abc/xyz.root
         :style: type of conversion. lfn-to-pfn is to convert LFN to PFN and pfn-to-pfn is for PFN to LFN
-        :caller is the method from there this method was called. It's used for resolving chained rules
+        :caller is the method from there this method was called. It's used for resolving chained rules. When a rule is chained, the path translation of protocol defined in "chain" attribute should be applied first before the one specified in this rule. Here is an example. In this storage description, https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json, the rule of protocol WebDAV of volume KIT_MSS is chained to the protocol pnfs of the same volume. The path translation of WebDAV rule must be done by applying the path translation of pnfs rule first before its own path translation is applied.
         """
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
@@ -105,7 +101,7 @@ class RucioFileCatalog(dict):
 
     def matchPFN(self, protocol, pfn):
         """
-        _matchLFN_
+        _matchPFN_
 
         Return the result for the LFN provided if the LFN
         matches the path-match for that protocol
@@ -115,6 +111,7 @@ class RucioFileCatalog(dict):
         """
         result = self._doMatch(protocol, pfn, "pfn-to-lfn", self.matchPFN)
         return result
+
     def __str__(self):
         result = ""
         for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
@@ -129,12 +126,13 @@ class RucioFileCatalog(dict):
                 result += "\n"
         return result
 
-
 def storageJsonPath(currentSite, currentSubsite, storageSite):
     """
     Return a path to storage.json from site names
-    :para currentSite and currentSubsite are the names of facilities where jobs will be executed, storageSite is the storage facility for a stage-out
-    :return /pathToStorageJson/storage.json
+    :para currentSite: str, name of site where jobs will be executed
+    :para currentSubsite: str, name of sub site where jobs will be executed
+    :para storageSite: str, name of storage site for a stage-out
+    :return: str, a path to storage.json (/pathToStorageJson/storage.json)
     """
     #get site config
     siteConfigPath = os.getenv('SITECONFIG_PATH',None)
@@ -170,13 +168,13 @@ def readRFC(filename, storageSite, volume, protocol):
     """
     rfcInstance = RucioFileCatalog()
     try:
-        jsonFile = open(filename,encoding="utf-8")
-        jsElements = json.load(jsonFile)
+        with open(filename,encoding="utf-8") as jsonFile:
+            jsElements = json.load(jsonFile)
     except Exception as ex:
         msg = "Error reading storage description file: %s\n" % filename
         msg += str(ex)
         raise RuntimeError(msg)
-    #now loop over elements, select the right one and fill lfn-to-pfn
+    #now loop over elements, select the one matched with inputs (storageSite, volume, protocol) and fill lfn-to-pfn
     for jsElement in jsElements:
         #check to see if the storageSite and volume matchs with "site" and "volume" in storage.json
         if jsElement['site'] == storageSite and jsElement['volume'] == volume: 
@@ -201,10 +199,11 @@ def readRFC(filename, storageSite, volume, protocol):
                     for rule in prot['rules']:
                         match = rule['lfn']
                         result = rule['pfn']
-                        chain = rule['chain'] if 'chain' in rule.keys() else None
+                        chain = rule.get('chain')
                         rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                        #pfn-to-lfn: not sure about this!!!
+                        #pfn-to-lfn
                         match = rule['pfn'].replace('$1','(.*)')
+                        #Update this if pfn-to-lfn is used extensively somewhere. We want lfn starts with '/abc' so remove all characters of regular expressions!!! 
                         result = rule['lfn'].replace('/+','/').replace('^/','/')
                         #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
                         result = re.sub('\(.*\)','$1',result)
@@ -226,7 +225,7 @@ def rseName(currentSite,currentSubsite,storageSite,volume):
         with open(storageJsonName,encoding="utf-8") as jsonFile:
             jsElements = json.load(jsonFile)
     except Exception as ex:
-        msg = "RucioFileCatalog.py:rseName_rucio() Error reading storage.json: %s\n" % storageJsonName 
+        msg = "RucioFileCatalog.py:rseName() Error reading storage.json: %s\n" % storageJsonName 
         msg += str(ex)
         raise RuntimeError(msg)
     for jsElement in jsElements:

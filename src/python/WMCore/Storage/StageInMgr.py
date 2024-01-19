@@ -63,11 +63,9 @@ class StageInMgr(object):
 
         if self.override == False:
             self.siteCfg = loadSiteLocalConfig()
-
-        if self.override:
-            self.initialiseOverride()
-        else:
             self.initialiseSiteConf()
+        else: 
+            self.initialiseOverride()
 
 
     def initialiseSiteConf(self):
@@ -82,6 +80,7 @@ class StageInMgr(object):
 
         msg = "\nThere are %s stage out definitions." % len(self.stageOuts)
         for stageOut in self.stageOuts:
+            foundNoneAttr = False
             for k in ['phedex-node','command','storageSite','volume','protocol']:
                 v = stageOut.get(k)
                 if v is None:
@@ -92,8 +91,9 @@ class StageInMgr(object):
                     amsg+= "Continue to the next stageOut.\n"
                     print(amsg)
                     msg += amsg
-                    continue
-
+                    foundNoneAttr = True
+                    break
+            if foundNoneAttr: continue
             storageSite = stageOut.get("storageSite")
             volume = stageOut.get("volume")
             protocol = stageOut.get("protocol")
@@ -230,9 +230,15 @@ class StageInMgr(object):
             pnn = self.overrideConf['phedex-node']
             command = self.overrideConf['command']
             options = self.overrideConf['option']
+            if self.overrideConf['lfn-prefix'] is None:
+                msg = "Unable to match lfn to pfn during stage in because override lfn-prefix is None: \n %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn)
             pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
             protocol = command
         else:
+            if stageOut_rfc is None:
+                msg = "Can not perform stage in for this lfn because of missing information (stageOut_rfc is None): \n %s" % lfn
+                raise StageOutFailure(msg, LFN=lfn)
             pnn = stageOut_rfc[0]['phedex-node']
             command = stageOut_rfc[0]['command']
             options = stageOut_rfc[0]['option']

@@ -12,6 +12,7 @@ from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
+from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from dbs.exceptions.dbsClientException import dbsClientException
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.Rucio.Rucio import Rucio
@@ -159,10 +160,10 @@ class StartPolicyInterface(PolicyInterface):
         self.validate()
         try:
             pileupDatasets = self.wmspec.listPileupDatasets()
+            self.logger.debug(f'pileupDatasets: {pileupDatasets}')
             if pileupDatasets:
                 # unwrap {"url":[datasets]} structure into list of datasets
-                datasets = [d for prec in pileupDatasets.values() for d in prec]
-                self.pileupData = self.getDatasetLocations(datasets)
+                self.pileupData = self.getDatasetLocationsFromMSPileup(pileupDatasets)
             self.split()
         # For known exceptions raise custom error that will fail the workflow.
         except dbsClientException as ex:
@@ -271,6 +272,35 @@ class StartPolicyInterface(PolicyInterface):
             locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
                                                              account=account)
             result[datasetPath] = self.cric.PNNstoPSNs(locations)
+        return result
+    
+    def getDatasetLocationsFromMSPileup(self, datasetsWithDbsURL):
+        """
+        Returns a dictionary with the location of the datasets according to MSPileup
+        :param datasetsWithDbsURL: a dict with the DBS URL as the key, and the associated list of datasets as the value
+        """
+        
+        result = {}
+        for dbsUrl, datasets in datasetsWithDbsURL.items():
+            pileUpinstance = '-testbed' if 'cmsweb-testbed' in dbsUrl else '-prod'
+            msPileupUrl = f'https://cmsweb{pileUpinstance}.cern.ch/ms-pileup/data/pileup'
+            self.logger.info(f'Will fetch {len(datasets)} from MSPileup url: {dbsUrl}')
+            for dataset in datasets:
+                queryDict = {'query': {'pileupName': dataset},
+                            'filters': ['expectedRSEs', 'currentRSEs', 'pileupName', 'containerFraction', 'ruleIds']}
+                try:
+                    doc = getPileupDocs(msPileupUrl, queryDict, method='POST')[0]
+                    currentRSEs = doc['currentRSEs']
+                    self.logger.debug(f'Retrieved MSPileup document: {doc}')
+                    if len(currentRSEs) == 0:
+                        self.logger.warning(f'No RSE has a copy of the desired pileup dataset. Expected RSEs: {doc["expectedRSEs"]}')  
+                    result[dataset] = doc['currentRSEs']
+                except IndexError:
+                    self.logger.warning('Did not find any pileup document for query: %s', queryDict['query'])
+                    result[dataset] = []
+                except Exception as ex:
+                    self.logger.exception('Error getting block location from MSPileup for %s: %s', dataset, str(ex))
+
         return result
 
     def blockLocationRucioPhedex(self, blockName):

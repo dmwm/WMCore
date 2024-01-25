@@ -17,7 +17,7 @@ ACDC unsupported:
 - SiblingProcessingBased
 
 """
-
+import json
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
@@ -87,20 +87,23 @@ class ResubmitBlock(StartPolicyInterface):
         if not acdcInfo:
             raise WorkQueueWMSpecError(self.wmspec, 'No acdc section for %s' % task.getPathName())
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
+
+        self.logger.info("Policy self.data variable content: %s", self.data)
         if self.data:
             acdcBlockSplit = ACDCBlock.splitBlockName(next(iter(self.data)))
         else:
-            # if self.data is not passed, assume the the data is input dataset
-            # from the spec
+            # if self.data is not passed, assume the data is input dataset from the spec
             acdcBlockSplit = False
 
+        self.logger.info("Using ACDC blockSplit:\n%s", json.dumps(acdcBlockSplit, indent=2))
         if acdcBlockSplit:
-            dbsBlock = {}
-            dbsBlock['Name'] = next(iter(self.data))
             block = acdc.getChunkInfo(acdcInfo['collection'],
                                       acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],
                                       acdcBlockSplit['NumOfFiles'])
+            dbsBlock = {}
+            dbsBlock['Name'] = next(iter(self.data))
+
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
@@ -117,6 +120,7 @@ class ResubmitBlock(StartPolicyInterface):
             if self.args['SplittingAlgo'] in self.algoMapping:
                 splittingFunc = self.algoMapping[self.args['SplittingAlgo']]
             validBlocks = splittingFunc(acdc, acdcInfo, task)
+        self.logger.info("ACDC with the following validBlocks summary:\n%s", json.dumps(validBlocks, indent=2))
 
         return validBlocks
 

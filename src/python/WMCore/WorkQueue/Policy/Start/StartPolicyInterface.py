@@ -138,11 +138,9 @@ class StartPolicyInterface(PolicyInterface):
         ele = WorkQueueElement(**args)
         for data, sites in viewitems(ele['Inputs']):
             if not sites:
-                # make call to rucio to get list of replicas for this input data
-                locations = self.getDatasetLocations(data, account=self.rucioAcct)
                 # we comment out raising exception due to issue-11784 and allow WQ element creation
                 # but we would like to monitor when and how often it happens
-                self.logger.warning('Input data has no location, spec=%s, data=%s, locations=%s', self.wmspec, data, locations)
+                self.logger.warning('Input data has no location, spec=%s, data=%s', self.wmspec, data)
                 # raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
 
         # catch infinite splitting loops

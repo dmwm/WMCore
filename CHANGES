@@ -1,3 +1,9 @@
+2.3.0 to 2.3.1rc1:
+  - Dont cross check location when data is reported without location (Alan Malta Rodrigues) #11878
+  - Python (standard library) implementation of update pileup object script (Valentin Kuznetsov) #11872
+  - Implement partialPileupTask logic (Valentin Kuznetsov) #11807
+
+
 2.2.6 to 2.3.0:
   - WMAgent stable release (new WorkflowUpdater component)
 

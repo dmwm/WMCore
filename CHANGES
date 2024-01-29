@@ -1,3 +1,7 @@
+2.3.0 to 2.3.0.1:
+  - Dont cross check location when data is reported without location (Alan Malta Rodrigues) #11880
+
+
 2.2.6 to 2.3.0:
   - WMAgent stable release (new WorkflowUpdater component)
 

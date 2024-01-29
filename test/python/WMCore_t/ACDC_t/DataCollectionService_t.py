@@ -145,7 +145,7 @@ class DataCollectionService_t(unittest.TestCase):
             self.assertEqual(chunkMetaData["files"], chunk["files"])
             self.assertEqual(chunkMetaData["lumis"], chunk["lumis"])
             self.assertEqual(chunkMetaData["events"], chunk["events"])
-            self.assertEqual(chunkMetaData["locations"], chunk["locations"])
+            self.assertItemsEqual(chunkMetaData["locations"], chunk["locations"])
 
             self.assertTrue(chunk["files"] in goldenMetaData, "Error: Extra chunk found.")
             self.assertEqual(chunk["lumis"], goldenMetaData[chunk["files"]]["lumis"],

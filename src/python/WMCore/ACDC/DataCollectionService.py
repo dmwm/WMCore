@@ -328,15 +328,14 @@ class DataCollectionService(CouchService):
         files = self._getFilesetInfo(collectionName, filesetName, chunkOffset, chunkSize)
 
         totalFiles = 0
-        currentLocation = None
+        currentLocation = set()
         numFilesInBlock = 0
         numLumisInBlock = 0
         numEventsInBlock = 0
 
         for fileInfo in files:
-            if currentLocation is None:
-                currentLocation = fileInfo["locations"]
-
+            # locations is a list
+            currentLocation.update(fileInfo["locations"])
             numFilesInBlock += 1
             lumis = 0
             for runLumi in fileInfo["runs"]:
@@ -346,7 +345,7 @@ class DataCollectionService(CouchService):
 
         return {"offset": totalFiles, "files": numFilesInBlock,
                 "events": numEventsInBlock, "lumis": numLumisInBlock,
-                "locations": currentLocation}
+                "locations": list(currentLocation)}
 
     @CouchUtils.connectToCouch
     def getChunkFiles(self, collectionName, filesetName, chunkOffset, chunkSize=100):

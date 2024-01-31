@@ -102,6 +102,15 @@ class testFileTools(unittest.TestCase):
         self.assertEqual(cksum, "3774692924")
         return
 
+    def testTarMode(self):
+        """
+        Test tarMode function
+        """
+        mode = FileTools.tarMode('file.bz2', 'w')
+        self.assertEqual(mode, 'w:bz2')
+        mode = FileTools.tarMode('file.tar', 'r')
+        self.assertEqual(mode, 'r')
+
 
 if __name__ == "__main__":
     unittest.main()

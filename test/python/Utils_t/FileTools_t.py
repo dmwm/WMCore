@@ -77,7 +77,7 @@ class testFileTools(unittest.TestCase):
 
     def test_getFullPath(self):
         fullPath = FileTools.getFullPath("cd")
-        #assuming there is path for cd
+        # assuming there is path for cd
         self.assertIsNotNone(fullPath)
         fullPath = FileTools.getFullPath("this_shouldnt_be")
         self.assertEqual(fullPath, None)
@@ -101,6 +101,15 @@ class testFileTools(unittest.TestCase):
         self.assertEqual(adler32, "827db5b1")
         self.assertEqual(cksum, "3774692924")
         return
+
+    def testTarMode(self):
+        """
+        Test tarMode function
+        """
+        mode = FileTools.tarMode('file.bz2', 'w')
+        self.assertEqual(mode, 'w:bz2')
+        mode = FileTools.tarMode('file.tar', 'r')
+        self.assertEqual(mode, 'r')
 
 
 if __name__ == "__main__":

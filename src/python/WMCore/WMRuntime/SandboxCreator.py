@@ -56,7 +56,8 @@ class SandboxCreator(object):
 
             extracts a sandbox at the given archivePath to the given targetPath
         """
-        os.makedirs(targetPath)
+        if not os.path.exists(targetPath):
+            os.makedirs(targetPath)
         archive = tarfile.TarFile(archivePath)
         archive.extractall(targetPath)
         archive.close()

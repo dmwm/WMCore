@@ -124,7 +124,6 @@ class StageOutMgr(object):
         else:
             self.initialiseOverride()
         
-        self.bypassImpl = False
         self.failed = {}
         self.completedFiles = {}
         return
@@ -296,15 +295,18 @@ class StageOutMgr(object):
     
     def stageOut(self, lfn, localPfn, checksums, stageOut_rfc=None):
         """
-        _stageOut_
-
         Given the lfn and a pair of stage out and corresponding Rucio file catalog, stageOut_rfc, or override configuration invoke the stage out
         If use override configuration self.overrideConf should contain:
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
         phedex-node - the Name of the PNN to which the file is being xferred
+        :param lfn: logical file name 
+        :param localPfn: physical file name of file at local location (source) that will be staged out to another location (destination)
+        :param checksums: check sum of file
+        :param stageOut_rfc: a pair of stage out and corresponding Rucio file catalog
         """
+        
         if not self.override:
             if stageOut_rfc is None:
                 msg = "Can not perform stage out for this lfn because of missing stage out information (stageOut_rfc is None): \n %s" % lfn
@@ -328,8 +330,7 @@ class StageOutMgr(object):
             impl.retryPause = self.retryPauseTime
 
             try:
-                if not self.bypassImpl:
-                    impl(protocol, localPfn, pfn, options, checksums)
+                impl(protocol, localPfn, pfn, options, checksums)
             except Exception as ex:
                 msg = "Failure for stage out:\n"
                 msg += str(ex)
@@ -362,8 +363,7 @@ class StageOutMgr(object):
             impl.retryPause = self.retryPauseTime
 
             try:
-                if not self.bypassImpl:
-                    impl(self.overrideConf['command'], localPfn, pfn, self.overrideConf["option"], checksums)
+                impl(self.overrideConf['command'], localPfn, pfn, self.overrideConf["option"], checksums)
             except Exception as ex:
                 msg = "Failure for override stage out:\n"
                 msg += str(ex)
@@ -374,14 +374,11 @@ class StageOutMgr(object):
     
     def cleanSuccessfulStageOuts(self):
         """
-        _cleanSucessfulStageOuts_
-
         In the event of a failed stage out, this method can be called to cleanup the
         files that may have previously been staged out so that the job ends in a clear state
         of failure, rather than a partial success
-
-
         """
+
         for lfn, fileInfo in viewitems(self.completedFiles):
             pfn = fileInfo['PFN']
             command = fileInfo['StageOutCommand']
@@ -390,7 +387,6 @@ class StageOutMgr(object):
             msg += "Using command implementation: %s\n" % command
             logging.info(msg)
             delManager = DeleteMgr(**self.overrideConf)
-            delManager.bypassImpl = self.bypassImpl
             try:
                 delManager.deletePFN(pfn, lfn, command)
             except StageOutFailure as ex:

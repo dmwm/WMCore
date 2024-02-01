@@ -40,10 +40,12 @@ class RucioFileCatalog(dict):
     def addMapping(self, protocol, match, result,
                    chain=None, mapping_type='lfn-to-pfn'):
         """
-        _addMapping_
-
         Add an lfn to pfn mapping to this instance
-
+        :param protocol: name of protocol, for example XRootD
+        :param match: regular expression string to perform path matching 
+        :param result: result of the path matching
+        :param chain: name of chained protocol
+        :param mapping_type: type of path matching
         """
         entry = {}
         entry.setdefault("protocol", protocol)
@@ -88,27 +90,27 @@ class RucioFileCatalog(dict):
 
     def matchLFN(self, protocol, lfn):
         """
-        _matchLFN_
-
         Return the result for the LFN provided if the LFN
         matches the path-match for that protocol
 
         Return None if no match
-
+        :param protocol: protocol name, for example XRootD
+        :param lfn: logical file name
         """
+
         result = self._doMatch(protocol, lfn, "lfn-to-pfn", self.matchLFN)
         return result
 
     def matchPFN(self, protocol, pfn):
         """
-        _matchPFN_
-
         Return the result for the LFN provided if the LFN
         matches the path-match for that protocol
 
         Return None if no match
-
+        :param protocol: protocol name, for example XRootD
+        :param pfn: physical file name
         """
+
         result = self._doMatch(protocol, pfn, "pfn-to-lfn", self.matchPFN)
         return result
 
@@ -161,11 +163,14 @@ def storageJsonPath(currentSite, currentSubsite, storageSite):
 
 def readRFC(filename, storageSite, volume, protocol):
     """
-    _readRFC_
-
     Read the provided storage.json and return a RucioFileCatalog
     instance containing the details found in it
+    :param filename: name including full path to storage description file (storage.json)
+    :param storageSite: name of site to store the output of stage out (where stage out goes to)
+    :param volume: the volume of storage elements
+    :param protocol: name of stage out protocol
     """
+
     rfcInstance = RucioFileCatalog()
     try:
         with open(filename,encoding="utf-8") as jsonFile:

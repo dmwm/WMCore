@@ -51,8 +51,6 @@ class DeleteMgr(object):
         self.logger = overrideParams.pop("logger", logging.getLogger())
         self.overrideConf = overrideParams
 
-        self.bypassImpl = False
-        
         #pairs of stageOut and Rucio file catalog: [(stageOut1,rfc1),(stageOut2,rfc2), ...]
         #a "stageOut" corresponds to a entry in the <stage-out> block in the site-local-config.xml, for example <method volume="KIT_dCache" protocol="WebDAV"/>
         #a "rfc" is the correponding RucioFileCatalog instance (RucioFileCatalog.py) of this "stageOut"
@@ -80,8 +78,7 @@ class DeleteMgr(object):
         
         self.stageOuts = self.siteCfg.stageOuts
 
-        msg = ""
-        msg += "There are %s stage out definitions.\n" % len(self.stageOuts)
+        msg = "There are %s stage out definitions.\n" % len(self.stageOuts)
         
         for stageOut in self.stageOuts:
             foundNoneAttr = False
@@ -225,6 +222,7 @@ class DeleteMgr(object):
             if stageOut_rfc is None:
                 msg = "Can not delete lfn because of missing stage out information (stageOut_rfc is None): \n %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn)
+            #FIXME there is circular import that is why this module is imported here
             from WMCore.Storage.StageOutMgr import searchRFC 
             command = stageOut_rfc[0]['command']
             pfn = searchRFC(stageOut_rfc[1],lfn)
@@ -246,7 +244,7 @@ class DeleteMgr(object):
         try:
             impl = retrieveStageOutImpl(command)
         except Exception as ex:
-            msg = "Unable to retrieve impl for file deletion in:\n"
+            msg = "Unable to retrieve impl for file deletion in %s\n" % (pfn)
             msg += "Error retrieving StageOutImpl for command named: %s\n" % (
                 command,)
             raise StageOutFailure(msg, Command=command,
@@ -255,8 +253,7 @@ class DeleteMgr(object):
         impl.retryPause = self.retryPauseTime
 
         try:
-            if not self.bypassImpl:
-                impl.removeFile(pfn)
+            impl.removeFile(pfn)
         except Exception as ex:
             self.logger.error("Failed to delete file: %s", pfn)
             ex.addInfo(Protocol=command, LFN=lfn, TargetPFN=pfn)

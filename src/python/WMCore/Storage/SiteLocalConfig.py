@@ -281,7 +281,8 @@ def processStageOut():
         for subnode in node.children:
             subSiteName = report['subSiteName'] if 'subSiteName' in report.keys() else None
             aStorageSite = subnode.attrs.get('site', None)
-            if aStorageSite is None: aStorageSite = report['siteName']
+            if aStorageSite is None:
+                aStorageSite = report['siteName']
             aProtocol = subnode.attrs.get('protocol', None)
             aVolume = subnode.attrs.get('volume', None)
             
@@ -289,7 +290,8 @@ def processStageOut():
             localReport['storageSite'] = aStorageSite
             localReport['command'] = subnode.attrs.get('command', None)
             #use default command='gfal2' when 'command' is not specified 
-            if localReport['command'] is None: localReport['command'] = 'gfal2'
+            if localReport['command'] is None:
+                localReport['command'] = 'gfal2'
             localReport['option'] = subnode.attrs.get('option', None)
             localReport['volume'] = aVolume 
             localReport['protocol'] = aProtocol 

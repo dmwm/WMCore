@@ -48,9 +48,6 @@ class StageInMgr(object):
         if overrideParams != {}:
             self.override = True
         
-        #for testing only
-        self.bypassImpl = False 
-        
         #pairs of stageOut and Rucio file catalog
         self.stageOuts_rfcs = [] 
 
@@ -216,14 +213,14 @@ class StageInMgr(object):
     
     def stageIn(self, lfn, stageOut_rfc=None):
         """
-        _stageIn_
-
         Given the lfn and a pair of stage out and corresponding Rucio file catalog, stageOut_rfc, or override configuration invoke the stage in
         If use override configuration self.overrideConf should contain:
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
         phedex-node - the Name of the PNN to which the file is being xferred
+        :param lfn: logical file name
+        :param stageOut_rfc: a pair of stage out attributes and corresponding Rucio file catalog
         """
         localPfn = os.path.join(os.getcwd(), os.path.basename(lfn))
         if self.override:
@@ -259,8 +256,7 @@ class StageInMgr(object):
         impl.retryPause = self.retryPauseTime
 
         try:
-            if not self.bypassImpl:
-                impl(protocol, pfn, localPfn, options)
+            impl(protocol, pfn, localPfn, options)
         except Exception as ex:
             msg = "Failure for stage in:\n"
             msg += str(ex)

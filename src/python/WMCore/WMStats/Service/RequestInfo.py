@@ -99,7 +99,7 @@ class JobDetailInfo(RESTEntity):
     @tools.expires(secs=-1)
     def get(self, request_name, sample_size):
 
-        result = self.wmstats.getTaskJobSummaryByRequest(request_name, sample_size)
+        result = self.wmstats.getTaskJobSummaryByRequest(request_name, sample_size, usePycurl=True)
         return rows([result])
 
 class TeamInfo(RESTEntity):

@@ -12,7 +12,6 @@ from WMCore.MicroService.MSCore.MSAuth import MSAuth
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.DataStructs.DefaultStructs import PILEUP_REPORT
 from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData
-from WMCore.MicroService.MSPileup.MSPileupError import MSPileupNoKeyFoundError
 
 
 class MSPileup(MSCore):
@@ -27,7 +26,8 @@ class MSPileup(MSCore):
         # Get the RSE expression for Disk RSEs from the configuration
         self.diskRSEExpr = msConfig.get("rucioDiskExpression", "")
 
-    def status(self):
+    @staticmethod
+    def status():
         """
         Provide MSPileup status API. We should extend it to check DB connection, etc.
 
@@ -69,8 +69,14 @@ class MSPileup(MSCore):
 
         # check if filters are present and use it as projection fields
         projection = {}
+        filters = kwargs.get('filters', [])
+        # convert a single filters to a list
+        if isinstance(filters, str):
+            filters = [filters]
         for key in kwargs.get('filters', []):
-            projection[key] = 1
+            # filter out empty strings
+            if key:
+                projection[key] = 1
         results = self.dataMgr.getPileup(spec, projection)
 
         return results

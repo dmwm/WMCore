@@ -5,16 +5,17 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 
 # system modules
-import cherrypy
 import unittest
 
+import cherrypy
+
 # WMCore modules
+from Utils.Timers import gmtimeSeconds
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.MicroService.MSPileup.MSPileup import MSPileup
 from WMCore.MicroService.MSPileup.MSPileupData import customDID
-from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj
-from WMCore.MicroService.Tools.Common import getMSLogger
-from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-from Utils.Timers import gmtimeSeconds
+from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import MSPileupObj, schema
 
 
 class MSPileupTest(EmulatedUnitTestCase):
@@ -86,6 +87,43 @@ class MSPileupTest(EmulatedUnitTestCase):
         # get doc
         res = self.mgr.getPileup(**self.spec)
         self.assertEqual(len(res), 1)
+
+        # get doc with one filter
+        spec = self.spec.copy()
+        spec['filters'] = ['currentRSEs']
+        res = self.mgr.getPileup(**spec)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(len(res[0].keys()), len(spec['filters']))
+
+        for k in res[0]:
+            self.assertIn(k, spec['filters'])
+
+        # get doc with two filters
+        spec = self.spec.copy()
+        spec['filters'] = ['currentRSEs', 'containerFraction']
+        res = self.mgr.getPileup(**spec)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(len(res[0].keys()), len(spec['filters']))
+
+        for k in res[0]:
+            self.assertIn(k, spec['filters'])
+
+        # get doc with empty string filter
+        spec = self.spec.copy()
+        spec['filters'] = ['']
+        res = self.mgr.getPileup(**spec)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(len(res[0].keys()), len(schema().keys()))
+
+        # get doc with two filters with one empty string
+        spec = self.spec.copy()
+        spec['filters'] = ['currentRSEs', '']
+        res = self.mgr.getPileup(**spec)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(len(res[0].keys()), len(spec['filters']) - 1)
+
+        for k in res[0]:
+            self.assertIn(k, spec['filters'])
 
     def testMSPileupQuery(self):
         """Test MSPileup createPileup and queryDatabase API"""

@@ -301,11 +301,10 @@ class RetryManagerPoller(BaseWorkerThread):
 
         return result
     
-    def selectJobModifier(self, jobList):
+    def includeFailureType(self, jobList):
         """
-        _selectJobModifier_
-
-        Selects which Modifier algorithm to use
+        Gets the job exit code and adds its respective key as "failureType" to each job dictionary. 
+        This allows to have config.RetryManager.modifier = {"memory" : "MemoryModifier"}
         """
         result = []
 
@@ -334,7 +333,19 @@ class RetryManagerPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.error(msg)
                 raise RetryManagerException
-                        
+            return result
+    def selectJobModifier(self, jobList):
+        """
+        _selectJobModifier_
+
+        Selects which Modifier algorithm to use
+        """
+        result = []
+
+        if len(jobList) == 0:
+            return result
+        
+        jobList = self.includeFailureType(jobList=jobList)
         for job in jobList:
             try:
                 if job['failureType'] in self.typeModifierAssoc:

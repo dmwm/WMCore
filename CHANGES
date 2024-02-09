@@ -1,3 +1,10 @@
+2.3.1rc1 to 2.3.1rc2:
+  - New function to get dataset locations from MSPileup and its implementation in StartPolicyInterface #11620 (Andrea Piccinelli) #11879
+  - Parse MSPileup filter as string if only listing one (Dennis Lee) #11886
+  - Increase JobSubmitter queue size from 50k to 100k (Alan Malta Rodrigues) #11889
+  - Created MSPileupUtils module and modified GQ CherryPy thread to use MSPileup instead of Rucio (Dennis Lee) #11870
+
+
 2.3.0 to 2.3.1rc1:
   - Dont cross check location when data is reported without location (Alan Malta Rodrigues) #11878
   - Python (standard library) implementation of update pileup object script (Valentin Kuznetsov) #11872

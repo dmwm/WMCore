@@ -1,8 +1,9 @@
+import os
 import pickle
+import logging
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMComponent.RetryManager.Modifier.BaseModifier import BaseModifier
-import pickle
-
+from WMCore.FwkJobReport.Report import Report
 
 class MemoryModifier(BaseModifier):
 
@@ -61,37 +62,98 @@ class MemoryModifier(BaseModifier):
 
         return
 
-    def changeJobPkl(new_memory, pkl_file):
+    ### Antonio ###
+    def getCacheDirectory(self, job):
+        """
+        returns the cache directory of a job
+        """
+        pass
+    
+    def getJobPkl(self, cacheDir):
+        """
+        returns the jobPkl file in a job's cache directory 
+        """
+        pass
+    
+    def changeJobPkl(self, jobPkl):
         """
         Modifies the pkl_file job.pkl by changing the estimatedMemoryUsage to a new_memory value
-
-        """
-        with open(pkl_file, 'rb') as file:
+        """     
+        
+        with open(jobPkl, 'rb') as file:
             data = pickle.load(file)
-        #print(data['estimatedMemoryUsage'])
-        data['estimatedMemoryUsage'] = new_memory
+
+        if data['estimatedMemoryUsage'] >= self.maxMemory:
+            pass
+        elif data['estimatedMemoryUsage'] + self.addedMemory > self.maxMemory:
+            data['estimatedMemoryUsage'] = self.maxMemory
+        else:
+            data['estimatedMemoryUsage'] += self.addedMemory
+
         with open('job.pkl', 'wb') as file:
             pickle.dump(data, file)
 
-    def checkNewJobPkl(pkl_file):
-        with open(pkl_file, 'rb') as file:
-            data = pickle.load(file)
-        print (data['estimatedMemoryUsage'])
-
-    def changeMemory(self, newMemory):
+        return
+    
+    def changeMemory(self, job, newMemory):
         """
         The "main" function in charge of modifying the memory before a retry. 
         It needs to modify the job.pkl file and the workflow sandbox
         It gets the cachedir from the database. There it has the sandbox and the job.pkl file accessible
+        It only does it if the configuration has the line config.RetryManager.MemoryModifier.default.requiresModify = True
         """
+        if self.requiresModify:
+            cacheDir = self.getCacheDirectory(job=job)
+            jobPkl = self.getJobPkl(cacheDir=cacheDir) 
 
-        loadAction = RetryManagerPoller.daoFactory(classname="Jobs.LoadFromID") # RetryManagerPoller has no attribute daoFactory. I am certainly accessing it wrong. How do I access it?
-        print(loadAction) 
+            self.changeJobPkl(jobPkl, newMemory)
+            self.changeSandbox(newMemory=newMemory)
+            return
+        else:
+            return
 
-        # I think loadAction is a dictionary whose keys are columns from the database. What is the exact name of the cachedir column?
-        cacheDir = loadAction[cachedir]
+    def isReady(self, job):
         
-        #Finds job.pkl file
-        pkl_file = '{}/job.pkl'.format(cacheDir) 
-        self.changeJobPkl(newMemory, pkl_file)
-        self.changeSandbox()
+        # Memory will not be modified  unless explicitely specified in the configuration
+        requiresModify = self.getModifierParam(job['jobType'], param=requiresModify, defaultReturn = False) 
+        maxMemory = self.getModifierParam(job['jobType'], param=maxMemory, defaultReturn = '16000')
+        addedMemory = self.getModifierParam(job['jobType'], param=addedMemory, defaultReturn = '2000')  
+
+        try:
+            report     = Report()
+            reportPath = os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count'])
+            report.load(reportPath)
+        except:
+            # If we're here, then the FWJR doesn't exist.
+            # Give up, run it again
+            return True
+
+        if report.getExitCode() == self.exitCode:
+            self.changeMemory(job=job, newMemory=newMemory)
+            return True
+        else:
+            logging.info('Not changing memory for job without exit code 50660')
+            return True
+
+
+
+    #def checkNewJobPkl(jobPkl):
+        #with open(jobPkl, 'rb') as file:
+        #   data = pickle.load(file)
+        #print (data['estimatedMemoryUsage'])
+
+    
+
+    ### Alternativa? ###
+    
+    #from WMCore.WMBS.Job import Job
+
+    #def addMemory(self, jobList, additionalMemory):
+        #for job in jobList:
+        #    job.addResourceEstimates(memory = additionalMemory)
+        
+        #return
+    
+
+
+    

@@ -52,6 +52,7 @@ Any parameter can be skipped and the component will use internal defaults.
 
 from future.utils import viewvalues
 
+import os
 import datetime
 import logging
 import threading
@@ -65,7 +66,7 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.WMFactory import WMFactory
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
+from WMCore.FwkJobReport.Report import Report
 __all__ = []
 
 
@@ -117,6 +118,12 @@ class RetryManagerPoller(BaseWorkerThread):
                              "WMComponent.RetryManager.PlugIns")
         self.pluginFactory = WMFactory("plugins", pluginPath)
 
+
+        modifierPath = getattr(self.config.RetryManager, "modifierPath",
+                             "WMComponent.RetryManager.Modifier")
+        self.modifierFactory = WMFactory("modifiers", modifierPath)
+
+
         self.changeState = ChangeState(self.config)
         self.getJobs = self.daoFactory(classname="Jobs.GetAllJobs")
 
@@ -134,6 +141,23 @@ class RetryManagerPoller(BaseWorkerThread):
                 self.plugins[pluginName] = plugin
             except Exception as ex:
                 msg = "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
+                msg += str(ex)
+                logging.error(msg)
+                raise RetryManagerException(msg)
+
+        # get needed modifiers
+        self.modifiers = {}
+
+        self.typeModifierAssoc = getattr(self.config.RetryManager, 'modifiers', {})
+        self.typeModifierAssoc.setdefault('default', 'DefaultModifier')
+
+        for modifierName in viewvalues(self.typeModifierAssoc):
+            try:
+                modifier = self.modifierFactory.loadObject(classname=modifierName,
+                                                       args=config)
+                self.modifiers[modifierName] = modifier
+            except Exception as ex:
+                msg = "Error loading modifier %s on path %s\n" % (modifierName, modifierPath)
                 msg += str(ex)
                 logging.error(msg)
                 raise RetryManagerException(msg)
@@ -218,7 +242,7 @@ class RetryManagerPoller(BaseWorkerThread):
 
         loadAction = self.daoFactory(classname="Jobs.LoadFromID")
         getTypeAction = self.daoFactory(classname="Jobs.GetType")
-
+        print(loadAction)
         binds = []
         for jobID in idList:
             binds.append({"jobid": jobID})
@@ -274,7 +298,60 @@ class RetryManagerPoller(BaseWorkerThread):
                 raise RetryManagerException(msg)
 
         return result
+    
+    def selectJobModifier(self, jobList):
+        """
+        _selectJobModifier_
 
+        Selects which Modifier algorithm to use
+        """
+        result = []
+
+        if len(jobList) == 0:
+            return result
+        
+        ### The goal now is to have the exit code and failure type as part of the job dictionary. Form is {"memory": 50660, ...}
+        failureTypes = {"50660" : "memory",
+                        "50662" : "disk",
+                        "OtherExitCode" : "default"
+                        } 
+        
+        for job in jobList:
+            try:
+                report = Report()
+                reportPath = os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count'])
+                report.load(reportPath)
+                jobExitCode = report.getExitCode()
+                if jobExitCode in failureTypes.keys():
+                    job['failureType'] = failureTypes[jobExitCode]
+                else:
+                    job['failureType'] = failureTypes["OtherExitCode"]
+
+            except Exception as ex:
+                msg = "Exception while getting the job report"
+                msg += str(ex)
+                logging.error(msg)
+                raise RetryManagerException
+                        
+        for job in jobList:
+            try:
+                if job['failureType'] in self.typeModifierAssoc:
+                    modifierName = self.typeModifierAssoc[job['failureType']]
+                else:
+                    modifierName = self.typeModifierAssoc['default']
+                modifier = self.modifiers[modifierName]
+
+                if modifier.isReady(job=job):
+                    result.append(job)
+
+            except Exception as ex:
+                msg = "Exception while checking the failure type for job %i\n" % job['id']
+                msg += str(ex)
+                logging.error(msg)
+                logging.debug("Job: %s\n", job)
+                raise RetryManagerException(msg)
+        return result
+    
     def doRetries(self):
         """
         Queries DB for all watched filesets, if matching filesets become
@@ -304,3 +381,5 @@ class RetryManagerPoller(BaseWorkerThread):
 
         jobs = self.getJobs.execute(state='submitpaused')
         logging.info("Found %s jobs in submitpaused", len(jobs))
+
+

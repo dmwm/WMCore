@@ -226,7 +226,9 @@ class RetryManagerPoller(BaseWorkerThread):
         jobList = self.loadJobsFromList(idList=jobs)
 
         # Now we should have the jobs
-        propList = self.selectRetryAlgo(jobList, cooloffType)
+        newJobList = self.selectJobModifier(jobList) #this job list includes the type of failure in each job
+        propList = self.selectRetryAlgo(newJobList, cooloffType)
+        
 
         if len(propList) > 0:
             self.changeState.propagate(propList, newJobState, oldstate)

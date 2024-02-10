@@ -80,7 +80,6 @@ class Dataset(StartPolicyInterface):
         datasetPath = task.getInputDatasetPath()
         Lexicon.dataset(datasetPath)  # check dataset name
         validBlocks = []
-        locations = None
 
         blockWhiteList = task.inputBlockWhitelist()
         blockBlackList = task.inputBlockBlacklist()
@@ -166,11 +165,6 @@ class Dataset(StartPolicyInterface):
                 blockSummary['NumberOfRuns'] = runs
 
             validBlocks.append(blockSummary)
-            blockLocation = set(self.blockLocationRucioPhedex(blockName))
-            if locations is None:
-                locations = blockLocation
-            else:
-                locations = locations.intersection(blockLocation)
 
         # all needed blocks present at these sites
         if task.getTrustSitelists().get('trustlists'):
@@ -178,7 +172,9 @@ class Dataset(StartPolicyInterface):
             siteBlacklist = task.siteBlacklist()
             self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
             self.data[datasetPath] = self.sites
-        elif locations:
+        else:
+            # as the container is dealt as a whole, resolve the container location
+            locations = set(self.blockLocationRucioPhedex(datasetPath))
             self.data[datasetPath] = list(set(self.cric.PNNstoPSNs(locations)))
 
         return validBlocks

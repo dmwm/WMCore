@@ -20,12 +20,13 @@ class DQMHarvestWorkflow(Workflow):
         Returns all the primary data that has to be locked and
         transferred with Rucio.
 
-        :return: a list of unique block names and an integer
-                 with their total size
+        :return: a tuple with a list of block names and an integer
+                with their total size in bytes
         """
-        blockList = list(self.getPrimaryBlocks())
+        inputContainer = [self.getInputDataset()]
         totalBlockSize = sum([blockInfo['blockSize'] for blockInfo in self.getPrimaryBlocks().values()])
-        return blockList, totalBlockSize
+        # the whole container must be locked
+        return inputContainer, totalBlockSize
 
     def getRucioGrouping(self):
         """

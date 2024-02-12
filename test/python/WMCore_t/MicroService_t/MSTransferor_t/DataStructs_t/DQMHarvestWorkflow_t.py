@@ -65,8 +65,8 @@ class DQMHarvestWorkflowTest(unittest.TestCase):
         wflow = DQMHarvestWorkflow(self.dqmSpec['RequestName'], deepcopy(self.dqmSpec))
         wflow.setPrimaryBlocks(self.primaryDict)
         inputBlocks, blockSize = wflow.getInputData()
-        self.assertEqual(len(inputBlocks), 2)
-        self.assertCountEqual(inputBlocks, list(self.primaryDict))
+        # this MSTransferor policy deals with the whole container
+        self.assertEqual(inputBlocks, [self.dqmSpec["InputDataset"]])
         self.assertEqual(blockSize, 3)
 
     def testGetRucioGrouping(self):

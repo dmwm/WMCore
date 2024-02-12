@@ -157,6 +157,7 @@ A non-exhaustive **checklist for code review** is:
 6. Commit messages are meaningful
 7. Pull request initial description implements the template and has a clear description
 8. Classes/methods/functions follow the docstring project recommendations.
+9. Finally, does the pull request implement the expected behavior? Is the logic sound?
 
 
 Creating unit tests

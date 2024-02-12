@@ -139,15 +139,25 @@ This infrastructure is thoroughly described in this `wiki_section <https://githu
 
 4. **python3 compatibility**: runs the futurize check to ensure that pre-python 2.7 idioms aren't reinserted in the code.
 
-Human Review
+Code Review
 ------------
 
-Every pull request has to be reviewed by at least one WMCore developer. However, others can also review and provide feedback to such developments, regardless whether they have been marked as "Reviewers" or not.
-Most of the project contributions will require one review approval, but deeper and/or intrusive changes might require 2 review approvals before it can get merged.
+Every pull request has to be reviewed by at least one WMCore developer. Deeper and larger impact developments are ideally to be reviewed by 2 core developers. Nonetheless, others are encouraged to provide any feedback to such developments, regardless whether they have been marked as "Reviewers" or not. It also include cases where the contribution has already been merged.
 
 Bare in mind that your pull request might not necessarily get approved and further changes could be requested. It's also possible that the team in the end decides not to accept those changes, providing you with a reason supporting that decision. Complex pull requests might go through partial reviews as well, which is better than no feedback at all.
 Reviews are performed following the GitHub review mechanism, such that we can avoid many notifications for each comment made along the code. In general, reviewers will not pay too much attention to your pylint/pep/unittest changes (usually present in the 2nd commit), since those are supposed to be safe and not touching any algorithmically/logical parts of our baseline code.
-Last but not least, even if a PR has been recently closed and/or merged, feedback would still be welcomed.
+
+A non-exhaustive **checklist for code review** is:
+
+1. based on the Jenkins report: all unit tests need to be successful (exception for unstable tests)
+2. based on the Jenkins report: there should be no **new** Errors and Warnings in pylint (exception for notifications from already existing code)
+3. based on the Jenkins report: brand new modules need to be clean of any unit test/pylint/pycodestyle notifications
+4. Pull Request no longer has the "PR: Do not merge yet" or "PR: Work in progress" labels
+5. Commits have been properly squashed (usually 1 for src/* and 1 for test/* changes)
+6. Commit messages are meaningful
+7. Pull request initial description implements the template and has a clear description
+8. Classes/methods/functions follow the docstring project recommendations.
+
 
 Creating unit tests
 -----------------------

@@ -131,22 +131,23 @@ def updateBlockInfo(jdoc, rdict):
 
     :param jdoc: JSON sandbox dictionary
     :param rdict: dict of blocks locations from rucio
-    :return: newly constructed dict
+    :return: updates jdoc in place
     """
-    returnDict = {}
     for puType in jdoc:
-        newDict = {}
         for blockName in list(jdoc[puType].keys()):
-            if blockName in rdict.keys():
-                newDict[blockName] = jdoc[puType][blockName]
-        returnDict[puType] = newDict
-    return returnDict
+            if blockName in rdict:
+                # then update the location for this block
+                jdoc[puType][blockName]["PhEDExNodeNames"] = rdict[blockName]
+            else:
+                # then remove this block from the json document (as it is not in MSPileup)
+                jdoc[puType].pop(blockName)
 
 
-def writePileupJson(tfile, jdict, dest=None):
+def writePileupJson(tfile, jsonFileName, jdict, dest=None):
     """
     Write pileup JSON sandbox files back to file system
     :param tfile: tar ball file name
+    :param jsonFileName: a string with a relative path to the pileupconf.json file
     :param jdict: JSON sandbox dictionary in form: {"path-to-json1": jdoc1, "path-to-json2": jdoc2}
     :param dest: optional destination parameter to write final tar ball (use for unit tests)
     :return: nothing
@@ -160,11 +161,11 @@ def writePileupJson(tfile, jdict, dest=None):
             tar.extractall(path=tmpDir)
         # overwrite json sanbox file in temporary directory
         for jname in jdict:
-            fname = os.path.join(tmpDir, jname)
-            fstat = os.stat(fname)
+            fname = os.path.join(tmpDir, jsonFileName)
+            previousStat = os.stat(fname)
             with open(fname, 'w', encoding='utf-8') as ostream:
-                json.dump(jdict[jname], ostream)
-            if fstat == os.stat(fname):
+                json.dump(jdict, ostream)
+            if previousStat == os.stat(fname):
                 # something wrong as we did not update the file
                 msg = f"File {fname} was not properly updated in {tfile}, file stat is identical"
                 raise Exception(msg)
@@ -220,10 +221,6 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
                                authUrl=self.rucioAuthUrl)
         except Exception as ex:
             self.rucio = None
-        # define where to look for sandbox tar balls
-        self.sandboxDir = getattr(self.config.WorkflowUpdater, "sandboxDir")
-        if not os.path.exists(self.sandboxDir):
-            self.sandboxDir = '/data/srv/wmagent/current/install/wmagentpy3/WorkQueueManager/cache'
 
     @timeFunction
     def algorithm(self, parameters=None):
@@ -260,7 +257,8 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
             with CodeTimer("Rucio block resolution", logger=logging):
                 self.findRucioBlocks(uniqueActivePU, msPileupList)
 
-            self.adjustJSONSpec(puWflows, msPileupList)
+            with CodeTimer("Updated pileup in workflow sandbox", logger=logging):
+                self.adjustJSONSpec(puWflows, msPileupList)
         except Exception as ex:
             msg = f"Caught unexpected exception in WorkflowUpdater. Details:\n{str(ex)}"
             logging.exception(msg)
@@ -288,57 +286,50 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
         # loop over active pileup workflows
         for wflow in puWflows:
             # this logic implies that we have untarred workflow tar ball
-            sdir = os.path.join(self.sandboxDir, wflow['name'])
-            tarName = wflow['name'] + '-Sandbox.tar.bz2'
-            tarFile = os.path.join(sdir, tarName)
-            self.logger.debug("process %s, tarfile %s", wflow, tarFile)
+            sandboxDir = os.path.join(wflow['spec'], "../WMSandbox")
+            self.logger.info("Processing workflow sandbox: %s", sandboxDir)
 
-            # json dictionary to write back to our tarball
-            jdict = {}
+            # find the pileup files
+            puFiles = findFiles(sandboxDir, "pileupconf.json")
 
-            # list over pileup workflows in MSPileup service
-            for pileupDoc in msPileupList:
-                # check if active pileup workflow is found in MSPileup one
-                pileupName = pileupDoc['pileupName']
-                if pileupName in wflow["pileup"]:
-                    # find pileup configuration files in sandbox area
-                    self.logger.debug("find pileupconf.json in %s", sdir)
-                    files = findFiles(sdir, "pileupconf.json")
-                    self.logger.debug("found matched pileup %s with conf files %s", pileupName, files)
+            # list over each pileupconf.json and update it
+            for puFile in puFiles:
+                # load the JSON and figure out the dataset name
+                with open(puFile, 'r', encoding='utf-8') as istream:
+                    puJsonContent = json.load(istream)
 
-                    # check config files content if they have the same or different datasets
-                    for fname in files:
-                        # make sure that there is no double slaehes in a file path
-                        fname = fname.replace("//", "/")
-                        self.logger.debug("search %s in %s", pileupName, fname)
-                        pileupConfContent = ""
-                        with open(fname, 'r', encoding='utf-8') as istream:
-                            pileupConfContent = istream.read()
+                jsonPUName = ""
+                for _puType, blocks in puJsonContent.items():
+                    for blockName, content in blocks.items():
+                        jsonPUName = blockName.split("#")[0]
+                        break  # we already have the pileup name
+                self.logger.info("Found pileup name %s under path: %s", jsonPUName, puFile)
 
-                        # check if our pileup name is present in pileupConf content
-                        if pileupName in pileupConfContent:
-                            self.logger.debug("found matched pileup %s in conf file %s", pileupName, fname)
+                # now that we know the pileup name, iterate over the MSPileup docs
+                for pileupDoc in msPileupList:
+                    # check if active pileup workflow is found in MSPileup one
+                    pileupName = pileupDoc['pileupName']
+                    if pileupName == jsonPUName:
+                        # then we need to check whether there are any changes or not
+                        jsonBlockLoc = blockLocations(puJsonContent)
+                        msPUBlockLoc = [{block: pileupDoc["rses"]} for block in pileupDoc["blocks"]]
 
-                            # extract pileupconf.json from full path name which should not have double slashes
-                            pileupConfJson = os.path.join('WMSandbox', fname.split('WMSandbox/')[-1])
-                            self.logger.debug("extract %s", pileupConfJson)
-
-                            # get cotent of pileupconf.json file
-                            jdoc = extractPileupconf(tarFile, pileupConfJson)
-                            bdict = blockLocations(jdoc)
-                            blocks = pileupDoc["blocks"]
-                            rdict = rucioBlockLocations(self.rucio, blocks)
-
-                            # check if rucio block locations are differ from one in pileupconf.json
-                            if checkChanges(rdict, bdict):
-                                self.logger.debug("Update pileup configuration file %s", pileupConfJson)
-                                jdoc = updateBlockInfo(jdoc, rdict)
-                                jdict[pileupConfJson] = jdoc
-
-            # replace pileupconf.json files within tarball if we have an update
-            if jdict:
-                self.logger.info("Write pileup configuration file %s", tarFile)
-                writePileupJson(tarFile, jdict, dest)
+                        # are the block locations different between the JSON and MSPileup?
+                        if checkChanges(jsonBlockLoc, msPUBlockLoc):
+                            self.logger.info("Found differences between JSON and MSPileup content.")
+                            updateBlockInfo(puJsonContent, msPUBlockLoc)
+                            # finally, update the tarball
+                            # FIXME TODO: we should update a tarball only once for each pileup name,
+                            # NOT once for each pileupconf.json file
+                            self.logger.info("Going to update tarball %s with a fresh pileup content",
+                                             wflow['spec'])
+                            # We update a workflow tarball, for a specific file, with new json content
+                            writePileupJson(wflow['spec'], puFile, puJsonContent, dest)
+                        else:
+                            msg = "There are no differences between JSON and MSPileup content "
+                            msg += f"for pileup name {pileupName}. Not updating anything!"
+                            self.logger.info(msg)
+            self.logger.info("Done updating spec: %s\n", wflow['spec'])
 
     def getPileupDocs(self):
         """

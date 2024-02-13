@@ -43,7 +43,9 @@ ARCH_TO_SCRAM = {arch:scram for scram, arch in list(SCRAM_TO_ARCH.items())}
 ARCH_TO_OS = {'slc5': ['rhel6'],
               'slc6': ['rhel6'],
               'slc7': ['rhel7'],
-              'el8': ['rhel8'], 'cc8': ['rhel8'], 'cs8': ['rhel8'], 'alma8': ['rhel8']}
+              'el8': ['rhel8'], 'cc8': ['rhel8'], 'cs8': ['rhel8'], 'alma8': ['rhel8'],
+              'el9': ['rhel9'], 'cs9': ['rhel9'],
+              }
 OS_TO_ARCH = {}
 for arch, oses in ARCH_TO_OS.items():
     for osName in oses:
@@ -328,7 +330,7 @@ class Scram(object):
                 try:
                     var, val = l.split("=", 1)
                 except ValueError as ex:
-                    raise ValueError("Couldn't split line: %s" % l)
+                    raise ValueError("Couldn't split line: %s" % l) from ex
 
                 self.runtimeEnv[var] = val
         if self.test_mode:

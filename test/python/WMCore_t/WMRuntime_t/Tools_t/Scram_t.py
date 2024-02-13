@@ -105,8 +105,9 @@ class Scram_t(unittest.TestCase):
         self.assertCountEqual(OS_TO_ARCH['rhel6'], ['slc5', 'slc6'])
         self.assertCountEqual(OS_TO_ARCH['rhel7'], ['slc7'])
         self.assertCountEqual(OS_TO_ARCH['rhel8'], ['el8', 'cc8', 'cs8', 'alma8'])
+        self.assertCountEqual(OS_TO_ARCH['rhel9'], ['el9', 'cs9'])
         self.assertCountEqual(ARCH_TO_OS['slc6'], ['rhel6'])
-        self.assertEqual(len(ARCH_TO_OS), 7)
+        self.assertEqual(len(ARCH_TO_OS), 9)
         self.assertCountEqual(ARCH_TO_OS['slc7'], ['rhel7'])
         self.assertCountEqual(ARCH_TO_OS['slc7'], ['rhel7'])
 

@@ -58,7 +58,9 @@ PY3_FUTURE_VERSION=0.18.2
 # Saving START_TIME and when job finishes END_TIME.
 WMA_MIN_JOB_RUNTIMESECS=300
 START_TIME=$(date +%s)
-WMA_DEFAULT_OS=rhel7
+WMA_DEFAULT_OS=rhel8
+WMA_CURRENT_OS=rhel$(rpm --eval '%{rhel}')
+[[ $WMA_CURRENT_OS =~ ^rhel[6789]?$ ]] || WMA_CURRENT_OS=$WMA_DEFAULT_OS
 # assign arguments
 SANDBOX=$1
 INDEX=$2
@@ -142,10 +144,10 @@ echo "======== WMAgent COMP Python bootstrap starting at $(TZ=GMT date) ========
 
 # First, decide which COMP ScramArch to use based on the required OS and Architecture
 THIS_ARCH=`uname -m`  # if it's PowerPC, it returns `ppc64le`
-# if this job can run at any OS, then use rhel7 as default
+# if this job can run at any OS, then try to run it on the OS discovered at runtime
 if [ "$REQUIRED_OS" = "any" ]
 then
-    WMA_SCRAM_ARCH=${WMA_DEFAULT_OS}_${THIS_ARCH}
+    WMA_SCRAM_ARCH=${WMA_CURRENT_OS}_${THIS_ARCH}
 else
     WMA_SCRAM_ARCH=${REQUIRED_OS}_${THIS_ARCH}
 fi

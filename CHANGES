@@ -1,3 +1,10 @@
+2.3.1rc2 to 2.3.1rc3:
+  - Discover the singularity container OS at runtime. (Todor Ivanov) #11896
+  - add support for rhel9. Fix #11985 (Stefano Belforte) #11897
+  - providing a checklist for code review (Alan Malta Rodrigues)
+  - Make container level data placement for DQMHarvest; update Start.Policy.Dataset to container too (Alan Malta Rodrigues) #11894
+
+
 2.3.1rc1 to 2.3.1rc2:
   - New function to get dataset locations from MSPileup and its implementation in StartPolicyInterface #11620 (Andrea Piccinelli) #11879
   - Parse MSPileup filter as string if only listing one (Dennis Lee) #11886

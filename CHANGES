@@ -1,3 +1,7 @@
+2.3.0.1 to 2.3.0.2:
+  - Discover the singularity container OS at runtime. (Todor Ivanov) #
+
+
 2.3.0 to 2.3.0.1:
   - Dont cross check location when data is reported without location (Alan Malta Rodrigues) #11880
 

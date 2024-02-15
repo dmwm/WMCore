@@ -149,7 +149,7 @@ class RetryManagerPoller(BaseWorkerThread):
         self.modifiers = {}
 
         self.typeModifierAssoc = getattr(self.config.RetryManager, 'modifiers', {})
-        self.typeModifierAssoc.setdefault('default', 'DefaultModifier')
+        self.typeModifierAssoc.setdefault('default', None)
 
         for modifierName in viewvalues(self.typeModifierAssoc):
             try:
@@ -226,8 +226,8 @@ class RetryManagerPoller(BaseWorkerThread):
         jobList = self.loadJobsFromList(idList=jobs)
 
         # Now we should have the jobs
-        newJobList = self.selectJobModifier(jobList) #this job list includes the type of failure in each job
-        propList = self.selectRetryAlgo(newJobList, cooloffType)
+        propList = self.selectRetryAlgo(jobList, cooloffType)
+        newJobList = self.selectJobModifier(propList) #this job list includes the type of failure in each job
         
 
         if len(propList) > 0:
@@ -301,55 +301,33 @@ class RetryManagerPoller(BaseWorkerThread):
 
         return result
     
-    def includeFailureType(self, jobList):
+    def getJobExitCode(self, job):
         """
-        Gets the job exit code and adds its respective key as "failureType" to each job dictionary. 
-        This allows to have config.RetryManager.modifier = {"memory" : "MemoryModifier"}
+        Gets and returns the job exit code. Used in selectJobModifier()
         """
-        result = []
-
-        if len(jobList) == 0:
-            return result
-        
-        ### The goal now is to have the exit code and failure type as part of the job dictionary. Form is {"memory": 50660, ...}
-        failureTypes = {"50660" : "memory",
-                        "50662" : "disk",
-                        "OtherExitCode" : "default"
-                        } 
-        
-        for job in jobList:
-            try:
-                report = Report()
-                reportPath = os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count'])
-                report.load(reportPath)
-                jobExitCode = report.getExitCode()
-                if jobExitCode in failureTypes.keys():
-                    job['failureType'] = failureTypes[jobExitCode]
-                else:
-                    job['failureType'] = failureTypes["OtherExitCode"]
-
-            except Exception as ex:
-                msg = "Exception while getting the job report"
-                msg += str(ex)
-                logging.error(msg)
-                raise RetryManagerException
-            return result
+        report = Report()
+        reportPath = os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count'])
+        report.load(reportPath)
+        exitCode = report.getExitCode()
+        return exitCode
+    
     def selectJobModifier(self, jobList):
         """
         _selectJobModifier_
 
         Selects which Modifier algorithm to use
         """
+
         result = []
 
         if len(jobList) == 0:
             return result
         
-        jobList = self.includeFailureType(jobList=jobList)
         for job in jobList:
+            exitCode = self.getJobExitCode(job) #Can and should this be setup differently? Something similar to such function may exist already
             try:
-                if job['failureType'] in self.typeModifierAssoc:
-                    modifierName = self.typeModifierAssoc[job['failureType']]
+                if exitCode in self.typeModifierAssoc:
+                    modifierName = self.typeModifierAssoc[exitCode]
                 else:
                     modifierName = self.typeModifierAssoc['default']
                 modifier = self.modifiers[modifierName]

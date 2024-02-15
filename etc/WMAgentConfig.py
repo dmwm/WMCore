@@ -260,16 +260,6 @@ config.RetryManager.section_("SquaredAlgo")
 config.RetryManager.SquaredAlgo.section_("default")
 config.RetryManager.SquaredAlgo.default.coolOffTime = retryAlgoParams
 
-#Include modifiers in RetryManager
-config.RetryManager.modifiers = {"default" : "DefaultModifier", "memory" : "MemoryModifier"}
-config.RetryManager.section_("DefaultModifier")
-config.RetryManager.DefaultModifier.section_("default")
-config.RetryManager.DefaultModifier.default.requiresModify = False
-config.RetryManager.section_("MemoryModifier")
-config.RetryManager.MemoryModifier.section_("memory")
-config.RetryManager.MemoryModifier.memory.requiresModify = True
-config.RetryManager.MemoryModifier.memory.maxMemory = 20 # in GB
-config.RetryManager.MemoryModifier.memory.addedMemory = 2 # in GB
 
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"

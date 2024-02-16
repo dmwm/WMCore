@@ -527,6 +527,7 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
             if self.tokenPath:
                 ad['My.ScitokensFile'] = classad.quote(self.tokenPath)
+            ad['My.use_oauth_services'] = classad.quote("cms")
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))

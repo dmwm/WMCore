@@ -11,13 +11,13 @@ config.RetryManager.MemoryModifier.merge.maxMemory = 3000 # Memory/cpu in MB
 """
 
 import pickle
+import logging
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMComponent.RetryManager.Modifier.BaseModifier import BaseModifier
-import pickle
 
 
 class MemoryModifier(BaseModifier):
-
+    
     def changeSandbox(self, jobPKL, newMemory):
         """
         _changeSandbox_
@@ -35,43 +35,57 @@ class MemoryModifier(BaseModifier):
 
         return
 
-    def changeJobPkl(self, jobPKL, newMemory):
+    def changeJobPkl(self, pklFile, jobPKL, newMemory):
         """
         Modifies the pklFile job.pkl by changing the estimatedMemoryUsage to a new_memory value
 
         """
-        jobPKL['estimatedMemoryUsage'] = newMemory
-        pklFile = '{}/job.pkl'.format(jobPKL['cache_dir']) 
-        self.savePKL(pklFile,data)
-
+        jobPKL['estimatedMemoryUsage'] = newMemory 
+        self.savePKL(pklFile, jobPKL)
 
     def checkNewJobPkl(pklFile):
         with open(pklFile, 'rb') as file:
             data = pickle.load(file)
         print (data['estimatedMemoryUsage'])
 
-    def getNewMemory(self, jobPKL):
-        maxMemPerCore = self.getModifierParam(job['jobType'], 'maxMemory')
+    def getNewMemory(self, jobPKL, settings):
+        maxMemPerCore = settings['maxMemory']
         #Finds job.pkl file
 
         currentMem = jobPKL['estimatedMemoryUsage']
         currentMemPerCore = currentMem/jobPKL['numberOfCores']
-        newMemPerCore = currentMemPerCore * 1.5
+        if 'multiplyMemory' in settings:
+            newMemPerCore = currentMemPerCore * settings['multiplyMemory']
+        elif 'addMemory' in settings:
+            newMemPerCore = currentMemPerCore + settings['addMemory']
+        else:
+            newMemPerCore = currentMemPerCore
+            logging.info('No increment values were given in the MemoryModifier parameter')
+            logging.info('No memory modification performed')
+
         if newMemPerCore > maxMemPerCore:
             newMemPerCore = maxMemPerCore
-        return maxMemPerCore * jobPKL['numberOfCores']
-
+        return newMemPerCore * jobPKL['numberOfCores']
+    
     def changeMemory(self, job):
         """
         The "main" function in charge of modifying the memory before a retry. 
         It needs to modify the job.pkl file and the workflow sandbox
         """
+        settings = self.getModifierParam(job['jobType'], 'settings')
+        if not settings['requiresModify']:
+            logging.info('requiresModify set to False or not specified')
+            logging.info('Not performing any modifications')
+            return
+        
         pklFile = '{}/job.pkl'.format(job['cache_dir']) 
         jobPKL = self.loadPKL(pklFile)
-        newMemory = self.getNewMemory(jobPKL)
 
-        self.changeJobPkl(jobPKL, newMemory)
+        newMemory = self.getNewMemory(jobPKL, settings)
+
+        self.changeJobPkl(pklFile, jobPKL, newMemory)
         self.changeSandbox(jobPKL, newMemory)
 
     def modifyJob(self, job):
+
         self.changeMemory(job)

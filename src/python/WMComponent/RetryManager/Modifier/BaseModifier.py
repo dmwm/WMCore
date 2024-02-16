@@ -93,13 +93,13 @@ class BaseModifier(object):
         modName = self.__class__.__name__
         modArgs = getattr(self.config.RetryManager, modName)
 
-        if hasattr(modArgs, jobType):
-            algoParams = getattr(modArgs, jobType)
+        if hasattr(modArgs, jobType): #config.RetryManager.MemoryModifier.Processing = modifierParams
+            modifierParams = getattr(modArgs, jobType)
         else:
-            algoParams = modArgs.default
+            modifierParams = modArgs.default #config.RetryManager.MemoryModifier.default = modifierParams
 
-        if hasattr(algoParams, param):
-            return getattr(algoParams, param)
+        if hasattr(modifierParams, param):
+            return getattr(modifierParams, param)
         else:
             logging.error("No %s for %s algorithm and %s job type" % (param, modName, jobType))
             return defaultReturn

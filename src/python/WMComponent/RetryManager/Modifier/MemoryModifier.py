@@ -72,11 +72,6 @@ class MemoryModifier(BaseModifier):
         The "main" function in charge of modifying the memory before a retry. 
         It needs to modify the job.pkl file and the workflow sandbox
         """
-        settings = self.getModifierParam(job['jobType'], 'settings')
-        if not settings['requiresModify']:
-            logging.info('requiresModify set to False or not specified')
-            logging.info('Not performing any modifications')
-            return
         
         pklFile = '{}/job.pkl'.format(job['cache_dir']) 
         jobPKL = self.loadPKL(pklFile)
@@ -87,5 +82,21 @@ class MemoryModifier(BaseModifier):
         self.changeSandbox(jobPKL, newMemory)
 
     def modifyJob(self, job):
+        try:
+            settings = self.getModifierParam(job['jobType'], 'settings')
+        except:
+            logging.exception('Error while getting the MemoryModifier settings parameter. Not modifying memory')
+            return
+        
+        if not 'requiresModify' in settings:
+            logging.info('requiresModify not specified')
+            logging.info('Not performing any modifications')
+            return 
 
-        self.changeMemory(job)
+        elif not settings['requiresModify']:
+            logging.info('requiresModify set to False')
+            logging.info('Not performing any modifications')
+            return
+        
+        else:
+            self.changeMemory(job)

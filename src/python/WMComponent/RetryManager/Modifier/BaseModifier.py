@@ -22,7 +22,7 @@ class BaseModifier(object):
     def __init__(self, config):
         object.__init__(self)
         self.backupPath = "./oldSandboxes"
-        self.tempFolder 
+        #self.tempFolder --> not being used? Initialized as what?
         self.sandboxPath = None
         self.config = config
 

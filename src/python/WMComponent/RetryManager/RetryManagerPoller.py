@@ -227,6 +227,7 @@ class RetryManagerPoller(BaseWorkerThread):
 
         # Now we should have the jobs
         propList = self.selectRetryAlgo(jobList, cooloffType)
+        logging.info('Now calling selectJobModifier')
         propList = self.selectJobModifier(propList) #this propList has the modified jobs
         
 

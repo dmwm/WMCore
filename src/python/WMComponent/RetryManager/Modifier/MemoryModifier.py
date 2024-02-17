@@ -31,7 +31,7 @@ class MemoryModifier(BaseModifier):
         for task in workHelper.getAllTasks():
             task.setMaxPSS(newMemory)
 
-        self.setWorkload(workload)
+        self.setWorkload(workload, jobPKL)
 
         return
 
@@ -40,6 +40,7 @@ class MemoryModifier(BaseModifier):
         Modifies the pklFile job.pkl by changing the estimatedMemoryUsage to a new_memory value
 
         """
+        logging.info('MemoryModifier.changeJobPkl: Modifying {} job memory. Previous value: {}. New value: {}'.format(jobPKL['jobType'], jobPKL['estimatedMemoryUsage'], newMemory))
         jobPKL['estimatedMemoryUsage'] = newMemory 
         self.savePKL(pklFile, jobPKL)
 
@@ -98,4 +99,5 @@ class MemoryModifier(BaseModifier):
             return
         
         else:
+            logging.info('MemoryModifier.changeMemory called successfully')
             self.changeMemory(job, settings)

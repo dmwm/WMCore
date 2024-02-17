@@ -149,7 +149,7 @@ class RetryManagerPoller(BaseWorkerThread):
         self.modifiers = {}
 
         self.typeModifierAssoc = getattr(self.config.RetryManager, 'modifiers', {})
-        self.typeModifierAssoc.setdefault('default', None)
+        #self.typeModifierAssoc.setdefault('default', None)
 
         for modifierName in viewvalues(self.typeModifierAssoc):
             try:

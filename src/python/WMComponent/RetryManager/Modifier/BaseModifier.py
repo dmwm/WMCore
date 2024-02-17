@@ -26,12 +26,12 @@ class BaseModifier(object):
         self.sandboxPath = None
         self.config = config
 
-    def loadPKL(pklFile):
+    def loadPKL(self, pklFile):
         with open(pklFile, 'rb') as file:
             data = pickle.load(file)
         return data
 
-    def savePKL(pklFile, data):
+    def savePKL(self, pklFile, data):
         with open(pklFile, 'wb') as file:
             pickle.dump(data, file)
 

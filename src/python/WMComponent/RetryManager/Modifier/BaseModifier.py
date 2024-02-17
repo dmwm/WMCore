@@ -40,7 +40,7 @@ class BaseModifier(object):
             self.job = load
 
 
-    def updateSandbox(self, jobPKL, workload):
+    def updateSandbox(self, jobPKL, workload): # Not using workload?
         date = datetime.datetime.now().strftime("%y%m%d%H%M%S")
         backupFile = f"{self.backupPath}/{jobPKL['workflow']}_{date}.tar.bz2"
 
@@ -79,7 +79,7 @@ class BaseModifier(object):
         with open(pklPath, 'wb') as pf:
             pickle.dump(workload, pf)
         
-        self.updateSandbox()
+        self.updateSandbox(jobPKL, workload) # Not using workload in this function updateSandbox
 
         return
 

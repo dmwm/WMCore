@@ -49,15 +49,14 @@ class MemoryModifier(BaseModifier):
         print (data['estimatedMemoryUsage'])
 
     def getNewMemory(self, jobPKL, settings):
-        maxMemPerCore = settings['maxMemory']
-        #Finds job.pkl file
-
+        maxMemPerCore = settings['maxMemory']/jobPKL['numberOfCores']
         currentMem = jobPKL['estimatedMemoryUsage']
         currentMemPerCore = currentMem/jobPKL['numberOfCores']
+
         if 'multiplyMemory' in settings:
             newMemPerCore = currentMemPerCore * settings['multiplyMemory']
         elif 'addMemory' in settings:
-            newMemPerCore = currentMemPerCore + settings['addMemory']
+            newMemPerCore = currentMemPerCore + (settings['addMemory']/jobPKL['numberOfCores'])
         else:
             newMemPerCore = currentMemPerCore
             logging.info('No increment values were given in the MemoryModifier parameter')
@@ -67,7 +66,7 @@ class MemoryModifier(BaseModifier):
             newMemPerCore = maxMemPerCore
         return newMemPerCore * jobPKL['numberOfCores']
     
-    def changeMemory(self, job):
+    def changeMemory(self, job, settings):
         """
         The "main" function in charge of modifying the memory before a retry. 
         It needs to modify the job.pkl file and the workflow sandbox
@@ -99,4 +98,4 @@ class MemoryModifier(BaseModifier):
             return
         
         else:
-            self.changeMemory(job)
+            self.changeMemory(job, settings)

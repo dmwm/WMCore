@@ -7,10 +7,12 @@ import unittest
 
 from nose.plugins.attrib import attr
 
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import schema
 from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 
 
-class MSPileupUtilsTest(unittest.TestCase):
+class MSPileupUtilsTest(EmulatedUnitTestCase):
     """
     Test class for the RucioUtils module
     """
@@ -20,6 +22,7 @@ class MSPileupUtilsTest(unittest.TestCase):
         Setup for unit tests
         """
         self.logger = logging.getLogger()
+        super().setUp()
 
     def tearDown(self):
         """
@@ -31,43 +34,14 @@ class MSPileupUtilsTest(unittest.TestCase):
         """
         Test getting pileup docs from testbed.
         """
-        pdict = {
-            "pileupName": "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM",
-            "pileupType": "classic",
-            "insertTime": 1680873642,
-            "lastUpdateTime": 1706216047,
-            "expectedRSEs": [
-                "T1_US_FNAL_Disk",
-                "T2_CH_CERN"
-                ],
-            "currentRSEs": [
-                "T1_US_FNAL_Disk",
-                "T2_CH_CERN"
-                ],
-            "fullReplicas": 1,
-            "campaigns": [
-                "Apr2023_Val"
-                ],
-            "containerFraction": 1.0,
-            "replicationGrouping": "ALL",
-            "activatedOn": 1706216047,
-            "deactivatedOn": 1680873642,
-            "active": True,
-            "pileupSize": 1233099715874,
-            "ruleIds": [
-                "55e5a21aecb5445c8aa40581a7bf18d2",
-                "67a3fa7252f54507ba1c45f271beb754"
-                ],
-            "customName": "",
-            "transition": []
-            }
+        pdict = schema()
 
         dataItem = '/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM'
         msPileupUrl = 'https://cmsweb-testbed.cern.ch/ms-pileup/data/pileup'
 
         # test without filter
         queryDict = {'query': {'pileupName': dataItem}}
-        result = getPileupDocs(msPileupUrl, queryDict)
+        result = getPileupDocs(msPileupUrl, queryDict, method='POST')
 
         self.logger.info('GetPileupDocs Result: %s', result)
 
@@ -81,7 +55,7 @@ class MSPileupUtilsTest(unittest.TestCase):
         filterKeys = ['currentRSEs', 'pileupName', 'containerFraction', 'ruleIds']
         queryDict = {'query': {'pileupName': dataItem},
                      'filters': filterKeys}
-        result = getPileupDocs(msPileupUrl, queryDict)
+        result = getPileupDocs(msPileupUrl, queryDict, method='POST')
 
         self.assertGreater(len(result), 0)
 

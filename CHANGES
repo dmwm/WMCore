@@ -1,3 +1,7 @@
+2.3.1rc3 to 2.3.1rc4:
+  - Correctly pass dbsUrl to the locationsFromMSPileup method (Todor Ivanov) #11906
+
+
 2.3.1rc2 to 2.3.1rc3:
   - Discover the singularity container OS at runtime. (Todor Ivanov) #11896
   - add support for rhel9. Fix #11985 (Stefano Belforte) #11897

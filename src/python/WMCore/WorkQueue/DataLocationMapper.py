@@ -77,7 +77,7 @@ class DataLocationMapper(object):
         for dbs, dataItems in viewitems(dataByDbs):
             # if global use Rucio, else use dbs
             if "pileup" in rucioAcct:
-                output = self.locationsFromMSPileup(dataItems, dbs)
+                output = self.locationsFromMSPileup(dataItems, dbs.dbsURL)
             elif isGlobalDBS(dbs):
                 output = self.locationsFromRucio(dataItems, rucioAcct)
             else:

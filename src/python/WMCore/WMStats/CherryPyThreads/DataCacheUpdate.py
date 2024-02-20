@@ -1,7 +1,7 @@
 from __future__ import (division, print_function)
 
 import time
-import tracemalloc
+from memory_profiler import profile
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
@@ -21,6 +21,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         """
         self.concurrentTasks = [{'func': self.gatherActiveDataStats, 'duration': 300}]
 
+    @profile
     def gatherActiveDataStats(self, config):
         """
         gather active data statistics
@@ -29,12 +30,6 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         try:
             tStart = time.time()
             if DataCache.islatestJobDataExpired():
-                snapshot = tracemalloc.take_snapshot()
-                top_stats = snapshot.statistics('lineno')
-                self.logger.info("Snapshot memory stats:")
-                for thisStat in top_stats[:5]:
-                    self.logger.info(thisStat)
-
                 wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                                           reqdbCouchApp="ReqMgr", logger=self.logger)
                 self.logger.info("Getting active data with job info for statuses: %s", WMSTATS_JOB_INFO)

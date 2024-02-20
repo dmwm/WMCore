@@ -11,9 +11,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
         self.getJobInfo = getattr(config, "getJobInfo", False)
-
         super(DataCacheUpdate, self).__init__(config)
-        tracemalloc.start()
 
     def setConcurrentTasks(self, config):
         """

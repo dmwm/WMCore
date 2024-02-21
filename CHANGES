@@ -1,3 +1,7 @@
+2.3.1rc4 to 2.3.1:
+  - Fix variable name in log record; complement to #11879 (Alan Malta Rodrigues) #11908
+
+
 2.3.1rc3 to 2.3.1rc4:
   - Correctly pass dbsUrl to the locationsFromMSPileup method (Todor Ivanov) #11906
 

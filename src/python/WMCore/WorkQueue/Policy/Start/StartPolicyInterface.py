@@ -284,7 +284,7 @@ class StartPolicyInterface(PolicyInterface):
         for dbsUrl, datasets in datasetsWithDbsURL.items():
             pileUpinstance = '-testbed' if 'cmsweb-testbed' in dbsUrl else '-prod'
             msPileupUrl = f'https://cmsweb{pileUpinstance}.cern.ch/ms-pileup/data/pileup'
-            self.logger.info(f'Will fetch {len(datasets)} from MSPileup url: {dbsUrl}')
+            self.logger.info(f'Will fetch {len(datasets)} from MSPileup url: {msPileupUrl}')
             for dataset in datasets:
                 queryDict = {'query': {'pileupName': dataset},
                             'filters': ['expectedRSEs', 'currentRSEs', 'pileupName', 'containerFraction', 'ruleIds']}

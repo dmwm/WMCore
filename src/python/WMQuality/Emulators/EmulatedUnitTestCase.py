@@ -114,10 +114,10 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
         if self.mockMSPileup:
             self.msPileupPatchers = []
-            patchMSPileupAt = ['WMCore.MicroService.MSTransferor.MSTransferor.getPileupDocs', # TODO: Need to use Services.MSPileupUtils
+            patchMSPileupAt = ['WMCore.MicroService.MSTransferor.MSTransferor.getPileupDocs',
                                'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.getPileupDocs',
                                'WMCore.WorkQueue.DataLocationMapper.getPileupDocs',
-                               # 'WMComponent.WorkflowUpdator.WorkflowUpdaterPoller.getPileupDocs', TODO: Need to use Services.MSPileupUtils
+                               'WMComponent.WorkflowUpdater.WorkflowUpdaterPoller.getPileupDocs',
                                'WMCore_t.Services_t.MSPileup_t.MSPileupUtils_t.getPileupDocs']
             for module in patchMSPileupAt:
                 self.msPileupPatchers.append(mock.patch(module, new=mockPileupDocs))

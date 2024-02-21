@@ -18,8 +18,8 @@ import threading
 from Utils.CertTools import cert, ckey
 from Utils.IteratorTools import flattenList
 from Utils.Timers import timeFunction, CodeTimer
+from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from WMCore.Services.Rucio.Rucio import Rucio
-from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -121,18 +121,14 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
            "rses": list of RSE names,
            "blocks": list of block names}
         """
-        mgr = RequestHandler()
-        headers = {'Content-Type': 'application/json'}
-        data = mgr.getdata(self.msPileupUrl, params={}, headers=headers, verb='GET',
-                           ckey=self.userKey, cert=self.userCert, encode=True, decode=True)
-        if data and data.get("result", []):
-            if "error" in data["result"][0]:
-                msg = f"Failed to retrieve MSPileup documents. Error: {data}"
-                raise WorkflowUpdaterException(msg)
+        try:
+            result = getPileupDocs(self.msPileupUrl, queryDict={}, method='GET')
+        except RuntimeError as e:
+            raise WorkflowUpdaterException from e
 
-        logging.info("A total of %d pileup documents have been retrieved.", len(data["result"]))
+        logging.info("A total of %d pileup documents have been retrieved.", len(result))
         pileupMapList = []
-        for puItem in data["result"]:
+        for puItem in result:
             logging.info("Pileup: %s, custom name: %s, expected at: %s, but currently available at: %s",
                          puItem['pileupName'], puItem['customName'],
                          puItem['expectedRSEs'], puItem['currentRSEs'])
@@ -143,7 +139,8 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
             pileupMapList.append(thisPU)
         return pileupMapList
 
-    def findWflowsWithPileup(self, listSpecs):
+    @staticmethod
+    def findWflowsWithPileup(listSpecs):
         """
         Given a list of workflow names and their respective specs, load each
         one of them and filter out those that don't require any pileup dataset.

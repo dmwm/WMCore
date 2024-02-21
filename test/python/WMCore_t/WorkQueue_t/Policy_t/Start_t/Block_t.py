@@ -32,25 +32,6 @@ parentProcArgs["SplittingAlgo"] = "LumiBased"
 parentProcArgs["LumisPerJob"] = 8
 
 
-# A mock class for WMCore.WorkQueue.Policy.Start.Block
-class ThisBlock(Block):
-    def __init__(self, **args):
-        super().__init__(**args)
-
-    def getDatasetLocationsFromMSPileup(self, datasetsWithDbsURL):
-        """
-        Override StartPolicyInterface.getDatasetLocationsFromMSPileup
-        for unit test purposes
-        """
-        print("Mocked ThisBlock.getDatasetLocationsFromMSPileup ")
-        expectedLocations = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
-        result = {}
-        for dbsUrl, datasets in datasetsWithDbsURL.items():
-            for dataset in datasets:
-                result[dataset] = expectedLocations
-        return result
-
-
 def rerecoWorkload(workloadName, arguments, assignArgs=None):
     factory = ReRecoWorkloadFactory()
     wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
@@ -453,8 +434,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         if it is present in the workload.
         """
         for task in MultiTaskProcessingWorkload.taskIterator():
-            # units, _, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
-            units, _, _ = ThisBlock(**self.splitArgs)(MultiTaskProcessingWorkload, task)
+            units, _, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
             self.assertEqual(58, len(units))
             for unit in units:
                 pileupData = unit["PileupData"]

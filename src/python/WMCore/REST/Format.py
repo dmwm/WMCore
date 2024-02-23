@@ -568,6 +568,7 @@ def _etag_tail(head, tail, etag):
     if etagval:
         cherrypy.response.headers["ETag"] = etagval
 
+@profile
 def stream_maybe_etag(size_limit, etag, reply):
     """Maybe generate ETag header for the response, and handle If-Match
     and If-None-Match request headers. Consumes the reply until at most

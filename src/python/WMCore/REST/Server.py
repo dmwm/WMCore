@@ -729,6 +729,7 @@ class MiniRESTApi(object):
         return encodeUnicodeToBytes(metrics)
 
     @expose
+    @profile
     def default(self, *args, **kwargs):
         """The HTTP request handler.
 

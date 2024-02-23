@@ -4,6 +4,8 @@ from builtins import object
 from future.utils import viewitems
 
 import logging
+from memory_profiler import profile
+
 from Utils.IteratorTools import nestedDictUpdate, grouper
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
@@ -304,6 +306,7 @@ class WMStatsReader(object):
 
         return self.getRequestByStatus(T0_ACTIVE_STATUS, jobInfoFlag)
 
+    @profile
     def getRequestByStatus(self, statusList, jobInfoFlag=False, limit=None, skip=None,
                            legacyFormat=False):
 

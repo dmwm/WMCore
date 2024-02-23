@@ -6,7 +6,6 @@ from builtins import str, bytes, object
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 from future.utils import viewitems
-from memory_profiler import profile
 
 import hashlib
 import json
@@ -567,7 +566,6 @@ def _etag_tail(head, tail, etag):
     if etagval:
         cherrypy.response.headers["ETag"] = etagval
 
-@profile
 def stream_maybe_etag(size_limit, etag, reply):
     """Maybe generate ETag header for the response, and handle If-Match
     and If-None-Match request headers. Consumes the reply until at most
@@ -608,12 +606,13 @@ def stream_maybe_etag(size_limit, etag, reply):
     # clients including browsers will ignore them.
     size = 0
     result = []
-    for chunk in reply:
-        result.append(chunk)
-        size += len(chunk)
-        if size > size_limit:
-            res.headers['Trailer'] = 'X-REST-Status'
-            return _etag_tail(result, reply, etag)
+    ### FIXME TODO: this block apparently leaks memory
+    #for chunk in reply:
+    #    result.append(chunk)
+    #    size += len(chunk)
+    #    if size > size_limit:
+    #        res.headers['Trailer'] = 'X-REST-Status'
+    #        return _etag_tail(result, reply, etag)
 
     # We've buffered the entire response, but it may be an error reply. The
     # generator code does not know if it's allowed to raise exceptions, so

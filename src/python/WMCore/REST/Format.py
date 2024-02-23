@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import gzip
 from builtins import str, bytes, object
+from memory_profiler import profile
 
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
@@ -552,6 +553,7 @@ def _etag_match(status, etagval, match, nomatch):
             if nomatch and ("*" in nomatch or etagval in nomatch):
                 raise cherrypy.HTTPRedirect([], 304)
 
+@profile
 def _etag_tail(head, tail, etag):
     """Generator which first returns anything in `head`, then `tail`.
     Sets ETag header at the end to value of `etag` if it's defined and
@@ -607,12 +609,12 @@ def stream_maybe_etag(size_limit, etag, reply):
     size = 0
     result = []
     ### FIXME TODO: this block apparently leaks memory
-    #for chunk in reply:
-    #    result.append(chunk)
-    #    size += len(chunk)
-    #    if size > size_limit:
-    #        res.headers['Trailer'] = 'X-REST-Status'
-    #        return _etag_tail(result, reply, etag)
+    for chunk in reply:
+        result.append(chunk)
+        size += len(chunk)
+        if size > size_limit:
+            res.headers['Trailer'] = 'X-REST-Status'
+            return _etag_tail(result, reply, etag)
 
     # We've buffered the entire response, but it may be an error reply. The
     # generator code does not know if it's allowed to raise exceptions, so

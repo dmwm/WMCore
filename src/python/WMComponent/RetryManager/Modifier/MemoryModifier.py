@@ -3,11 +3,14 @@
 """
 _MemoryModifier_
 
+config.RetryManager.modifiers = {50660: 'MemoryModifier'}
 config.RetryManager.section_('MemoryModifier')
 config.RetryManager.MemoryModifier.section_('default')
-config.RetryManager.MemoryModifier.default.maxMemory = 2000 # Memory/cpu in MB
+config.RetryManager.MemoryModifier.default.settings = {'requiresModify': False, 'addMemoryPerCore': 200, 'maxMemoryPerCore': 2000}
+config.RetryManager.MemoryModifier.section_('Processing')
+config.RetryManager.MemoryModifier.Processing.settings = {'requiresModify': True, 'addMemoryPerCore': 200, 'maxMemoryPerCore': 2500}
 config.RetryManager.MemoryModifier.section_('merge')
-config.RetryManager.MemoryModifier.merge.maxMemory = 3000 # Memory/cpu in MB
+config.RetryManager.MemoryModifier.merge.settings = {'requiresModify': True, 'multiplyMemoryPerCore': 1.2, 'maxMemoryPerCore': 3000}
 """
 
 import pickle
@@ -40,7 +43,7 @@ class MemoryModifier(BaseModifier):
         Modifies the pklFile job.pkl by changing the estimatedMemoryUsage to a new_memory value
 
         """
-        logging.info('MemoryModifier.changeJobPkl: Modifying {} job memory. Previous value: {}. New value: {}'.format(jobPKL['jobType'], jobPKL['estimatedMemoryUsage'], newMemory))
+        logging.info('MemoryModifier modifying %s job pkl file. Previous value: %d. New value: %d', jobPKL['jobType'], jobPKL['estimatedMemoryUsage'], newMemory)
         jobPKL['estimatedMemoryUsage'] = newMemory 
         self.savePKL(pklFile, jobPKL)
 
@@ -50,18 +53,16 @@ class MemoryModifier(BaseModifier):
         print (data['estimatedMemoryUsage'])
 
     def getNewMemory(self, jobPKL, settings):
-        maxMemPerCore = settings['maxMemory']
+        maxMemPerCore = settings['maxMemoryPerCore']
         currentMem = jobPKL['estimatedMemoryUsage']
         currentMemPerCore = currentMem/jobPKL['numberOfCores']
 
-        if 'multiplyMemory' in settings:
-            newMemPerCore = currentMemPerCore * settings['multiplyMemory']
-        elif 'addMemory' in settings:
-            newMemPerCore = currentMemPerCore + settings['addMemory']
+        if 'multiplyMemoryPerCore' in settings:
+            newMemPerCore = currentMemPerCore * settings['multiplyMemoryPerCore']
+        elif 'addMemoryPerCore' in settings:
+            newMemPerCore = currentMemPerCore + settings['addMemoryPerCore']
         else:
             newMemPerCore = currentMemPerCore
-            logging.info('No increment values were given in the MemoryModifier parameter')
-            logging.info('No memory modification performed')
 
         if newMemPerCore > maxMemPerCore:
             newMemPerCore = maxMemPerCore
@@ -86,19 +87,17 @@ class MemoryModifier(BaseModifier):
         try:
             settings = self.getModifierParam(job['jobType'], 'settings')
         except:
-            logging.exception('Error while getting the MemoryModifier settings parameter. Not modifying memory')
+            logging.debug('MemoryModifier did not get settings parameter for job type %s. Not modifying memory', job['jobType'])
             return
 
         if not 'requiresModify' in settings:
-            logging.info('requiresModify not specified')
-            logging.info('Not performing any modifications')
+            logging.debug('MemoryModifer for job type %s does not specify requiresModify. Not modifying memory',job['jobType'])
             return 
 
         elif not settings['requiresModify']:
-            logging.info('requiresModify set to False')
-            logging.info('Not performing any modifications')
+            logging.debug('MemoryModifyer for job type %s has requiresModify set to False. Not modifying memory', job['jobType'])
             return
         
         else:
-            logging.info('Modifying memory for job %d', job['id'])
+            logging.info('MemoryModifier modifying memory for job %d of job type %s', job['id'], job['jobType'])
             self.changeMemory(job, settings)

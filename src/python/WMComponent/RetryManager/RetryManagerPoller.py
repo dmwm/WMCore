@@ -324,18 +324,18 @@ class RetryManagerPoller(BaseWorkerThread):
         if len(jobList) == 0:
             return result
         
-        for job in jobList:
-            exitCode = self.getJobExitCode(job) #Can and should this be setup differently? Something similar to such function may exist already
+        for job in jobList: 
             try:
+                exitCode = self.getJobExitCode(job)
                 if exitCode in self.typeModifierAssoc:
                     modifierName = self.typeModifierAssoc[exitCode]
                     modifier = self.modifiers[modifierName]
                     modifier.modifyJob(job=job)
-                    
+                    logging.debug('job %d of job type %s was modified with the %s. Job %d now proceeds to retry', job['id'], job['jobType'], modifierName, job['id'])  
                 result.append(job)
 
             except Exception as ex:
-                msg = "Exception while checking the failure type for job %i\n" % job['id']
+                msg = "Exception while checking the exit code for job %i\n" % job['id']
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Job: %s\n", job)

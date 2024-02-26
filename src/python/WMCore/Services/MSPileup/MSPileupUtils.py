@@ -21,7 +21,6 @@ def getPileupDocs(mspileupUrl, queryDict=None, method='GET'):
     queryDict = queryDict or {}
     mgr = RequestHandler()
     headers = {'Content-Type': 'application/json'}
-    # TODO: Use GET instead?
     data = mgr.getdata(mspileupUrl, queryDict, headers, verb=method,
                        ckey=ckey(), cert=cert(), encode=True, decode=True)
     if data and data.get("result", []):

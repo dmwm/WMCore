@@ -64,6 +64,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
                             'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.Rucio',
                             'WMCore.MicroService.MSCore.MSCore.Rucio',
                             'WMComponent.RucioInjector.RucioInjectorPoller.Rucio',
+                            'WMComponent.WorkflowUpdater.WorkflowUpdaterPoller.Rucio',
                             'WMCore.WMSpec.Steps.Fetchers.PileupFetcher.Rucio',
                             'WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio',
                             'WMCore_t.WorkQueue_t.WMBSHelper_t.Rucio']

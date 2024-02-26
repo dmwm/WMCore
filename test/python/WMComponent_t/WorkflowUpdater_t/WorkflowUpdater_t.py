@@ -96,6 +96,7 @@ class WorkflowUpdaterTest(EmulatedUnitTestCase):
         config.WorkflowUpdater.rucioUrl = "http://cms-rucio-int.cern.ch"
         config.WorkflowUpdater.rucioAuthUrl = "https://cms-rucio-auth-int.cern.ch"
         config.WorkflowUpdater.msPileupUrl = "https://cmsweb-testbed.cern.ch/ms-pileup/data/pileup"
+        config.WorkflowUpdater.sandboxDir = "/tmp"
 
         return config
 

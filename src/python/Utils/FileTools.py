@@ -6,12 +6,44 @@ Utilities related to file handling
 
 import io
 import os
+import glob
 import stat
 import subprocess
 import time
 import zlib
 
 from Utils.Utilities import decodeBytesToUnicode
+
+
+def findFiles(path, pat):
+    """
+    Find files within given path and matching given pattern.
+    :param path: starting directory path (string)
+    :param pat: match pattern (string), e.g. *.py or name of the file
+    :return: matched file names
+    """
+    files = []
+    for idir, _, _ in os.walk(path):
+        files.extend(glob.glob(os.path.join(idir, pat)))
+    return files
+
+
+def tarMode(tfile, opMode):
+    """
+    Extract proper mode of operation for given tar file. For instance,
+    if op='r' and tfile name is file.tar.gz we should get 'r:gz',
+    while if tfile name is file.tar.bz2 we should get 'r':bz2', while
+    if tfile name is file.tar we should get 'r', etc.
+    :param opMode: mode of operation (string), e.g. 'r', or 'w'
+    :param tfile: sandbox tar file name (string)
+    :return: mode of operation
+    """
+    ext = tfile.split(".")[-1]
+    if ext == 'tar':
+        return opMode
+    mode = opMode + ':' + ext
+    return mode
+
 
 def calculateChecksums(filename):
     """
@@ -107,6 +139,7 @@ def findMagicStr(filename, matchString):
         for line in logfile:
             if matchString in line:
                 yield line
+
 
 def getFullPath(name, envPath="PATH"):
     """

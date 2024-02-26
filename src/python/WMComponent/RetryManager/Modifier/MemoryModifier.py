@@ -50,14 +50,14 @@ class MemoryModifier(BaseModifier):
         print (data['estimatedMemoryUsage'])
 
     def getNewMemory(self, jobPKL, settings):
-        maxMemPerCore = settings['maxMemory']/jobPKL['numberOfCores']
+        maxMemPerCore = settings['maxMemory']
         currentMem = jobPKL['estimatedMemoryUsage']
         currentMemPerCore = currentMem/jobPKL['numberOfCores']
 
         if 'multiplyMemory' in settings:
             newMemPerCore = currentMemPerCore * settings['multiplyMemory']
         elif 'addMemory' in settings:
-            newMemPerCore = currentMemPerCore + (settings['addMemory']/jobPKL['numberOfCores'])
+            newMemPerCore = currentMemPerCore + settings['addMemory']
         else:
             newMemPerCore = currentMemPerCore
             logging.info('No increment values were given in the MemoryModifier parameter')
@@ -80,6 +80,7 @@ class MemoryModifier(BaseModifier):
 
         self.changeJobPkl(pklFile, jobPKL, newMemory)
         self.changeSandbox(jobPKL, newMemory)
+        logging.info('Old maxPSS: %d. New maxPSS: %d', job['estimatedMemoryUsage'], newMemory)
 
     def modifyJob(self, job):
         try:
@@ -87,7 +88,7 @@ class MemoryModifier(BaseModifier):
         except:
             logging.exception('Error while getting the MemoryModifier settings parameter. Not modifying memory')
             return
-        
+
         if not 'requiresModify' in settings:
             logging.info('requiresModify not specified')
             logging.info('Not performing any modifications')
@@ -99,5 +100,5 @@ class MemoryModifier(BaseModifier):
             return
         
         else:
-            logging.info('MemoryModifier.changeMemory called successfully')
+            logging.info('Modifying memory for job %d', job['id'])
             self.changeMemory(job, settings)

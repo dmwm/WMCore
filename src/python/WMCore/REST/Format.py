@@ -592,6 +592,8 @@ def stream_maybe_etag(size_limit, etag, reply):
     req = cherrypy.request
     res = cherrypy.response
     match = [str(x) for x in (req.headers.elements('If-Match') or [])]
+    # FIXME TODO this apparently increases wmstatsserver memory
+    # footprint by half giga byte
     nomatch = [str(x) for x in (req.headers.elements('If-None-Match') or [])]
 
     # If ETag is already set, match conditions and output without buffering.

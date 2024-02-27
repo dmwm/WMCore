@@ -862,6 +862,8 @@ class MiniRESTApi(object):
         # Format the response.
         response.headers['X-REST-Status'] = 100
         response.headers['Content-Type'] = format
+        # FIXME TODO this apparently increases wmstatsserver memory
+        # footprint by half giga byte
         etagger = apiobj.get('etagger', None) or SHA1ETag()
         reply = stream_compress(fmthandler(obj, etagger),
                                 apiobj.get('compression', self.compression),

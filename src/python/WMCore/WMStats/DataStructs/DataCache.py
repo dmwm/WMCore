@@ -2,6 +2,8 @@ from builtins import object, str, bytes
 from future.utils import viewitems
 
 import time
+
+from Utils.Utilities import getSize
 from WMCore.ReqMgr.DataStructs.Request import RequestInfo, protectedLFNs
 
 class DataCache(object):
@@ -22,6 +24,7 @@ class DataCache(object):
     @staticmethod
     def getlatestJobData():
         if (DataCache._lastedActiveDataFromAgent):
+            print(f"Size of DataCache: {getSize(DataCache._lastedActiveDataFromAgent)}")
             return DataCache._lastedActiveDataFromAgent["data"]
         else:
             return {}

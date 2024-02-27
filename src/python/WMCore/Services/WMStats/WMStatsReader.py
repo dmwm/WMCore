@@ -95,6 +95,7 @@ class WMStatsReader(object):
             options.update(self.defaultStale)
         return options
 
+    @profile
     def getLatestJobInfoByRequests(self, requestNames):
         jobInfoByRequestAndAgent = {}
 
@@ -103,6 +104,7 @@ class WMStatsReader(object):
             jobInfoByRequestAndAgent = self._getLatestJobInfo(requestAndAgentKey)
         return jobInfoByRequestAndAgent
 
+    @profile
     def _updateRequestInfoWithJobInfo(self, requestInfo):
         if requestInfo:
             jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(list(requestInfo))

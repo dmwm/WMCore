@@ -29,6 +29,7 @@ from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.DAOFactory import DAOFactory
+from WMCore.Services.DBS.DBSConcurrency import getBlockInfo4PU
 
 
 def findJsonSandboxFiles(tfile):
@@ -142,6 +143,7 @@ def updateBlockInfo(jdoc, msPUBlockLoc, logger):
 
     :param jdoc: JSON sandbox dictionary
     :param msPUBlockLOck: dict of block with rses from MSPileup service, i.e. {'block': [rses], ... }
+    :param logger: logger object
     :return: newly constructed dict
     """
     returnDict = {}
@@ -176,44 +178,13 @@ def updateBlockInfo(jdoc, msPUBlockLoc, logger):
     if len(blocksToUpdate) > 0:
         logger.info("Adding %s blocks from MSPileup which are not present in pileupconf.json",
                     len(blocksToUpdate))
-        binfo = getBlockInfo(blocksToUpdate)
+        binfo = getBlockInfo4PU(blocksToUpdate, ckey(), cert())
         for puType in returnDict.keys():
             for blockName in blocksToUpdate:
                 # update block record in-place
                 record = returnDict[puType][blockName]
                 record.update(binfo[blockName])
     return returnDict
-
-
-def getBlockInfo(blockNames):
-    """
-    Fetch block information details, file list and number of events, from DBS
-    server.
-    :param blockNames: list of block names
-    :return dict: dictionary of {block: {"FileList": file_list, "NumberOfEvents": number_events}, ...}
-    """
-    # TODO: the logic of this function should be implemented concurrently:
-    # - for every given block get information from DBS: list of files and number of events in a block
-    # - please use pycurl_manager.py module and the following logic:
-#    urls = []
-#    for blk in blockNames:
-#        # need to encode block name properly
-#        block = urllib.parse.quote_plus(blk)
-#        url = f"https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/datasetsummary?block_name={block}"
-#        urls.append(url)
-#    # place concurrent calls to DBS
-#    results = getdata(urls, ckey, cert, cookie=cookie)
-#    # parse output of getdata in some form
-#    for row in resuls:
-#        blockInfo[blk] = ...
-
-    # so far we put placeholder codebase which does nothing
-    fileList = []
-    numEvents = 0
-    blockInfo = {}
-    for blk in blockNames:
-        blockInfo[blk] = {"FileList": fileList, "NumberOfEvents": numEvents}
-    return blockInfo
 
 
 def writePileupJson(tfile, jdict, logger, dest=None):

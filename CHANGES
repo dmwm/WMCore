@@ -1,3 +1,9 @@
+2.3.1 to 2.3.2rc1:
+  - Use MSPileupUtils getPileupDocs in MSTransferor, WorkflowUpdaterPoller (Dennis Lee) #11910
+  - Add pileup availability logic (Valentin Kuznetsov) #11884
+  - Added MSPileupUtils getPileupDocs mock and emulator (Dennis Lee) #11905
+
+
 2.3.1rc4 to 2.3.1:
   - Fix variable name in log record; complement to #11879 (Alan Malta Rodrigues) #11908
 

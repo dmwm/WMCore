@@ -1,3 +1,9 @@
+2.3.2rc1 to 2.3.2rc2:
+  - Pylint/pycode complement for storage.json fix in 11869 (Alan Malta Rodrigues) #11917
+  - Abandon storage.xml in favor of storage.json for stage-in and stage-out (nhduongvn) #11869
+  - Initial implementation of DBSConcurrency module (Valentin Kuznetsov) #11913
+
+
 2.3.1 to 2.3.2rc1:
   - Use MSPileupUtils getPileupDocs in MSTransferor, WorkflowUpdaterPoller (Dennis Lee) #11910
   - Add pileup availability logic (Valentin Kuznetsov) #11884

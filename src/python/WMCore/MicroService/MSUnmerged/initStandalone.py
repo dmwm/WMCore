@@ -1,5 +1,5 @@
 import sys
-import os
+import os, shutil
 import time
 import logging
 import resource
@@ -307,7 +307,6 @@ def getUnmergedfromFile(msUnmerged, rse, filePath):
     :param filePath: Path to file from which to read the list of unmerged files.
     :return:    rse
     """
-    msUnmerged.logger.info("We are here")
     with open(filePath, 'r') as fdUnmerged:
         for line in fdUnmerged:
             # rse['files']['allUnmerged'].append(line)
@@ -357,7 +356,7 @@ def filterUnmergedFromFile(msUnmerged, rse, filePath):
         with open(filePath, 'r') as fd:
             for line in fd:
                 if line.startswith(pattern):
-                    yield line
+                    yield line.rstrip()
 
     # NOTE: If the 'dirFilterIncl' is non empty then the cleaning process will
     #       be enclosed only in this part of the tree and will ignore anything
@@ -433,9 +432,11 @@ if __name__ == '__main__':
 
     random.seed(time.time())
     msConfig['enableRealMode'] = False
+    msConfig['limitDirsPerRSE'] = -1
+
     msUnmerged = MSUnmerged(msConfig)
     msUnmerged.resetServiceCounters()
-    # ctx = createGfal2Context(msConfig['gfalLogLevel'], msConfig['emulateGfal2'])
+    ctx = createGfal2Context(msConfig['gfalLogLevel'], msConfig['emulateGfal2'])
     msUnmerged.protectedLFNs = set(msUnmerged.wmstatsSvc.getProtectedLFNs())
     msUnmerged.rseConsStats = msUnmerged.rucioConMon.getRSEStats()
 
@@ -499,6 +500,7 @@ if __name__ == '__main__':
     rseName = 'T2_CH_CERN'
     rse = MSUnmergedRSE(rseName)
     rse = msUnmerged.getRSEFromMongoDB(rse)
+    rse = msUnmerged.updateRSETimestamps(rse, start=True, end=False)
     rse['pfnPrefixes'] = {}
     for proto in protoList:
         rse['pfnPrefixes'][proto] = findPfnPrefix(rse['name'], proto)
@@ -508,3 +510,6 @@ if __name__ == '__main__':
     rse = getUnmergedfromFile(msUnmerged, rse, fileUnmerged)
     # rse = msUnmerged.filterUnmergedFiles(rse)
     rse = filterUnmergedFromFile(msUnmerged, rse, fileUnmerged)
+    rse = msUnmerged.cleanRSEOs(rse)
+    rse = msUnmerged.updateRSETimestamps(rse, start=False, end=True)
+    rse = msUnmerged.uploadRSEToMongoDB(rse)

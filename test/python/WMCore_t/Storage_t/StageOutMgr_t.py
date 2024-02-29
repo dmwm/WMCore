@@ -7,17 +7,17 @@ Modified on Nov. 7, 2023 by Duong Nguyen
 '''
 import unittest
 import os
+import logging
 from future.utils import viewitems
 
-import logging
 
-from WMCore.WMBase import getTestBase
-
-from WMCore.Storage.StageOutMgr import StageOutMgr,searchRFC
-from WMCore.Storage.SiteLocalConfig import SiteLocalConfig, SiteConfigError
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore_t.Storage_t.DeleteMgr_t import DeleteMgrTest
+from WMCore.WMBase import getTestBase
+from WMCore.Storage.StageOutMgr import StageOutMgr,searchRFC
+from WMCore.Storage.SiteLocalConfig import stageOutStr
+from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.Registry import retrieveStageOutImpl
+
 
 class StageOutMgrTest(StageOutMgr):
     def stageOut(self, lfn, localPfn, checksums, stageOut_rfc=None):
@@ -33,9 +33,10 @@ class StageOutMgrTest(StageOutMgr):
         :param checksums: check sum of file
         :param stageOut_rfc: a pair of stage out and corresponding Rucio file catalog
         """
+        
         if not self.override:
-            if stageOut_rfc is None:
-                msg = "Can not perform stage out for this lfn because of missing stage out information (stageOut_rfc is None): \n %s" % lfn
+            if not stageOut_rfc:
+                msg = "Can not perform stage out for this lfn because of missing stage out information (stageOut_rfc is None or empty): \n %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn)
             command = stageOut_rfc[0]['command']
             options = stageOut_rfc[0]['option']
@@ -63,7 +64,7 @@ class StageOutMgrTest(StageOutMgr):
                 try:
                     import traceback
                     msg += traceback.format_exc()
-                except AttributeError as ex:
+                except AttributeError:
                     msg += "Traceback unavailable\n"
                 raise StageOutFailure(msg, Command=command, Protocol=protocol,
                                       LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
@@ -188,6 +189,7 @@ class StageOutMgrUnitTest(unittest.TestCase):
         stageOutMgr(fileToStage)
         assert fileToStage['PFN']=="davs://dcache-cms-webdav-wan.desy.de:2880/pnfs/desy.de/cms/tier2/store/abc/xyz.root"
         stageOutMgr.cleanSuccessfulStageOuts()
+
         return
 
 if __name__ == "__main__":

@@ -78,18 +78,18 @@ class DeleteMgr(object):
         
         self.stageOuts = self.siteCfg.stageOuts
 
-        msg = "There are %s stage out definitions.\n" % len(self.stageOuts)
+        self.logger.info("There are %s stage out definitions.\n" % len(self.stageOuts))
         
         for stageOut in self.stageOuts:
             foundNoneAttr = False
             for k in ['phedex-node','command','storageSite','volume','protocol']:
                 v = stageOut.get(k)
                 if v is None:
-                    msg += "Unable to retrieve "+k+" of this stageOut: \n"
+                    msg = "Unable to retrieve "+k+" of this stageOut: \n"
                     msg += stageOutStr(stageOut) + "\n"
-                    msg += "From site config file.\n"
+                    msg += "from site config file.\n"
                     msg += "Continue to the next stageOut.\n"
-                    logging.error(msg)
+                    self.logger.error(msg)
                     foundNoneAttr = True
                     break
             if foundNoneAttr: continue
@@ -99,28 +99,27 @@ class DeleteMgr(object):
             command = stageOut.get("command")
             pnn = stageOut.get("phedex-node")
             
-            msg += "\tStage out to : %s using: %s \n" % (pnn, command)
+            self.logger.info("\tStage out to : %s using: %s \n" % (pnn, command))
             
             try:
                 aPath = storageJsonPath(self.siteCfg.siteName,self.siteCfg.subSiteName,storageSite)
                 rfc = readRFC(aPath,storageSite,volume,protocol)
                 self.stageOuts_rfcs.append((stageOut,rfc))
-                msg += "Rucio File Catalog has been loaded:\n"
+                msg = "Rucio File Catalog has been loaded:\n"
                 msg += str(self.stageOuts_rfcs[-1][1])
+                self.logger.info(msg)
             except Exception as ex:
-                msg += "Unable to load Rucio File Catalog:\n"
+                msg = "Unable to load Rucio File Catalog:\n"
                 msg += "This stage out will not be attempted:\n"
                 msg += stageOutStr(stageOut) + '\n'
                 msg += str(ex)
-                logging.exception(msg)
+                self.logger.exception(msg)
                 continue
 
         #no Rucio file catalog is initialized
         if not self.stageOuts_rfcs:
-            raise StageOutInitError(msg)
+            raise StageOutInitError("===>Can not initialize Rucio file catalog")
 
-        self.logger.info(msg)
-        
         return
 
     def initialiseOverride(self):
@@ -146,7 +145,7 @@ class DeleteMgr(object):
             msg = "Unable to extract override parameters from config:\n"
             msg += str(self.overrideConf)
             raise StageOutInitError(msg)
-        if 'option' in self.overrideConf and self.overrideConf['option'] is not None:
+        if self.overrideConf.get('option') is not None:
             if len(self.overrideConf['option']) > 0:
                 overrideConf['option'] = self.overrideConf['option']
             else:
@@ -255,8 +254,7 @@ class DeleteMgr(object):
         try:
             impl.removeFile(pfn)
         except Exception as ex:
-            self.logger.error("Failed to delete file: %s", pfn)
-            ex.addInfo(Protocol=command, LFN=lfn, TargetPFN=pfn)
+            self.logger.exception("Failed to delete file: %s", pfn)
             raise ex
 
         return pfn

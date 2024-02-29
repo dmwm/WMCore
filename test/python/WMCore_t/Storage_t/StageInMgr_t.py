@@ -4,13 +4,12 @@ Created on Nov. 7, 2023 by Duong Nguyen
 import unittest
 import os
 
-from WMCore.WMBase import getTestBase
-
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.StageOutMgr import searchRFC
 from WMCore.Storage.StageInMgr import StageInMgr
-from WMCore.Storage.SiteLocalConfig import SiteLocalConfig, SiteConfigError
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+from WMCore.Storage.SiteLocalConfig import stageOutStr
+from WMCore.Storage.StageOutError import StageOutFailure
+
 
 class StageInMgrTest(StageInMgr):
     def stageIn(self, lfn, stageOut_rfc=None):
@@ -35,8 +34,8 @@ class StageInMgrTest(StageInMgr):
             pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
             protocol = command
         else:
-            if stageOut_rfc is None:
-                msg = "Can not perform stage in for this lfn because of missing information (stageOut_rfc is None): \n %s" % lfn
+            if not stageOut_rfc:
+                msg = "Can not perform stage in for this lfn because of missing information (stageOut_rfc is None or empty): \n %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn)
             pnn = stageOut_rfc[0]['phedex-node']
             command = stageOut_rfc[0]['command']
@@ -65,7 +64,6 @@ class StageInMgrTest(StageInMgr):
             raise StageOutFailure(msg, Command=command, Protocol=protocol,
                                   LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
         return localPfn 
-
 class StageInMgrUnitTest(unittest.TestCase):
 
     def setUp(self):
@@ -81,7 +79,6 @@ class StageInMgrUnitTest(unittest.TestCase):
         fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
         stageInMgr(**fileToStage)
         stageInMgr_override(**fileToStage)
-
         return
 
 

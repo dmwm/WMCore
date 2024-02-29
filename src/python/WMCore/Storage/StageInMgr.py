@@ -14,6 +14,8 @@ from future.utils import viewitems
 
 import os
 
+import logging
+
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig,stageOutStr
 
 #do we want seperate exceptions - for the moment no
@@ -75,7 +77,7 @@ class StageInMgr(object):
 
         self.stageOuts = self.siteCfg.stageOuts
 
-        msg = "\nThere are %s stage out definitions." % len(self.stageOuts)
+        logging.info("\nThere are %s stage out definitions." % len(self.stageOuts))
         for stageOut in self.stageOuts:
             foundNoneAttr = False
             for k in ['phedex-node','command','storageSite','volume','protocol']:
@@ -84,10 +86,9 @@ class StageInMgr(object):
                     amsg = ""
                     amsg+= "Unable to retrieve "+k+" of this stageOut: \n"
                     amsg+= stageOutStr(stageOut) + "\n"
-                    amsg+= "From site config file.\n"
+                    amsg+= "from site config file.\n"
                     amsg+= "Continue to the next stageOut.\n"
-                    print(amsg)
-                    msg += amsg
+                    logging.error(amsg)
                     foundNoneAttr = True
                     break
             if foundNoneAttr: continue
@@ -97,27 +98,25 @@ class StageInMgr(object):
             command = stageOut.get("command")
             pnn = stageOut.get("phedex-node")
             
-            msg += "\nStage out to : %s using: %s" % (pnn, command)
+            logging.info("\nStage out to : %s using: %s" % (pnn, command))
             
             try:
                 aPath = storageJsonPath(self.siteCfg.siteName,self.siteCfg.subSiteName,storageSite)
                 rfc = readRFC(aPath,storageSite,volume,protocol)
                 self.stageOuts_rfcs.append((stageOut,rfc))
-                msg += "\nRucio File Catalog has been loaded:"
+                msg = "\nRucio File Catalog has been loaded:"
                 msg += "\n"+str(rfc)
+                logging.info(msg)
             except Exception as ex:
                 amsg = "\nUnable to load Rucio File Catalog. This stage out will not be attempted:\n"
                 amsg += '\t'+stageOutStr(stageOut) + '\n'
                 amsg += str(ex)
-                msg += amsg
-                print(amsg)
+                logging.exception(amsg)
                 continue
         
         #no Rucio file catalog is initialized
         if not self.stageOuts_rfcs:
-            raise StageOutInitError(msg)
-
-        print(msg)
+            raise StageOutInitError("===>Can not initialize Rucio file catalog")
 
         return
 
@@ -144,7 +143,7 @@ class StageInMgr(object):
             msg += str(self.overrideConf) + "\n"
             msg += str(ex)
             raise StageOutInitError(msg)
-        if 'option' in self.overrideConf and self.overrideConf['option'] is not None:
+        if self.overrideConf.get('option') is not None:
             if len(overrideConf['option']) > 0:
                 overrideConf['option'] = self.overrideConf['option']
             else:
@@ -187,7 +186,7 @@ class StageInMgr(object):
                         msg += "======>  using this stageOut %s\n" % str(stageOut_rfc[0])
                         msg += str(ex)
                         msg += "\n Continue to the next stage-out"
-                        print(msg)
+                        logging.exception(msg)
                         continue
             else:
                 print("===> Attempting stage outs from override")
@@ -199,13 +198,13 @@ class StageInMgr(object):
                     msg = "===> Local Stage Out Failure for file:\n"
                     msg += "======>  %s using override\n" % fileToStage['LFN']
                     msg += str(ex)
-                    print(msg)
+                    logging.exception(msg)
                     
         except StageInSuccess:
             msg = "===> Stage In Successful:\n"
             msg += "====> LFN: %s\n" % fileToStage['LFN']
             msg += "====> PFN: %s\n" % fileToStage['PFN']
-            print(msg)
+            logging.info(msg)
             return fileToStage
         msg = "Unable to stage out file:\n"
         msg += fileToStage['LFN']
@@ -233,8 +232,8 @@ class StageInMgr(object):
             pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
             protocol = command
         else:
-            if stageOut_rfc is None:
-                msg = "Can not perform stage in for this lfn because of missing information (stageOut_rfc is None): \n %s" % lfn
+            if not stageOut_rfc:
+                msg = "Can not perform stage in for this lfn because of missing information (stageOut_rfc is None or empty): \n %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn)
             pnn = stageOut_rfc[0]['phedex-node']
             command = stageOut_rfc[0]['command']

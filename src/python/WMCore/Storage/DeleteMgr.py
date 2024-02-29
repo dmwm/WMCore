@@ -7,22 +7,17 @@ Util class to provide delete functionality as an interface object.
 Based on StageOutMgr class
 
 """
-from __future__ import print_function
+import logging
 
 from builtins import object
 from future.utils import viewitems
 
-import logging
-
 from WMCore.Storage.Registry import retrieveStageOutImpl
-# do we want seperate exceptions - for the moment no
-from WMCore.Storage.StageOutError import StageOutFailure
-from WMCore.Storage.StageOutError import StageOutInitError
+from WMCore.Storage.RucioFileCatalog import storageJsonPath, readRFC
+from WMCore.Storage.SiteLocalConfig import stageOutStr, loadSiteLocalConfig
+from WMCore.Storage.StageOutError import StageOutFailure, StageOutInitError
 from WMCore.WMException import WMException
 
-
-from WMCore.Storage.SiteLocalConfig import stageOutStr,loadSiteLocalConfig
-from WMCore.Storage.RucioFileCatalog import storageJsonPath,readRFC 
 
 class DeleteMgrError(WMException):
     """
@@ -47,13 +42,13 @@ class DeleteMgr(object):
     """
 
     def __init__(self, **overrideParams):
-        
+
         self.logger = overrideParams.pop("logger", logging.getLogger())
         self.overrideConf = overrideParams
 
-        #pairs of stageOut and Rucio file catalog: [(stageOut1,rfc1),(stageOut2,rfc2), ...]
-        #a "stageOut" corresponds to a entry in the <stage-out> block in the site-local-config.xml, for example <method volume="KIT_dCache" protocol="WebDAV"/>
-        #a "rfc" is the correponding RucioFileCatalog instance (RucioFileCatalog.py) of this "stageOut"
+        # pairs of stageOut and Rucio file catalog: [(stageOut1,rfc1),(stageOut2,rfc2), ...]
+        # a "stageOut" corresponds to a entry in the <stage-out> block in the site-local-config.xml, for example <method volume="KIT_dCache" protocol="WebDAV"/>
+        # a "rfc" is the correponding RucioFileCatalog instance (RucioFileCatalog.py) of this "stageOut"
         self.stageOuts_rfcs = []
         self.numberOfRetries = 3
         self.retryPauseTime = 600
@@ -75,17 +70,17 @@ class DeleteMgr(object):
         Extract required information from site conf and TFC
 
         """
-        
+
         self.stageOuts = self.siteCfg.stageOuts
 
         self.logger.info("There are %s stage out definitions.\n" % len(self.stageOuts))
-        
+
         for stageOut in self.stageOuts:
             foundNoneAttr = False
-            for k in ['phedex-node','command','storageSite','volume','protocol']:
+            for k in ['phedex-node', 'command', 'storageSite', 'volume', 'protocol']:
                 v = stageOut.get(k)
                 if v is None:
-                    msg = "Unable to retrieve "+k+" of this stageOut: \n"
+                    msg = "Unable to retrieve " + k + " of this stageOut: \n"
                     msg += stageOutStr(stageOut) + "\n"
                     msg += "from site config file.\n"
                     msg += "Continue to the next stageOut.\n"
@@ -98,13 +93,13 @@ class DeleteMgr(object):
             protocol = stageOut.get("protocol")
             command = stageOut.get("command")
             pnn = stageOut.get("phedex-node")
-            
+
             self.logger.info("\tStage out to : %s using: %s \n" % (pnn, command))
-            
+
             try:
-                aPath = storageJsonPath(self.siteCfg.siteName,self.siteCfg.subSiteName,storageSite)
-                rfc = readRFC(aPath,storageSite,volume,protocol)
-                self.stageOuts_rfcs.append((stageOut,rfc))
+                aPath = storageJsonPath(self.siteCfg.siteName, self.siteCfg.subSiteName, storageSite)
+                rfc = readRFC(aPath, storageSite, volume, protocol)
+                self.stageOuts_rfcs.append((stageOut, rfc))
                 msg = "Rucio File Catalog has been loaded:\n"
                 msg += str(self.stageOuts_rfcs[-1][1])
                 self.logger.info(msg)
@@ -116,7 +111,7 @@ class DeleteMgr(object):
                 self.logger.exception(msg)
                 continue
 
-        #no Rucio file catalog is initialized
+        # no Rucio file catalog is initialized
         if not self.stageOuts_rfcs:
             raise StageOutInitError("===>Can not initialize Rucio file catalog")
 
@@ -129,13 +124,13 @@ class DeleteMgr(object):
         Extract and verify that the Override parameters are all present
 
         """
-        
+
         overrideConf = {
             "command": None,
             "option": None,
             "phedex-node": None,
             "lfn-prefix": None,
-        }
+            }
 
         try:
             overrideConf['command'] = self.overrideConf['command']
@@ -158,7 +153,7 @@ class DeleteMgr(object):
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
         self.logger.info(msg)
-        
+
         return
 
     def __call__(self, fileToDelete):
@@ -173,9 +168,9 @@ class DeleteMgr(object):
         lfn = fileToDelete['LFN']
 
         deleteSuccess = False
-        
+
         if not self.overrideConf:
-            logging.info("===> Attempting to delete with %s stage outs", len(self.stageOuts))
+            self.logger.info("===> Attempting to delete with %s stage outs", len(self.stageOuts))
             for stageOut_rfc in self.stageOuts_rfcs:
                 if not deleteSuccess:
                     try:
@@ -186,7 +181,7 @@ class DeleteMgr(object):
                     except Exception as ex:
                         continue
         else:
-            logging.info("===> Attempting stage outs from override")
+            self.logger.info("===> Attempting stage outs from override")
             try:
                 fileToDelete['PNN'] = self.overrideConf['phedex-node']
                 fileToDelete['PFN'] = self.deleteLFN(lfn)
@@ -204,7 +199,7 @@ class DeleteMgr(object):
             msg = "Unable to delete file:\n"
             msg += fileToDelete['LFN']
             raise StageOutFailure(msg, **fileToDelete)
-    
+
     def deleteLFN(self, lfn, stageOut_rfc=None):
         """
         deleteLFN
@@ -217,14 +212,14 @@ class DeleteMgr(object):
             lfn-prefix - the LFN prefix to generate the PFN
             phedex-node - the Name of the PNN to which the file is being xferred
         """
-        if not self.overrideConf: 
+        if not self.overrideConf:
             if stageOut_rfc is None:
                 msg = "Can not delete lfn because of missing stage out information (stageOut_rfc is None): \n %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn)
-            #FIXME there is circular import that is why this module is imported here
-            from WMCore.Storage.StageOutMgr import searchRFC 
+            # FIXME there is circular import that is why this module is imported here
+            from WMCore.Storage.StageOutMgr import searchRFC
             command = stageOut_rfc[0]['command']
-            pfn = searchRFC(stageOut_rfc[1],lfn)
+            pfn = searchRFC(stageOut_rfc[1], lfn)
             if pfn is None:
                 msg = "Unable to match lfn to pfn: \n  %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn, STAGEOUT=stageOutStr(stageOut_rfc[0]))

@@ -10,16 +10,13 @@ import os
 import os.path
 import random
 import shutil
-import socket
-import sys
 # Basic libraries
 import unittest
 
+import sys
 # from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
-from nose.plugins.attrib import attr
 
-import WMCore.WMBase
 import WMCore.WMRuntime.Bootstrap as Bootstrap
 # DataStructs
 from WMCore.DataStructs.File import File
@@ -150,7 +147,7 @@ class RuntimeTest(unittest.TestCase):
         if not os.path.exists(siteConfigPath):
             os.makedirs(siteConfigPath)
         shutil.copy(os.path.join(self.thisDirPath, 'site-local-config.xml'), siteConfigPath)
-        shutil.copy(os.path.join(self.thisDirPath, 'storage.json'), os.path.join(siteConfigPath,'..'))
+        shutil.copy(os.path.join(self.thisDirPath, 'storage.json'), os.path.join(siteConfigPath, '..'))
         environment = rereco.data.section_('environment')
         environment.CMS_PATH = workloadDir
         environment.SITECONFIG_PATH = os.path.join(workloadDir, 'SITECONF/local')
@@ -304,7 +301,7 @@ class RuntimeTest(unittest.TestCase):
         for primeTask in workload.taskIterator():
             listOfTasks.append(primeTask)
             # Only run primeTasks for now
-        
+
         for task in listOfTasks:
             jobName = task.name()
             taskDir = os.path.join(self.unpackDir, jobName, 'job')
@@ -314,8 +311,9 @@ class RuntimeTest(unittest.TestCase):
             # Scream, run around in panic, blow up machine
             print("About to run jobs")
             print(taskDir)
-            #SITECONFIG_PATH is not available here so set it up so that site config can be loaded in Bootstrap.createInitialReport inside miniStartup
-            os.environ['SITECONFIG_PATH'] = os.path.realpath(os.path.join(taskDir,'../../../basicWorkload/SITECONF/local')) 
+            # SITECONFIG_PATH is not available here so set it up so that site config can be loaded in Bootstrap.createInitialReport inside miniStartup
+            os.environ['SITECONFIG_PATH'] = os.path.realpath(
+                os.path.join(taskDir, '../../../basicWorkload/SITECONF/local'))
             miniStartup(thisDir=taskDir)
             # When exiting, go back to where you started
             os.chdir(self.initialDir)
@@ -410,7 +408,7 @@ class RuntimeTest(unittest.TestCase):
         self.createWMBSComponents(workload=workload)
 
         self.unpackComponents(workload=workload)
-        
+
         self.runJobs(workload=workload)
 
         # Check the report
@@ -421,7 +419,7 @@ class RuntimeTest(unittest.TestCase):
 
         # Now validate the report
         self.assertEqual(report.getSiteName(), 'T1_US_FNAL')
-        #self.assertEqual(report.data.hostName, socket.gethostname())
+        # self.assertEqual(report.data.hostName, socket.gethostname())
         self.assertTrue(report.data.completed)
 
         # Should have status 0 (emulator job)

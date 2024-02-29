@@ -1,22 +1,20 @@
-'''
+"""
 Created on Jun 18, 2009
-
 @author: meloam
-
 Modified on Nov. 7, 2023 by Duong Nguyen
-'''
-import unittest
-import os
+"""
 import logging
-from future.utils import viewitems
-
+import os
+import unittest
 
 from WMCore_t.Storage_t.DeleteMgr_t import DeleteMgrTest
-from WMCore.WMBase import getTestBase
-from WMCore.Storage.StageOutMgr import StageOutMgr,searchRFC
+from future.utils import viewitems
+
+from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.SiteLocalConfig import stageOutStr
 from WMCore.Storage.StageOutError import StageOutFailure
-from WMCore.Storage.Registry import retrieveStageOutImpl
+from WMCore.Storage.StageOutMgr import StageOutMgr, searchRFC
+from WMCore.WMBase import getTestBase
 
 
 class StageOutMgrTest(StageOutMgr):
@@ -33,14 +31,14 @@ class StageOutMgrTest(StageOutMgr):
         :param checksums: check sum of file
         :param stageOut_rfc: a pair of stage out and corresponding Rucio file catalog
         """
-        
+
         if not self.override:
             if not stageOut_rfc:
                 msg = "Can not perform stage out for this lfn because of missing stage out information (stageOut_rfc is None or empty): \n %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn)
             command = stageOut_rfc[0]['command']
             options = stageOut_rfc[0]['option']
-            pfn = searchRFC(stageOut_rfc[1],lfn)
+            pfn = searchRFC(stageOut_rfc[1], lfn)
             protocol = stageOut_rfc[1].preferredProtocol
             if pfn == None:
                 msg = "Unable to match lfn to pfn: \n  %s" % lfn
@@ -69,12 +67,12 @@ class StageOutMgrTest(StageOutMgr):
                 raise StageOutFailure(msg, Command=command, Protocol=protocol,
                                       LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
             return pfn
-      
+
         else:
             if self.overrideConf['lfn-prefix'] is None:
                 msg = "Unable to match lfn to pfn during stage out because override lfn-prefix is None: \n %s" % lfn
                 raise StageOutFailure(msg, LFN=lfn)
- 
+
             pfn = "%s%s" % (self.overrideConf['lfn-prefix'], lfn)
 
             try:
@@ -105,7 +103,7 @@ class StageOutMgrTest(StageOutMgr):
         files that may have previously been staged out so that the job ends in a clear state
         of failure, rather than a partial success
         """
-        
+
         for lfn, fileInfo in viewitems(self.completedFiles):
             pfn = fileInfo['PFN']
             command = fileInfo['StageOutCommand']
@@ -113,7 +111,7 @@ class StageOutMgrTest(StageOutMgr):
             msg += "Removing PFN: %s" % pfn
             msg += "Using command implementation: %s\n" % command
             logging.info(msg)
-            #Need to use DeleteMgrTest so that the actual deletion will not proceed
+            # Need to use DeleteMgrTest so that the actual deletion will not proceed
             delManager = DeleteMgrTest(**self.overrideConf)
             try:
                 delManager.deletePFN(pfn, lfn, command)
@@ -121,6 +119,7 @@ class StageOutMgrTest(StageOutMgr):
                 msg = "Failed to cleanup staged out file after error:"
                 msg += " %s\n%s" % (lfn, str(ex))
                 logging.error(msg)
+
 
 class StageOutMgrUnitTest(unittest.TestCase):
 
@@ -131,67 +130,79 @@ class StageOutMgrUnitTest(unittest.TestCase):
 
     def testStageOutMgr(self):
         configFileName = os.path.join(getTestBase(),
-                                           "WMCore_t/Storage_t/T1_DE_KIT/JobConfig",
-                                           "site-local-config.xml")
+                                      "WMCore_t/Storage_t/T1_DE_KIT/JobConfig",
+                                      "site-local-config.xml")
         os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = configFileName
         os.environ['SITECONFIG_PATH'] = os.path.join(getTestBase(),
-                                          "WMCore_t/Storage_t",
-                                          "T1_DE_KIT")
-        os.system('cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T1_DE_KIT.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
+                                                     "WMCore_t/Storage_t",
+                                                     "T1_DE_KIT")
+        os.system(
+            'cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T1_DE_KIT.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
         stageOutMgr = StageOutMgrTest()
-        fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
+        fileToStage = {'LFN': '/store/abc/xyz.root', 'PFN': ''}
         stageOutMgr(fileToStage)
-        assert fileToStage['PFN']=="davs://cmswebdav-kit-disk.gridka.de:2880/pnfs/gridka.de/cms/disk-only/store/abc/xyz.root"
+        assert fileToStage[
+                   'PFN'] == "davs://cmswebdav-kit-disk.gridka.de:2880/pnfs/gridka.de/cms/disk-only/store/abc/xyz.root"
         stageOutMgr.cleanSuccessfulStageOuts()
-        
-        #test override
-        stageOutMgr_override = StageOutMgrTest(**{"command":"gfal2","phedex-node":"T1_US_FNAL_Disk","lfn-prefix":"root://abc/xyz"})
-        fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
+
+        # test override
+        stageOutMgr_override = StageOutMgrTest(
+            **{"command": "gfal2", "phedex-node": "T1_US_FNAL_Disk", "lfn-prefix": "root://abc/xyz"})
+        fileToStage = {'LFN': '/store/abc/xyz.root', 'PFN': ''}
         stageOutMgr_override(fileToStage)
-        assert fileToStage['PFN']=="root://abc/xyz/store/abc/xyz.root"
+        assert fileToStage['PFN'] == "root://abc/xyz/store/abc/xyz.root"
         stageOutMgr_override.cleanSuccessfulStageOuts()
-        
-        #test chained rules
-        os.system('cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-chainedRules.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
+
+        # test chained rules
+        os.system(
+            'cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-chainedRules.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
         stageOutMgr = StageOutMgrTest()
-        fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
+        fileToStage = {'LFN': '/store/abc/xyz.root', 'PFN': ''}
         stageOutMgr(fileToStage)
-        assert fileToStage['PFN']=="davs://cmswebdav-kit-tape.gridka.de:2880/pnfs/gridka.de/cms/tape/store/abc/xyz.root"
+        assert fileToStage[
+                   'PFN'] == "davs://cmswebdav-kit-tape.gridka.de:2880/pnfs/gridka.de/cms/tape/store/abc/xyz.root"
         stageOutMgr.cleanSuccessfulStageOuts()
-        
-        #test stage-out to another site, T2_DE_DESY
-        os.system('cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T2_DE_DESY.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
+
+        # test stage-out to another site, T2_DE_DESY
+        os.system(
+            'cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T2_DE_DESY.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
         stageOutMgr = StageOutMgrTest()
-        fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
+        fileToStage = {'LFN': '/store/abc/xyz.root', 'PFN': ''}
         stageOutMgr(fileToStage)
-        assert fileToStage['PFN']=="davs://dcache-cms-webdav-wan.desy.de:2880/pnfs/desy.de/cms/tier2/store/abc/xyz.root"
+        assert fileToStage[
+                   'PFN'] == "davs://dcache-cms-webdav-wan.desy.de:2880/pnfs/desy.de/cms/tier2/store/abc/xyz.root"
         stageOutMgr.cleanSuccessfulStageOuts()
-        
-        #test subsite
+
+        # test subsite
         configFileName = os.path.join(getTestBase(),
-                                           "WMCore_t/Storage_t/T1_DE_KIT/KIT-T3/JobConfig",
-                                           "site-local-config.xml")
+                                      "WMCore_t/Storage_t/T1_DE_KIT/KIT-T3/JobConfig",
+                                      "site-local-config.xml")
         os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = configFileName
         os.environ['SITECONFIG_PATH'] = os.path.join(getTestBase(),
-                                          "WMCore_t/Storage_t",
-                                          "T1_DE_KIT/KIT-T3")
-        os.system('cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T1_DE_KIT.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
+                                                     "WMCore_t/Storage_t",
+                                                     "T1_DE_KIT/KIT-T3")
+        os.system(
+            'cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T1_DE_KIT.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
         stageOutMgr = StageOutMgrTest()
-        fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
+        fileToStage = {'LFN': '/store/abc/xyz.root', 'PFN': ''}
         stageOutMgr(fileToStage)
-        assert fileToStage['PFN']=="davs://cmswebdav-kit-disk.gridka.de:2880/pnfs/gridka.de/cms/disk-only/store/abc/xyz.root"
+        assert fileToStage[
+                   'PFN'] == "davs://cmswebdav-kit-disk.gridka.de:2880/pnfs/gridka.de/cms/disk-only/store/abc/xyz.root"
         stageOutMgr.cleanSuccessfulStageOuts()
-        
-        #test subsite with stage-out to another site T2_DE_DESY
-        os.system('cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T2_DE_DESY.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
+
+        # test subsite with stage-out to another site T2_DE_DESY
+        os.system(
+            'cp $SITECONFIG_PATH/JobConfig/site-local-config-testStageOut-T2_DE_DESY.xml $SITECONFIG_PATH/JobConfig/site-local-config.xml')
         stageOutMgr = StageOutMgrTest()
-        fileToStage = {'LFN':'/store/abc/xyz.root','PFN':''}
+        fileToStage = {'LFN': '/store/abc/xyz.root', 'PFN': ''}
         stageOutMgr(fileToStage)
-        assert fileToStage['PFN']=="davs://dcache-cms-webdav-wan.desy.de:2880/pnfs/desy.de/cms/tier2/store/abc/xyz.root"
+        assert fileToStage[
+                   'PFN'] == "davs://dcache-cms-webdav-wan.desy.de:2880/pnfs/desy.de/cms/tier2/store/abc/xyz.root"
         stageOutMgr.cleanSuccessfulStageOuts()
 
         return
 
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

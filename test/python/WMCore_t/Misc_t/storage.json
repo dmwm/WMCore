@@ -1,0 +1,74 @@
+[
+   {  "site": "T1_US_FNAL",
+      "volume": "FNAL_dCache_EOS",
+      "protocols": [
+         {  "protocol": "xrootd",
+            "access": "global-ro",
+            "comment": "xrootd read via site redirector",
+            "prefix": "root://cmsxrootd-site.fnal.gov/"
+         },
+         {  "protocol": "XRootD",
+            "access": "global-rw",
+            "comment": "xrootd write to dCache/EOS endpoint directly",
+            "rules": [
+               {  "lfn": "/+store/temp/user/(.*)",
+                  "pfn": "root://cmseos.fnal.gov//eos/uscms/store/temp/user/$1"
+               },
+               {  "lfn": "/+store/(.*)",
+                  "pfn": "root://cmsdcadisk.fnal.gov//dcache/uscmsdisk/store/$1"
+               }
+            ]
+         },
+         {  "protocol": "SRMv2",
+            "access": "global-rw",
+            "rules": [
+               {  "lfn": "/+store/temp/user/(.*)",
+                  "pfn": "gsiftp://cmseos-gridftp.fnal.gov//eos/uscms/store/temp/user/$1"
+               },
+               {  "lfn": "/+store/(.*)",
+                  "pfn": "srm://cmsdcadisk.fnal.gov:8443/srm/managerv2?SFN=/dcache/uscmsdisk/store/$1"
+               }
+            ]
+         },
+         {   "protocol": "WebDAV",
+             "comment": "Ignoring CRAB stageout to EOS -- all disk dCache",
+             "access":   "global-rw",
+             "prefix":   "davs://cmsdcadisk.fnal.gov:2880/dcache/uscmsdisk"
+         }
+      ],
+      "type": "DISK",
+      "rse": "T1_US_FNAL_Disk",
+      "fts": [ "https://cmsfts3.fnal.gov:8446", "https://fts3-cms.cern.ch:8446" ],
+      "loadtest": true
+   },
+
+   {  "site": "T1_US_FNAL",
+      "volume": "FNAL_MSS",
+      "protocols": [
+         {  "protocol": "SRMv2",
+            "access": "global-rw",
+            "prefix": "srm://cmsdcatape.fnal.gov:8443/srm/managerv2?SFN=/11"
+         },
+         {   "protocol": "WebDAV",
+             "access":   "global-rw",
+             "prefix":   "davs://cmsdcatape.fnal.gov:2880/WAX/11"
+         }
+      ],
+      "type": "TAPE",
+      "rse": "T1_US_FNAL_Tape",
+      "fts": [ "https://cmsfts3.fnal.gov:8446", "https://fts3-cms.cern.ch:8446" ]
+   },
+
+   {  "site": "T1_US_FNAL",
+      "volume": "American_Federation",
+      "protocols": [
+         {  "protocol": "XRootD",
+            "access": "global-ro",
+            "prefix": "root://cmsxrootd.fnal.gov/"
+         }
+      ],
+      "type": "DISK",
+      "rse": null,
+      "fts": []
+   }
+]

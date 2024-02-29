@@ -1,0 +1,79 @@
+[
+   {  "site": "T2_DE_DESY",
+      "volume": "DESY_dCache",
+      "protocols": [
+         {  "protocol": "pnfs",
+            "access": "virtual",
+            "rules": [
+               {  "lfn": "/+store/unmerged/(.*)",
+                  "pfn": "/pnfs/desy.de/cms/tier2/unmerged/$1"
+               },
+               {  "lfn": "/+store/temp/(.*)",
+                  "pfn": "/pnfs/desy.de/cms/tier2/temp/$1"
+               },
+               {  "lfn": "/+(.*)",
+                  "pfn": "/pnfs/desy.de/cms/tier2/$1"
+               }
+            ]
+         },
+         {  "protocol": "gsidcap",
+            "access": "site-ro",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "gsidcap://dcache-cms-gsidcap.desy.de:22128/$1",
+                  "chain": "pnfs"
+               }
+            ]
+         },
+         {  "protocol": "dcap",
+            "access": "site-ro",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "dcap://dcache-cms-dcap.desy.de/$1",
+                  "chain": "pnfs"
+               }
+            ]
+         },
+         {  "protocol": "SRMv2",
+            "access": "global-rw",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "srm://dcache-se-cms.desy.de:8443/srm/managerv2?SFN=/$1",
+                  "chain": "pnfs"
+               }
+            ]
+         },
+         {  "protocol": "XRootD",
+            "access": "global-rw",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "root://dcache-cms-xrootd.desy.de:1094//$1"
+               }
+            ]
+         },
+         {  "protocol": "WebDAV",
+            "access": "global-rw",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "davs://dcache-cms-webdav-wan.desy.de:2880/$1",
+                  "chain": "pnfs"
+               }
+            ]
+         },
+         {  "protocol": "davs-lan",
+            "access": "global-rw",
+            "rules": [
+               {  "lfn": "/+(.*)",
+                  "pfn": "davs://dcache-cms-webdav-job.desy.de:2880/$1",
+                  "chain": "pnfs"
+               }
+            ]
+         }
+      ],
+      "type": "DISK",
+      "rse": "T2_DE_DESY",
+      "fts": [ "https://fts3-cms.cern.ch:8446", "https://lcgfts3.gridpp.rl.ac.uk:8446" ],
+      "loadtest": true
+   }
+]
+ 

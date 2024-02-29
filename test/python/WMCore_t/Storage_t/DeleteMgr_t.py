@@ -1,17 +1,18 @@
-'''
+"""
 Created on Jun 18, 2009
 
 @author: meloam
 
 Modified on Nov. 7, 2023 by Duong Nguyen
-'''
-import unittest
+"""
 import os
+import unittest
 
-#need this otherwise retrieveStageOutImpl fails
-from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.DeleteMgr import DeleteMgr
+# need this otherwise retrieveStageOutImpl fails
+from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.StageOutError import StageOutFailure
+
 
 class DeleteMgrTest(DeleteMgr):
     def deletePFN(self, pfn, lfn, command):
@@ -36,6 +37,8 @@ class DeleteMgrTest(DeleteMgr):
             raise ex
 
         return pfn
+
+
 class DeleteMgrUnitTest(unittest.TestCase):
 
     def setUp(self):
@@ -46,9 +49,10 @@ class DeleteMgrUnitTest(unittest.TestCase):
     def testDeleteMgr(self):
         os.environ['SITECONFIG_PATH'] = '/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL'
         deleteMgr = DeleteMgrTest()
-        #keep using 'phedex-node' for overrideParams (to be compatible with the whole DMWM structure?)
-        deleteMgr_override = DeleteMgrTest(**{"command":"gfal2","phedex-node":"T1_US_FNAL_Disk","lfn-prefix":"root://abc/xyz"})
-        fileToDelete = {'LFN':'/store/abc/xyz.root'}
+        # keep using 'phedex-node' for overrideParams (to be compatible with the whole DMWM structure?)
+        deleteMgr_override = DeleteMgrTest(
+            **{"command": "gfal2", "phedex-node": "T1_US_FNAL_Disk", "lfn-prefix": "root://abc/xyz"})
+        fileToDelete = {'LFN': '/store/abc/xyz.root'}
         deleteMgr(fileToDelete)
         deleteMgr_override(fileToDelete)
 
@@ -56,5 +60,5 @@ class DeleteMgrUnitTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+    # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -11,17 +11,12 @@ given a storage description file, storage.json, execute readRFC. This will retur
 a RucioFileCatalog instance that can be used to match LFNs to PFNs.
 """
 
-from builtins import next, str, range
-
+import json
 import os
 import re
 
-import json
+from builtins import str, range
 
-from urllib.parse import urlsplit
-from xml.dom.minidom import Document
-
-from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
 
 class RucioFileCatalog(dict):
     """
@@ -128,6 +123,7 @@ class RucioFileCatalog(dict):
                 result += "\n"
         return result
 
+
 def storageJsonPath(currentSite, currentSubsite, storageSite):
     """
     Return a path to storage.json from site names
@@ -136,30 +132,32 @@ def storageJsonPath(currentSite, currentSubsite, storageSite):
     :para storageSite: str, name of storage site for a stage-out
     :return: str, a path to storage.json (/pathToStorageJson/storage.json)
     """
-    #get site config
-    siteConfigPath = os.getenv('SITECONFIG_PATH',None)
+    # get site config
+    siteConfigPath = os.getenv('SITECONFIG_PATH', None)
     if not siteConfigPath:
         raise RuntimeError('SITECONFIG_PATH is not defined')
     subPath = ''
-    #the storage site is where jobs are executed so use local path given in SITECONFIG_PATH to locate storage.json
+    # the storage site is where jobs are executed so use local path given in SITECONFIG_PATH to locate storage.json
     if currentSite == storageSite:
-        #it is a site (no defined subSite), storage.json is located at the path given in SITECONFIG_PATH
+        # it is a site (no defined subSite), storage.json is located at the path given in SITECONFIG_PATH
         if currentSubsite is None:
             subPath = siteConfigPath
-        #it is a subsite, move one level up
+        # it is a subsite, move one level up
         else:
             subPath = siteConfigPath + '/..'
-    #cross site
+    # cross site
     else:
-        #it is a site (no defined subSite), move one level up
+        # it is a site (no defined subSite), move one level up
         if currentSubsite is None:
             subPath = siteConfigPath + '/../' + storageSite
-        #it is a subsite, move two levels up
+        # it is a subsite, move two levels up
         else:
             subPath = siteConfigPath + '/../../' + storageSite
     pathToStorageDescription = subPath + '/storage.json'
-    pathToStorageDescription = os.path.normpath(os.path.realpath(pathToStorageDescription))#resolve symbolic link and relative path?
-    return pathToStorageDescription 
+    pathToStorageDescription = os.path.normpath(
+        os.path.realpath(pathToStorageDescription))  # resolve symbolic link and relative path?
+    return pathToStorageDescription
+
 
 def readRFC(filename, storageSite, volume, protocol):
     """
@@ -173,64 +171,67 @@ def readRFC(filename, storageSite, volume, protocol):
 
     rfcInstance = RucioFileCatalog()
     try:
-        with open(filename,encoding="utf-8") as jsonFile:
+        with open(filename, encoding="utf-8") as jsonFile:
             jsElements = json.load(jsonFile)
     except Exception as ex:
         msg = "Error reading storage description file: %s\n" % filename
         msg += str(ex)
         raise RuntimeError(msg)
-    #now loop over elements, select the one matched with inputs (storageSite, volume, protocol) and fill lfn-to-pfn
+    # now loop over elements, select the one matched with inputs (storageSite, volume, protocol) and fill lfn-to-pfn
     for jsElement in jsElements:
-        #check to see if the storageSite and volume matchs with "site" and "volume" in storage.json
-        if jsElement['site'] == storageSite and jsElement['volume'] == volume: 
+        # check to see if the storageSite and volume matchs with "site" and "volume" in storage.json
+        if jsElement['site'] == storageSite and jsElement['volume'] == volume:
             rfcInstance.preferredProtocol = protocol
-            #now loop over protocols to add all mappings (needed for chained rule cases)
+            # now loop over protocols to add all mappings (needed for chained rule cases)
             for prot in jsElement['protocols']:
-                #check if prefix is in protocol block
+                # check if prefix is in protocol block
                 if 'prefix' in prot.keys():
-                    #lfn-to-pfn
-                    match = '/(.*)' #match all
-                    result = prot['prefix']+'/$1'
-                    #prefix case should not be chained
-                    chain = None 
+                    # lfn-to-pfn
+                    match = '/(.*)'  # match all
+                    result = prot['prefix'] + '/$1'
+                    # prefix case should not be chained
+                    chain = None
                     rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                    #pfn-to-lfn
-                    match = prot['prefix']+'/(.*)'
+                    # pfn-to-lfn
+                    match = prot['prefix'] + '/(.*)'
                     result = '/$1'
                     rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
-                #here is rules  
+                # here is rules
                 else:
-                    #loop over rules
+                    # loop over rules
                     for rule in prot['rules']:
                         match = rule['lfn']
                         result = rule['pfn']
                         chain = rule.get('chain')
                         rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'lfn-to-pfn')
-                        #pfn-to-lfn
-                        match = rule['pfn'].replace('$1','(.*)')
-                        #Update this if pfn-to-lfn is used extensively somewhere. We want lfn starts with '/abc' so remove all characters of regular expressions!!! 
-                        result = rule['lfn'].replace('/+','/').replace('^/','/')
-                        #now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
-                        result = re.sub('\(.*\)','$1',result)
+                        # pfn-to-lfn
+                        match = rule['pfn'].replace('$1', '(.*)')
+                        # Update this if pfn-to-lfn is used extensively somewhere. We want lfn starts with '/abc' so remove all characters of regular expressions!!!
+                        result = rule['lfn'].replace('/+', '/').replace('^/', '/')
+                        # now replace anything inside () with $1, for example (.*) --> $1, (store/.*) --> $1
+                        result = re.sub('\(.*\)', '$1', result)
                         rfcInstance.addMapping(str(prot['protocol']), str(match), str(result), chain, 'pfn-to-lfn')
-    
+
     return rfcInstance
 
-def rseName(currentSite,currentSubsite,storageSite,volume):
+
+def rseName(currentSite, currentSubsite, storageSite, volume):
     """
-    Return Rucio storage element name, for example https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L39
+    Return Rucio storage element name, for example:
+    https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L39
     :currentSite is the site where jobs are executing
     :currentSubsite is the sub site if jobs are running here
     :storageSite is the site for storage
-    :volume is the volume name, for example https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L3
+    :volume is the volume name, for example:
+        https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L3
     """
     rse = None
-    storageJsonName = storageJsonPath(currentSite,currentSubsite,storageSite)
+    storageJsonName = storageJsonPath(currentSite, currentSubsite, storageSite)
     try:
-        with open(storageJsonName,encoding="utf-8") as jsonFile:
+        with open(storageJsonName, encoding="utf-8") as jsonFile:
             jsElements = json.load(jsonFile)
     except Exception as ex:
-        msg = "RucioFileCatalog.py:rseName() Error reading storage.json: %s\n" % storageJsonName 
+        msg = "RucioFileCatalog.py:rseName() Error reading storage.json: %s\n" % storageJsonName
         msg += str(ex)
         raise RuntimeError(msg)
     for jsElement in jsElements:

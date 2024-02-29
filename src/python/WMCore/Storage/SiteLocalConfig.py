@@ -7,15 +7,13 @@ into an object with an API for getting info from it.
 
 """
 
+import logging
+import os
 
 from builtins import next, str, object
 
-import os
-import logging
-
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
-from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC
-from WMCore.Storage.RucioFileCatalog import readRFC,rseName
+from WMCore.Storage.RucioFileCatalog import rseName
 
 
 def loadSiteLocalConfig():
@@ -55,16 +53,20 @@ def loadSiteLocalConfig():
     config = SiteLocalConfig(actualPath)
     return config
 
-def makeStorageAttribute(siteName,subSiteName,storageSiteName,volume,protocol):
-    return {'site':siteName,'subSite':subSiteName,'storageSite':storageSiteName,'volume':volume,'protocol':protocol}
 
-#return a string of a stage out
+def makeStorageAttribute(siteName, subSiteName, storageSiteName, volume, protocol):
+    return {'site': siteName, 'subSite': subSiteName, 'storageSite': storageSiteName, 'volume': volume,
+            'protocol': protocol}
+
+
+# return a string of a stage out
 def stageOutStr(stageOut):
     msg = ""
-    for sTmp in ['storageSite','volume','protocol','command','options']:
+    for sTmp in ['storageSite', 'volume', 'protocol', 'command', 'options']:
         msg += sTmp + ': ' + str(stageOut.get(sTmp)) + ', '
     msg += 'phedex-node: ' + str(stageOut.get('phedex-node'))
     return msg
+
 
 class SiteConfigError(Exception):
     """
@@ -81,6 +83,7 @@ class SiteLocalConfig(object):
     Readonly API object for getting info out of the SiteLocalConfig file
 
     """
+
     def __init__(self, siteConfigXML):
         self.siteConfigFile = siteConfigXML
         self.siteName = None
@@ -136,7 +139,7 @@ class SiteLocalConfig(object):
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
             raise SiteConfigError(msg)
-        
+
         nodeResult = nodeReader(node)
 
         if 'siteName' not in nodeResult:
@@ -158,15 +161,16 @@ class SiteLocalConfig(object):
             msg += self.siteConfigFile
             raise SiteConfigError(msg)
 
-        self.siteName             = nodeResult.get('siteName', None)
-        self.subSiteName          = nodeResult.get('subSiteName', None)
+        self.siteName = nodeResult.get('siteName', None)
+        self.subSiteName = nodeResult.get('subSiteName', None)
         self.eventData['catalog'] = nodeResult.get('catalog', None)
-        self.localStageOut        = nodeResult.get('localStageOut', [])
-        self.stageOuts            = nodeResult.get('stageOuts', [])
-        self.fallbackStageOut     = nodeResult.get('fallbackStageOut', [])
-        self.frontierServers      = nodeResult.get('frontierServers', [])
-        self.frontierProxies      = nodeResult.get('frontierProxies', [])
+        self.localStageOut = nodeResult.get('localStageOut', [])
+        self.stageOuts = nodeResult.get('stageOuts', [])
+        self.fallbackStageOut = nodeResult.get('fallbackStageOut', [])
+        self.frontierServers = nodeResult.get('frontierServers', [])
+        self.frontierProxies = nodeResult.get('frontierProxies', [])
         return
+
 
 def coroutine(func):
     """
@@ -175,11 +179,14 @@ def coroutine(func):
     Decorator method used to prime coroutines
 
     """
+
     def start(*args, **kwargs):
         cr = func(*args, **kwargs)
         next(cr)
         return cr
+
     return start
+
 
 def nodeReader(node):
     """
@@ -202,6 +209,7 @@ def nodeReader(node):
 
     return report
 
+
 @coroutine
 def processNode(target):
     """
@@ -215,6 +223,7 @@ def processNode(target):
                     if child.name == 'site':
                         target.send((report, child))
 
+
 @coroutine
 def processSite(targets):
     """
@@ -224,21 +233,22 @@ def processSite(targets):
 
     while True:
         report, node = (yield)
-        #Get the name first
+        # Get the name first
         report['siteName'] = node.attrs.get('name', None)
         for subnode in node.children:
             if subnode.name == 'subsite':
-                report['subSiteName'] = subnode.attrs.get('name',None)
+                report['subSiteName'] = subnode.attrs.get('name', None)
             if subnode.name == 'event-data':
                 targets['event-data'].send((report, subnode))
             elif subnode.name == 'calib-data':
                 targets['calib-data'].send((report, subnode))
             elif subnode.name == 'local-stage-out':
-                targets['local-stage-out'].send((report,subnode))
+                targets['local-stage-out'].send((report, subnode))
             elif subnode.name == 'stage-out':
-                targets['stage-out'].send((report,subnode))
+                targets['stage-out'].send((report, subnode))
             elif subnode.name == 'fallback-stage-out':
-                targets['fallback-stage-out'].send((report,subnode))
+                targets['fallback-stage-out'].send((report, subnode))
+
 
 @coroutine
 def processEventData():
@@ -252,6 +262,7 @@ def processEventData():
         for subnode in node.children:
             if subnode.name == 'catalog':
                 report['catalog'] = str(subnode.attrs.get('url', None))
+
 
 @coroutine
 def processLocalStageOut():
@@ -269,6 +280,7 @@ def processLocalStageOut():
                 localReport[subnode.name] = subnode.attrs.get('url', None)
         report['localStageOut'] = localReport
 
+
 @coroutine
 def processStageOut():
     """
@@ -285,18 +297,19 @@ def processStageOut():
                 aStorageSite = report['siteName']
             aProtocol = subnode.attrs.get('protocol', None)
             aVolume = subnode.attrs.get('volume', None)
-            
+
             localReport = {}
             localReport['storageSite'] = aStorageSite
             localReport['command'] = subnode.attrs.get('command', None)
-            #use default command='gfal2' when 'command' is not specified 
+            # use default command='gfal2' when 'command' is not specified
             if localReport['command'] is None:
                 localReport['command'] = 'gfal2'
             localReport['option'] = subnode.attrs.get('option', None)
-            localReport['volume'] = aVolume 
-            localReport['protocol'] = aProtocol 
-            localReport['phedex-node'] = rseName(report["siteName"],subSiteName,aStorageSite,aVolume)
+            localReport['volume'] = aVolume
+            localReport['protocol'] = aProtocol
+            localReport['phedex-node'] = rseName(report["siteName"], subSiteName, aStorageSite, aVolume)
             report['stageOuts'].append(localReport)
+
 
 @coroutine
 def processFallbackStageOut():

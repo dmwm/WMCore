@@ -170,6 +170,7 @@ def addTransitionRecords(handler, url, userDN, logger, dryrun):
     """
     puDocs = getPileupDocs(url, handler, logger)
     logger.info("Found %d documents in MSPileup", len(puDocs))
+    recordsToUpdate = []
     for rec in puDocs:
         if not rec.get("transition"):
             tranRecord = {'containerFraction': 1.0,
@@ -178,13 +179,14 @@ def addTransitionRecords(handler, url, userDN, logger, dryrun):
                           'DN': userDN}
             rec['transition'] = [tranRecord]
             logger.info("New pileup document is: %s", rec)
+            recordsToUpdate.append(rec)
 
     if dryrun:
-        logger.info("documents are not written due to --dry-run option\n")
+        logger.info("%s documents needs to be updated but are not written due to --dry-run option\n", len(recordsToUpdate))
     else:
         # finally, update the pileup documents in the database
-        writePileupDocs(url, puDocs, handler, logger)
-        logger.info("documents are uploaded to MSPileup\n")
+        writePileupDocs(url, recordsToUpdate, handler, logger)
+        logger.info("%s documents are uploaded to MSPileup\n", len(recordsToUpdate))
 
 
 def updatePileupRecords(handler, url, logger, dryrun, fin=""):
@@ -206,8 +208,11 @@ def updatePileupRecords(handler, url, logger, dryrun, fin=""):
             logger.error("Provided %s file does not exist", fin)
             os.exit(1)
     else:
-        puDocs = getPileupDocs(url, handler, logger)
-        logger.info("Found %d documents in MSPileup", len(puDocs))
+        logger.info("No input file is provided to update pileup records")
+        os.exit(1)
+
+    puDocs = getPileupDocs(url, handler, logger)
+    logger.info("Found %d documents in MSPileup", len(puDocs))
 
     # update the documents with the override content
     for doc in puDocs:

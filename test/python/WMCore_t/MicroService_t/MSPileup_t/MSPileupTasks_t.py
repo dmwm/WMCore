@@ -98,6 +98,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         """
         # we will define log stream to capture everything that goes to the log stream
         self.logger = logging.getLogger()
+        self.userDN = 'test-dn'
 
         # setup rucio client
         self.rucioAccount = 'wmcore_pileup'
@@ -148,13 +149,13 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
             'ruleIds': ['rse1']}
         self.data = data
 
-        self.mgr.createPileup(data, self.validRSEs)
+        self.mgr.createPileup(data, self.validRSEs, userDN=self.userDN)
 
         # add more docs similar in nature but with different size
         data['pileupName'] = pname.replace('processed', 'processed-2')
-        self.mgr.createPileup(data, self.validRSEs)
+        self.mgr.createPileup(data, self.validRSEs, userDN=self.userDN)
         data['pileupName'] = pname.replace('processed', 'processed-3')
-        self.mgr.createPileup(data, self.validRSEs)
+        self.mgr.createPileup(data, self.validRSEs, userDN=self.userDN)
 
     def testMSPileupTasks(self):
         """
@@ -230,7 +231,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         trec = {'DN': 'localhost-test', 'containerFraction': 1, 'customDID': 'customDID', 'updateTime': gmtimeSeconds()}
         data.update({'transition': [trec]})
 
-        self.mgr.createPileup(data, self.validRSEs)
+        self.mgr.createPileup(data, self.validRSEs, userDN=self.userDN)
 
         # now create mock rucio client
         rucioClient = MockRucioApi(self.rucioAccount, hostUrl=self.hostUrl, authUrl=self.authUrl)
@@ -272,7 +273,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         trec = {'DN': 'localhost-test', 'containerFraction': 1, 'customDID': 'customDID', 'updateTime': gmtimeSeconds()}
         data.update({'transition': [trec]})
 
-        self.mgr.createPileup(data, self.validRSEs)
+        self.mgr.createPileup(data, self.validRSEs, userDN=self.userDN)
 
         # now create mock rucio client
         rucioClient = MockRucioApi(self.rucioAccount, hostUrl=self.hostUrl, authUrl=self.authUrl)
@@ -317,7 +318,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         self.logger.info("### step 1: create partial pileup document %s", pname)
         data = dict(self.data)
         data['pileupName'] = pname
-        self.mgr.createPileup(data, self.validRSEs)
+        self.mgr.createPileup(data, self.validRSEs, userDN=self.userDN)
 
         # sleep a little bit between creation and updated document
         time.sleep(1)
@@ -355,7 +356,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
         # step 4 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
         # add new spec with transition change
         spec = {'pileupName': pname, 'containerFraction': 0.5}
-        res = self.mgr.updatePileup(spec)
+        res = self.mgr.updatePileup(spec, rseList=self.validRSEs)
         self.logger.info("### step 4: updatePileup %s", res)
         self.assertEqual(len(res), 0)
 
@@ -401,7 +402,7 @@ class MSPileupTasksTest(EmulatedUnitTestCase):
 
         # step 8 of https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
         spec = {'pileupName': pname, 'containerFraction': 0.75}
-        res = self.mgr.updatePileup(spec)
+        res = self.mgr.updatePileup(spec, rseList=self.validRSEs)
         self.logger.info("### step 8: updatePileup %s", res)
         self.assertEqual(len(res), 0)
 

@@ -99,7 +99,8 @@ class MSPileupTasks():
                 pileupSize = datasetSizes.get(pileupName, 0)
                 if pileupSize:
                     doc['pileupSize'] = pileupSize
-                self.mgr.updatePileup(doc, validate=False)
+                # here we update our new document in database with document validation
+                self.mgr.updatePileupDocumentInDatabase(doc)
         except Exception as exp:
             msg = f"MSPileup pileup size task failed with error {exp}"
             self.logger.exception(msg)
@@ -262,7 +263,8 @@ class MSPileupTasks():
                     self.logger.info("Finally, updating the pileup document for pileup name: %s", doc['pileupName'])
 
                     # update MSPileup document in MongoDB
-                    self.mgr.updatePileup(doc, rseList=doc['currentRSEs'])
+                    # here we update our new document in database with document validation
+                    self.mgr.updatePileupDocumentInDatabase(doc, rseList=doc['currentRSEs'])
                     self.logger.info("Pileup name %s had its fraction updated in the partialPileupTask function", doc['pileupName'])
                 except Exception as exp:
                     msg = f"Failed to update MSPileup document, {exp}"
@@ -516,7 +518,9 @@ def monitoringTask(doc, spec):
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"monitoring task {uuid}, update {pname}")
-        mgr.updatePileup(doc, validate=False)
+        # here we update our new document in database without validation since
+        # we only updated rule ids and rses
+        mgr.updatePileupDocumentInDatabase(doc, validate=False)
         msg = f"update pileup {pname}"
         report.addEntry('monitoring', uuid, msg)
     else:
@@ -582,7 +586,9 @@ def inactiveTask(doc, spec):
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"inactive task {uuid}, update {pname}")
-        mgr.updatePileup(doc, validate=False)
+        # here we update our new document in database without validation since
+        # we only updated rule ids and rses
+        mgr.updatePileupDocumentInDatabase(doc, validate=False)
         msg = f"update pileup {pname}"
         report.addEntry('inactive', uuid, msg)
 
@@ -703,7 +709,9 @@ def activeTask(doc, spec):
     # persist an up-to-date version of the pileup data structure in MongoDB
     if modify:
         logger.info(f"active task {uuid} update {pname}")
-        mgr.updatePileup(doc, validate=False)
+        # here we update our new document in database without validation since
+        # we only updated rule ids and rses
+        mgr.updatePileupDocumentInDatabase(doc, validate=False)
         msg = f"update pileup {pname}"
         report.addEntry('active', uuid, msg)
     else:

@@ -34,7 +34,7 @@ class OptionParser():
         defaultDN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account'
         self.parser = argparse.ArgumentParser(prog='PROG')
         self.parser.add_argument("--fin", action="store",
-                                 dest="fin", default="", help="Input JSON file (optional)")
+                                 dest="fin", default="", help="Input file with update fields (optional)")
         self.parser.add_argument("--dry-run", action="store_true",
                                  dest="dryrun", help="Fetch docs but do not update")
         self.parser.add_argument("--url", action="store",

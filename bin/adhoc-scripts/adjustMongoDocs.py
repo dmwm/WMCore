@@ -68,9 +68,7 @@ def addTransitionRecord(dburi, dbname, dbcoll, userDN, verbose):
     conn = MongoClient(host=dburi)
     records = [r for r in conn[dbname][dbcoll].find()]
     for rec in records:
-        if 'pileupName' not in rec:
-            continue
-        if ('transition' in rec and len(rec['transition']) == 0) or 'transition' not in rec:
+        if not rec.get("transition"):
             tranRecord = {'containerFraction': 1.0,
                           'customDID': rec['pileupName'],
                           'updateTime': gmtimeSeconds(),

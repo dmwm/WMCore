@@ -6,6 +6,7 @@ from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.ReqMgr.DataStructs.RequestStatus import WMSTATS_JOB_INFO, WMSTATS_NO_JOB_INFO
 
+
 class DataCacheUpdate(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
@@ -17,7 +18,8 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         """
         sets the list of functions which
         """
-        self.concurrentTasks = [{'func': self.gatherActiveDataStats, 'duration': 300}]
+        self.concurrentTasks = [{'func': self.gatherActiveDataStats,
+                                 'duration': config.dataCacheUpdateDuration}]
 
     def gatherActiveDataStats(self, config):
         """

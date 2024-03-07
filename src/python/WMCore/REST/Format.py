@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import gzip
 from builtins import str, bytes, object
+from memory_profiler import profile
 
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
@@ -552,6 +553,7 @@ def _etag_match(status, etagval, match, nomatch):
             if nomatch and ("*" in nomatch or etagval in nomatch):
                 raise cherrypy.HTTPRedirect([], 304)
 
+@profile
 def _etag_tail(head, tail, etag):
     """Generator which first returns anything in `head`, then `tail`.
     Sets ETag header at the end to value of `etag` if it's defined and
@@ -566,6 +568,7 @@ def _etag_tail(head, tail, etag):
     if etagval:
         cherrypy.response.headers["ETag"] = etagval
 
+@profile
 def stream_maybe_etag(size_limit, etag, reply):
     """Maybe generate ETag header for the response, and handle If-Match
     and If-None-Match request headers. Consumes the reply until at most
@@ -589,6 +592,8 @@ def stream_maybe_etag(size_limit, etag, reply):
     req = cherrypy.request
     res = cherrypy.response
     match = [str(x) for x in (req.headers.elements('If-Match') or [])]
+    # FIXME TODO this apparently increases wmstatsserver memory
+    # footprint by half giga byte
     nomatch = [str(x) for x in (req.headers.elements('If-None-Match') or [])]
 
     # If ETag is already set, match conditions and output without buffering.
@@ -606,6 +611,7 @@ def stream_maybe_etag(size_limit, etag, reply):
     # clients including browsers will ignore them.
     size = 0
     result = []
+    ### FIXME TODO: this block apparently leaks memory
     for chunk in reply:
         result.append(chunk)
         size += len(chunk)

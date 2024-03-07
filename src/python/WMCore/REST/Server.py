@@ -3,6 +3,7 @@ from future.utils import viewitems, viewvalues, listvalues
 
 import cherrypy
 import inspect
+from memory_profiler import profile
 import os
 import re
 import signal
@@ -728,6 +729,7 @@ class MiniRESTApi(object):
         return encodeUnicodeToBytes(metrics)
 
     @expose
+    @profile
     def default(self, *args, **kwargs):
         """The HTTP request handler.
 
@@ -760,6 +762,7 @@ class MiniRESTApi(object):
 
     default._cp_config = {'response.stream': True}
 
+    @profile
     def _call(self, param):
         """The real HTTP request handler.
 
@@ -859,6 +862,8 @@ class MiniRESTApi(object):
         # Format the response.
         response.headers['X-REST-Status'] = 100
         response.headers['Content-Type'] = format
+        # FIXME TODO this apparently increases wmstatsserver memory
+        # footprint by half giga byte
         etagger = apiobj.get('etagger', None) or SHA1ETag()
         reply = stream_compress(fmthandler(obj, etagger),
                                 apiobj.get('compression', self.compression),

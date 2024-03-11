@@ -31,7 +31,6 @@ class OptionParser():
 
     def __init__(self):
         "User based option parser"
-        defaultDN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account'
         self.parser = argparse.ArgumentParser(prog='PROG')
         self.parser.add_argument("--fin", action="store",
                                  dest="fin", default="", help="Input file with update fields (optional)")
@@ -41,7 +40,7 @@ class OptionParser():
                                  dest="url", default="https://cmsweb-testbed.cern.ch",
                                  help="URL for the MSPileup service")
         self.parser.add_argument("--userdn", action="store",
-                                 dest="userDN", default=defaultDN, help="user DN")
+                                 dest="userDN", default='', help="user DN")
         self.parser.add_argument("--add-tran-record", action="store_true",
                                  dest="transition", help="add transition record")
 
@@ -168,6 +167,8 @@ def addTransitionRecords(handler, url, userDN, logger, dryrun):
     :param dryrun: option to run dry-run mode (boolean)
     :return: nothing
     """
+    if not userDN:
+        raise Exception("No userDN provided")
     puDocs = getPileupDocs(url, handler, logger)
     logger.info("Found %d documents in MSPileup", len(puDocs))
     recordsToUpdate = []

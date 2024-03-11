@@ -37,7 +37,6 @@ class OptionParser(object):
 
     def __init__(self):
         "User based option parser"
-        defaultDN = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account'
         self.parser = argparse.ArgumentParser(prog='PROG')
         self.parser.add_argument("--fin", action="store",
                                  dest="fin", default="", help="Input file with update fields")
@@ -48,7 +47,7 @@ class OptionParser(object):
         self.parser.add_argument("--dbcoll", action="store",
                                  dest="dbcoll", default="", help="MongoDB collection")
         self.parser.add_argument("--userdn", action="store",
-                                 dest="userDN", default=defaultDN, help="user DN")
+                                 dest="userDN", default='', help="user DN")
         self.parser.add_argument("--add-tran-record", action="store_true",
                                  dest="transition", help="add transaction record")
         self.parser.add_argument("--verbose", action="store",
@@ -65,6 +64,8 @@ def addTransitionRecord(dburi, dbname, dbcoll, userDN, verbose):
     :param verbose: verbose flag (boolean)
     :return: nothing
     """
+    if not userDN:
+        raise Exception("No userDN provided")
     conn = MongoClient(host=dburi)
     records = [r for r in conn[dbname][dbcoll].find()]
     for rec in records:

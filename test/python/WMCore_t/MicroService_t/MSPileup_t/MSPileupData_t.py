@@ -9,8 +9,10 @@ import time
 import unittest
 
 # WMCore modules
-from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys, getNewTimestamp, customDID
+from WMCore.MicroService.MSPileup.MSPileupData import MSPileupData, stripKeys, getNewTimestamp, \
+    customDID, addTransitionRecord
 from WMCore.MicroService.MSPileup.MSPileupError import MSPILEUP_SCHEMA_ERROR
+from WMCore.MicroService.Tools.Common import getMSLogger
 from Utils.Timers import encodeTimestamp, decodeTimestamp, gmtimeSeconds
 
 
@@ -19,6 +21,7 @@ class MSPileupTest(unittest.TestCase):
 
     def setUp(self):
         """setup unit test class"""
+        self.logger = getMSLogger(False)
         self.validRSEs = ['rse1']
         msConfig = {'reqmgr2Url': 'http://localhost',
                     'rucioAccount': 'wmcore_test',
@@ -34,6 +37,42 @@ class MSPileupTest(unittest.TestCase):
                     'mockMongoDB': True}
         self.mgr = MSPileupData(msConfig, skipRucio=True)
 
+        pname = '/skldjflksdjf/skldfjslkdjf/PREMIX'
+        now = int(time.mktime(time.gmtime()))
+        expectedRSEs = self.validRSEs
+        fullReplicas = 1
+        pileupSize = 1
+        ruleIds = []
+        campaigns = []
+        containerFraction = 1.0
+        replicationGrouping = "ALL"
+
+        pdict = {
+            'pileupName': pname,
+            'pileupType': 'classic',
+            'insertTime': now,
+            'lastUpdateTime': now,
+            'expectedRSEs': expectedRSEs,
+            'currentRSEs': expectedRSEs,
+            'fullReplicas': fullReplicas,
+            'campaigns': campaigns,
+            'containerFraction': containerFraction,
+            'replicationGrouping': replicationGrouping,
+            'activatedOn': now,
+            'deactivatedOn': now,
+            'active': True,
+            'pileupSize': pileupSize,
+            'customName': '',
+            'transition': [],
+            'ruleIds': ruleIds}
+        self.doc = pdict
+        self.pname = pname
+        self.userDN = 'test-dn'
+        self.tranRecord = {'containerFraction': 1.0,
+                           'customDID': self.pname,
+                           'DN': self.userDN,
+                           'updateTime': gmtimeSeconds()}
+
     def testCustomDID(self):
         """Test the customDID function"""
         pname = "/abc/xyz/MINIAOD"
@@ -47,6 +86,65 @@ class MSPileupTest(unittest.TestCase):
         did = customDID(pname)
         expect = "/abc/xyz/MINIAOD-V124"
         self.assertTrue(did == expect)
+
+    def testUpdateTransitionRecord(self):
+        """Test the addTransitionRecord function"""
+        self.logger.info("test addTransitionRecord function")
+        doc = dict(self.doc)
+        userDN = ''
+        doc['transition'] = [self.tranRecord]
+        addTransitionRecord(doc, userDN, self.logger)
+        self.logger.info("1st test (empty DN) %s", doc)
+        self.assertTrue(len(doc['transition']), 1)
+        trec = doc['transition'][0]
+        self.logger.info("trec %s", trec)
+        self.assertTrue(trec['DN'], self.userDN)
+
+        # test when our document contains smaller fraction
+        fraction = 0.5
+        doc['containerFraction'] = fraction
+        doc['transition'] = [self.tranRecord]
+        addTransitionRecord(doc, userDN, self.logger)
+        self.logger.info("2nd test (container fraction) %s", doc)
+        self.assertTrue(len(doc['transition']), 2)
+        # check that all transition record have the same DN
+        for trec in doc['transition']:
+            self.assertTrue(trec['DN'], self.userDN)
+        # check container fraction of last record
+        trec = doc['transition'][-1]
+        self.logger.info("trec %s", trec)
+        self.assertTrue(trec['containerFraction'], fraction)
+
+
+        # test use-case when we supply the same container fraction
+        addTransitionRecord(doc, self.userDN, self.logger)
+        self.logger.info("2nd test (same container fraction) %s", doc)
+        self.assertTrue(len(doc['transition']), 2)
+
+        # test when our document contains smaller fraction and we add new transition record with custom DN
+        userDN = 'bla'
+        addTransitionRecord(doc, userDN, self.logger)
+        self.logger.info("3rd test (custom DN) %s", doc)
+        self.assertTrue(len(doc['transition']), 3)
+        # check that last transition record will have custom DN
+        trec = doc['transition'][-1]
+        self.assertTrue(trec['DN'], userDN)
+        # and first and second transition record should have original userDN
+        trec = doc['transition'][0]
+        self.assertTrue(trec['DN'], self.userDN)
+        trec = doc['transition'][1]
+        self.assertTrue(trec['DN'], self.userDN)
+
+        # test daemon use-case, i.e. when we update pileup record attribute w/o transition
+        doc = dict(self.doc)
+        doc['transition'] = [self.tranRecord]
+        doc['pileupSize'] = 100
+        userDN = ''
+        addTransitionRecord(doc, userDN, self.logger)
+        self.logger.info("4th test (daemon test) %s", doc)
+        self.assertTrue(len(doc['transition']), 1)
+        trec = doc['transition'][0]
+        self.assertTrue(trec['DN'], self.userDN)
 
     def testStripKeys(self):
         """
@@ -88,40 +186,13 @@ class MSPileupTest(unittest.TestCase):
         Unit test to test document creation and storage in MongoDB
         """
         skeys = ['_id']
-        pname = '/skldjflksdjf/skldfjslkdjf/PREMIX'
-        now = int(time.mktime(time.gmtime()))
-        expectedRSEs = self.validRSEs
-        fullReplicas = 1
-        pileupSize = 1
-        ruleIds = []
-        campaigns = []
-        containerFraction = 1.0
-        replicationGrouping = "ALL"
-
-        pdict = {
-            'pileupName': pname,
-            'pileupType': 'classic',
-            'insertTime': now,
-            'lastUpdateTime': now,
-            'expectedRSEs': expectedRSEs,
-            'currentRSEs': expectedRSEs,
-            'fullReplicas': fullReplicas,
-            'campaigns': campaigns,
-            'containerFraction': containerFraction,
-            'replicationGrouping': replicationGrouping,
-            'activatedOn': now,
-            'deactivatedOn': now,
-            'active': True,
-            'pileupSize': pileupSize,
-            'customName': '',
-            'transition': [],
-            'ruleIds': ruleIds}
-
-        out = self.mgr.createPileup(pdict, self.validRSEs)
+        pdict = dict(self.doc)
+        pname = self.pname
+        out = self.mgr.createPileup(pdict, self.validRSEs, userDN=self.userDN)
         self.assertEqual(len(out), 0)
 
         # now fail the RSE validation
-        out = self.mgr.createPileup(pdict, ['rse2'])[0]
+        out = self.mgr.createPileup(pdict, ['rse2'], userDN=self.userDN)[0]
         self.assertEqual(out['error'], "MSPileupError")
         self.assertEqual(out['code'], 7)
         expect = "Failed to create MSPileupObj, MSPileup input is invalid, expectedRSEs value ['rse1'] is not in validRSEs ['rse2']"

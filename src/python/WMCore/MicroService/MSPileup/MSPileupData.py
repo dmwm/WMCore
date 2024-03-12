@@ -79,6 +79,32 @@ def customDID(pname):
     return pname
 
 
+def addTransitionRecord(doc, userDN, logger):
+    """
+    Add a new transition record if the current container fraction differs from the
+    last transition record container fraction. If they are the same, nothing needs to
+    be done with the transition records. For more information please see
+    https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
+
+    :param doc: MSPileup record
+    :param userDN: user DN (string)
+    :param logger: logger to use
+    :return: nothing (document transition is updated in place)
+    """
+    fraction = doc['containerFraction']
+    prevTranRecord = doc['transition'][-1]
+    userDN = userDN or prevTranRecord['DN']
+    if prevTranRecord['containerFraction'] != fraction:
+        customName = customDID(prevTranRecord['customDID'])
+        # preserve previous container fraction
+        transitionRecord = {'containerFraction': prevTranRecord['containerFraction'],
+                            'customDID': customName,
+                            'updateTime': gmtimeSeconds(),
+                            'DN': userDN}
+        doc['transition'].append(transitionRecord)
+        logger.info("Added transition record for pileup %s", doc['pileupName'])
+
+
 class MSPileupData():
     """
     MSPileupData provides logic behind data used and stored by MSPileup module
@@ -215,9 +241,7 @@ class MSPileupData():
         fraction = doc.get('containerFraction', 1.0)
 
         # perform check of input doc, is it partial pileup spec or not
-        partialPileupSpec = False
         if set(doc.keys()) == set(["pileupName", "containerFraction"]):
-            partialPileupSpec = True
             # check if given containerFraction is differ from existing document one
             if fraction == dbDoc.get('containerFraction', 1.0):
                 msg = f"container fraction in provided spec {spec} is identical to one in MongoDB"
@@ -226,17 +250,44 @@ class MSPileupData():
                 return [err.error()]
             self.logger.info("partial pileup spec: %s", doc)
 
-        # Based on the document retrieved from the database, apply the user-related
-        # updates and run this new data structure through the usual validation
+        # Based on the document retrieved from the database, apply the user-related updates
         dbDoc.update(doc)
+
+        # add transition record if doc contains new fraction
+        transition = dbDoc.get('transition', [])
+        if not transition:
+            msg = f"To update pileup {pname} document we should already have transition record in place"
+            err = MSPileupUniqueConstrainError(spec, msg)
+            self.logger.error(err)
+            return [err.error()]
+
+        # update transition record if necessary
+        addTransitionRecord(dbDoc, userDN, self.logger)
+        output = self.updatePileupDocumentInDatabase(dbDoc, rseList)
+        return output
+
+    def updatePileupDocumentInDatabase(self, doc, rseList=None, validate=True):
+        """
+        Update given pileup document in database
+        :param doc: pileup document (dictionary)
+        :param rseList: a list of valid RSE names
+        :param validate: boolean flag to validate document (default)
+        :return: outcome of update, either empty list in case of success or list of error
+        """
+        spec = {'pileupName': doc['pileupName']}
+        partialPileupSpec = False
+        if set(doc.keys()) == set(["pileupName", "containerFraction"]):
+            partialPileupSpec = True
+
+        rseList = rseList or []
         if validate:
             try:
                 # NOTE: MSPileupObj calls validate in its ctor with provided validRSEs
                 # therefore, for partial pileup we take expectedRSEs for validation
                 # while for generic update case we use rseList passed to this API as is
-                if partialPileupSpec:
-                    rseList = dbDoc['expectedRSEs']
-                obj = MSPileupObj(dbDoc, validRSEs=rseList)
+                if partialPileupSpec or not rseList:
+                    rseList = doc['expectedRSEs']
+                obj = MSPileupObj(doc, validRSEs=rseList)
                 doc = obj.getPileupData()
             except Exception as exp:
                 msg = f"Failed to update MSPileupObj, {exp}"
@@ -244,29 +295,6 @@ class MSPileupData():
                 err = MSPileupSchemaError(doc, msg)
                 self.logger.error(err)
                 return [err.error()]
-
-        # add transition record if doc contains new fraction
-        transition = doc.get('transition', [])
-        if not transition:
-            msg = f"To update pileup {pname} document we should already have transition record in place"
-            err = MSPileupUniqueConstrainError(spec, msg)
-            self.logger.error(err)
-            return [err.error()]
-
-        # check previous fraction value and add new transition record if it is
-        # differ from current one or does not exist, see logic:
-        # https://gist.github.com/amaltaro/b4f9bafc0b58c10092a0735c635538b5
-        prevTranRecord = transition[-1]
-        if prevTranRecord['containerFraction'] != fraction:
-            customName = customDID(prevTranRecord['customDID'])
-            # preserve previous container fraction
-            transitionRecord = {'containerFraction': prevTranRecord['containerFraction'],
-                                'customDID': customName,
-                                'updateTime': gmtimeSeconds(),
-                                'DN': userDN}
-            transition.append(transitionRecord)
-            doc['transition'] = transition
-            self.logger.info("Added transition record for pileup %s", pname)
 
         # mandatory timestamp updates
         doc.update(getNewTimestamp(doc))

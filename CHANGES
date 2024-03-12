@@ -1,3 +1,10 @@
+2.3.2rc2 to 2.3.2rc3:
+  - Revisit logic of transition records, put code into stand-alone function (Valentin Kuznetsov) #11921
+  - Provide concurrent implementation for REST jobdetail API (Alan Malta Rodrigues) #11885
+  - add BossAir.Plugins.BasePlugin modules to crabtaskworker deps (Thanayut Seethongchuen) #11926
+  - Fix interval for WMStats DataCacheUpdate CherryPy thread (Alan Malta Rodrigues) #11924
+
+
 2.3.2rc1 to 2.3.2rc2:
   - Pylint/pycode complement for storage.json fix in 11869 (Alan Malta Rodrigues) #11917
   - Abandon storage.xml in favor of storage.json for stage-in and stage-out (nhduongvn) #11869

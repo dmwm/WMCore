@@ -1,15 +1,20 @@
 from __future__ import division, print_function
 
+import time
+
 from builtins import object
 from future.utils import viewitems
 
 import logging
+
 from Utils.IteratorTools import nestedDictUpdate, grouper
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
-from WMCore.ReqMgr.DataStructs.RequestStatus import T0_ACTIVE_STATUS, WMSTATS_JOB_INFO, WMSTATS_NO_JOB_INFO
+from WMCore.ReqMgr.DataStructs.RequestStatus import T0_ACTIVE_STATUS
+from WMCore.Services.WMStats.WMStatsPycurl import getTaskJobSummaryByRequestPycurl
+
 
 REQUEST_PROPERTY_MAP = {
     "_id": "_id",
@@ -70,6 +75,9 @@ class WMStatsReader(object):
         else:
             self.reqDB = None
         self.logger = logger if logger else logging.getLogger()
+        self.serviceOpts = {"couchURL": self.couchURL,
+                            "dbName": self.dbName,
+                            "couchapp": self.couchapp}
 
     def _sanitizeURL(self, couchURL):
         return sanitizeURL(couchURL)['url']
@@ -370,26 +378,35 @@ class WMStatsReader(object):
         reqInfoInstance = RequestInfo(requestInfo[requestName])
         return reqInfoInstance.isWorkflowFinished()
 
-    def getTaskJobSummaryByRequest(self, requestName, sampleSize=1):
-
+    def getTaskJobSummaryByRequest(self, requestName, sampleSize=1, usePycurl=True):
+        reqStart = time.time()
         options = {'reduce': True, 'group_level': 5, 'startkey': [requestName],
                    'endkey': [requestName, {}]}
         results = self._getCouchView("jobsByStatusWorkflow", options)
+
         jobDetails = {}
-        for row in results['rows']:
-            # row["key"] = ['workflow', 'task', 'jobstatus', 'exitCode', 'site']
-            startKey = row["key"][:4]
-            endKey = []
-            site = row["key"][4]
-            if site:
-                startKey.append(site)
+        if usePycurl is True:
+            jobDetails = getTaskJobSummaryByRequestPycurl(results, sampleSize, self.serviceOpts)
+        else:
+            # then it is sequential
+            for row in results['rows']:
+                # row["key"] = ['workflow', 'task', 'jobstatus', 'exitCode', 'site']
+                startKey = row["key"][:4]
+                endKey = []
+                site = row["key"][4]
+                if site:
+                    startKey.append(site)
 
-            endKey.extend(startKey)
-            endKey.append({})
-            numOfError = row["value"]
+                endKey.extend(startKey)
+                endKey.append({})
+                numOfError = row["value"]
 
-            jobInfo = self.jobDetailByTasks(startKey, endKey, numOfError, sampleSize)
-            jobDetails = nestedDictUpdate(jobDetails, jobInfo)
+                jobInfo = self.jobDetailByTasks(startKey, endKey, numOfError, sampleSize)
+                jobDetails = nestedDictUpdate(jobDetails, jobInfo)
+        callRuntime = round((time.time() - reqStart), 3)
+        msg = f"Retrieved job details (pycurl mode: {usePycurl}) for {requestName} in "
+        msg += f"{callRuntime} seconds, with a total of {len(results['rows']) + 1} CouchDB calls"
+        print(msg)
         return jobDetails
 
     def jobDetailByTasks(self, startKey, endKey, numOfError, limit=1):

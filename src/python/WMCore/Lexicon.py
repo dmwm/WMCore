@@ -26,7 +26,7 @@ from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_E
 # i.e production should end with v[number]
 PRIMARY_DS = {'re': '^[a-zA-Z][a-zA-Z0-9\-_]*$', 'maxLength': 99}
 PROCESSED_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 199}
-TIER = {'re': '[A-Z\-_]+', 'maxLength': 99}
+TIER = {'re': '[A-Z0-9\-_]+', 'maxLength': 99}
 BLOCK_STR = {'re': '#[a-zA-Z0-9\.\-_]+', 'maxLength': 100}
 
 lfnParts = {
@@ -103,7 +103,7 @@ def searchblock(candidate):
     return check(regexp, candidate)
 
 
-SEARCHDATASET_RE = r'^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$'
+SEARCHDATASET_RE = r'^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z0-9\-\*]{1,99})){0,1}$'
 
 
 def searchdataset(candidate):
@@ -202,7 +202,7 @@ def globalTag(candidate):
     return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
 
 
-DATASET_RE = r'^/[a-zA-Z0-9\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[A-Z\-]{1,50}$'
+DATASET_RE = r'^/[a-zA-Z0-9\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[A-Z0-9\-]{1,99}$'
 
 
 def dataset(candidate):

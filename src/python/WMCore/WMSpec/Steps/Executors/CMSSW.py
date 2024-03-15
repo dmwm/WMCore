@@ -284,8 +284,10 @@ class CMSSW(Executor):
             proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             childPid, exitStatus, resource = os.wait4(proc.pid, os.P_PID)
             stdout, stderr = proc.communicate()
-            stdoutHandle.write(str(stdout))
-            stderrHandle.write(str(stderr))
+            stdout = decodeBytesToUnicodeConditional(stdout, condition=PY3)
+            stderr = decodeBytesToUnicodeConditional(stderr, condition=PY3)            
+            stdoutHandle.write(stdout)
+            stderrHandle.write(stderr)
             returnCode = proc.returncode
 
         # calculate user and sys time of subprocess by substructing relevant

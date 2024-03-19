@@ -169,7 +169,7 @@ class Rucio(object):
         :return: a list of block names
         """
         blockNames = []
-        if not self.isContainer(container):
+        if not self.isContainer(container, scope=scope):
             # input container wasn't really a container
             self.logger.warning("Provided DID name is not a CONTAINER type: %s", container)
             return blockNames
@@ -360,7 +360,9 @@ class Rucio(object):
         """
         if not isinstance(dids, list):
             dids = [dids]
-        dids = [{'scope': scope, 'name': did} for did in dids]
+        # NOTE: the attaching dids do not create new container within a scope
+        # and it is safe to use cms scope for it
+        dids = [{'scope': 'cms', 'name': did} for did in dids]
 
         response = False
         try:
@@ -881,7 +883,7 @@ class Rucio(object):
 
         # At this point, we might already have some of the RSEs where the data is available and locked
         # Now check dataset locks and compare those rules against our list of multi RSE rules
-        if self.isContainer(kwargs['name']):
+        if self.isContainer(kwargs['name'], scope=kwargs.get('scope', 'cms')):
             # It's a container! Find what those RSEs are and add them to the finalRSEs set
             rseLocks = self._getContainerLockedAndAvailable(multiRSERules, returnTape=returnTape, **kwargs)
             self.logger.debug("Data location for %s from multiple RSE locks and available at: %s",
@@ -988,7 +990,7 @@ class Rucio(object):
         a specific method for this process, even though that adds some code duplication.
         """
         result = dict()
-        if not self.isContainer(container):
+        if not self.isContainer(container, scope=scope):
             raise WMRucioException("Pileup location needs to be resolved for a container DID type")
 
         multiRSERules = []
@@ -1096,7 +1098,7 @@ class Rucio(object):
         """
         if 'name' not in kwargs:
             raise WMRucioException("A DID name must be provided to the getBlockLockedAndAvailable API")
-        if self.isContainer(kwargs['name']):
+        if self.isContainer(kwargs['name'], scope=kwargs.get('scope', 'cms')):
             # then resolve it at container level and all its blocks
             return self.getContainerLockedAndAvailable(**kwargs)
 

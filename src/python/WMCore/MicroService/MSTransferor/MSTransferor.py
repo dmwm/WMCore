@@ -128,7 +128,10 @@ class MSTransferor(MSCore):
         self.logger.info("Updating all local caches...")
         self.dsetCounter = 0
         self.blockCounter = 0
-        self.pileupDocs = getPileupDocs(self.msConfig['mspileupUrl'], self.pileupQuery)
+        self.pileupDocs = getPileupDocs(self.msConfig['mspileupUrl'],
+                                        self.pileupQuery, method='POST')
+        self.logger.info("Found %s pileup documents matching the query: %s",
+                         len(self.pileupDocs), self.pileupQuery)
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
         self.psn2pnnMap = self.cric.PSNtoPNNMap()
         self.pnn2psnMap = self.cric.PNNtoPSNMap()

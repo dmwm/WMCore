@@ -1,13 +1,9 @@
 """
-File       : MSOtput.py
+File       : MSOutput.py
 
 Description: MSOutput.py class provides the whole logic behind
 the Output data placement in WMCore MicroServices.
 """
-
-# futures
-from __future__ import division, print_function
-from future.utils import viewitems
 
 # system modules
 import time
@@ -88,7 +84,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("enableRelValCustodial", False)
         self.msConfig.setdefault("excludeDataTier", [])
         self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
-        self.msConfig.setdefault("rucioRSEAttribute", 'ddm_quota')
+        self.msConfig.setdefault("rucioRSEAttribute", 'dm_weight')
         self.msConfig.setdefault("rucioDiskRuleWeight", 'ddm_quota')
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
         # This Disk expression wil target all real DISK T1 and T2 RSEs
@@ -240,7 +236,7 @@ class MSOutput(MSCore):
 
         # filter out documents already produced
         finalRequests = []
-        for reqName, reqData in viewitems(requestRecords):
+        for reqName, reqData in requestRecords.items():
             if reqName in mongoDocNames:
                 self.logger.info("Mongo document already created for %s, skipping it.", reqName)
             else:
@@ -634,7 +630,7 @@ class MSOutput(MSCore):
         A function used to update one or few particular fields in a document
         :**kwargs: The keys/value pairs to be updated (will be tested against MSOutputTemplate)
         """
-        for key, value in viewitems(kwargs):
+        for key, value in kwargs.items():
             try:
                 msOutDoc.setKey(key, value)
                 msOutDoc.updateTime()

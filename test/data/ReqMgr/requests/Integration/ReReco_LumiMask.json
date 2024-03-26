@@ -1,6 +1,6 @@
 {
     "assignRequest": {
-        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "AcquisitionEra": "Run2022C",
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
         "MergedLFNBase": "/store/backfill/1", 
@@ -18,35 +18,36 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "Run2018D", 
-        "CMSSWVersion": "CMSSW_10_6_12", 
+        "AcquisitionEra": "Run2022C", 
+        "CMSSWVersion": "CMSSW_12_4_14_patch1", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
-            "CheckList": "ReReco with LumiList; ReReco with growing dataset",
-            "WorkFlowDesc": ["ReReco NanoAOD with LumiList, 3 runs and 46 lumis, bringing in 2 blocks; 2cores and 2GB;",
-                            "do not write logs to EOS; keep WorkQueue inbox open for 2h"]
+            "CheckList": "ReReco workflow; ReReco+skim workflow; ReReco with LumiList; ReReco with growing dataset; ReReco harvesting",
+            "WorkFlowDesc": ["ReReco reading 1 RAW block based on LumiList; 3 runs and 33 lumis; Creating Skim dataset",
+                             "Open in running-open for 2 hours; harvest 3 runs; 4 cores and 10GB of RAM; AcqEra forced to Run2022C"]
         }, 
-        "ConfigCacheID": "6d0b906879c210bde4baecd2e78ded41", 
+        "ConfigCacheID": "3852d43544da0301ed0e04da715182b5", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
-        "GlobalTag": "106X_dataRun2_v28", 
-        "InputDataset": "/NoBPTX/Run2018D-12Nov2019_UL2018-v1/MINIAOD",
-        "LumiList": {"320836": [[1, 10], [16, 20]], "322605": [[264, 275]], "324841": [[560, 565], [855, 860], [920, 926]]},
-        "Memory": 2000, 
-        "Multicore": 2, 
+        "DQMConfigCacheID": "3852d43544da0301ed0e04da7152ca79",
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+        "EnableHarvesting": true,
+        "GlobalTag": "124X_dataRun3_v15", 
+        "InputDataset": "/MuonEG/Run2022C-v1/RAW", 
+        "LumiList": {"356164": [[11, 15], [21, 30], [40, 40]], "356165": [[1, 10], [16, 20]], "356174": [[1, 2]]},
+        "Memory": 10000, 
+        "Multicore": 4, 
         "OpenRunningTimeout": 7200,
-        "PrepID": "TEST-ReReco-Run2018D-NoBPTX-Nano02Dec2019-00001", 
-        "ProcessingString": "Nano02Dec2019_12Nov2019_UL2018", 
+        "PrepID": "TEST-ReReco-Run2022C-MuonEG-27Jun2023-00001", 
+        "ProcessingString": "27Jun2023", 
         "ProcessingVersion": 2, 
         "RequestPriority": 600000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "ReReco", 
-        "ScramArch": [
-            "slc7_amd64_gcc700"
-        ], 
+        "ScramArch": "el8_amd64_gcc10", 
         "SizePerEvent": 1, 
         "SplittingAlgo": "EventAwareLumiBased", 
-        "TimePerEvent": 0.2
+        "TimePerEvent": 1
     }
 }

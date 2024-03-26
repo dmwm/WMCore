@@ -9,6 +9,9 @@ used to update every single pileup document that it fetches from MSPileup.
 
 Example usage is:
 python3 updatePileupObjects.py --url=https://cmsweb.cern.ch --fin=override_data.json
+
+# run script to add new transition record to all MSPileup records if they do not have it
+python3 updatePileupObjects.py --add-tran-record -url=https://cmsweb.cern.ch --userDN=<user-dn>
 """
 import argparse
 import json
@@ -19,6 +22,9 @@ import urllib.request
 import ssl
 from http.client import HTTPSConnection
 
+# WMCore services
+from Utils.Timers import gmtimeSeconds
+
 
 class OptionParser():
     """Class to parse the command line arguments"""
@@ -26,13 +32,17 @@ class OptionParser():
     def __init__(self):
         "User based option parser"
         self.parser = argparse.ArgumentParser(prog='PROG')
-        self.parser.add_argument("--fin", required=True,
-                                 dest="fin", help="Input JSON file")
+        self.parser.add_argument("--fin", action="store",
+                                 dest="fin", default="", help="Input file with update fields (optional)")
         self.parser.add_argument("--dry-run", action="store_true",
                                  dest="dryrun", help="Fetch docs but do not update")
         self.parser.add_argument("--url", action="store",
                                  dest="url", default="https://cmsweb-testbed.cern.ch",
                                  help="URL for the MSPileup service")
+        self.parser.add_argument("--userdn", action="store",
+                                 dest="userDN", default='', help="user DN")
+        self.parser.add_argument("--add-tran-record", action="store_true",
+                                 dest="transition", help="add transition record")
 
 
 class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
@@ -147,6 +157,79 @@ def writePileupDocs(mspileupUrl, puDocs, handler, logger):
                 logger.critical(msg)
 
 
+def addTransitionRecords(handler, url, userDN, logger, dryrun):
+    """
+    Helper function to add and update in place transition record for existing MSPileup records
+    :param handler: HTTP handler to use
+    :param url: url to use (string)
+    :param userDN: string representing user DN
+    :param logger: logger to use
+    :param dryrun: option to run dry-run mode (boolean)
+    :return: nothing
+    """
+    if not userDN:
+        raise Exception("No userDN provided")
+    puDocs = getPileupDocs(url, handler, logger)
+    logger.info("Found %d documents in MSPileup", len(puDocs))
+    recordsToUpdate = []
+    for rec in puDocs:
+        if not rec.get("transition"):
+            tranRecord = {'containerFraction': 1.0,
+                          'customDID': rec['pileupName'],
+                          'updateTime': gmtimeSeconds(),
+                          'DN': userDN}
+            rec['transition'] = [tranRecord]
+            logger.info("New pileup document is: %s", rec)
+            recordsToUpdate.append(rec)
+
+    if dryrun:
+        logger.info("%s documents needs to be updated but are not written due to --dry-run option\n", len(recordsToUpdate))
+    else:
+        # finally, update the pileup documents in the database
+        writePileupDocs(url, recordsToUpdate, handler, logger)
+        logger.info("%s documents are uploaded to MSPileup\n", len(recordsToUpdate))
+
+
+def updatePileupRecords(handler, url, logger, dryrun, fin=""):
+    """
+    helper function to update pileup records
+    :param handler: HTTP handler to use
+    :param url: url to use (string)
+    :param logger: logger object to use
+    :param dryrun: option to run dry-run mode (boolean)
+    :param fin: input file name to read from (optional, string)
+    :return: nothing
+    """
+    if fin:
+        if os.path.exists(fin):
+            with open(fin, 'r', encoding='utf-8') as istream:
+                puOverride = json.load(istream)
+            logger.info("Pileup override file: %s has the following content: %s", fin, puOverride)
+        else:
+            logger.error("Provided %s file does not exist", fin)
+            os.exit(1)
+    else:
+        logger.info("No input file is provided to update pileup records")
+        os.exit(1)
+
+    puDocs = getPileupDocs(url, handler, logger)
+    logger.info("Found %d documents in MSPileup", len(puDocs))
+
+    # update the documents with the override content
+    for doc in puDocs:
+        doc.update(puOverride)
+        logger.info("New pileup document is: %s", doc)
+
+    if dryrun:
+        logger.info("Updated documents (dry-run option):")
+        for doc in puDocs:
+            logger.info(doc)
+    else:
+        # finally, update the pileup documents in the database
+        writePileupDocs(url, puDocs, handler, logger)
+        logger.info("documents are uploaded to MSPileup\n")
+
+
 def main():
     """Executes everything"""
     optmgr = OptionParser()
@@ -179,24 +262,10 @@ def main():
     # initialize HTTPS client handler
     handler = HTTPSClientAuthHandler(key, cert)
 
-    with open(opts.fin, 'r', encoding='utf-8') as istream:
-        puOverride = json.load(istream)
-    logger.info("Pileup override file: %s has the following content: %s", opts.fin, puOverride)
-
-    puDocs = getPileupDocs(opts.url, handler, logger)
-    logger.info("Found %d documents in MSPileup", len(puDocs))
-
-    # update the documents with the override content
-    for doc in puDocs:
-        doc.update(puOverride)
-        logger.info("New pileup document is: %s", doc)
-
-    if opts.dryrun:
-        logger.info("documents are not written due to --dry-run option\n")
+    if opts.transition:
+        addTransitionRecords(handler, opts.url, opts.userDN, logger, opts.dryrun)
     else:
-        # finally, update the pileup documents in the database
-        writePileupDocs(opts.url, puDocs, handler, logger)
-        logger.info("documents are uploaded to MSPileup\n")
+        updatePileupRecords(handler, opts.url, logger, opts.dryrun, opts.fin)
 
 
 if __name__ == '__main__':

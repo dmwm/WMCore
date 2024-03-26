@@ -87,6 +87,18 @@ class MSPileupTest(unittest.TestCase):
         expect = "/abc/xyz/MINIAOD-V124"
         self.assertTrue(did == expect)
 
+        # test last digit wrap
+        pname = "/abc/xyz/MINIAOD-V19"
+        did = customDID(pname)
+        expect = "/abc/xyz/MINIAOD-V20"
+        self.assertTrue(did == expect)
+
+        # test last digit wrap
+        pname = "/abc/xyz/MINIAOD-V99"
+        did = customDID(pname)
+        expect = "/abc/xyz/MINIAOD-V100"
+        self.assertTrue(did == expect)
+
     def testUpdateTransitionRecord(self):
         """Test the addTransitionRecord function"""
         self.logger.info("test addTransitionRecord function")

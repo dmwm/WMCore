@@ -71,9 +71,9 @@ def customDID(pname):
     if re.match(pat, pname):
         arr = pname.split("-")
         lastSuffix = arr[-1]
-        ver = int(lastSuffix[-1])
+        ver = int(lastSuffix.replace('V', ''))
         suffix = f"{ver + 1}"
-        pname = ''.join(pname[:-1]) + suffix
+        pname = ''.join(pname.split('-V')[0]) + '-V' + suffix
     else:
         pname += "-V1"
     return pname

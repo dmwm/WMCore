@@ -1,0 +1,63 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": "ProcessingString-OVERRIDE-ME",
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "TrustSitelists": true,
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "Run2023C",
+        "BlockWhitelist": ["/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD#146eb70b-12ad-47dd-a109-b7feef4927cf",
+                           "/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD#5b047ae4-f01e-44b4-b960-ae443ed46c2e",
+                           "/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD#7597e092-5056-4316-b7b6-0b5aa48d6829"],
+        "CMSSWVersion": "CMSSW_13_2_6_patch2",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": ["ReReco workflow; ReReco with IncludeParents; ReReco with run whitelist;",
+                          "ReReco with block whitelist; ReReco multicore; ReReco with TrustSitelists enabled"],
+            "WorkFlowDesc": ["ReReco MINIAOD with 3 blocks whitelisted; but only 2 blocks processed out of 4 runs whitelisted;",
+                             "Including 4 AOD parent blocks; Running with 2 cores and 3GB of memory"]
+        },
+        "ConfigCacheID": "544d8059f5f200f8959e2e4fab11a94e",
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "EnableHarvesting": false,
+        "EventStreams": 0,
+        "GPUParams": "null",
+        "GlobalTag": "130X_dataRun3_Prompt_v4",
+        "IncludeParents": true,
+        "InputDataset": "/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD",
+        "Memory": 3000,
+        "Multicore": 2,
+        "PrepID": "TEST-ReReco-Run2023C-MinimumBias-JMENano12p5_v4-00001",
+        "ProcessingString": "JMENano12p5_v4",
+        "ProcessingVersion": 1,
+        "RequestPriority": 613000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "ReReco",
+        "RequiresGPU": "forbidden",
+        "RunWhitelist": [367786, 367832, 367913, 368851],
+        "Scenario": "pp",
+        "ScramArch": [
+            "el8_amd64_gcc11"
+        ],
+        "SizePerEvent": 100,
+        "SplittingAlgo": "EventAwareLumiBased",
+        "TimePerEvent": 8
+    }
+}

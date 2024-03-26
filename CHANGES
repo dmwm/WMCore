@@ -1,3 +1,8 @@
+2.3.2rc5 to 2.3.2rc6:
+  - Fix issue with customDID (Valentin Kuznetsov) #11948
+  - Add code to insert transition record; code re-factoring (Valentin Kuznetsov) #11947
+
+
 2.3.2rc4 to 2.3.2rc5:
   - Adjust scopes (Valentin Kuznetsov) #11938
   - Update Tape RSE attribute from ddqm_quota to dm_weight in MSOutput (Alan Malta Rodrigues) #11940

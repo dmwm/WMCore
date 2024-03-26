@@ -1,3 +1,8 @@
+2.3.2rc4 to 2.3.2rc5:
+  - Adjust scopes (Valentin Kuznetsov) #11938
+  - Update Tape RSE attribute from ddqm_quota to dm_weight in MSOutput (Alan Malta Rodrigues) #11940
+
+
 2.3.2rc3 to 2.3.2rc4:
   - Use POST method for getting pileup documents in MSTransferor (Alan Malta Rodrigues) #11936
   - Allow digits in data tier names (German Giraldo) #11930

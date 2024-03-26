@@ -140,7 +140,7 @@ class MockRucioApi(object):
         logging.info("%s attachDID rse=%s, suportDID=%s, portion=%s, scope=%s", cname, rse, superDID, portion, scope)
         return True
 
-    def createReplicationRule(self, portion, rseExpression):
+    def createReplicationRule(self, portion, rseExpression, scope='cms'):
         """
         Emulate createReplicationRule Rucio API
         """

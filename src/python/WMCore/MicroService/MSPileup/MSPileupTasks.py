@@ -133,14 +133,13 @@ class MSPileupTasks():
         :return: list of blocks
         """
         pname = doc['pileupName']
-        lastTransition = doc['transition'][-1]
-        cname = lastTransition['customDID']
+        cname = doc['customName']
         totalBlocks = self.rucioClient.getBlocksInContainer(pname)
-        customBlocks = self.rucioClient.getBlocksInContainer(cname)
+        customBlocks = self.rucioClient.getBlocksInContainer(cname, scope=self.customRucioScope)
         portion = math.ceil(fraction * len(totalBlocks))
         blockList = customBlocks + [b for b in totalBlocks if b not in customBlocks]
         self.logger.info("increase scenario: use %d blocks out of %d custom blocks from %s and %d from %s",
-                         len(blockList), len(customBlocks), cname, abs(portion-len(customBlocks)), pname)
+                         len(blockList), len(customBlocks), cname, abs(portion - len(customBlocks)), pname)
         return blockList[:portion]
 
     def getDecreasingBlocks(self, doc, fraction):
@@ -161,7 +160,7 @@ class MSPileupTasks():
             self.logger.info("decrease scenario: use %d blocks out of pileup %s with %d blocks",
                              len(totalBlocks[:portion]), pname, len(totalBlocks))
             return totalBlocks[:portion]
-        customBlocks = self.rucioClient.getBlocksInContainer(cname)
+        customBlocks = self.rucioClient.getBlocksInContainer(cname, scope=self.customRucioScope)
         self.logger.info("decrease scenario: use %d blocks out of custom container %s",
                          portion, cname)
         return customBlocks[:portion]
@@ -220,15 +219,16 @@ class MSPileupTasks():
             # call rucio APIs to attach custom blocks to our custom container (DID)
             newRules = []
             self.logger.info("Attaching %d blocks to custom pileup name: %s", len(customBlocks), cname)
-            self.rucioClient.attachDIDs(None, cname, customBlocks, scope=self.customRucioScope)
+            if len(customBlocks):
+                self.rucioClient.attachDIDs(None, cname, customBlocks, scope=self.customRucioScope)
             for rse in doc['expectedRSEs']:
                 # create new rule for custom DID using pileup document rse
-                ruleIds = self.rucioClient.createReplicationRule(cname, rse)
+                ruleIds = self.rucioClient.createReplicationRule(cname, rse, scope=self.customRucioScope)
                 self.logger.info("Rule ids: %s created for custom pileup: %s for RSE: %s", ruleIds, cname, rse)
                 newRules += ruleIds
 
             self.logger.info("Custom pileup: %s has the following new rules created: %s for RSEs: %s",
-                             doc['customName'], newRules, doc['expectedRSEs'])
+                             cname, newRules, doc['expectedRSEs'])
             # set expiration date (to be 24h) for already existing ruleIds from pileup document
             for rid in doc['ruleIds']:
                 # set expiration date to be 24h ahead of right now

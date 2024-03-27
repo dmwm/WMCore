@@ -472,6 +472,18 @@ class AccountantWorker(WMConnectionBase):
             elif jobType == "Merge" and set(outputMap) == {'MergedRAW', 'MergedErrorRAW', 'logArchive'} \
                     and outputModules == {'MergedErrorRAW', 'logArchive'}:
                 pass
+            elif jobType == "Merge" and set(outputMap) == {'MergedL1SCOUT', 'MergedErrorL1SCOUT', 'logArchive'} \
+                    and outputModules == {'MergedL1SCOUT', 'logArchive'}:
+                pass
+            elif jobType == "Merge" and set(outputMap) == {'MergedL1SCOUT', 'MergedErrorL1SCOUT', 'logArchive'} \
+                    and outputModules == {'MergedErrorL1SCOUT', 'logArchive'}:
+                pass
+            elif jobType == "Merge" and set(outputMap) == {'MergedHLTSCOUT', 'MergedErrorHLTSCOUT', 'logArchive'} \
+                    and outputModules == {'MergedHLTSCOUT', 'logArchive'}:
+                pass
+            elif jobType == "Merge" and set(outputMap) == {'MergedHLTSCOUT', 'MergedErrorHLTSCOUT', 'logArchive'} \
+                    and outputModules == {'MergedErrorHLTSCOUT', 'logArchive'}:
+                pass
             elif jobType == "Express" and set(outputMap).difference(outputModules) == {'write_RAWRAW'}:
                 pass
             else:

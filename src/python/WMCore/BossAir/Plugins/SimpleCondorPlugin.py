@@ -520,6 +520,9 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['Requirements'] = self.reqStr
 
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
+            # let HTCondor manage/transfer the token for us
+            ad['use_oauth_services'] = "cms"
+
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))

@@ -62,12 +62,19 @@ class BaseModifier(object):
         tempDir.cleanup()
         return
         
+    def getTask(self, jobPKL):
+        """
+        _getTask_
 
+        """
+        task = jobPKL['task']
+        return task
+    
     def getWorkload(self, jobPKL):
         """
         _getWorkload_
 
-        
+
         """
         pklPath = jobPKL['spec']
 

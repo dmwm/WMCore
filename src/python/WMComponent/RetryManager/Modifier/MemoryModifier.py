@@ -33,10 +33,18 @@ class MemoryModifier(BaseModifier):
 
         for task in workHelper.getAllTasks():
             task.setMaxPSS(newMemory)
+            
 
         self.setWorkload(workload, jobPKL)
 
         return
+    
+    def changeMemoryForTask(self, jobPKL, newMemory):
+        """
+        Approach to modify memory per task, rather than continuously changing the whole workflow
+        """
+        task = self.getTask(jobPKL)
+        task.setMaxPSS(newMemory)
 
     def changeJobPkl(self, pklFile, jobPKL, newMemory):
         """
@@ -80,7 +88,7 @@ class MemoryModifier(BaseModifier):
         newMemory = self.getNewMemory(jobPKL, settings)
 
         self.changeJobPkl(pklFile, jobPKL, newMemory)
-        self.changeSandbox(jobPKL, newMemory)
+        self.changeMemoryForTask(jobPKL, newMemory)
         logging.info('Old maxPSS: %d. New maxPSS: %d', job['estimatedMemoryUsage'], newMemory)
 
     def modifyJob(self, job):

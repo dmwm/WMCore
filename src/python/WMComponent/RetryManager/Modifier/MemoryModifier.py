@@ -15,6 +15,7 @@ config.RetryManager.MemoryModifier.merge.settings = {'requiresModify': True, 'mu
 
 import pickle
 import logging
+from WMCore.WMSpec.WMTask import WMTaskHelper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMComponent.RetryManager.Modifier.BaseModifier import BaseModifier
 
@@ -32,6 +33,7 @@ class MemoryModifier(BaseModifier):
         workHelper = WMWorkloadHelper(workload)
 
         for task in workHelper.getAllTasks():
+            
             task.setMaxPSS(newMemory)
             
 
@@ -43,8 +45,12 @@ class MemoryModifier(BaseModifier):
         """
         Approach to modify memory per task, rather than continuously changing the whole workflow
         """
-        task = self.getTask(jobPKL)
+        workload = self.getWorkload(jobPKL)
+        workHelper = WMWorkloadHelper(workload)
+        taskPath = self.getTaskPath(jobPKL)
+        task = workHelper.getTaskByPath(taskPath)
         task.setMaxPSS(newMemory)
+        self.setWorkload(workload, jobPKL)
 
     def changeJobPkl(self, pklFile, jobPKL, newMemory):
         """

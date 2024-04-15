@@ -7,6 +7,7 @@ import logging
 import traceback
 from Utils.IteratorTools import grouper
 from Utils.Timers import timeFunction
+from Utils.Utilities import getSize
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMArchive.DataMap import createArchiverDoc
 from WMCore.Services.WMArchive.WMArchive import WMArchive
@@ -24,6 +25,8 @@ class ArchiveDataPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
+        # setup size threshold to fit CMSWEB nginx/frontend, i.e. 8MB
+        self.sizeThreshold = self.config.get('sizeThredhold', 8*1024*1024)
 
     def setup(self, parameters):
         """
@@ -51,8 +54,17 @@ class ArchiveDataPoller(BaseWorkerThread):
                 archiveDocs = []
                 for job in slicedData:
                     doc = createArchiverDoc(job)
-                    archiveDocs.append(doc)
-                    jobIDs.append(job["id"])
+                    # check document size before accepting to send to WMArchive service
+                    size = getSize(doc)
+                    if size > self.sizeThreshold:
+                        shortDoc = {'id': doc['id'],
+                                    'fwjr': doc['doc']['fwjr'],
+                                    'jobtype': doc['doc']['jobtype'],
+                                    'jobstate': doc['doc']['jobstate']}
+                        logging.warning("Created document is too large for WMArchive, size=%s thredshold=%s, document slice=%s", size, self.sizeThreshold, shortDoc)
+                    else:
+                        archiveDocs.append(doc)
+                        jobIDs.append(job["id"])
 
                 response = self.wmarchiver.archiveData(archiveDocs)
 

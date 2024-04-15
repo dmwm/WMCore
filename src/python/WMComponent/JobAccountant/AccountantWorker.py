@@ -455,8 +455,10 @@ class AccountantWorker(WMConnectionBase):
         if jobSuccess:
             fileList = fwkJobReport.getAllFiles()
 
-            # consistency check comparing outputMap to fileList
-            # they should match except for some limited special cases
+            # Consistency check comparing outputMap to fileList
+            # they should match except for some limited special cases related to Tier-0:
+            #     Repack Merge: May not produce Error output modules
+            #     Express Merge: May not write RAW output
             # as of #7998, workflow output identifier is made of output module name and datatier
             outputModules = set([])
             for fwjrFile in fileList:
@@ -466,11 +468,7 @@ class AccountantWorker(WMConnectionBase):
                 pass
             elif jobType == "LogCollect" and not outputMap and outputModules == {'LogCollect'}:
                 pass
-            elif jobType == "Merge" and set(outputMap) == {'MergedRAW', 'MergedErrorRAW', 'logArchive'} \
-                    and outputModules == {'MergedRAW', 'logArchive'}:
-                pass
-            elif jobType == "Merge" and set(outputMap) == {'MergedRAW', 'MergedErrorRAW', 'logArchive'} \
-                    and outputModules == {'MergedErrorRAW', 'logArchive'}:
+            elif jobType == "Merge" and (set(outputMap) & {'MergedErrorRAW', 'MergedErrorL1SCOUT', 'MergedErrorHLTSCOUT'}):
                 pass
             elif jobType == "Express" and set(outputMap).difference(outputModules) == {'write_RAWRAW'}:
                 pass

@@ -394,8 +394,10 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
                             if puNewJsonContent:
                                 # we update json file if we get new pileup content
                                 jdict[puConfJson] = puNewJsonContent
-                            self.logger.info("Mark %s to be updated in tarball %s with a fresh pileup content",
-                                             puConfJson, tarFile)
+                                self.logger.info("Mark %s to be updated in tarball %s with a fresh pileup content",
+                                                 puConfJson, tarFile)
+                            else:
+                                self.logger.info("updateBlockInfo did not return any results, will skipp update of pileup jsoon content")
                         else:
                             msg = "### There are no differences between JSON and MSPileup content "
                             msg += f"for pileup name {pileupName}. Not updating anything!"

@@ -54,7 +54,7 @@ class DBSConcurrencyTest(EmulatedUnitTestCase):
         self.assertTrue(elapsedTime < 3)
 
         time0 = time.time()
-        blockInfoList = getBlockInfo4PU(blocks, self.ckey, self.cert)
+        blockInfoList = getBlockInfo4PU(blocks, self.dbs, self.ckey, self.cert)
         for blk, row in blockInfoList.items():
             self.logger.debug("block %s, nfiles=%d, nevents=%d", blk, len(row['FileList']), row['NumberOfEvents'])
         elapsedTime = time.time() - time0

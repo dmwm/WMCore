@@ -38,6 +38,7 @@ class WorkflowUpdaterPollerTest(EmulatedUnitTestCase):
         # setup WorkflowUpdater
         config = Configuration()
         config.component_('WorkflowUpdater')
+        config.WorkflowUpdater.dbsUrl = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader'
         config.WorkflowUpdater.rucioAccount = 'wma_test'
         config.WorkflowUpdater.rucioUrl = 'http://cms-rucio-int.cern.ch'
         config.WorkflowUpdater.rucioAuthUrl = 'https://cms-rucio-auth-int.cern.ch'

@@ -118,7 +118,7 @@ def checkChanges(jdict, msPUBlockLoc):
     return False
 
 
-def updateBlockInfo(jdoc, msPUBlockLoc, logger):
+def updateBlockInfo(jdoc, msPUBlockLoc, dbsUrl, logger):
     """
     Update block information within sandbox json pileup conf file using MSPileup block location info.
     The main logic is the following:
@@ -143,6 +143,7 @@ def updateBlockInfo(jdoc, msPUBlockLoc, logger):
 
     :param jdoc: JSON sandbox dictionary
     :param msPUBlockLOck: dict of block with rses from MSPileup service, i.e. {'block': [rses], ... }
+    :param dbsUrl: dbs Url
     :param logger: logger object
     :return: newly constructed dict
     """
@@ -178,7 +179,7 @@ def updateBlockInfo(jdoc, msPUBlockLoc, logger):
     if len(blocksToUpdate) > 0:
         logger.info("Adding %s blocks from MSPileup which are not present in pileupconf.json",
                     len(blocksToUpdate))
-        binfo = getBlockInfo4PU(blocksToUpdate, ckey(), cert())
+        binfo = getBlockInfo4PU(blocksToUpdate, dbsUrl, ckey(), cert())
         for puType in returnDict.keys():
             for blockName in blocksToUpdate:
                 # update block record in-place
@@ -250,6 +251,7 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
 
         # parse mandatory attributes from the configuration
         self.config = config
+        self.dbsUrl = getattr(config.WorkflowUpdater, "dbsUrl", "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
         self.rucioAcct = getattr(config.WorkflowUpdater, "rucioAccount")
         self.rucioUrl = getattr(config.WorkflowUpdater, "rucioUrl")
         self.rucioAuthUrl = getattr(config.WorkflowUpdater, "rucioAuthUrl")
@@ -385,11 +387,13 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
                         # {block1: [rses], block2: [rses], ...}
                         if checkChanges(jsonBlockLoc, msPUBlockLoc):
                             self.logger.info("Found differences between JSON and MSPileup content.")
-                            puNewJsonContent = updateBlockInfo(puJsonContent, msPUBlockLoc, self.logger)
+                            puNewJsonContent = updateBlockInfo(puJsonContent, msPUBlockLoc, self.dbsUrl, self.logger)
 
                             # we should update a tarball only once for each pileup name,
                             # therefore we add new entry to jdict with our pilupe conf file
-                            jdict[puConfJson] = puNewJsonContent
+                            if puNewJsonContent:
+                                # we update json file if we get new pileup content
+                                jdict[puConfJson] = puNewJsonContent
                             self.logger.info("Mark %s to be updated in tarball %s with a fresh pileup content",
                                              puConfJson, tarFile)
                         else:

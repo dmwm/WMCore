@@ -28,11 +28,11 @@ RUCIO_AUTH=https://cms-rucio-auth.cern.ch
 TEAMNAME=
 AGENT_NUMBER=
 MSPILEUP_URL=https://cmsweb.cern.ch/ms-pileup/data/pileup
-RESOURCE_OPP1=([name]=T3_US_NERSC [run]=3000 [pend]=750 [state]=normal)
-RESOURCE_OPP2=([name]=T3_US_OSG [run]=2000 [pend]=500 [state]=normal)
-RESOURCE_OPP3=([name]=T3_US_PSC [run]=2000 [pend]=500 [state]=normal)
-RESOURCE_OPP4=([name]=T3_US_SDSC [run]=2000 [pend]=500 [state]=normal)
-RESOURCE_OPP5=([name]=T3_US_TACC [run]=3000 [pend]=750 [state]=normal)
-RESOURCE_OPP6=([name]=T3_US_Anvil [run]=1000 [pend]=250 [state]=normal)
-RESOURCE_OPP7=([name]=T3_US_Lancium [run]=5000 [pend]=1250 [state]=normal)
-RESOURCE_OPP8=([name]=T3_ES_PIC_BSC [run]=5000 [pend]=3700 [state]=normal)
+RESOURCE_OPP1=([name]=T3_US_NERSC [run]=3000 [pend]=2000 [state]=normal)
+RESOURCE_OPP2=([name]=T3_US_OSG [run]=3000 [pend]=2000 [state]=normal)
+RESOURCE_OPP3=([name]=T3_US_PSC [run]=3000 [pend]=2000 [state]=normal)
+RESOURCE_OPP4=([name]=T3_US_SDSC [run]=3000 [pend]=2000 [state]=normal)
+RESOURCE_OPP5=([name]=T3_US_TACC [run]=3000 [pend]=2000 [state]=normal)
+RESOURCE_OPP6=([name]=T3_US_Anvil [run]=3000 [pend]=2000 [state]=normal)
+RESOURCE_OPP7=([name]=T3_US_Lancium [run]=3000 [pend]=2000 [state]=normal)
+RESOURCE_OPP8=([name]=T3_ES_PIC_BSC [run]=3000 [pend]=2000 [state]=normal)

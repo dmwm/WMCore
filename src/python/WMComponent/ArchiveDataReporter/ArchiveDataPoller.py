@@ -26,7 +26,7 @@ class ArchiveDataPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
         # setup size threshold to fit CMSWEB nginx/frontend, i.e. 8MB
-        self.sizeThreshold = self.config.get('sizeThredhold', 8*1024*1024)
+        self.sizeThreshold = getattr(config.ArchiveDataReporter, "sizeThreshold", 8*1024*1024)
 
     def setup(self, parameters):
         """

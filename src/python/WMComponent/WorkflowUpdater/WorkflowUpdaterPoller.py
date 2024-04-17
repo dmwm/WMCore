@@ -397,7 +397,7 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
                                 self.logger.info("Mark %s to be updated in tarball %s with a fresh pileup content",
                                                  puConfJson, tarFile)
                             else:
-                                self.logger.warning("updateBlockInfo did not return any results, will skip update of pileup json content")
+                                self.logger.warning("updateBlockInfo did not return any results for %s, will skip update of pileup json content", pileupName)
                         else:
                             msg = "### There are no differences between JSON and MSPileup content "
                             msg += f"for pileup name {pileupName}. Not updating anything!"

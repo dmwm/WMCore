@@ -15,6 +15,7 @@ WMSTATS_URL=https://cmsweb.cern.ch/couchdb/wmstats
 ACDC_URL=https://cmsweb.cern.ch/couchdb/acdcserver
 WORKLOAD_SUMMARY_URL=https://cmsweb.cern.ch/couchdb/workloadsummary
 DBS3_URL=https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter
+DBS3_READER_URL=https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader
 DQM_URL=https://cmsweb.cern.ch/dqm/offline
 REQUESTCOUCH_URL=https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache
 REQMGR2_URL=https://cmsweb.cern.ch/reqmgr2

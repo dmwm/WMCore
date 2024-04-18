@@ -251,7 +251,10 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
 
         # parse mandatory attributes from the configuration
         self.config = config
-        self.dbsUrl = getattr(config.WorkflowUpdater, "dbsUrl", "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
+        dbsUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
+        self.dbsUrl = getattr(config.WorkflowUpdater, "dbsUrl", dbsUrl)
+        if not self.dbsUrl:
+            self.dbsUrl = dbsUrl
         self.rucioAcct = getattr(config.WorkflowUpdater, "rucioAccount")
         self.rucioUrl = getattr(config.WorkflowUpdater, "rucioUrl")
         self.rucioAuthUrl = getattr(config.WorkflowUpdater, "rucioAuthUrl")

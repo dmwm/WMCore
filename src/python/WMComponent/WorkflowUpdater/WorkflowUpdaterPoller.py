@@ -206,7 +206,7 @@ def writePileupJson(tfile, jdict, logger, dest=None):
         for jname in jdict:
             fname = os.path.join(tmpDir, jname)
             fstat = os.stat(fname)
-            logger.info("Updating pileup file at {jname} for workflow tarball: {tfile}")
+            logger.info(f"Updating pileup file at {jname} for workflow tarball: {tfile}")
             with open(fname, 'w', encoding='utf-8') as ostream:
                 json.dump(jdict[jname], ostream)
             if fstat == os.stat(fname):

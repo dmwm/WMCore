@@ -38,6 +38,8 @@ class WorkflowUpdaterPollerTest(EmulatedUnitTestCase):
         # setup WorkflowUpdater
         config = Configuration()
         config.component_('WorkflowUpdater')
+        self.dbsUrl = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader'
+        config.WorkflowUpdater.dbsUrl = self.dbsUrl
         config.WorkflowUpdater.rucioAccount = 'wma_test'
         config.WorkflowUpdater.rucioUrl = 'http://cms-rucio-int.cern.ch'
         config.WorkflowUpdater.rucioAuthUrl = 'https://cms-rucio-auth-int.cern.ch'
@@ -100,7 +102,7 @@ class WorkflowUpdaterPollerTest(EmulatedUnitTestCase):
         rses = ['rse1', 'rse2', 'rse3']
         binfo = {'PhEDExNodeNames': rses, 'files': [], 'events': 0}
         msPUBlockLoc = {'block1': binfo, 'block2': binfo}
-        doc = updateBlockInfo(jdoc, msPUBlockLoc, self.logger)
+        doc = updateBlockInfo(jdoc, msPUBlockLoc, self.dbsUrl, self.logger)
         for rec in doc.values():
             # for block1 and block2 we expect new list of rses from blockInfo
             # block3 should be discarded by now

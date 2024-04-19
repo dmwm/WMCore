@@ -391,6 +391,7 @@ config.WorkflowUpdater.namespace = "WMComponent.WorkflowUpdater.WorkflowUpdater"
 config.WorkflowUpdater.componentDir = config.General.workDir + "/WorkflowUpdater"
 config.WorkflowUpdater.logLevel = globalLogLevel
 config.WorkflowUpdater.pollInterval = 8 * 60 * 60  # every 8 hours
+config.WorkflowUpdater.dbsUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.rucioAccount = "wmcore_pileup"
 config.WorkflowUpdater.rucioUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"

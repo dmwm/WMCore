@@ -1,3 +1,13 @@
+2.3.2rc6 to 2.3.2rc7:
+  - Add DBS3_READER_URL and WorkflowUpdater.dbsUrl (Valentin Kuznetsov) #11972
+  - Fix print function in WorkflowUpdater (Alan Malta Rodrigues) #11971
+  - Modification of the opportunistic resource thresholds (Andrea Piccinelli) #11966
+  - Addition of the sites with HPC resources for the WMAgent docker deployment (Andrea Piccinelli) #11966
+  - Allow numbers in DataTier fields in all regular expressions (Todor Ivanov) #11962
+  - Add new Merge Repack special cases to AccountantWorker (German Giraldo) #11952
+  - Fix regex for Spec generation with alphanumerical data tiers (German Giraldo) #11951
+
+
 2.3.2rc5 to 2.3.2rc6:
   - Fix issue with customDID (Valentin Kuznetsov) #11948
   - Add code to insert transition record; code re-factoring (Valentin Kuznetsov) #11947

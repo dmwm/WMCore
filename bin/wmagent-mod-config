@@ -288,12 +288,14 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "ArchiveDataReporter"):
         config.ArchiveDataReporter.WMArchiveURL = args["wmarchive_url"]
 
-        # custom WMArchiveReporter
+    # custom WMArchiveReporter
     if hasattr(config, "WorkflowUpdater"):
+        config.WorkflowUpdater.dbsUrl = args.get("dbs3_reader_url", None)
         config.WorkflowUpdater.rucioUrl = args["rucio_host"]
         config.WorkflowUpdater.rucioAuthUrl = args["rucio_auth"]
         if args.get("mspileup_url", None):
             config.WorkflowUpdater.msPileupUrl = args["mspileup_url"]
+
 
     return config
 
@@ -319,7 +321,7 @@ def main(argv=None):
                                          "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
                                          "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
                                          "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
-                                         "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=",
+                                         "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "dbs3_reader_url=",
                                          "dqm_url=", "grafana_token=", "requestcouch_url=", "central_logdb_url=",
                                          "wmarchive_url=", "amq_credentials=",
                                          "rucio_account=", "rucio_host=", "rucio_auth=", "mspileup_url="])
@@ -343,7 +345,7 @@ def main(argv=None):
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
-                          '--amq_auth_file', '--dbs3_url', '--dqm_url',
+                          '--amq_auth_file', '--dbs3_url', '--dbs3_reader_url', '--dqm_url',
                           '--grafana_token', '--requestcouch_url', '--central_logdb_url',
                           '--wmarchive_url', '--amq_credentials',
                           '--rucio_account', '--rucio_host', '--rucio_auth', '--mspileup_url'):

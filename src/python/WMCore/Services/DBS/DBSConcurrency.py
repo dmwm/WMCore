@@ -11,20 +11,23 @@ import urllib
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
 
-def getBlockInfo4PU(blockNames, ckey, cert):
+def getBlockInfo4PU(blockNames, dbsUrl, ckey, cert):
     """
     Fetch block information details, file list and number of events, from DBS
     server. Here we use concrete set of parameters for DBS to use in this case, i.e.
     we must look-up only valid files and get full details from the DBS API (in order
     to get number of events).
     :param blockNames: list of block names
+    :param dbsUrl: dbs URL
+    :param ckey: user keyfile
+    :param cert: user certificate
     :return: dictionary of {block: {"FileList": list of strings, "NumberOfEvents": integer}, ...}
     """
     urls = []
     for blk in blockNames:
         # need to encode block name properly
         block = urllib.parse.quote_plus(blk)
-        url = f"https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/files?detail=true&validFileOnly=1&block_name={block}"
+        url = f"{dbsUrl}/files?detail=true&validFileOnly=1&block_name={block}"
         urls.append(url)
     # place concurrent calls to DBS, please note that multi_getdata is generator, therefore
     # it does not put DBS results into the memory until this generator is iterated

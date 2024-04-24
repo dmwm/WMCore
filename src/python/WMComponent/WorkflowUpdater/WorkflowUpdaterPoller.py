@@ -170,7 +170,8 @@ def updateBlockInfo(jdoc, msPUBlockLoc, dbsUrl, logger):
                 newDict[blockName] = record
                 # keep track of blocks we need to update with DBS information
                 blocksToUpdate.append(blockName)
-        returnDict[puType] = newDict
+        if newDict:
+            returnDict[puType] = newDict
 
     # Update block records with DBS information.
     # Optimization note: this step is done outside of main loop above since

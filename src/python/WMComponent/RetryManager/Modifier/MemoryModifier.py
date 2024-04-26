@@ -21,7 +21,8 @@ from WMComponent.RetryManager.Modifier.BaseModifier import BaseModifier
 
 
 class MemoryModifier(BaseModifier):
-    
+    def __init__(self):
+        self.taskMemory = {}
     def changeSandbox(self, jobPKL, newMemory):
         """
         _changeSandbox_
@@ -41,13 +42,12 @@ class MemoryModifier(BaseModifier):
 
         return
     
-    def changeMemoryForTask(self, jobPKL, newMemory):
+    def changeMemoryForTask(self, taskPath, jobPKL, newMemory):
         """
         Approach to modify memory per task, rather than continuously changing the whole workflow
         """
         workload = self.getWorkload(jobPKL)
         workHelper = WMWorkloadHelper(workload)
-        taskPath = self.getTaskPath(jobPKL)
         task = workHelper.getTaskByPath(taskPath)
         task.setMaxPSS(newMemory)
         self.setWorkload(workload, jobPKL)
@@ -85,16 +85,24 @@ class MemoryModifier(BaseModifier):
     def changeMemory(self, job, settings):
         """
         The "main" function in charge of modifying the memory before a retry. 
-        It needs to modify the job.pkl file and the workflow sandbox
+        It needs to modify the job.pkl file and the maxPSS value for the respective task
         """
         
         pklFile = '{}/job.pkl'.format(job['cache_dir']) 
         jobPKL = self.loadPKL(pklFile)
 
         newMemory = self.getNewMemory(jobPKL, settings)
+        taskPath = self.getTaskPath(jobPKL)
+
+        if not taskPath in self.taskMemory:
+            self.taskMemory[taskPath] = job['estimatedMemoryUsage']
 
         self.changeJobPkl(pklFile, jobPKL, newMemory)
-        self.changeMemoryForTask(jobPKL, newMemory)
+
+        if self.taskMemory[taskPath] < newMemory:
+            self.changeMemoryForTask(taskPath, jobPKL, newMemory)
+            self.taskMemory[taskPath] = newMemory
+        
         logging.info('Old maxPSS: %d. New maxPSS: %d', job['estimatedMemoryUsage'], newMemory)
 
     def modifyJob(self, job):

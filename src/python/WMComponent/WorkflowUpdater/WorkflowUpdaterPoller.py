@@ -170,7 +170,8 @@ def updateBlockInfo(jdoc, msPUBlockLoc, dbsUrl, logger):
                 newDict[blockName] = record
                 # keep track of blocks we need to update with DBS information
                 blocksToUpdate.append(blockName)
-        returnDict[puType] = newDict
+        if newDict:
+            returnDict[puType] = newDict
 
     # Update block records with DBS information.
     # Optimization note: this step is done outside of main loop above since
@@ -293,7 +294,7 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
                 logging.info("Agent has no active workflows with pileup at the moment")
                 return
             # resolve unique active pileup dataset names
-            uniqueActivePU = flattenList([item['pileup'] for item in puWflows])
+            uniqueActivePU = set(flattenList([item['pileup'] for item in puWflows]))
 
             # otherwise, move on retrieving pileups
             msPileupList = self.getPileupDocs()
@@ -463,7 +464,9 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
                 workloadHelper.load(wflowSpec['spec'])
                 pileupSpecs = workloadHelper.listPileupDatasets()
                 if pileupSpecs:
-                    wflowSpec['pileup'] = pileupSpecs.values()
+                    wflowSpec['pileup'] = set()
+                    for pileupN in pileupSpecs.values():
+                        wflowSpec['pileup'] =  wflowSpec['pileup'] | pileupN
                     logging.info("Workflow: %s requires pileup dataset(s): %s",
                                  wflowSpec['name'], wflowSpec['pileup'])
                     wflowsWithPU.append(wflowSpec)

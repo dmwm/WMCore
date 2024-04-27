@@ -1,3 +1,7 @@
+2.3.2rc8 to 2.3.2rc9:
+  - Add check for creating updateBlockInfo return dictionary (Author: Todor Ivanov) #11975
+
+
 2.3.2rc7 to 2.3.2rc8:
   - Packaging and build failed; retrying
 

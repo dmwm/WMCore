@@ -24,6 +24,7 @@ class BaseModifier(object):
         self.backupPath = "oldSandboxes/"
         self.sandboxPath = None
         self.config = config
+        self.dataDict = {}
 
     def loadPKL(self, pklFile):
         with open(pklFile, 'rb') as file:
@@ -33,11 +34,12 @@ class BaseModifier(object):
     def savePKL(self, pklFile, data):
         with open(pklFile, 'wb') as file:
             pickle.dump(data, file)
-
-    def loadJobPKL(self, pklFile):
-        if self.data is None:
-            self.job = load
-
+            
+    def getDataDict(self):
+        return self.dataDict
+    
+    def updateDataDict(self, key, value):
+        self.dataDict[key] = value
 
     def updateSandbox(self, jobPKL, workload): # Not using workload?
         date = datetime.datetime.now().strftime("%y%m%d%H%M%S")

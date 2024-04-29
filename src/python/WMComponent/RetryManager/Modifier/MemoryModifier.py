@@ -21,8 +21,7 @@ from WMComponent.RetryManager.Modifier.BaseModifier import BaseModifier
 
 
 class MemoryModifier(BaseModifier):
-    def __init__(self):
-        self.taskMemory = {}
+
     def changeSandbox(self, jobPKL, newMemory):
         """
         _changeSandbox_
@@ -93,16 +92,19 @@ class MemoryModifier(BaseModifier):
 
         newMemory = self.getNewMemory(jobPKL, settings)
         taskPath = self.getTaskPath(jobPKL)
+        taskMemory = self.getDataDict()
+        logging.info('CURRENT TASK is {}'.format(taskPath))
+        logging.info('1. DICTIONARY is {}'.format(taskMemory))
 
-        if not taskPath in self.taskMemory:
-            self.taskMemory[taskPath] = job['estimatedMemoryUsage']
+        if not taskPath in taskMemory:
+            self.updateDataDict(key=taskPath, value=job['estimatedMemoryUsage'])
 
         self.changeJobPkl(pklFile, jobPKL, newMemory)
 
-        if self.taskMemory[taskPath] < newMemory:
+        logging.info('2. DICTIONARY is {}'.format(taskMemory))
+        if taskMemory[taskPath] < newMemory:
             self.changeMemoryForTask(taskPath, jobPKL, newMemory)
-            self.taskMemory[taskPath] = newMemory
-        
+            taskMemory[taskPath] = newMemory
         logging.info('Old maxPSS: %d. New maxPSS: %d', job['estimatedMemoryUsage'], newMemory)
 
     def modifyJob(self, job):

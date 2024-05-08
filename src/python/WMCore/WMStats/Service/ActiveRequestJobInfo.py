@@ -2,6 +2,7 @@
 Gets the cache data from server cache. This shouldn't update the server cache.
 Just wait for the server cache to be updated
 """
+from memory_profiler import profile
 from __future__ import (division, print_function)
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
@@ -21,6 +22,7 @@ class ActiveRequestJobInfo(RESTEntity):
         RESTEntity.__init__(self, app, api, config, mount)
 
     def validate(self, apiobj, method, api, param, safe):
+        @profile
         return
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])

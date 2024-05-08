@@ -100,7 +100,7 @@ class WMStatsReader(object):
         if 'stale' not in options:
             options.update(self.defaultStale)
         return options
-
+    @profile
     def getLatestJobInfoByRequests(self, requestNames):
         jobInfoByRequestAndAgent = {}
 
@@ -108,7 +108,7 @@ class WMStatsReader(object):
             requestAndAgentKey = self._getRequestAndAgent(requestNames)
             jobInfoByRequestAndAgent = self._getLatestJobInfo(requestAndAgentKey)
         return jobInfoByRequestAndAgent
-
+    @profile
     def _updateRequestInfoWithJobInfo(self, requestInfo):
         if requestInfo:
             jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(list(requestInfo))

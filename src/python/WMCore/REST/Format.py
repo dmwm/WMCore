@@ -551,7 +551,7 @@ def _etag_match(status, etagval, match, nomatch):
                 raise cherrypy.HTTPError(412, "Precondition on ETag %s failed" % etagval)
             if nomatch and ("*" in nomatch or etagval in nomatch):
                 raise cherrypy.HTTPRedirect([], 304)
-
+@profile
 def _etag_tail(head, tail, etag):
     """Generator which first returns anything in `head`, then `tail`.
     Sets ETag header at the end to value of `etag` if it's defined and

@@ -18,10 +18,9 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         """
         sets the list of functions which
         """
-        @profile
         self.concurrentTasks = [{'func': self.gatherActiveDataStats,
                                  'duration': config.dataCacheUpdateDuration}]
-
+    @profile
     def gatherActiveDataStats(self, config):
         """
         gather active data statistics

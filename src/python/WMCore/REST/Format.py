@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+from memory_profiler import profile
 import gzip
 from builtins import str, bytes, object
 
@@ -565,7 +565,7 @@ def _etag_tail(head, tail, etag):
     etagval = (etag and etag.value())
     if etagval:
         cherrypy.response.headers["ETag"] = etagval
-
+@profile
 def stream_maybe_etag(size_limit, etag, reply):
     """Maybe generate ETag header for the response, and handle If-Match
     and If-None-Match request headers. Consumes the reply until at most

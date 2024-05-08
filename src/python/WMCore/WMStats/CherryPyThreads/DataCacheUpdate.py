@@ -1,5 +1,5 @@
 from __future__ import (division, print_function)
-
+from memory_profiler import profile
 import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMStats.DataStructs.DataCache import DataCache
@@ -18,6 +18,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         """
         sets the list of functions which
         """
+        @profile
         self.concurrentTasks = [{'func': self.gatherActiveDataStats,
                                  'duration': config.dataCacheUpdateDuration}]
 

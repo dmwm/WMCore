@@ -1,5 +1,5 @@
 from __future__ import division, print_function
-
+from memory_profiler import profile
 import time
 
 from builtins import object
@@ -311,7 +311,7 @@ class WMStatsReader(object):
     def getT0ActiveData(self, jobInfoFlag=False):
 
         return self.getRequestByStatus(T0_ACTIVE_STATUS, jobInfoFlag)
-
+    @profile
     def getRequestByStatus(self, statusList, jobInfoFlag=False, limit=None, skip=None,
                            legacyFormat=False):
 

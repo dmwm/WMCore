@@ -3,6 +3,7 @@ from future.utils import viewitems, viewvalues, listvalues
 
 import cherrypy
 import inspect
+from memory_profiler import profile
 import os
 import re
 import signal
@@ -759,7 +760,7 @@ class MiniRESTApi(object):
                                                   (1e6 * (time.time() - request.start_time))
 
     default._cp_config = {'response.stream': True}
-
+    @profile
     def _call(self, param):
         """The real HTTP request handler.
 

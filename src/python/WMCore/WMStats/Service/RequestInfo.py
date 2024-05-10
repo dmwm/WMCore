@@ -5,6 +5,7 @@ Teams, Groups, Software versions handling for ReqMgr.
 
 """
 import cherrypy
+from memory_profiler import profile
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
@@ -32,6 +33,7 @@ class RequestInfo(RESTEntity):
 
     @restcall(formats = [('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self, request_name):
         result = self.wmstats.getRequestSummaryWithJobInfo(request_name)
         return rows([result])
@@ -58,6 +60,7 @@ class FinishedStatusInfo(RESTEntity):
 
     @restcall(formats = [('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self, request_name):
 
         try:
@@ -97,6 +100,7 @@ class JobDetailInfo(RESTEntity):
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('text/html', PrettyJSONHTMLFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self, request_name, sample_size):
 
         result = self.wmstats.getTaskJobSummaryByRequest(request_name, sample_size, usePycurl=True)
@@ -122,6 +126,7 @@ class TeamInfo(RESTEntity):
 
     @restcall(formats = [('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self):
         result = self.wmstats.agentsByTeam(filterDrain=False)
         return rows(result)

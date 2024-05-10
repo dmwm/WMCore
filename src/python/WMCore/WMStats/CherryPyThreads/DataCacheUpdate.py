@@ -13,7 +13,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         self.getJobInfo = getattr(config, "getJobInfo", False)
 
         super(DataCacheUpdate, self).__init__(config)
-
+    @profile
     def setConcurrentTasks(self, config):
         """
         sets the list of functions which

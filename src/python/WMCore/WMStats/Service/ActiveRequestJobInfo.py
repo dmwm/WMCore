@@ -2,8 +2,8 @@
 Gets the cache data from server cache. This shouldn't update the server cache.
 Just wait for the server cache to be updated
 """
-from memory_profiler import profile
 from __future__ import (division, print_function)
+from memory_profiler import profile
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Error import DataCacheEmpty

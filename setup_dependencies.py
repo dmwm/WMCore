@@ -186,6 +186,7 @@ dependencies = {
                      'WMCore.BossAir+', 'WMCore.Credential',
                      'WMCore.JobSplitting+', 'WMCore.ProcessPool',
                      'WMCore.Services+', 'WMCore.WMSpec+',
+                     'WMCore.ReqMgr.DataStructs+', 'WMCore.ReqMgr.Tools+',
                      'WMCore.WMBS+', 'WMCore.ResourceControl+'],
         'systems': ['wmc-web', 'wmc-database', 'global-workqueue', 'wmc-runtime'],
         'statics': ['bin+',

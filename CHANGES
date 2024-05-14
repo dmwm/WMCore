@@ -1,3 +1,7 @@
+2.3.3 to 2.3.4rc1:
+  - Add WMCore.ReqMgr.Tools dependency for wmagent pypi package. (Todor Ivanov) #11983
+
+
 2.3.2 to 2.3.3:
   - WMAgent stable release
 

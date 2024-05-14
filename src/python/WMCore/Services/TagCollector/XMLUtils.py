@@ -71,7 +71,7 @@ def get_children(elem, event, row, key):
     row for given key. The change of notations can be applied during
     parsing step by using provided notations dictionary.
     """
-    for child in elem.getchildren():
+    for child in list(elem):
         child_key = child.tag
         child_data = child.attrib
         if not child_data:
@@ -79,7 +79,7 @@ def get_children(elem, event, row, key):
         else:
             child_dict = child_data
 
-        if child.getchildren():  # we got grand-children
+        if list(child):  # we got grand-children
             if child_dict:
                 row[key][child_key] = child_dict
             else:

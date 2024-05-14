@@ -1,3 +1,7 @@
+2.3.4rc2 to 2.3.4rc3:
+  - Remove dependency on deprecated method xml..getchildren (Todor Ivanov) #11984
+
+
 2.3.4rc1 to 2.3.4rc2:
   - Previous build failed while checking the package hash. Retrigger it.
 

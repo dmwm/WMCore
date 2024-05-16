@@ -1330,6 +1330,7 @@ class DBConnectionPool(Thread):
         self.sigqueue.notifyAll()
         self.sigqueue.release()
 
+    @profile
     def get(self, id, module):
         """Get a new connection from the pool, identified to server side and
         the session monitor as to be used for action `id` by `module`.
@@ -1389,7 +1390,7 @@ class DBConnectionPool(Thread):
             now = time.time()
         sigready.release()
         return dbh, err
-
+    @profile
     def put(self, dbh, bad=False):
         """Add a database handle `dbh` back to the pool.
 

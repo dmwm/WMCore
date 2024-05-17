@@ -18,6 +18,19 @@ from WMCore.Configuration import loadConfigurationFile
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMBase import getWMBASE
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--skip-cron", dest = "cron",
+                    default = True, action = "store_false",
+                    help = "Do not install maintenance cron jobs")
+parser.add_argument("--only-cron", dest = "pushApps",
+                    default = True, action = "store_false",
+                    help = "Install only maintenance cron jobs")
+options = parser.parse_args()
+
+if not options.cron and not options.pushApps:
+    print("Mutually excluding options: --skip-cron && --only-cron")
+    print("Chose only one of them.")
+    sys.exit(1)
 
 def couchAppRoot(couchapp):
     """Return parent path containing couchapp"""
@@ -31,7 +44,32 @@ def couchAppRoot(couchapp):
         return os.path.join(wmcoreroot, 'data', 'couchapps')
     raise OSError('Cannot find couchapp: %s' % couchapp)
 
+# Defining a minimal decorator with parameter
+def pushApps(pushAppsFlag):
+    """
+    Decorator with a single Bool parameter
+    :param pushApps: Bool parameter to check if the callFunc is to be executed or not
+    :return:         The decorated function with call arguments if pushApps=True
+    """
+    def pushAppsDecorator(callFunc):
+        """
+        An Auxiliary simple decorator
+        """
+        def installCouchAppWrapper(*args, **kwargs):
+            """
+            The callFunc wrapper. To decide whether to return the call to the
+            wrapped function or not based on the decorator's pushAppsFlag
+            :*args:    All parameters passed to the wrapped function call
+            :**kwargs: All keyword arguments passed to the wrapped function call
+            """
+            if pushAppsFlag:
+                return callFunc(*args, **kwargs)
+            else:
+                return
+        return installCouchAppWrapper
+    return pushAppsDecorator
 
+@pushApps(options.pushApps)
 def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
     """
     _installCouchApp_
@@ -273,11 +311,6 @@ files_needed_from_yui = [
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--skip-cron", dest = "cron",
-                        default = True, action = "store_false",
-                        help = "Do not install maintenance cron jobs")
-    options = parser.parse_args()
 
     if "WMAGENT_CONFIG" not in os.environ:
         print("The WMAGENT_CONFIG environment variable needs to be set before")
@@ -285,7 +318,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
-            
+
     if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
         fwjrDumpName = urllib.parse.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)
         jobDumpName = urllib.parse.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
@@ -355,7 +388,7 @@ if __name__ == "__main__":
            urlsplit(wmagentConfig.WorkloadSummary.couchurl).scheme == 'http':
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "ACDC")
             installCouchApp(wmagentConfig.ACDC.couchurl, wmagentConfig.ACDC.database, "GroupUser")
-    
+
     if hasattr(wmagentConfig, "Tier0Feeder"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName, "T0Request")
         centralWMStatsURL = wmagentConfig.General.centralWMStatsURL

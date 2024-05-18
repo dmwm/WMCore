@@ -1,3 +1,8 @@
+2.3.4rc3 to 2.3.4rc4:
+  - Many fixes to CMSKubernetes wmagent deployment and MariaDB configuration
+  - Add --only-cron parameter to wmagent-couchapp-init (Todor Ivanov) #11988
+
+
 2.3.4rc2 to 2.3.4rc3:
   - Remove dependency on deprecated method xml..getchildren (Todor Ivanov) #11984
 

@@ -537,7 +537,7 @@ def stream_compress(reply, available, compress_level, max_chunk):
             return _stream_compressor[enc.value](reply, compress_level, max_chunk)
 
     return reply
-
+@profile
 def _etag_match(status, etagval, match, nomatch):
     """Match ETag value against any If-Match / If-None-Match headers."""
     # Execute conditions only for status 2xx. We only handle GET/HEAD

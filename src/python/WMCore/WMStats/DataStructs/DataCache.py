@@ -1,6 +1,6 @@
 from builtins import object, str, bytes
 from future.utils import viewitems
-
+from memory_profiler import profile
 import time
 from WMCore.ReqMgr.DataStructs.Request import RequestInfo, protectedLFNs
 
@@ -20,6 +20,7 @@ class DataCache(object):
         DataCache._duration = sec
 
     @staticmethod
+    @profile
     def getlatestJobData():
         if (DataCache._lastedActiveDataFromAgent):
             return DataCache._lastedActiveDataFromAgent["data"]
@@ -32,6 +33,7 @@ class DataCache(object):
         return not DataCache._lastedActiveDataFromAgent.get("data")
 
     @staticmethod
+    @profile
     def setlatestJobData(jobData):
         DataCache._lastedActiveDataFromAgent["time"] = int(time.time())
         DataCache._lastedActiveDataFromAgent["data"] = jobData

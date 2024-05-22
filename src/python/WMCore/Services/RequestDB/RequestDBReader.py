@@ -3,7 +3,7 @@ import time
 
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
-
+from memory_profiler import profile
 
 class RequestDBReader(object):
     def __init__(self, couchURL, couchapp="ReqMgr"):
@@ -74,7 +74,7 @@ class RequestDBReader(object):
             return result
         else:
             return list(result)
-
+    @profile
     def _getRequestByName(self, requestName, detail):
         """
         Retrieves a request dictionary from CouchDB
@@ -94,7 +94,7 @@ class RequestDBReader(object):
             result.pop('_rev', None)
             return {result['RequestName']: result}
         return [result['RequestName']]
-
+    @profile
     def _getRequestByNames(self, requestNames, detail):
         """
         'status': list of the status
@@ -103,7 +103,7 @@ class RequestDBReader(object):
         options["include_docs"] = detail
         result = self.couchDB.allDocs(options, requestNames)
         return result
-
+    @profile
     def _getRequestByStatus(self, statusList, detail, limit, skip):
         """
         'status': list of the status
@@ -117,7 +117,7 @@ class RequestDBReader(object):
             options["skip"] = skip
         keys = statusList
         return self._getCouchView("bystatus", options, keys)
-
+    @profile
     def _getRequestByStatusAndStartTime(self, status, detail, startTime):
         timeNow = int(time.time())
         options = {}
@@ -185,7 +185,7 @@ class RequestDBReader(object):
             requestInfo = self._getRequestByNames(requestNames, detail=detail)
             requestInfo = self._formatCouchData(requestInfo, detail=detail)
         return requestInfo
-
+    @profile
     def getRequestByStatus(self, statusList, detail=False, limit=None, skip=None):
 
         data = self._getRequestByStatus(statusList, detail, limit, skip)

@@ -586,8 +586,8 @@ def stream_maybe_etag(size_limit, etag, reply):
     as it normally would be, the `size_limit` constrains the compressed
     size, and chunk boundaries correspond to compressed chunks."""
     print("size_limit:" + size_limmit)
-    print(\n + "etag:" + etag)
-    print(\n + "reply:" + reply)
+    print("\n" + "etag:" + etag)
+    print("\n" + "reply:" + reply)
     req = cherrypy.request
     res = cherrypy.response
     match = [str(x) for x in (req.headers.elements('If-Match') or [])]

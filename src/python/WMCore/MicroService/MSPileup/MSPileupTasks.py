@@ -220,7 +220,10 @@ class MSPileupTasks():
             newRules = []
             self.logger.info("Attaching %d blocks to custom pileup name: %s", len(customBlocks), cname)
             if len(customBlocks):
-                self.rucioClient.attachDIDs(None, cname, customBlocks, scope=self.customRucioScope)
+                status = self.rucioClient.attachDIDs(None, cname, customBlocks, scope=self.customRucioScope)
+                if not status:
+                    self.logger.error("Failed to attach DIDs to custom container %s with scope %s", cname, self.customRucioScope)
+                    continue
             for rse in doc['expectedRSEs']:
                 # create new rule for custom DID using pileup document rse
                 ruleIds = self.rucioClient.createReplicationRule(cname, rse, scope=self.customRucioScope)

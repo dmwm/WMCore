@@ -605,10 +605,10 @@ def stream_maybe_etag(size_limit, etag, reply):
     # headers, so clients which understand trailers will get the value; most
     # clients including browsers will ignore them.
     size = 0
-    print("size of size:")
+    print("size of size: ")
     sys.getsizeof(size)
     result = []
-    print("size of result:")
+    print("size of result: ")
     sys.getsizeof(result)
     for chunk in reply:
         result.append(chunk)
@@ -618,7 +618,7 @@ def stream_maybe_etag(size_limit, etag, reply):
             return _etag_tail(result, reply, etag)
     print("size of size now: ")
     sys.getsizeof(size)
-    print("size of result now")
+    print("size of result now: ")
     sys.getsizeof(result)
     # We've buffered the entire response, but it may be an error reply. The
     # generator code does not know if it's allowed to raise exceptions, so

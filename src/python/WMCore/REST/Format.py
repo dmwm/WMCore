@@ -614,7 +614,7 @@ def stream_maybe_etag(size_limit, etag, reply):
         if size > size_limit:
             res.headers['Trailer'] = 'X-REST-Status'
             return _etag_tail(result, reply, etag)
-    del result
+    
     # We've buffered the entire response, but it may be an error reply. The
     # generator code does not know if it's allowed to raise exceptions, so
     # it swallows all errors and converts them into X-* headers. We recover
@@ -640,5 +640,6 @@ def stream_maybe_etag(size_limit, etag, reply):
     resp = b"" if PY3 else ""
     for item in result:
         resp += encodeUnicodeToBytesConditional(item, condition=PY3)
+    del result
     assert len(resp) == size
     return resp

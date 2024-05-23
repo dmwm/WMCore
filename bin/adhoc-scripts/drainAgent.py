@@ -366,8 +366,7 @@ def main():
     twiki = ('<pre>', '</pre>') if args.twiki else ('', '')
     print(twiki[0])
 
-    os.environ['WMAGENT_CONFIG'] = '/data/srv/wmagent/current/config/wmagent/config.py'
-    config = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+    config = loadConfigurationFile(os.environ.get('WMA_CONFIG_FILE', '/data/srv/wmagent/current/config/config.py')) 
 
     gmtTimeNow = strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
     print("Drain check time: %s\n" % gmtTimeNow)

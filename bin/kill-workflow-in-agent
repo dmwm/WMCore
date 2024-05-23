@@ -16,12 +16,8 @@ def killWorkflowAgent(WorkflowName):
     """
     Cancel work for a given workflow - delete in wmbs, delete from workqueue db, set canceled in inbox
     """    
-    # get configuration file path
-    if "WMAGENT_CONFIG" not in os.environ:
-        os.environ['WMAGENT_CONFIG'] = '/data/srv/wmagent/current/config/wmagent/config.py'
-    
-    # load config
-    wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])
+    # get configuration file path and load it
+    wmConfig = loadConfigurationFile(os.environ.get('WMA_CONFIG_FILE', '/data/srv/wmagent/current/config/config.py'))
     wqManager = wmConfig.section_('WorkQueueManager')
     
     couchUrl = wqManager.couchurl

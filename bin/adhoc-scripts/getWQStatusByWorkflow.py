@@ -37,9 +37,7 @@ def createElementsSummary(reqName, elements, queueUrl):
 
 
 def main():
-    if 'WMAGENT_CONFIG' not in os.environ:
-        os.environ['WMAGENT_CONFIG'] = '/data/srv/wmagent/current/config/wmagent/config.py'
-    config = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+    config = loadConfigurationFile(os.environ.get('WMA_CONFIG_FILE', '/data/srv/wmagent/current/config/config.py'))
 
     if len(sys.argv) != 2:
         print("You must provide a request name")

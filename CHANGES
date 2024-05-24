@@ -1,5 +1,20 @@
+2.3.4rc4 to 2.3.4rc5:
+  - WMAgent: Add _service_gracefull_exit function v2 https://github.com/dmwm/CMSKubernetes/pull/1488
+  - WМАgent switch deployment model copy runtime fix 11990 https://github.com/dmwm/CMSKubernetes/pull/1490
+  - Adding init_tier0 function https://github.com/dmwm/CMSKubernetes/pull/1466
+  - Fix some indentation missing in wmagent manage-common https://github.com/dmwm/CMSKubernetes/pull/1489
+  - Add MSPileup Url to the agent initialization/configuration https://github.com/dmwm/CMSKubernetes/pull/1487
+  - Find and gracefully stop WMAgent CouchDB processes https://github.com/dmwm/CMSKubernetes/pull/1484
+  - Parsing the WMA_TAG and using only the release part for creating the WMA_BUILD_ID https://github.com/dmwm/CMSKubernetes/pull/1485
+  - Fix certs directory in WMAgent CouchDB image as well https://github.com/dmwm/CMSKubernetes/pull/1486
+  - WMAgent: change certs mount point https://github.com/dmwm/CMSKubernetes/pull/1480
+
+
 2.3.4rc3 to 2.3.4rc4:
-  - Many fixes to CMSKubernetes wmagent deployment and MariaDB configuration
+  - Export USER and WMA_USER variables from $WMA_ENV_FILE https://github.com/dmwm/CMSKubernetes/pull/1482
+  - Fix ZeroTimeWindow for renew_proxy && Fix missing cronjobs https://github.com/dmwm/CMSKubernetes/pull/1476
+  - Add tweak for WorkQueueManager https://github.com/dmwm/CMSKubernetes/pull/1479
+  - Tune MariaDB settings for better performance https://github.com/dmwm/CMSKubernetes/pull/1475
   - Add --only-cron parameter to wmagent-couchapp-init (Todor Ivanov) #11988
 
 
@@ -11,6 +26,12 @@
   - Previous build failed while checking the package hash. Retrigger it.
 
 2.3.3 to 2.3.4rc1:
+  - Copy bashrc template instead of moving it, for wmagent https://github.com/dmwm/CMSKubernetes/pull/1474
+  - Set WMAgent/MariaDB/CouchDB user during container runtime https://github.com/dmwm/CMSKubernetes/pull/1469
+  - Copy WMRuntime scripts at the host during WMAgent initialization. https://github.com/dmwm/CMSKubernetes/pull/1460
+  - Add dbs3_reader_url option https://github.com/dmwm/CMSKubernetes/pull/1465
+  - Addition of the opportunistic resources in the initialization script (retrying to avoid false authors) https://github.com/dmwm/CMSKubernetes/pull/1462
+  - Add minimal CouchDB container for WMAgent https://github.com/dmwm/CMSKubernetes/pull/1409
   - Add WMCore.ReqMgr.Tools dependency for wmagent pypi package. (Todor Ivanov) #11983
 
 

@@ -9,7 +9,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMInit import connectToDB
 
 def fixDBSmissingFileAssoc():
-    os.environ['WMAGENT_CONFIG'] = '/data/srv/wmagent/current/config/wmagent/config.py'
+    os.environ['WMA_CONFIG_FILE'] = '/data/srv/wmagent/current/config/config.py'
     connectToDB()
     myThread = threading.currentThread()
     formatter = DBFormatter(logging, myThread.dbi)

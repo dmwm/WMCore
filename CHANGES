@@ -1,3 +1,12 @@
+2.3.4rc5 to 2.3.4rc6:
+  - Adapting the references to config files to the containerized deployment model (Andrea Piccinelli) #11996
+  - WMAgent: Add _service_gracefull_exit function v2 https://github.com/dmwm/CMSKubernetes/pull/1488
+  - WМАgent switch deployment model copy runtime fix 11990 https://github.com/dmwm/CMSKubernetes/pull/1490
+  - MariaDB/CouchDB: Add _service_gracefull_exit function https://github.com/dmwm/CMSKubernetes/pull/1491
+  - Fix release vs tag usage in docker pull/tagging https://github.com/dmwm/CMSKubernetes/pull/1493
+  - Fix check for docker environment in wmagent https://github.com/dmwm/CMSKubernetes/pull/1495
+
+
 2.3.4rc4 to 2.3.4rc5:
   - WMAgent: Add _service_gracefull_exit function v2 https://github.com/dmwm/CMSKubernetes/pull/1488
   - WМАgent switch deployment model copy runtime fix 11990 https://github.com/dmwm/CMSKubernetes/pull/1490

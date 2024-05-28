@@ -606,10 +606,10 @@ def stream_maybe_etag(size_limit, etag, reply):
     # clients including browsers will ignore them.
     size = 0
     print("size of size: ")
-    sys.getsizeof(size)
+    print(sys.getsizeof(size))
     result = []
     print("size of result: ")
-    sys.getsizeof(result)
+    print(sys.getsizeof(result))
     for chunk in reply:
         result.append(chunk)
         size += len(chunk)
@@ -617,9 +617,9 @@ def stream_maybe_etag(size_limit, etag, reply):
             res.headers['Trailer'] = 'X-REST-Status'
             return _etag_tail(result, reply, etag)
     print("size of size now: ")
-    sys.getsizeof(size)
+    print(sys.getsizeof(size))
     print("size of result now: ")
-    sys.getsizeof(result)
+    print(sys.getsizeof(result))
     # We've buffered the entire response, but it may be an error reply. The
     # generator code does not know if it's allowed to raise exceptions, so
     # it swallows all errors and converts them into X-* headers. We recover

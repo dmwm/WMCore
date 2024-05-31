@@ -1,3 +1,8 @@
+2.3.4rc6 to 2.3.4rc7:
+  - Upgrade htcondor to 10.3.0 (Dennis Lee) #12002
+  - Fix CouchDB manage restart option https://github.com/dmwm/CMSKubernetes/pull/1496
+
+
 2.3.4rc5 to 2.3.4rc6:
   - Adapting the references to config files to the containerized deployment model (Andrea Piccinelli) #11996
   - WMAgent: Add _service_gracefull_exit function v2 https://github.com/dmwm/CMSKubernetes/pull/1488

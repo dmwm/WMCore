@@ -11,15 +11,15 @@ class DataCache(object):
     _duration = 300  # 5 minitues
     _lastedActiveDataFromAgent = {}
 
-    @staticmethod
+#    @staticmethod
     def getDuration():
         return DataCache._duration
 
-    @staticmethod
+ #   @staticmethod
     def setDuration(sec):
         DataCache._duration = sec
 
-    @staticmethod
+  #  @staticmethod
     @profile
     def getlatestJobData():
         if (DataCache._lastedActiveDataFromAgent):
@@ -27,18 +27,18 @@ class DataCache(object):
         else:
             return {}
 
-    @staticmethod
+   # @staticmethod
     def isEmpty():
         # simple check to see if the data cache is populated
         return not DataCache._lastedActiveDataFromAgent.get("data")
 
-    @staticmethod
+    #@staticmethod
     @profile
     def setlatestJobData(jobData):
         DataCache._lastedActiveDataFromAgent["time"] = int(time.time())
         DataCache._lastedActiveDataFromAgent["data"] = jobData
 
-    @staticmethod
+    #@staticmethod
     def islatestJobDataExpired():
         if not DataCache._lastedActiveDataFromAgent:
             return True
@@ -47,7 +47,7 @@ class DataCache(object):
             return True
         return False
 
-    @staticmethod
+    #@staticmethod
     def filterData(filterDict, maskList):
         reqData = DataCache.getlatestJobData()
 
@@ -63,7 +63,7 @@ class DataCache(object):
                     elif result is not None and result != "":
                         yield result
 
-    @staticmethod
+    #@staticmethod
     def filterDataByRequest(filterDict, maskList=None):
         reqData = DataCache.getlatestJobData()
 
@@ -85,7 +85,7 @@ class DataCache(object):
                         resultItem[prop] = reqInfo.get(prop, None)
                     yield resultItem
 
-    @staticmethod
+    #@staticmethod
     def getProtectedLFNs():
         reqData = DataCache.getlatestJobData()
 

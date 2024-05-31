@@ -8,48 +8,49 @@ class DataCache(object):
     # TODO: need to change to  store in  db instead of storing in the memory
     # When mulitple server run for load balancing it could have different result
     # from each server.
-    _duration = 300  # 5 minitues
-    _lastedActiveDataFromAgent = {}
-
+    def _init_(self):
+        self._duration = 300  # 5 minitues
+        self._lastedActiveDataFromAgent = {}
+    
 #    @staticmethod
-    def getDuration():
-        return DataCache._duration
+    def getDuration(self):
+        return self._duration
 
  #   @staticmethod
-    def setDuration(sec):
-        DataCache._duration = sec
+    def setDuration(self, sec):
+        self._duration = sec
 
   #  @staticmethod
     @profile
-    def getlatestJobData():
-        if (DataCache._lastedActiveDataFromAgent):
-            return DataCache._lastedActiveDataFromAgent["data"]
+    def getlatestJobData(self):
+        if (self._lastedActiveDataFromAgent):
+            return self._lastedActiveDataFromAgent["data"]
         else:
             return {}
 
    # @staticmethod
-    def isEmpty():
+    def isEmpty(self):
         # simple check to see if the data cache is populated
-        return not DataCache._lastedActiveDataFromAgent.get("data")
+        return not self._lastedActiveDataFromAgent.get("data")
 
     #@staticmethod
     @profile
-    def setlatestJobData(jobData):
-        DataCache._lastedActiveDataFromAgent["time"] = int(time.time())
-        DataCache._lastedActiveDataFromAgent["data"] = jobData
+    def setlatestJobData(self, jobData):
+        self._lastedActiveDataFromAgent["time"] = int(time.time())
+        self._lastedActiveDataFromAgent["data"] = jobData
 
     #@staticmethod
-    def islatestJobDataExpired():
-        if not DataCache._lastedActiveDataFromAgent:
+    def islatestJobDataExpired(self):
+        if not self._lastedActiveDataFromAgent:
             return True
 
-        if (int(time.time()) - DataCache._lastedActiveDataFromAgent["time"]) > DataCache._duration:
+        if (int(time.time()) - self._lastedActiveDataFromAgent["time"]) > self._duration:
             return True
         return False
 
     #@staticmethod
-    def filterData(filterDict, maskList):
-        reqData = DataCache.getlatestJobData()
+    def filterData(self, filterDict, maskList):
+        reqData = self.getlatestJobData()
 
         for _, reqInfo in viewitems(reqData):
             reqData = RequestInfo(reqInfo)
@@ -64,8 +65,8 @@ class DataCache(object):
                         yield result
 
     #@staticmethod
-    def filterDataByRequest(filterDict, maskList=None):
-        reqData = DataCache.getlatestJobData()
+    def filterDataByRequest(self, filterDict, maskList=None):
+        reqData = self.getlatestJobData()
 
         if maskList is not None:
             if isinstance(maskList, (str, bytes)):
@@ -86,8 +87,8 @@ class DataCache(object):
                     yield resultItem
 
     #@staticmethod
-    def getProtectedLFNs():
-        reqData = DataCache.getlatestJobData()
+    def getProtectedLFNs(self):
+        reqData = self.getlatestJobData()
 
         for _, reqInfo in viewitems(reqData):
             for dirPath in protectedLFNs(reqInfo):

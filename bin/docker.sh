@@ -52,9 +52,8 @@ if [ "$action" == "build" ]; then
         docker build --build-arg TAG=${tag} --tag ${rurl}:${tag} .
     fi
     docker images | grep $tag | grep $service
-    exit 0
 fi
-if [ "$action" == "build-stable" ]; then
+if [ "$action" == "build-stable" ] || [ "$action" == "build" && -n "suffix" ]; then
     if [ -z "$suffix" ]; then
         echo "Building stable image for tag=$tag is not appropriate as tag is not matched X.Y.Z or X.Y.Z.P pattern"
         exit 0
@@ -66,9 +65,8 @@ if [ "$action" == "build-stable" ]; then
         docker build --build-arg TAG=${tag} --tag ${rurl}:${tag}${suffix} .
     fi
     docker images | grep ${tag}${suffix} | grep $service
-    exit 0
 fi
-if [ "$action" == "push" ]; then
+if [ "$action" == "push" ] || [ "$action" == "push" && -n "$suffix" ]; then
     image_exist=`docker images | grep $tag | grep $service`
     if [ -z "$image_exit" ]; then
         echo "Image ${rurl}:${tag}${suffix} is not found"
@@ -76,7 +74,6 @@ if [ "$action" == "push" ]; then
     fi
     echo "action: docker push ${rurl}:${tag}"
     docker push ${rurl}:${tag}
-    exit 0
 fi
 if [ "$action" == "remove" ] || [ "$action" == "delete" ]; then
     echo "action: docker image rm -f ${rurl}:${tag}${suffix}"
@@ -86,5 +83,4 @@ if [ "$action" == "remove" ] || [ "$action" == "delete" ]; then
         exit 0
     fi
     docker rmi ${rurl}:${tag}
-    exit 0
 fi

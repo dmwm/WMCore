@@ -57,7 +57,7 @@ fi
 if [ "$action" == "build-stable" ]; then
     if [ -z "$suffix" ]; then
         echo "Building stable image for tag=$tag is not appropriate as tag is not matched X.Y.Z or X.Y.Z.P pattern"
-        exit 1
+        exit 0
     fi
     echo "check if image with service=$service and tag=${tag}${suffix} exist ..."
     image_exist=`docker images | grep ${tag}${suffix} | grep $service`
@@ -72,7 +72,7 @@ if [ "$action" == "push" ]; then
     image_exist=`docker images | grep $tag | grep $service`
     if [ -z "$image_exit" ]; then
         echo "Image ${rurl}:${tag}${suffix} is not found"
-        exit 1
+        exit 0
     fi
     echo "action: docker push ${rurl}:${tag}"
     docker push ${rurl}:${tag}
@@ -83,7 +83,7 @@ if [ "$action" == "remove" ] || [ "$action" == "delete" ]; then
     image_exist=`docker images | grep ${tag}${suffix} | grep $service`
     if [ -z "$image_exit" ]; then
         echo "Image ${rurl}:${tag}${suffix} is not found"
-        exit 1
+        exit 0
     fi
     docker rmi ${rurl}:${tag}
     exit 0

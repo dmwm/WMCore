@@ -49,9 +49,5 @@ jobs:
           curl -ksLO https://raw.githubusercontent.com/dmwm/WMCore/master/bin/docker.sh
           echo "build new image"
           ./docker.sh build ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}
-          echo "build new stable image"
-          ./docker.sh build-stable ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}
           echo "push new image"
           ./docker.sh push ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}
-          echo "push new stable image"
-          ./docker.sh push-stable ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}

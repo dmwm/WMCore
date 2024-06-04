@@ -24,13 +24,22 @@ class ActiveRequestJobInfo(RESTEntity):
     def validate(self, apiobj, method, api, param, safe):
         return
 
+    """
+    New code:
+    """
+    #Populate an object: DataCache
+    x = DataCache()
+    
+    """
+    End New code:
+    """
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows([DataCache.getlatestJobData()])
+        return rows([x.getlatestJobData()])
 
 
 class FilteredActiveRequestJobInfo(RESTEntity):
@@ -51,14 +60,21 @@ class FilteredActiveRequestJobInfo(RESTEntity):
             del param.kwargs[prop]
 
         return
-
+    """
+    New code:
+    """
+    #Populate an object: DataCache
+    x = DataCache()
+    """
+    End New code:
+    """
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
     def get(self, mask=None, **input_condition):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows(DataCache.filterDataByRequest(input_condition, mask))
+        return rows(x.filterDataByRequest(input_condition, mask))
 
 
 class ProtectedLFNList(RESTEntity):
@@ -73,17 +89,34 @@ class ProtectedLFNList(RESTEntity):
 
     def validate(self, apiobj, method, api, param, safe):
         return
-
+    """
+    New code:
+    """
+    #Populate an object: DataCache
+    x = DataCache()
+    #Replicating datacacheupdate.py
+    try:
+        wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
+                                  reqdbCouchApp="ReqMgr", logger=self.logger)
+        jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
+        tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
+        jobData.update(tempData)
+        x.setlatestJobData(jobData)
+    except Exception as ex:
+        print("Something went wrong")
+    """
+    End New code:
+    """
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        if DataCache.isEmpty():
+        if x.isEmpty():
             raise DataCacheEmpty()
         else:
-            return rows(DataCache.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
+            return rows(x.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
 
 
 class ProtectedLFNListOnlyFinalOutput(RESTEntity):
@@ -98,14 +131,31 @@ class ProtectedLFNListOnlyFinalOutput(RESTEntity):
 
     def validate(self, apiobj, method, api, param, safe):
         return
-
+    """
+    New code:
+    """
+    #Populate an object: DataCache
+    x = DataCache()
+    #Replicating datacacheupdate.py
+    try:
+        wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
+                                  reqdbCouchApp="ReqMgr", logger=self.logger)
+        jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
+        tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
+        jobData.update(tempData)
+        x.setlatestJobData(jobData)
+    except Exception as ex:
+        print("Something went wrong")
+    """
+    End New code:
+    """
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows(DataCache.getProtectedLFNs())
+        return rows(x.getProtectedLFNs())
 
 
 class GlobalLockList(RESTEntity):
@@ -115,15 +165,32 @@ class GlobalLockList(RESTEntity):
 
     def validate(self, apiobj, method, api, param, safe):
         return
-
+    """
+    New code:
+    """
+    #Populate an object: DataCache
+    x = DataCache()
+    #Replicating datacacheupdate.py
+    try:
+        wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
+                                  reqdbCouchApp="ReqMgr", logger=self.logger)
+        jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
+        tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
+        jobData.update(tempData)
+        x.setlatestJobData(jobData)
+    except Exception as ex:
+        print("Something went wrong")
+    """
+    End New code:
+    """
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        if DataCache.isEmpty():
+        if x.isEmpty():
             raise DataCacheEmpty()
         else:
-            return rows(DataCache.filterData(ACTIVE_STATUS_FILTER,
+            return rows(x.filterData(ACTIVE_STATUS_FILTER,
                                              ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))

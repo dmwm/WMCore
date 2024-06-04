@@ -1,3 +1,9 @@
+2.3.4rc7 to 2.3.4rc8:
+  - Fix CouchDB manage restart option https://github.com/dmwm/CMSKubernetes/pull/1496
+  - WMAgent: Install voms-clients-java (same package used in FNAL/CERN hosts) https://github.com/dmwm/CMSKubernetes/pull/1497
+  - Fixes wmagent tagging during run.sh; aesthetic changes https://github.com/dmwm/CMSKubernetes/pull/1499
+  - Do not push central couchapps into WMAgent CouchDB https://github.com/dmwm/CMSKubernetes/pull/1500
+
 2.3.4rc6 to 2.3.4rc7:
   - Upgrade htcondor to 10.3.0 (Dennis Lee) #12002
   - Fix CouchDB manage restart option https://github.com/dmwm/CMSKubernetes/pull/1496

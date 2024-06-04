@@ -132,6 +132,12 @@ def storageJsonPath(currentSite, currentSubsite, storageSite):
     :para storageSite: str, name of storage site for a stage-out
     :return: str, a path to storage.json (/pathToStorageJson/storage.json)
     """
+
+    # return path override if it is defined and exists
+    siteConfigPathOverride = os.getenv('WMAGENT_RUCIO_CATALOG_OVERRIDE', None)
+    if siteConfigPathOverride and os.path.exists(siteConfigPathOverride):
+        return siteConfigPathOverride    
+
     # get site config
     siteConfigPath = os.getenv('SITECONFIG_PATH', None)
     if not siteConfigPath:

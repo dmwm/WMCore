@@ -1,3 +1,9 @@
+2.3.4rc8 to 2.3.4rc9:
+  - Validate Pileup document with expectedRSEs instead of currentRSEs (Alan Malta Rodrigues) #11995
+  - Check status of attachDIDs API and act upon it (Valentin Kuznetsov) #11995
+  - Allow override for Rucio storag.json using env variable (jeyserma) #12009
+
+
 2.3.4rc7 to 2.3.4rc8:
   - Fix CouchDB manage restart option https://github.com/dmwm/CMSKubernetes/pull/1496
   - WMAgent: Install voms-clients-java (same package used in FNAL/CERN hosts) https://github.com/dmwm/CMSKubernetes/pull/1497

@@ -267,7 +267,7 @@ class MSPileupTasks():
 
                     # update MSPileup document in MongoDB
                     # here we update our new document in database with document validation
-                    self.mgr.updatePileupDocumentInDatabase(doc, rseList=doc['currentRSEs'])
+                    self.mgr.updatePileupDocumentInDatabase(doc, rseList=doc['expectedRSEs'])
                     self.logger.info("Pileup name %s had its fraction updated in the partialPileupTask function", doc['pileupName'])
                 except Exception as exp:
                     msg = f"Failed to update MSPileup document, {exp}"

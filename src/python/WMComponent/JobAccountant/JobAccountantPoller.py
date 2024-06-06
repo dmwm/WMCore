@@ -65,7 +65,10 @@ class JobAccountantPoller(BaseWorkerThread):
             logging.debug("No work to do; exiting")
             return
 
+        jobsProcessed = 0
         for jobsSlice in grouper(completeJobs, self.accountantWorkSize):
+            logging.info("Processing jobs [%d, %s] out of a total of %s", jobsProcessed,
+                         jobsProcessed + len(jobsSlice), len(completeJobs))
             try:
                 self.accountantWorker(jobsSlice)
             except WMException:
@@ -88,5 +91,6 @@ class JobAccountantPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.exception(msg)
                 raise JobAccountantPollerException(msg)
+            jobsProcessed += len(jobsSlice)
 
         return

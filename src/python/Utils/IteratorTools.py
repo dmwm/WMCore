@@ -18,6 +18,18 @@ def grouper(iterable, n):
     return iter(lambda: list(islice(iterable, n)), [])
 
 
+def getChunk(arr, step):
+    """
+    Return chunk of entries from given array and step, it is similar in behavior to grouper
+    function but instead of returning new list it provides a generator iterable object.
+    :param arr: input array of data
+    :param step: step to iterate
+    :return: generator, set of slices with number of entries equal to step of iteration
+    """
+    for i in range(0, len(arr), step):
+        yield arr[i:i + step]
+
+
 def flattenList(doubleList):
     """
     Make flat a list of lists.

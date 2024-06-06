@@ -18,6 +18,7 @@ from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, Acc
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
                                     UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound)
 from Utils.MemoryCache import MemoryCache
+from Utils.IteratorTools import grouper
 from WMCore.Services.Rucio.RucioUtils import (validateMetaData, weightedChoice,
                                               isTapeRSE, dropTapeRSEs)
 from WMCore.WMException import WMException
@@ -346,7 +347,7 @@ class Rucio(object):
             response = self.attachDIDs(kwargs.get('rse'), container, name, scope)
         return response
 
-    def attachDIDs(self, rse, superDID, dids, scope='cms'):
+    def attachDIDs(self, rse, superDID, dids, scope='cms', chunkSize=1000):
         """
         _attachDIDs_
 
@@ -356,28 +357,38 @@ class Rucio(object):
              then it's a container name; if attaching files, then it's a block name)
         :param dids: either a string or a list of data identifiers (can be block or files)
         :param scope: string with the scope name
+        :param chunkSize: maximum number of dids to be attached in any single Rucio server call
         :return: a boolean to represent whether it succeeded or not
         """
         if not isinstance(dids, list):
             dids = [dids]
         # NOTE: the attaching dids do not create new container within a scope
         # and it is safe to use cms scope for it
-        dids = [{'scope': 'cms', 'name': did} for did in dids]
+        alldids = [{'scope': 'cms', 'name': did} for did in sorted(dids)]
 
-        response = False
-        try:
-            response = self.cli.attach_dids(scope, superDID, dids=dids, rse=rse)
-        except DuplicateContent:
-            self.logger.warning("Dids: %s already attached to: %s", dids, superDID)
-            response = True
-        except FileAlreadyExists:
-            self.logger.warning("Failed to attach files already existent on block: %s", superDID)
-            response = True
-        except DataIdentifierNotFound:
-            self.logger.error("Failed to attach dids: %s. Parent DID %s does not exist.", dids, superDID)
-        except Exception as ex:
-            self.logger.error("Exception attaching dids: %s to: %s. Error: %s",
-                              dids, superDID, str(ex))
+        # report if we use chunk size in rucio attach_dids API call
+        if len(alldids) > chunkSize:
+            self.logger.info("Attaching a total of %d DIDs in chunk size of: %d", len(alldids), chunkSize)
+
+        for dids in grouper(alldids, chunkSize):
+            response = False
+            try:
+                response = self.cli.attach_dids(scope, superDID, dids=dids, rse=rse)
+            except DuplicateContent:
+                self.logger.warning("Dids: %s already attached to: %s", dids, superDID)
+                response = True
+            except FileAlreadyExists:
+                self.logger.warning("Failed to attach files already existent on block: %s", superDID)
+                response = True
+            except DataIdentifierNotFound:
+                self.logger.error("Failed to attach dids: %s. Parent DID %s does not exist.", dids, superDID)
+            except Exception as ex:
+                self.logger.error("Exception attaching %s dids to: %s. Error: %s. First 10 dids: %s",
+                                  len(dids), superDID, str(ex), dids[:10])
+            if not response:
+                # if we had failure with specific chunk of dids we'll return immediately
+                return response
+
         return response
 
     def createReplicas(self, rse, files, block, scope='cms', ignoreAvailability=True):

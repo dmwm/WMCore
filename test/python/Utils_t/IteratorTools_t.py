@@ -7,7 +7,7 @@ from builtins import range
 import itertools
 import unittest
 
-from Utils.IteratorTools import grouper, flattenList, makeListElementsUnique
+from Utils.IteratorTools import grouper, flattenList, makeListElementsUnique, getChunk
 
 
 class IteratorToolsTest(unittest.TestCase):
@@ -73,6 +73,13 @@ class IteratorToolsTest(unittest.TestCase):
         data = [(1, 2), (1, 3), (2, 4), (2, 5), (1, 3), (2, 5)]
         self.assertListEqual([(1, 2), (1, 3), (2, 4), (2, 5)], makeListElementsUnique(data))
 
+    def testGetChunk(self):
+        """
+        Test the `getChunk` function.
+        """
+        arr = range(10)
+        for chunk in getChunk(arr, 2):
+            self.assertTrue(len(chunk) == 2)
 
 if __name__ == '__main__':
     unittest.main()

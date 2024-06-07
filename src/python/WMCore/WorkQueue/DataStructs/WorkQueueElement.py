@@ -10,6 +10,7 @@ from hashlib import md5
 
 from Utils.Utilities import encodeUnicodeToBytesConditional
 from Utils.PythonVersion import PY3
+from WMCore.Services.CRIC.CRIC import CRIC
 
 STATES = ('Available', 'Negotiating', 'Acquired', 'Running',
           'Done', 'Failed', 'CancelRequested', 'Canceled')
@@ -29,13 +30,14 @@ def possibleSites(element):
         return elem['SiteWhitelist']
 
     commonSites = set(elem['SiteWhitelist']) - set(elem['SiteBlacklist'])
+    cric = CRIC()    
 
     if elem['Inputs'] and elem['NoInputUpdate'] is False:
-        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['Inputs']) for y in x]))
+        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['Inputs']) for y in cric.PNNstoPSNs(x)]))
     if elem['ParentFlag'] and elem['NoInputUpdate'] is False:
-        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['ParentData']) for y in x]))
+        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['ParentData']) for y in cric.PNNstoPSNs(x)]))
     if elem['PileupData'] and elem['NoPileupUpdate'] is False:
-        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['PileupData']) for y in x]))
+        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['PileupData']) for y in cric.PNNstoPSNs(x)]))
 
     return list(commonSites)
 

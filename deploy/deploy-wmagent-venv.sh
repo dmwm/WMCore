@@ -493,6 +493,14 @@ wmaInstall() {
     _addWMCoreVenvVar  WMA_GID $(id -g)
     _addWMCoreVenvVar  WMA_ROOT_DIR $venvPath
 
+    _addWMCoreVenvVar  WMA_VER_MINOR ${WMA_TAG#*.*.}
+    _addWMCoreVenvVar  WMA_VER_MAJOR ${WMA_TAG%.$WMA_VER_MINOR}
+    _addWMCoreVenvVar  WMA_VER_MINOR ${WMA_VER_MINOR%rc*}
+    _addWMCoreVenvVar  WMA_VER_MINOR ${WMA_VER_MINOR%.*}
+    _addWMCoreVenvVar  WMA_VER_RELEASE ${WMA_VER_MAJOR}.${WMA_VER_MINOR}
+    _addWMCoreVenvVar  WMA_VER_PATCH ${WMA_TAG#$WMA_VER_RELEASE}
+    _addWMCoreVenvVar  WMA_VER_PATCH ${WMA_VER_PATCH#.}
+
     # Basic WMAgent directory structure passed to all scripts through env variables:
     # NOTE: Those should be static and depend only on $WMA_BASE_DIR
     _addWMCoreVenvVar  WMA_BASE_DIR $WMA_ROOT_DIR/srv/wmagent
@@ -504,6 +512,7 @@ wmaInstall() {
     _addWMCoreVenvVar  WMA_CURRENT_DIR $WMA_BASE_DIR/$WMA_TAG
     _addWMCoreVenvVar  WMA_INSTALL_DIR $WMA_CURRENT_DIR/install
     _addWMCoreVenvVar  WMA_CONFIG_DIR $WMA_CURRENT_DIR/config
+    _addWMCoreVenvVar  WMA_CONFIG_FILE $WMA_CONFIG_DIR/config.py
     _addWMCoreVenvVar  WMA_MANAGE_DIR $WMA_CONFIG_DIR
     _addWMCoreVenvVar  WMA_LOG_DIR $WMA_CURRENT_DIR/logs
     _addWMCoreVenvVar  WMA_DEPLOY_DIR $venvPath

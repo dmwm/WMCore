@@ -1,3 +1,10 @@
+2.3.4rc9 to 2.3.4rc10:
+  - Add X509_USER_PROXY (Todor Ivanov) #12014
+  - Change WMA_MANAGE_DIR (Todor Ivanov) #12014
+  - Add missing environment variables for the Tier0 and virtual env deployments. (Todor Ivanov) #12014
+  - Add Tier0 coucapp dependencies (Todor Ivanov) #12011
+
+
 2.3.4rc8 to 2.3.4rc9:
   - Validate Pileup document with expectedRSEs instead of currentRSEs (Alan Malta Rodrigues) #11995
   - Check status of attachDIDs API and act upon it (Valentin Kuznetsov) #11995

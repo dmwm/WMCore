@@ -508,6 +508,7 @@ wmaInstall() {
     _addWMCoreVenvVar  WMA_CERTS_DIR $WMA_ROOT_DIR/certs
     _addWMCoreVenvVar  X509_USER_CERT $WMA_CERTS_DIR/servicecert.pem
     _addWMCoreVenvVar  X509_USER_KEY $WMA_CERTS_DIR/servicekey.pem
+    _addWMCoreVenvVar  X509_USER_PROXY $WMA_CERTS_DIR/myproxy.pem
 
     _addWMCoreVenvVar  WMA_CURRENT_DIR $WMA_BASE_DIR/$WMA_TAG
     _addWMCoreVenvVar  WMA_INSTALL_DIR $WMA_CURRENT_DIR/install

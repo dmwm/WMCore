@@ -1,3 +1,4 @@
+"""
 from __future__ import (division, print_function)
 from memory_profiler import profile
 import time
@@ -16,14 +17,18 @@ class DataCacheUpdate(CherryPyPeriodicTask):
     @profile
     def setConcurrentTasks(self, config):
         """
+        """
         sets the list of functions which
+        """
         """
         self.concurrentTasks = [{'func': self.gatherActiveDataStats,
                                  'duration': config.dataCacheUpdateDuration}]
     @profile
     def gatherActiveDataStats(self, config):
         """
+        """
         gather active data statistics
+        """
         """
         self.logger.info("Starting gatherActiveDataStats with jobInfo set to: %s", self.getJobInfo)
         try:
@@ -43,3 +48,4 @@ class DataCacheUpdate(CherryPyPeriodicTask):
             self.logger.exception("Exception updating DataCache. Error: %s", str(ex))
         self.logger.info("Total time loading data from ReqMgr2 and WMStats: %s", time.time() - tStart)
         return
+"""

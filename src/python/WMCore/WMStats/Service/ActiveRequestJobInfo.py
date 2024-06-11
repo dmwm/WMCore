@@ -39,7 +39,7 @@ class ActiveRequestJobInfo(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self):
+    def get(self, config):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
@@ -68,7 +68,7 @@ class FilteredActiveRequestJobInfo(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self, mask=None, **input_condition):
+    def get(self,config, mask=None, **input_condition):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
@@ -92,7 +92,7 @@ class ProtectedLFNList(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self):
+    def get(self, config):
         x = DataCache()
         x.setlatestJobData(updateCache(config))
         # This assumes DataCahe is periodically updated.
@@ -120,7 +120,7 @@ class ProtectedLFNListOnlyFinalOutput(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self):
+    def get(self, config):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
@@ -139,7 +139,7 @@ class GlobalLockList(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self):
+    def get(self, config):
         x = DataCache()
         x.setlatestJobData(updateCache(config))
         # This assumes DataCahe is periodically updated.

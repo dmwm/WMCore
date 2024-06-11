@@ -12,9 +12,12 @@ Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
 import collections
+from contextlib import ExitStack
+import json
 import gc
 import logging
 import os
+import pathlib
 import threading
 
 from Utils.Timers import CodeTimer
@@ -95,6 +98,9 @@ class AccountantWorker(WMConnectionBase):
 
         # Store location for the specs for DBS
         self.specDir = getattr(config.JobAccountant, 'specDir', None)
+
+        # Store location for component logs and other files
+        self.compDir = getattr(config.JobAccountant, 'componentDir', None)
 
         # maximum RAW EDM size for Repack output before data is put into Error dataset and skips PromptReco
         self.maxAllowedRepackOutputSize = getattr(config.JobAccountant, 'maxAllowedRepackOutputSize',
@@ -223,40 +229,46 @@ class AccountantWorker(WMConnectionBase):
         returnList = []
         self.reset()
 
-        with CodeTimer("### Loading jobs and checking their final status"):
-            for job in parameters:
-                logging.info("Handling %s", job["fwjr_path"])
+        for job in parameters:
+            logging.info("Handling %s", job["fwjr_path"])
 
-                # Load the job and set the ID
-                fwkJobReport = self.loadJobReport(job["fwjr_path"])
-                fwkJobReport.setJobID(job['id'])
+            # Load the job and set the ID
+            fwkJobReport = self.loadJobReport(job["fwjr_path"])
+            fwkJobReport.setJobID(job['id'])
 
-                jobSuccess = self.handleJob(jobID=job["id"],
-                                            fwkJobReport=fwkJobReport)
+            jobSuccess = self.handleJob(jobID=job["id"],
+                                        fwkJobReport=fwkJobReport)
 
-                if self.returnJobReport:
-                    returnList.append({'id': job["id"], 'jobSuccess': jobSuccess,
-                                    'jobReport': fwkJobReport})
-                else:
-                    returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
+            if self.returnJobReport:
+                returnList.append({'id': job["id"], 'jobSuccess': jobSuccess,
+                                   'jobReport': fwkJobReport})
+            else:
+                returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
 
-                self.count += 1
+            self.count += 1
 
         existingTransaction = self.beginTransaction()
 
         # Now things done at the end of the job
         # Do what we can with WMBS files
-        with CodeTimer("### Handling WMBS unmerged files"):
+        with ExitStack() as stack:
+            ctx_timer = CodeTimer("### Handling WMBS unmerged files")
+            stack.enter_context(ctx_timer)
             self.handleWMBSFiles(self.wmbsFilesToBuild, self.parentageBinds)
+
+            filepath = pathlib.Path(self.compDir, 'WMBS_unmerged.json')
+            if not (filepath.exists() and filepath.stat().st_size > 0):
+                f = stack.enter_context(open(filepath, 'w'))
+                content = {'wmbsFilesToBuild': self.wmbsFilesToBuild,
+                           'parentageBinds': self.parentageBinds}
+                json.dump(content, f, indent=4)
 
         # handle merge files separately since parentage need to set
         # separately to support robust merge
-        with CodeTimer("### Handling WMBS merged files"):
-            self.handleWMBSFiles(self.wmbsMergeFilesToBuild, self.parentageBindsForMerge)
+        self.handleWMBSFiles(self.wmbsMergeFilesToBuild, self.parentageBindsForMerge)
 
         # Create DBSBufferFiles
-        with CodeTimer("### Creating files in DBSBuffer"):
-            self.createFilesInDBSBuffer()
+        self.createFilesInDBSBuffer()
 
         # Handle filesetAssoc
         if self.filesetAssoc:
@@ -267,29 +279,25 @@ class AccountantWorker(WMConnectionBase):
 
         # Move successful jobs to successful
         if self.listOfJobsToSave:
-            with CodeTimer("### Updating success job outcome and files to skip"):
-                idList = [x['id'] for x in self.listOfJobsToSave]
-                outcomeBinds = [{'jobid': x['id'], 'outcome': x['outcome']} for x in self.listOfJobsToSave]
-                self.setBulkOutcome.execute(binds=outcomeBinds,
-                                            conn=self.getDBConn(),
-                                            transaction=self.existingTransaction())
+            idList = [x['id'] for x in self.listOfJobsToSave]
+            outcomeBinds = [{'jobid': x['id'], 'outcome': x['outcome']} for x in self.listOfJobsToSave]
+            self.setBulkOutcome.execute(binds=outcomeBinds,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
 
-                self.jobCompleteInput.execute(id=idList,
-                                              lfnsToSkip=self.jobsWithSkippedFiles,
-                                              conn=self.getDBConn(),
-                                              transaction=self.existingTransaction())
-            with CodeTimer("### Propagating success state change through JSM"):
-                self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
+            self.jobCompleteInput.execute(id=idList,
+                                          lfnsToSkip=self.jobsWithSkippedFiles,
+                                          conn=self.getDBConn(),
+                                          transaction=self.existingTransaction())
+            self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
         # If we have failed jobs, fail them
         if self.listOfJobsToFail:
-            with CodeTimer("### Updating fail job outcome and files to skip"):
-                outcomeBinds = [{'jobid': x['id'], 'outcome': x['outcome']} for x in self.listOfJobsToFail]
-                self.setBulkOutcome.execute(binds=outcomeBinds,
-                                            conn=self.getDBConn(),
-                                            transaction=self.existingTransaction())
-            with CodeTimer("### Propagating jobfailed state change through JSM"):
-                self.stateChanger.propagate(self.listOfJobsToFail, "jobfailed", "complete")
+            outcomeBinds = [{'jobid': x['id'], 'outcome': x['outcome']} for x in self.listOfJobsToFail]
+            self.setBulkOutcome.execute(binds=outcomeBinds,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
+            self.stateChanger.propagate(self.listOfJobsToFail, "jobfailed", "complete")
 
         # Arrange WMBS parentage
         if self.parentageBinds:
@@ -298,19 +306,16 @@ class AccountantWorker(WMConnectionBase):
                                             conn=self.getDBConn(),
                                             transaction=self.existingTransaction())
         if self.parentageBindsForMerge:
-            with CodeTimer("### Setting WMBS merge parentage job binds"):
-                self.setParentageByMergeJob.execute(binds=self.parentageBindsForMerge,
-                                                    conn=self.getDBConn(),
-                                                    transaction=self.existingTransaction())
+            self.setParentageByMergeJob.execute(binds=self.parentageBindsForMerge,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
 
         # Straighten out DBS Parentage
         if self.mergedOutputFiles:
-            with CodeTimer("### Setting merge DBSBuffer parentage"):
-                self.handleDBSBufferParentage()
+            self.handleDBSBufferParentage()
 
         if self.jobsWithSkippedFiles:
-            with CodeTimer("### Setting skipped files"):
-                self.handleSkippedFiles()
+            self.handleSkippedFiles()
 
         self.commitTransaction(existingTransaction)
 

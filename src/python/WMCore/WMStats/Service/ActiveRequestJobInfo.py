@@ -10,14 +10,14 @@ from WMCore.REST.Error import DataCacheEmpty
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
+from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 
-def updateCache():
+def updateCache(config):
     try:
         wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                                   reqdbCouchApp="ReqMgr", logger=self.logger)
         jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
-        print(jobData)
         tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
         jobData.update(tempData)
         return jobData
@@ -43,7 +43,7 @@ class ActiveRequestJobInfo(RESTEntity):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
-        x.setlatestJobData(updateCache())
+        x.setlatestJobData(updateCache(config))
         return rows([x.getlatestJobData()])
 
 
@@ -72,7 +72,7 @@ class FilteredActiveRequestJobInfo(RESTEntity):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
-        x.setlatestJobData(updateCache())
+        x.setlatestJobData(updateCache(config))
         return rows(x.filterDataByRequest(input_condition, mask))
 
 
@@ -94,7 +94,7 @@ class ProtectedLFNList(RESTEntity):
     @profile
     def get(self):
         x = DataCache()
-        x.setlatestJobData(updateCache())
+        x.setlatestJobData(updateCache(config))
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         if x.isEmpty():
@@ -124,7 +124,7 @@ class ProtectedLFNListOnlyFinalOutput(RESTEntity):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
-        x.setlatestJobData(updateCache())
+        x.setlatestJobData(updateCache(config))
         return rows(x.getProtectedLFNs())
 
 
@@ -141,7 +141,7 @@ class GlobalLockList(RESTEntity):
     @profile
     def get(self):
         x = DataCache()
-        x.setlatestJobData(updateCache())
+        x.setlatestJobData(updateCache(config))
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         if x.isEmpty():

@@ -256,12 +256,15 @@ class AccountantWorker(WMConnectionBase):
             stack.enter_context(ctx_timer)
             self.handleWMBSFiles(self.wmbsFilesToBuild, self.parentageBinds)
 
-            filepath = pathlib.Path(self.compDir, 'WMBS_unmerged.json')
+            filepath = pathlib.Path(self.compDir, 'wmbsFilesToBuild.json')
             if not (filepath.exists() and filepath.stat().st_size > 0):
                 f = stack.enter_context(open(filepath, 'w'))
-                content = {'wmbsFilesToBuild': self.wmbsFilesToBuild,
-                           'parentageBinds': self.parentageBinds}
-                json.dump(content, f, indent=4)
+                json.dump(self.wmbsFilesToBuild, f, indent=4)
+
+            filepath2 = pathlib.Path(self.compDir, 'parentageBinds.json')
+            if not (filepath2.exists() and filepath2.stat().st_size > 0):
+                f2 = stack.enter_context(open(filepath2, 'w'))
+                json.dump(self.parentageBinds, f2, indent=4)
 
         # handle merge files separately since parentage need to set
         # separately to support robust merge
@@ -272,10 +275,18 @@ class AccountantWorker(WMConnectionBase):
 
         # Handle filesetAssoc
         if self.filesetAssoc:
-            with CodeTimer("### Adding fileset associations"):
+            with ExitStack() as stack:
+                ctx_timer = CodeTimer("### Adding fileset associations")
+                stack.enter_context(ctx_timer)
                 self.bulkAddToFilesetAction.execute(binds=self.filesetAssoc,
                                                     conn=self.getDBConn(),
                                                     transaction=self.existingTransaction())
+
+                filepath = pathlib.Path(self.compDir, 'filesToBuild.json')
+                if not (filepath.exists() and filepath.stat().st_size > 0):
+                    f = stack.enter_context(open(filepath, 'w'))
+                    json.dump(self.wmbsFilesToBuild, f, indent=4)
+
 
         # Move successful jobs to successful
         if self.listOfJobsToSave:
@@ -301,10 +312,18 @@ class AccountantWorker(WMConnectionBase):
 
         # Arrange WMBS parentage
         if self.parentageBinds:
-            with CodeTimer("### Setting WMBS parentage job binds"):
+            with ExitStack() as stack:
+                ctx_timer =  CodeTimer("### Setting WMBS parentage job binds")
+                stack.enter_context(ctx_timer)
                 self.setParentageByJob.execute(binds=self.parentageBinds,
                                             conn=self.getDBConn(),
                                             transaction=self.existingTransaction())
+
+                filepath = pathlib.Path(self.compDir, 'parentageBinds2.json')
+                if not (filepath.exists() and filepath.stat().st_size > 0):
+                    f = stack.enter_context(open(filepath, 'w'))
+                    json.dump(self.parentageBinds, f, indent=4)
+
         if self.parentageBindsForMerge:
             self.setParentageByMergeJob.execute(binds=self.parentageBindsForMerge,
                                                 conn=self.getDBConn(),

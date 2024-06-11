@@ -94,7 +94,7 @@ class ProtectedLFNList(RESTEntity):
     @profile
     def get(self):
         x = DataCache()
-        x.setlatestJobData(updateCache()
+        x.setlatestJobData(updateCache())
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         if x.isEmpty():

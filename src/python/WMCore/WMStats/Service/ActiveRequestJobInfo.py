@@ -13,9 +13,9 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 
-def updateCache(config):
+def updateCache():
     try:
-        wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
+        wmstatsDB = WMStatsReader('https://cmsweb-testbed.cern.ch/wmstatsserver', reqdbURL='https://cmsweb-testbed.cern.ch/reqmgr2',
                                   reqdbCouchApp="ReqMgr", logger=self.logger)
         jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
         tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
@@ -39,11 +39,11 @@ class ActiveRequestJobInfo(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self, config):
+    def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
-        x.setlatestJobData(updateCache(config))
+        x.setlatestJobData(updateCache())
         return rows([x.getlatestJobData()])
 
 
@@ -68,11 +68,11 @@ class FilteredActiveRequestJobInfo(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self,config, mask=None, **input_condition):
+    def get(self, mask=None, **input_condition):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
-        x.setlatestJobData(updateCache(config))
+        x.setlatestJobData(updateCache())
         return rows(x.filterDataByRequest(input_condition, mask))
 
 
@@ -92,9 +92,9 @@ class ProtectedLFNList(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self, config):
+    def get(self):
         x = DataCache()
-        x.setlatestJobData(updateCache(config))
+        x.setlatestJobData(updateCache()
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         if x.isEmpty():
@@ -120,11 +120,11 @@ class ProtectedLFNListOnlyFinalOutput(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self, config):
+    def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         x = DataCache()
-        x.setlatestJobData(updateCache(config))
+        x.setlatestJobData(updateCache())
         return rows(x.getProtectedLFNs())
 
 
@@ -139,9 +139,9 @@ class GlobalLockList(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     @profile
-    def get(self, config):
+    def get(self):
         x = DataCache()
-        x.setlatestJobData(updateCache(config))
+        x.setlatestJobData(updateCache())
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         if x.isEmpty():

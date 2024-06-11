@@ -17,6 +17,7 @@ def updateCache():
         wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                                   reqdbCouchApp="ReqMgr", logger=self.logger)
         jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
+        print(jobData)
         tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
         jobData.update(tempData)
         return jobData

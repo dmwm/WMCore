@@ -8,7 +8,7 @@ class DataCache(object):
     # TODO: need to change to  store in  db instead of storing in the memory
     # When mulitple server run for load balancing it could have different result
     # from each server.
-    def _init_(self):
+    def __init__(self):
         self._duration = 300  # 5 minitues
         self._lastedActiveDataFromAgent = {}
     

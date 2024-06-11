@@ -97,9 +97,9 @@ class ProtectedLFNList(RESTEntity):
         x.setlatestJobData(updateCache()
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-       if x.isEmpty():
+        if x.isEmpty():
             raise DataCacheEmpty()
-       else:
+        else:
             return rows(x.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
 
 

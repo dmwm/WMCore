@@ -46,4 +46,4 @@ class DataCacheUpdate(CherryPyPeriodicTask):
             self.logger.exception("Exception updating DataCache. Error: %s", str(ex))
         self.logger.info("Total time loading data from ReqMgr2 and WMStats: %s", time.time() - tStart)
         return
-"""
+

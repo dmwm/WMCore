@@ -12,6 +12,17 @@ from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
 
 
+def updateCache():
+    try:
+        wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
+                                  reqdbCouchApp="ReqMgr", logger=self.logger)
+        jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
+        tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
+        jobData.update(tempData)
+        return jobData
+    except Exception as ex:
+        print("Something went wrong")
+
 class ActiveRequestJobInfo(RESTEntity):
     """
     get all the active requests with job information attatched
@@ -137,13 +148,4 @@ class GlobalLockList(RESTEntity):
         else:
             return rows(x.filterData(ACTIVE_STATUS_FILTER,
                                              ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))
-def updateCache():
-    try:
-        wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
-                                  reqdbCouchApp="ReqMgr", logger=self.logger)
-        jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
-        tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
-        jobData.update(tempData)
-        return jobData
-    except Exception as ex:
-        print("Something went wrong")
+

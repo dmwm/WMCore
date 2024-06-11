@@ -1,4 +1,3 @@
-"""
 from __future__ import (division, print_function)
 from memory_profiler import profile
 import time
@@ -17,18 +16,17 @@ class DataCacheUpdate(CherryPyPeriodicTask):
     @profile
     def setConcurrentTasks(self, config):
         """
-        """
+      
         sets the list of functions which
-        """
+        
         """
         self.concurrentTasks = [{'func': self.gatherActiveDataStats,
                                  'duration': config.dataCacheUpdateDuration}]
     @profile
     def gatherActiveDataStats(self, config):
         """
-        """
+       
         gather active data statistics
-        """
         """
         self.logger.info("Starting gatherActiveDataStats with jobInfo set to: %s", self.getJobInfo)
         try:

@@ -4,7 +4,7 @@ Utilities related to timing and performance testing
 """
 
 from builtins import object
-import json
+import pickle
 import logging
 from pathlib import Path
 import time
@@ -103,8 +103,8 @@ class CodeTimer2(object):
                 "label": self.label,
                 "data": self.content
             }
-            f = open(self.dataPath, 'w')
-            json.dump(data, f, indent=4)
+            f = open(self.dataPath, 'wb')
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
             self.logger.info(f"### {self.label} content dumped to {self.dataPath}")
             f.close()
 

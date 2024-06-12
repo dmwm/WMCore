@@ -4,8 +4,11 @@ Utilities related to timing and performance testing
 """
 
 from builtins import object
+import json
 import logging
+from pathlib import Path
 import time
+from typing import Union
 import calendar
 from datetime import tzinfo, timedelta
 
@@ -61,6 +64,51 @@ def timeFunction(func):
     return wrapper
 
 
+class CodeTimer2(object):
+    """
+    A context manager for timing function calls.
+    Adapted from https://www.blog.pythonlibrary.org/2016/05/24/python-101-an-intro-to-benchmarking-your-code/
+
+    Use like
+
+    with CodeTimer(label='Doing something'):
+        do_something()
+    """
+
+    def __init__(self,
+                 label = 'The function',
+                 save = False,
+                 dataPath = "/tmp",
+                 content = {},
+                 logger=None):
+        self.start = time.time()
+        self.label = label
+        self.dataPath = dataPath
+        self.content = content
+        self.logger = logger or logging.getLogger()
+        self.save = save
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        end = time.time()
+        runtime = round((end - self.start), 3)
+        self.logger.info(f"### {self.label} took {runtime} seconds to complete")
+        if self.save and \
+            not (self.dataPath.exists() and self.dataPath.stat().st_size > 0):
+            data = {
+                "start": self.start,
+                "runtime": runtime,
+                "label": self.label,
+                "data": self.content
+            }
+            f = open(self.dataPath, 'w')
+            json.dump(data, f, indent=4)
+            self.logger.info(f"### {self.label} content dumped to {self.dataPath}")
+            f.close()
+
+
 class CodeTimer(object):
     """
     A context manager for timing function calls.
@@ -90,7 +138,7 @@ class LocalTimezone(tzinfo):
     """
     A required python 2 class to determine current timezone for formatting rfc3339 timestamps
     Required for sending alerts to the MONIT AlertManager
-    Can be removed once WMCore starts using python3
+    TODO: Can be removed once WMCore starts using python3
 
     Details of class can be found at: https://docs.python.org/2/library/datetime.html#tzinfo-objects
     """

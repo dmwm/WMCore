@@ -12,15 +12,13 @@ Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
 import collections
-from contextlib import ExitStack
-import json
 import gc
 import logging
 import os
 import pathlib
 import threading
 
-from Utils.Timers import CodeTimer
+from Utils.Timers import CodeTimer, CodeTimer2
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.DAOFactory import DAOFactory
@@ -251,20 +249,8 @@ class AccountantWorker(WMConnectionBase):
 
         # Now things done at the end of the job
         # Do what we can with WMBS files
-        with ExitStack() as stack:
-            ctx_timer = CodeTimer("### Handling WMBS unmerged files")
-            stack.enter_context(ctx_timer)
-            self.handleWMBSFiles(self.wmbsFilesToBuild, self.parentageBinds)
+        self.handleWMBSFiles(self.wmbsFilesToBuild, self.parentageBinds)
 
-            filepath = pathlib.Path(self.compDir, 'wmbsFilesToBuild.json')
-            if not (filepath.exists() and filepath.stat().st_size > 0):
-                f = stack.enter_context(open(filepath, 'w'))
-                json.dump(self.wmbsFilesToBuild, f, indent=4)
-
-            filepath2 = pathlib.Path(self.compDir, 'parentageBinds.json')
-            if not (filepath2.exists() and filepath2.stat().st_size > 0):
-                f2 = stack.enter_context(open(filepath2, 'w'))
-                json.dump(self.parentageBinds, f2, indent=4)
 
         # handle merge files separately since parentage need to set
         # separately to support robust merge
@@ -275,17 +261,11 @@ class AccountantWorker(WMConnectionBase):
 
         # Handle filesetAssoc
         if self.filesetAssoc:
-            with ExitStack() as stack:
-                ctx_timer = CodeTimer("### Adding fileset associations")
-                stack.enter_context(ctx_timer)
+            with CodeTimer("### Adding fileset associations"):
                 self.bulkAddToFilesetAction.execute(binds=self.filesetAssoc,
                                                     conn=self.getDBConn(),
                                                     transaction=self.existingTransaction())
 
-                filepath = pathlib.Path(self.compDir, 'filesToBuild.json')
-                if not (filepath.exists() and filepath.stat().st_size > 0):
-                    f = stack.enter_context(open(filepath, 'w'))
-                    json.dump(self.wmbsFilesToBuild, f, indent=4)
 
 
         # Move successful jobs to successful
@@ -312,17 +292,10 @@ class AccountantWorker(WMConnectionBase):
 
         # Arrange WMBS parentage
         if self.parentageBinds:
-            with ExitStack() as stack:
-                ctx_timer =  CodeTimer("### Setting WMBS parentage job binds")
-                stack.enter_context(ctx_timer)
+            with CodeTimer("### Setting WMBS parentage job binds"):
                 self.setParentageByJob.execute(binds=self.parentageBinds,
                                             conn=self.getDBConn(),
                                             transaction=self.existingTransaction())
-
-                filepath = pathlib.Path(self.compDir, 'parentageBinds2.json')
-                if not (filepath.exists() and filepath.stat().st_size > 0):
-                    f = stack.enter_context(open(filepath, 'w'))
-                    json.dump(self.parentageBinds, f, indent=4)
 
         if self.parentageBindsForMerge:
             self.setParentageByMergeJob.execute(binds=self.parentageBindsForMerge,
@@ -871,22 +844,42 @@ class AccountantWorker(WMConnectionBase):
 
         try:
 
-            self.addFileAction.execute(files=fileCreate,
-                                       conn=self.getDBConn(),
-                                       transaction=self.existingTransaction())
+            filepath = pathlib.Path(self.compDir, 'addFileAction.json')
+            with CodeTimer2("handleWMBS.addFileAction",
+                           save=True,
+                           dataPath=filepath,
+                           content=fileCreate):
+                self.addFileAction.execute(files=fileCreate,
+                                           conn=self.getDBConn(),
+                                           transaction=self.existingTransaction())
 
             if runLumiBinds:
-                self.setFileRunLumi.execute(file=runLumiBinds,
+                filepath = pathlib.Path(self.compDir, 'runLumiBinds.json')
+                with CodeTimer2("handleWMBS.setFileRunLumi",
+                               save=True,
+                               dataPath=filepath,
+                               content=runLumiBinds):
+                    self.setFileRunLumi.execute(file=runLumiBinds,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
+
+            filepath = pathlib.Path(self.compDir, 'setFileAddChecksum.json')
+            with CodeTimer2("handleWMBS.setFileAddChecksum",
+                           save=True,
+                           dataPath=filepath,
+                           content=fileCksumBinds):
+                self.setFileAddChecksum.execute(bulkList=fileCksumBinds,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
+
+            filepath = pathlib.Path(self.compDir, 'setFileLocation.json')
+            with CodeTimer2("handleWMBS.setFileLocation",
+                           save=True,
+                           dataPath=filepath,
+                           content=fileLocations):
+                self.setFileLocation.execute(lfn=fileLocations,
                                             conn=self.getDBConn(),
                                             transaction=self.existingTransaction())
-
-            self.setFileAddChecksum.execute(bulkList=fileCksumBinds,
-                                            conn=self.getDBConn(),
-                                            transaction=self.existingTransaction())
-
-            self.setFileLocation.execute(lfn=fileLocations,
-                                         conn=self.getDBConn(),
-                                         transaction=self.existingTransaction())
 
 
         except WMException:

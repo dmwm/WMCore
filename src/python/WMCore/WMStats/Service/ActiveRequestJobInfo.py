@@ -16,7 +16,7 @@ from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 def updateCache():
     try:
         print("This worked")
-        wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
+        wmstatsDB = WMStatsReader(wmstats_url = "https://cmsweb-test9.cern.ch/couchdb/wmstats", reqmgrdb_url = "https://cmsweb-test9.cern.ch/couchdb/reqmgr_workload_cache",
                                           reqdbCouchApp="ReqMgr", logger=self.logger)
         print("This worked two")
         jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)

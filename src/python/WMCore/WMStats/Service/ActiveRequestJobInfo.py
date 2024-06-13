@@ -11,6 +11,8 @@ from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+from WMCore.ReqMgr.DataStructs.RequestStatus import WMSTATS_JOB_INFO, WMSTATS_NO_JOB_INFO
+
 
 
 def updateCache():

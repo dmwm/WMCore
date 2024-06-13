@@ -19,7 +19,7 @@ def updateCache():
     print("This worked")
     wmstatsDB = WMStatsReader("https://cmsweb-test9.cern.ch/couchdb/wmstats",  reqdbURL = "https://cmsweb-test9.cern.ch/couchdb/reqmgr_workload_cache", reqdbCouchApp="ReqMgr", logger=None)
     print("This worked two")
-    jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
+    jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=False)
     print("This worked three")
     tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
     print("This worked four")

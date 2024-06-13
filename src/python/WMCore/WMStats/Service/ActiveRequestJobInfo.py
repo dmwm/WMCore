@@ -14,19 +14,17 @@ from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 
 def updateCache():
-    try:
-        print("This worked")
-        wmstatsDB = WMStatsReader("https://cmsweb-test9.cern.ch/couchdb/wmstats",  reqdbURL = "https://cmsweb-test9.cern.ch/couchdb/reqmgr_workload_cache", reqdbCouchApp="ReqMgr", logger=self.logger)
-        print("This worked two")
-        jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
-        print("This worked three")
-        tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
-        print("This worked four")
-        jobData.update(tempData)
-        print("This worked five")
-        return jobData
-    except Exception as ex:
-        print("Something went wrong")
+    print("This worked")
+    wmstatsDB = WMStatsReader("https://cmsweb-test9.cern.ch/couchdb/wmstats",  reqdbURL = "https://cmsweb-test9.cern.ch/couchdb/reqmgr_workload_cache", reqdbCouchApp="ReqMgr", logger=self.logger)
+    print("This worked two")
+    jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=self.getJobInfo)
+    print("This worked three")
+    tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
+    print("This worked four")
+    jobData.update(tempData)
+    print("This worked five")
+    return jobData
+    
 
 class ActiveRequestJobInfo(RESTEntity):
     """

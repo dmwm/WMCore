@@ -11,6 +11,8 @@ from future.utils import viewitems
 import time
 import logging
 import threading
+import json
+import os
 from pprint import pformat
 from Utils.Timers import timeFunction
 from Utils.Utilities import numberCouchProcess
@@ -105,6 +107,10 @@ class AgentStatusPoller(BaseWorkerThread):
                                         'filter': wqfilter, 'query_params': query_params})
 
         logging.info("Going to create %d new replication documents", len(self.replicatorDocs))
+        saveDir = getattr(config.AgentStatusWatcher, "componentDir", "/data/tier0/")
+        with open(os.path.join(saveDir, "replication.json"), "w") as jo:
+            json.dump(data, jo, indent=2)
+
         for rp in self.replicatorDocs:
             resp = self.localCouchMonitor.couchServer.replicate(rp['source'], rp['target'],
                                                                 continuous=True,

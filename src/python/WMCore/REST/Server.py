@@ -866,6 +866,7 @@ class MiniRESTApi(object):
                                 apiobj.get('compression', self.compression),
                                 apiobj.get('compression_level', self.compression_level),
                                 apiobj.get('compression_chunk', self.compression_chunk))
+        del obj
         return stream_maybe_etag(apiobj.get('etag_limit', self.etag_limit), etagger, reply)
 
     def _precall(self, param):

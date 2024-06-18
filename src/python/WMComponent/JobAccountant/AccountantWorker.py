@@ -15,8 +15,10 @@ import collections
 import gc
 import logging
 import os
+import pathlib
 import threading
 
+from Utils.Timers import CodeTimer, CodeTimer2
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.DAOFactory import DAOFactory
@@ -94,6 +96,9 @@ class AccountantWorker(WMConnectionBase):
 
         # Store location for the specs for DBS
         self.specDir = getattr(config.JobAccountant, 'specDir', None)
+
+        # Store location for component logs and other files
+        self.compDir = getattr(config.JobAccountant, 'componentDir', None)
 
         # maximum RAW EDM size for Repack output before data is put into Error dataset and skips PromptReco
         self.maxAllowedRepackOutputSize = getattr(config.JobAccountant, 'maxAllowedRepackOutputSize',
@@ -246,6 +251,7 @@ class AccountantWorker(WMConnectionBase):
         # Do what we can with WMBS files
         self.handleWMBSFiles(self.wmbsFilesToBuild, self.parentageBinds)
 
+
         # handle merge files separately since parentage need to set
         # separately to support robust merge
         self.handleWMBSFiles(self.wmbsMergeFilesToBuild, self.parentageBindsForMerge)
@@ -255,9 +261,12 @@ class AccountantWorker(WMConnectionBase):
 
         # Handle filesetAssoc
         if self.filesetAssoc:
-            self.bulkAddToFilesetAction.execute(binds=self.filesetAssoc,
-                                                conn=self.getDBConn(),
-                                                transaction=self.existingTransaction())
+            with CodeTimer("### Adding fileset associations"):
+                self.bulkAddToFilesetAction.execute(binds=self.filesetAssoc,
+                                                    conn=self.getDBConn(),
+                                                    transaction=self.existingTransaction())
+
+
 
         # Move successful jobs to successful
         if self.listOfJobsToSave:
@@ -283,9 +292,11 @@ class AccountantWorker(WMConnectionBase):
 
         # Arrange WMBS parentage
         if self.parentageBinds:
-            self.setParentageByJob.execute(binds=self.parentageBinds,
-                                           conn=self.getDBConn(),
-                                           transaction=self.existingTransaction())
+            with CodeTimer("### Setting WMBS parentage job binds"):
+                self.setParentageByJob.execute(binds=self.parentageBinds,
+                                            conn=self.getDBConn(),
+                                            transaction=self.existingTransaction())
+
         if self.parentageBindsForMerge:
             self.setParentageByMergeJob.execute(binds=self.parentageBindsForMerge,
                                                 conn=self.getDBConn(),
@@ -833,22 +844,42 @@ class AccountantWorker(WMConnectionBase):
 
         try:
 
-            self.addFileAction.execute(files=fileCreate,
-                                       conn=self.getDBConn(),
-                                       transaction=self.existingTransaction())
+            filepath = pathlib.Path(self.compDir, 'addFileAction.json')
+            with CodeTimer2("handleWMBS.addFileAction",
+                           save=True,
+                           dataPath=filepath,
+                           content=fileCreate):
+                self.addFileAction.execute(files=fileCreate,
+                                           conn=self.getDBConn(),
+                                           transaction=self.existingTransaction())
 
             if runLumiBinds:
-                self.setFileRunLumi.execute(file=runLumiBinds,
+                filepath = pathlib.Path(self.compDir, 'runLumiBinds.json')
+                with CodeTimer2("handleWMBS.setFileRunLumi",
+                               save=True,
+                               dataPath=filepath,
+                               content=runLumiBinds):
+                    self.setFileRunLumi.execute(file=runLumiBinds,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
+
+            filepath = pathlib.Path(self.compDir, 'setFileAddChecksum.json')
+            with CodeTimer2("handleWMBS.setFileAddChecksum",
+                           save=True,
+                           dataPath=filepath,
+                           content=fileCksumBinds):
+                self.setFileAddChecksum.execute(bulkList=fileCksumBinds,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
+
+            filepath = pathlib.Path(self.compDir, 'setFileLocation.json')
+            with CodeTimer2("handleWMBS.setFileLocation",
+                           save=True,
+                           dataPath=filepath,
+                           content=fileLocations):
+                self.setFileLocation.execute(lfn=fileLocations,
                                             conn=self.getDBConn(),
                                             transaction=self.existingTransaction())
-
-            self.setFileAddChecksum.execute(bulkList=fileCksumBinds,
-                                            conn=self.getDBConn(),
-                                            transaction=self.existingTransaction())
-
-            self.setFileLocation.execute(lfn=fileLocations,
-                                         conn=self.getDBConn(),
-                                         transaction=self.existingTransaction())
 
 
         except WMException:

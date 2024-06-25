@@ -10,7 +10,10 @@ import sys
 import logging
 import importlib
 import runpy
+import pkgutil
 
+from pprint import pprint,pformat
+from distutils.sysconfig import get_python_lib
 from argparse import ArgumentParser
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
@@ -68,7 +71,7 @@ if __name__ == '__main__':
 
     # sourcing $WMA_ENV_FILE explicitely
     if not options.wmaEnvFilePath or not os.path.exists(options.wmaEnvFilePath):
-        msg = "Missing WMAgent environment file! One may expect compnent misbehaviour!"
+        msg = "Missing WMAgent environment file! One may expect component misbehaviour!"
         logger.warning(msg)
     else:
         msg = "Trying to source explicitely the WMAgent environment file: %s"
@@ -88,12 +91,34 @@ if __name__ == '__main__':
     logger.info(f"daemon: {options.daemon}")
 
     connectToDB()
-    logger.info(f"Creating component objects.")
+
+    logger.info(f"Creating default component objects.")
     resourceControl = ResourceControl(config=wmaConfig)
     wmaComponentName = options.wmaComponentName
-    wmaComponentPath = "WMComponent." + wmaComponentName
-    wmaComponent = importlib.import_module(wmaComponentPath + "." + wmaComponentName)
-    wmaComponentPoller = importlib.import_module(wmaComponentPath + "." + wmaComponentName + "Poller")
+    wmaComponentModule = "WMComponent." + wmaComponentName
+    # wmaComponent = importlib.import_module(wmaComponentModule + "." + wmaComponentName)
+
+    logger.info("Importing all possible modules found for this component")
+
+    # First find all possible locations for the component source
+    # NOTE: We always consider PYTHONPATH first
+    pythonLibPaths = os.getenv('PYTHONPATH', '').split(':')
+    pythonLibPaths.append(get_python_lib())
+
+    wmaComponentPaths = []
+    for comPath in pythonLibPaths:
+        comPath = comPath + '/WMComponent/' + wmaComponentName
+        if os.path.exists(comPath):
+            wmaComponentPaths.append(comPath)
+
+    # Then try to load all possible modules and submodules under the component's source path
+    for pkgSource, pkgName, _ in pkgutil.iter_modules(wmaComponentPaths):
+        fullPkgName =  'WMComponent' + '.' + wmaComponentName + '.' + pkgName
+        if fullPkgName not in sys.modules:
+            logger.info("Loading package: %s", fullPkgName)
+            modSpec = pkgSource.find_spec(fullPkgName)
+            module = importlib.util.module_from_spec(modSpec)
+            modSpec.loader.exec_module(module)
 
     if options.daemon:
         main()

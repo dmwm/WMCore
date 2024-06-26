@@ -11,6 +11,7 @@ import logging
 import importlib
 import runpy
 import pkgutil
+import inspect
 
 from pprint import pprint,pformat
 from distutils.sysconfig import get_python_lib
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     logger.info(f"Creating default component objects.")
     resourceControl = ResourceControl(config=wmaConfig)
     wmaComponentName = options.wmaComponentName
-    wmaComponentModule = "WMComponent." + wmaComponentName
+    wmaComponentModule = f"WMComponent.{wmaComponentName}"
     # wmaComponent = importlib.import_module(wmaComponentModule + "." + wmaComponentName)
 
     logger.info("Importing all possible modules found for this component")
@@ -107,18 +108,72 @@ if __name__ == '__main__':
 
     wmaComponentPaths = []
     for comPath in pythonLibPaths:
-        comPath = comPath + '/WMComponent/' + wmaComponentName
+        comPath = f"{comPath}/WMComponent/{wmaComponentName}"
         if os.path.exists(comPath):
             wmaComponentPaths.append(comPath)
 
+    modules = {}
+    classDefs = {}
     # Then try to load all possible modules and submodules under the component's source path
-    for pkgSource, pkgName, _ in pkgutil.iter_modules(wmaComponentPaths):
-        fullPkgName =  'WMComponent' + '.' + wmaComponentName + '.' + pkgName
-        if fullPkgName not in sys.modules:
-            logger.info("Loading package: %s", fullPkgName)
-            modSpec = pkgSource.find_spec(fullPkgName)
-            module = importlib.util.module_from_spec(modSpec)
-            modSpec.loader.exec_module(module)
+    # for pkgSource, pkgName, _ in pkgutil.iter_modules(wmaComponentPaths):
+    for pkgSource, pkgName, _ in pkgutil.walk_packages(wmaComponentPaths):
+        fullPkgName =  f"WMComponent.{wmaComponentName}.{pkgName}"
+        # if fullPkgName not in sys.modules:
+        logger.info("Loading package: %s", fullPkgName)
+        modSpec = pkgSource.find_spec(fullPkgName)
+        module = importlib.util.module_from_spec(modSpec)
+        modSpec.loader.exec_module(module)
+        modules[pkgName] = module
+
+        # Emulating `from module import *`"
+        logger.info(f"Populating the namespace with all definitions from {pkgName}")
+        if "__all__" in module.__dict__:
+            names = module.__dict__["__all__"]
+        else:
+            names = [x for x in module.__dict__ if not x.startswith("_")]
+        globals().update({k: getattr(module, k) for k in names})
+
+        # Creating instances only for class definitions local to pkgName
+
+        # Note: The method bellow for separating local definitions from imported ones
+        #       won't work for decorated  classes, since the module name of the
+        #       decorated class defintion is considered to be the fully qulified
+        #       module name/path of the decorator rather than the package where the
+        #       the class definition exists:
+        #       e.g.:
+        #       In [10]: modules['DataCollectAPI'].__name__
+        #       Out[10]: 'WMComponent.AnalyticsDataCollector.DataCollectAPI'
+        #
+        #       In [11]: classDefs['DataCollectAPI']['LocalCouchDBData']
+        #       Out[11]: WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch.emulatorHook.<locals>.EmulatorWrapper
+        #
+        #       In [12]: classDefs['DataCollectAPI']['LocalCouchDBData'].__name__
+        #       Out[12]: 'EmulatorWrapper'
+        #
+        #       In [13]: classDefs['DataCollectAPI']['LocalCouchDBData'].__module__
+        #       Out[13]: 'WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch'
+        #
+        #       In [14]: modules['DataCollectAPI'].__name__
+        #       Out[14]: 'WMComponent.AnalyticsDataCollector.DataCollectAPI'
+
+        logger.info("Trying to create an instance of all class definitions inside: %s", pkgName)
+        classDefs[pkgName] = {}
+        for objName, obj in inspect.getmembers(module):
+            if inspect.isclass(obj) and obj.__module__ == modules[pkgName].__name__:
+                classDefs[pkgName][objName]=obj
+
+        for className in classDefs[pkgName]:
+            logger.info(f"{fullPkgName}:{className}")
+            try:
+                exec(f"{className.lower()} = {className}()")
+            except TypeError:
+                try:
+                    exec(f"{className.lower()} = {className}(wmaConfig)")
+                except TypeError:
+                    try:
+                        exec(f"{className.lower()} = {className}(wmaConfig, logger=logger)")
+                    except TypeError:
+                        logger.warning(f"We did our best to create an instance of: {pkgName}. Giving up now!")
 
     if options.daemon:
         main()

@@ -36,10 +36,14 @@
         "CMSSWVersion": "CMSSW_10_6_25",
         "Campaign": "Campaign-OVERRIDE-ME",
         "Comments": {
-            "CheckList": ["StepChain request from scratch; StepChain with duplicate output module; StepChain request with KeepOutput false",
-                          "StepChain multicore/eventStreams; StepChain with different CMSSW/ScramArch and PrepID"],
-            "WorkFlowDesc": ["StepChain from scratch with PU at Step3; KeepOutput of Step5/6 only - AOD and MINI; SC with dup outputModule",
-                             "Diff CMSSW/ScramArch and PrepID; 100 jobs 2LpJ; Diff Multicore and EventStreams, 4GB RAM"]
+            "CheckList": [
+                "StepChain: Pileup workflow from scratch; StepChain with duplicate output module; StepChain request with KeepOutput false",
+                "StepChain multicore/eventStreams; StepChain with different CMSSW/ScramArch and PrepID"
+            ],
+            "WorkFlowDesc": [
+                "TC from scratch with PU at Step3; KeepOutput of Step5/6 only - AOD and MINI; Diff CMSSW/ScramArch and PrepID",
+                "2000EpJ and 4LpJ for Step1; Diff Multicore/Memory/EventStreams, T1: 2/1GB/2, T2: 4/2GB/0, T3: 4/4GB/0, T4: 2/4GB/2, T5:4/3GB/0, T6: 1/3GB/2"
+            ]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache",
@@ -65,7 +69,6 @@
             "CMSSWVersion": "CMSSW_10_6_28_patch1",
             "Campaign": "RunIISummer20UL16wmLHEGENAPV",
             "ConfigCacheID": "abd4cc458ae724060c82a8c7e8535570",
-            "EventsPerJob": 1000,
             "EventsPerLumi": 500,
             "FilterEfficiency": 1,
             "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8",
@@ -76,7 +79,7 @@
             "PrepID": "HIG-Step1",
             "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
             "ProcessingString": "Step1_WMCore_TEST",
-            "RequestNumEvents": 100000,
+            "RequestNumEvents": 20000,
             "ScramArch": [
                 "slc7_amd64_gcc700"
             ],
@@ -157,7 +160,9 @@
             "PrepID": "HIG-Step5",
             "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
             "ProcessingString": "Step5_WMCore_TEST",
-            "ScramArch": ["slc7_amd64_gcc700"],
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ],
             "SplittingAlgo": "EventAwareLumiBased",
             "StepName": "HIG_RunIISummer20UL16RECOAPV_02812_0"
         },
@@ -176,12 +181,14 @@
             "PrepID": "HIG-Step6",
             "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
             "ProcessingString": "Step6_WMCore_TEST",
-            "ScramArch": ["slc7_amd64_gcc820"],
+            "ScramArch": [
+                "slc7_amd64_gcc820"
+            ],
             "SplittingAlgo": "EventAwareLumiBased",
             "StepName": "HIG_RunIISummer20UL16MiniAODAPVv2_02457_0"
         },
         "StepChain": 6,
         "SubRequestType": "ReDigi",
-        "TimePerEvent": 15.951107623690724
+        "TimePerEvent": 89.4
     }
 }

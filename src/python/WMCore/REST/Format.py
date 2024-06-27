@@ -1,8 +1,8 @@
 from __future__ import print_function
-
+from memory_profiler import profile
 import gzip
 from builtins import str, bytes, object
-
+import sys
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 from future.utils import viewitems
@@ -537,7 +537,7 @@ def stream_compress(reply, available, compress_level, max_chunk):
             return _stream_compressor[enc.value](reply, compress_level, max_chunk)
 
     return reply
-
+@profile
 def _etag_match(status, etagval, match, nomatch):
     """Match ETag value against any If-Match / If-None-Match headers."""
     # Execute conditions only for status 2xx. We only handle GET/HEAD
@@ -551,7 +551,7 @@ def _etag_match(status, etagval, match, nomatch):
                 raise cherrypy.HTTPError(412, "Precondition on ETag %s failed" % etagval)
             if nomatch and ("*" in nomatch or etagval in nomatch):
                 raise cherrypy.HTTPRedirect([], 304)
-
+@profile
 def _etag_tail(head, tail, etag):
     """Generator which first returns anything in `head`, then `tail`.
     Sets ETag header at the end to value of `etag` if it's defined and
@@ -565,7 +565,7 @@ def _etag_tail(head, tail, etag):
     etagval = (etag and etag.value())
     if etagval:
         cherrypy.response.headers["ETag"] = etagval
-
+@profile
 def stream_maybe_etag(size_limit, etag, reply):
     """Maybe generate ETag header for the response, and handle If-Match
     and If-None-Match request headers. Consumes the reply until at most
@@ -585,7 +585,7 @@ def stream_maybe_etag(size_limit, etag, reply):
     Note that if this function is fed the output from `stream_compress()`
     as it normally would be, the `size_limit` constrains the compressed
     size, and chunk boundaries correspond to compressed chunks."""
-
+    
     req = cherrypy.request
     res = cherrypy.response
     match = [str(x) for x in (req.headers.elements('If-Match') or [])]
@@ -605,14 +605,21 @@ def stream_maybe_etag(size_limit, etag, reply):
     # headers, so clients which understand trailers will get the value; most
     # clients including browsers will ignore them.
     size = 0
+    print("size of size: ")
+    print(sys.getsizeof(size))
     result = []
+    print("size of result: ")
+    print(sys.getsizeof(result))
     for chunk in reply:
         result.append(chunk)
         size += len(chunk)
         if size > size_limit:
             res.headers['Trailer'] = 'X-REST-Status'
             return _etag_tail(result, reply, etag)
-
+    print("size of size now: ")
+    print(sys.getsizeof(size))
+    print("size of result now: ")
+    print(sys.getsizeof(result))
     # We've buffered the entire response, but it may be an error reply. The
     # generator code does not know if it's allowed to raise exceptions, so
     # it swallows all errors and converts them into X-* headers. We recover

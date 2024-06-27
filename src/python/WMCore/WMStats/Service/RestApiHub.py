@@ -17,14 +17,14 @@ from WMCore.WMStats.Service.RequestInfo import (RequestInfo, FinishedStatusInfo,
 from WMCore.WMStats.Service.ActiveRequestJobInfo import (ActiveRequestJobInfo, GlobalLockList,
                                                          ProtectedLFNList, ProtectedLFNListOnlyFinalOutput,
                                                          FilteredActiveRequestJobInfo)
-
+from memory_profiler import profile
 
 class RestApiHub(RESTApi):
     """
     Server object for REST data access API.
 
     """
-
+    @profile
     def __init__(self, app, config, mount):
         """
         :arg app: reference to application object; passed to all entities.

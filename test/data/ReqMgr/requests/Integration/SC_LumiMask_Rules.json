@@ -39,7 +39,7 @@
         "DeterministicPileup": false,
         "EventStreams": 0,
         "GlobalTag": "123X_dataRun2_HLT_relval_v2",
-        "Memory": 13500,
+        "Memory": 3000,
         "Multicore": 1,
         "PrepID": "TEST-CMSSW_12_3_0__PPC-RunDoubleMuon2018C-00001",
         "PrimaryDataset": "UPDATEME",

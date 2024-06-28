@@ -67,8 +67,15 @@ if __name__ == '__main__':
     optParser = createOptionParser()
     (options, args) = optParser.parse_known_args()
     FORMAT = "%(asctime)s:%(levelname)s:%(module)s:%(funcName)s(): %(message)s"
-    logging.basicConfig(stream=sys.stdout, format=FORMAT, level=logging.INFO)
+    LOGLEVEL = logging.INFO
+    # add logfile handler as well:
+    logFilePath = os.path.join(os.getenv('WMA_INSTALL_DIR', '/tmp'), f'{options.wmaComponentName}/ComponentLogStandalone')
+    logFileHandler = logging.FileHandler(logFilePath)
+    logStdoutHandler = logging.StreamHandler(sys.stdout)
+
+    logging.basicConfig(handlers=[logStdoutHandler, logFileHandler], format=FORMAT, level=LOGLEVEL)
     logger = logging.getLogger(__name__)
+    # logger.setLevel(LOGLEVEL)
 
     # sourcing $WMA_ENV_FILE explicitely
     if not options.wmaEnvFilePath or not os.path.exists(options.wmaEnvFilePath):

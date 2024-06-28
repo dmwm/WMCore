@@ -28,6 +28,7 @@ import ast
 import threading
 import logging
 import argparse
+import pickle
 from pprint import pformat
 
 from WMCore.DAOFactory import DAOFactory
@@ -70,7 +71,10 @@ def parseArgs():
     parser.add_argument('sqlArgs', nargs=argparse.REMAINDER, default=(),
                         help="""\
                         -- Positional parameters to be forwarded to the DAO execute method and used as SQL arguments in the query.""")
-
+    parser.add_argument('-f', '--pklFile', default=None,
+                        help="""\
+                        An extra *.pkl file containing any additional python objects needed for the given dao
+                        for the given e.g. WMCore.WMBS.Files.AddRunLumi""")
     args = parser.parse_args()
 
     return args
@@ -282,6 +286,15 @@ def main():
     if 'WMAGENT_CONFIG' not in os.environ:
         os.environ['WMAGENT_CONFIG'] = args.config
     configFile = os.environ['WMAGENT_CONFIG']
+
+    # Create an instance of the *.pkl file provided with the dao call, ifa any.
+    if args.pklFile:
+        pklFilePath = os.path.normpath(args.pklFile)
+        if not os.path.exists(pklFilePath):
+            logger.error(f"Cannot find the pkl file: {pklFilePath}. Exit!")
+            return 1
+        with open(pklFilePath, 'rb') as fd:
+            pklFile = pickle.load(fd)
 
     daoObject = ExecuteDAO(logger=logger, configFile=configFile,
                            package=args.package, daoModule=args.module)

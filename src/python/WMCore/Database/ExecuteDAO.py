@@ -219,7 +219,13 @@ class ExecuteDAO():
             self.logger.info("DAO SQL arguments provided:\n%s, %s", pformat(sqlArgs), pformat(sqlKwArgs))
         else:
             results = self.dao.execute(*sqlArgs, **sqlKwArgs)
-            self.logger.info("DAO Results:\n%s", pformat(results if isinstance(results, dict) else list(results)))
+            # self.logger.info("DAO Results:\n%s", pformat(results if isinstance(results, dict) else list(results)))
+            if isinstance(results,dict):
+                self.logger.info("DAO Results:\n%s", pformat(results))
+            elif isinstance(results, bool):
+                self.logger.info("DAO Results:\n%s", results)
+            else:
+                self.logger.info("DAO Results:\n%s", list(results))
         return results
 
     def getSqlQuery(self):
@@ -252,7 +258,8 @@ def strToDict(dString, logger=None):
     :return:        The constructed dictionary
     """
     logger = logger or logging.getLogger()
-    result = ast.literal_eval(dString)
+    # result = ast.literal_eval(dString)
+    result = eval(dString)
     if not isinstance(result, dict):
         logger.error("The Query named arguments need to be provided as a dictionary. WRONG option: %s", pformat(dString))
         raise TypeError(pformat(dString))
@@ -263,12 +270,29 @@ def main():
     """
     An Utility to construct a DAO Factory and execute the DAO requested.
     """
+    daoObject = ExecuteDAO(logger=logger, configFile=configFile,
+                           package=args.package, daoModule=args.module)
+    daoObject(*args.sqlArgs, dryRun=args.dryRun, daoHelp=True, **args.sqlKwArgs)
+
+
+if __name__ == '__main__':
     args = parseArgs()
 
     if args.debug:
         logger = loggerSetup(logging.DEBUG)
     else:
         logger = loggerSetup()
+
+    # Create an instance of the *.pkl file provided with the dao call, ifa any.
+    if args.pklFile:
+        pklFilePath = os.path.normpath(args.pklFile)
+        if not os.path.exists(pklFilePath):
+            logger.error(f"Cannot find the pkl file: {pklFilePath}. Exit!")
+            exit(1)
+        with open(pklFilePath, 'rb') as fd:
+            pklFile = pickle.load(fd)
+            logger.info(f'PklFile: {pklFilePath} loaded as: pklFile')
+    # logger.info(pformat(pklFile))
 
     # Remove leading double slash if present:
     if args.sqlArgs and args.sqlArgs[0] == '--':
@@ -287,19 +311,4 @@ def main():
         os.environ['WMAGENT_CONFIG'] = args.config
     configFile = os.environ['WMAGENT_CONFIG']
 
-    # Create an instance of the *.pkl file provided with the dao call, ifa any.
-    if args.pklFile:
-        pklFilePath = os.path.normpath(args.pklFile)
-        if not os.path.exists(pklFilePath):
-            logger.error(f"Cannot find the pkl file: {pklFilePath}. Exit!")
-            return 1
-        with open(pklFilePath, 'rb') as fd:
-            pklFile = pickle.load(fd)
-
-    daoObject = ExecuteDAO(logger=logger, configFile=configFile,
-                           package=args.package, daoModule=args.module)
-    daoObject(*args.sqlArgs, dryRun=args.dryRun, daoHelp=True, **args.sqlKwArgs)
-
-
-if __name__ == '__main__':
     main()

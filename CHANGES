@@ -1,3 +1,6 @@
+2.3.4rc12 to 2.3.4:
+  - Mount /etc/vomses and grid-security in the WMAgent container https://github.com/dmwm/CMSKubernetes/pull/1518
+
 2.3.4rc11 to 2.3.4rc12:
   - Start cron daemon with root externally upon docker run https://github.com/dmwm/CMSKubernetes/pull/1506
 

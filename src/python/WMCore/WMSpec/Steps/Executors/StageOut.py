@@ -12,7 +12,7 @@ import os
 import os.path
 import signal
 import sys
-
+import time
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Lexicon import lfn     as lfnRegEx
@@ -66,7 +66,7 @@ class StageOut(Executor):
 
         # Set wait to two hours per retry
         # this alarm leaves a subprocess behing that may cause trouble, see #6273
-        waitTime = overrides.get('waitTime', 7200 * self.step.retryCount)
+        waitTime = overrides.get('waitTime', 60 * self.step.retryCount)
 
         logging.info("StageOut override is: %s ", self.step)
 
@@ -201,6 +201,8 @@ class StageOut(Executor):
                     fileName.StageOutCommand = fileForTransfer['StageOutCommand']
                     fileName.location = fileForTransfer['PNN']
                     fileName.OutputPFN = fileForTransfer['PFN']
+                    logging.info("DEBUG AMR: finished stageout, but sleeping now for %s secs", waitTime)
+                    time.sleep(waitTime)
                 except Alarm:
                     msg = "Indefinite hang during stageOut of logArchive"
                     logging.error(msg)

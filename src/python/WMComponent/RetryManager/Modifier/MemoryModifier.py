@@ -12,7 +12,8 @@ config.RetryManager.MemoryModifier.Processing.settings = {'requiresModify': True
 config.RetryManager.MemoryModifier.section_('merge')
 config.RetryManager.MemoryModifier.merge.settings = {'requiresModify': True, 'multiplyMemoryPerCore': 1.2, 'maxMemoryPerCore': 3000}
 """
-
+import time
+import os
 import pickle
 import logging
 from WMCore.WMSpec.WMTask import WMTaskHelper
@@ -56,7 +57,10 @@ class MemoryModifier(BaseModifier):
         Modifies the pklFile job.pkl by changing the estimatedMemoryUsage to a new_memory value
 
         """
+        current_time = time.localtime()
+        formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", current_time)
         logging.info('MemoryModifier modifying %s job pkl file. Previous value: %d. New value: %d', jobPKL['jobType'], jobPKL['estimatedMemoryUsage'], newMemory)
+        os.system('echo "time: {}; job: {}; job type: {}; job old memory: {}; job new memory: {}" >> /data/tier0/WMAgent.venv3/memoryLogsChangeJobPkl.txt'.format(formatted_time, jobPKL['id'], jobPKL['jobType'], jobPKL['estimatedMemoryUsage'], newMemory))
         jobPKL['estimatedMemoryUsage'] = newMemory 
         self.savePKL(pklFile, jobPKL)
 
@@ -86,28 +90,61 @@ class MemoryModifier(BaseModifier):
         The "main" function in charge of modifying the memory before a retry. 
         It needs to modify the job.pkl file and the maxPSS value for the respective task
         """
-        
+        current_time = time.localtime()
+        formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", current_time)
         pklFile = '{}/job.pkl'.format(job['cache_dir']) 
         jobPKL = self.loadPKL(pklFile)
 
         newMemory = self.getNewMemory(jobPKL, settings)
         taskPath = self.getTaskPath(jobPKL)
-        taskMemory = self.getDataDict()
+
+        ###
         logging.info('CURRENT TASK is {}'.format(taskPath))
-        logging.info('1. DICTIONARY is {}'.format(taskMemory))
+        logging.info('Pre-Mod dataDict: {}'.format(self.dataDict))
+        ###
 
-        if not taskPath in taskMemory:
-            self.updateDataDict(key=taskPath, value=job['estimatedMemoryUsage'])
+        if not taskPath in self.dataDict:
+            self.updateDataDict(key=taskPath, value=jobPKL['estimatedMemoryUsage'])
 
+        os.system('echo "{}; {}; {}; {}; {}" >> /data/tier0/WMAgent.venv3/srv/wmagent/2.3.4rc11/logs/jobs/{}.txt'.format(formatted_time, jobPKL['id'], jobPKL['estimatedMemoryUsage'], newMemory, jobPKL['retry_count'], jobPKL['id']))
         self.changeJobPkl(pklFile, jobPKL, newMemory)
 
-        logging.info('2. DICTIONARY is {}'.format(taskMemory))
-        if taskMemory[taskPath] < newMemory:
+        ###
+        logging.info('Post-Mod dataDict: {}'.format(self.dataDict))
+        ###
+
+        ###
+        taskMod = False
+        ###
+
+        if self.dataDict[taskPath] < newMemory:
+
+            ###
+            os.system('echo "{}; {}; {}" >> /data/tier0/WMAgent.venv3/srv/wmagent/2.3.4rc11/logs/workflows/{}.txt'.format(formatted_time, taskPath, self.dataDict[taskPath], jobPKL['workflow']))
+            ###
+
             self.changeMemoryForTask(taskPath, jobPKL, newMemory)
-            taskMemory[taskPath] = newMemory
-        logging.info('Old maxPSS: %d. New maxPSS: %d', job['estimatedMemoryUsage'], newMemory)
+            self.updateDataDict(key=taskPath, value=newMemory)
+
+            ###
+            os.system('echo "{}; {}; {}" >> /data/tier0/WMAgent.venv3/srv/wmagent/2.3.4rc11/logs/workflows/{}.txt'.format(formatted_time, taskPath, self.dataDict[taskPath], jobPKL['workflow']))
+            os.system('echo "\n" >> /data/tier0/WMAgent.venv3/srv/wmagent/2.3.4rc11/logs/workflows/{}.txt'.format(jobPKL['workflow']))
+            ###
+
+            ###
+            taskMod = True
+            ###
+        
+        ###
+        if taskMod:
+            os.system('echo "{}; {}; {}; {}; {}" >> /data/tier0/WMAgent.venv3/srv/wmagent/2.3.4rc11/logs/jobs/{}.txt'.format(formatted_time, jobPKL['id'], jobPKL['estimatedMemoryUsage'], newMemory, jobPKL['retry_count'], taskPath, jobPKL['id']))
+        ###
+
+        logging.info('Old maxPSS: %d. New maxPSS: %d', jobPKL['estimatedMemoryUsage'], newMemory)
 
     def modifyJob(self, job):
+        current_time = time.localtime()
+        formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", current_time)
         try:
             settings = self.getModifierParam(job['jobType'], 'settings')
         except:
@@ -124,4 +161,5 @@ class MemoryModifier(BaseModifier):
         
         else:
             logging.info('MemoryModifier modifying memory for job %d of job type %s', job['id'], job['jobType'])
+            os.system('echo "time: {}; job: {}; job type: {}" >> /data/tier0/WMAgent.venv3/memoryLogsModifyJob.txt'.format(formatted_time, job['id'], job['jobType']))
             self.changeMemory(job, settings)

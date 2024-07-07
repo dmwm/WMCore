@@ -7,6 +7,7 @@ _BaseModifier_
 """
 
 import pickle, os
+import json
 import logging
 import tarfile
 import sys
@@ -24,7 +25,13 @@ class BaseModifier(object):
         self.backupPath = "oldSandboxes/"
         self.sandboxPath = None
         self.config = config
-        self.dataDict = {}
+        self.dataDictJson = '/data/tier0/WMAgent.venv3/dataDict.json'
+
+        if os.path.exists('{}'.format(self.dataDictJson)):
+            self.dataDict = self.readDataDict(self.dataDictJson)
+        else:
+            self.dataDict = {}
+            self.writeDataDict(self.dataDictJson)
 
     def loadPKL(self, pklFile):
         with open(pklFile, 'rb') as file:
@@ -40,6 +47,15 @@ class BaseModifier(object):
     
     def updateDataDict(self, key, value):
         self.dataDict[key] = value
+
+    def writeDataDict(self, jsonPath, jsonData):
+        with open(jsonPath, 'w') as jsonDataDict:
+            json.dump(jsonData, jsonDataDict, indent=4)
+
+    def readDataDict(self, jsonPath):
+        with open(jsonPath, 'r') as jsonDataDict:
+            data = json.load(dataJson)
+        return data
 
     def updateSandbox(self, jobPKL, workload): # Not using workload?
         date = datetime.datetime.now().strftime("%y%m%d%H%M%S")

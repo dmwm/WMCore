@@ -31,7 +31,7 @@ class BaseModifier(object):
             self.dataDict = self.readDataDict(self.dataDictJson)
         else:
             self.dataDict = {}
-            self.writeDataDict(self.dataDictJson)
+            self.writeDataDict(self.dataDictJson, self.dataDict)
 
     def loadPKL(self, pklFile):
         with open(pklFile, 'rb') as file:

@@ -25,39 +25,65 @@ class BaseModifier(object):
         self.backupPath = "oldSandboxes/"
         self.sandboxPath = None
         self.config = config
-        self.dataDictJson = '/data/tier0/WMAgent.venv3/dataDict.json'
+        #self.dataDictJson = '/data/tier0/WMAgent.venv3/dataDict.json' # How to save it in $WMA_INSTALL_DIR/RetryManager ?
 
-        if os.path.exists('{}'.format(self.dataDictJson)):
+        self.logDir = getattr(config.RetryManager, 'componentDir')
+        self.dataDictJson = "%s/%s" % (self.logDir, 'dataDict.json')
+
+
+        if os.path.exists(self.dataDictJson):
             self.dataDict = self.readDataDict(self.dataDictJson)
         else:
             self.dataDict = {}
             self.writeDataDict(self.dataDictJson, self.dataDict)
 
     def loadPKL(self, pklFile):
+        """
+        __loadPKL__
+
+        Loads data from pickle file
+        Used for job.pkl
+        """
         with open(pklFile, 'rb') as file:
             data = pickle.load(file)
         return data
 
     def savePKL(self, pklFile, data):
+        """
+        __savePKL__
+
+        Saves new job data into pickle file
+        Used for job.pkl
+        """
         with open(pklFile, 'wb') as file:
             pickle.dump(data, file)
             
-    def getDataDict(self):
-        return self.dataDict
-    
-    def updateDataDict(self, key, value):
-        self.dataDict[key] = value
-
     def writeDataDict(self, jsonPath, jsonData):
+        """
+        __writeDataDict__
+
+        Writes updates dataDict into json file in the component directory
+        Json file serves as record keeping of job modifications that have taken place by a modifier
+        """
         with open(jsonPath, 'w') as jsonDataDict:
             json.dump(jsonData, jsonDataDict, indent=4)
 
     def readDataDict(self, jsonPath):
+        """
+        __readDataDict__
+
+        Retreives dataDict from json file
+        """
         with open(jsonPath, 'r') as jsonDataDict:
             data = json.load(dataJson)
         return data
 
-    def updateSandbox(self, jobPKL, workload): # Not using workload?
+    def updateSandbox(self, jobPKL): 
+        """
+        __updateSandbox__
+
+
+        """
         date = datetime.datetime.now().strftime("%y%m%d%H%M%S")
         os.makedirs(os.path.dirname(self.backupPath), exist_ok=True)
         backupFile = f"{self.backupPath}/{jobPKL['workflow']}_{date}.tar.bz2"
@@ -114,7 +140,7 @@ class BaseModifier(object):
         with open(pklPath, 'wb') as pf:
             pickle.dump(workload, pf)
         
-        self.updateSandbox(jobPKL, workload) # Not using workload in this function updateSandbox
+        self.updateSandbox(jobPKL)
 
         return
 
@@ -122,8 +148,7 @@ class BaseModifier(object):
         """
         _getAlgoParam_
 
-        Get a parameter from the config for the current algorithm and given
-        job type
+        Get a parameter from the config for the current algorithm and given job type
         """
         modName = self.__class__.__name__
         modArgs = getattr(self.config.RetryManager, modName)
@@ -144,3 +169,16 @@ class BaseModifier(object):
         Executes the functions to modify the job
         """
         pass
+
+#    def getDataDict(self):
+#        """
+#        __getDataDict__
+#        """
+#        return self.dataDict
+    
+#    def updateDataDict(self, key, value):
+#        """
+#        __updateDataDict__
+
+#        """
+#        self.dataDict[key] = value

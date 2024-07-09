@@ -75,7 +75,7 @@ class BaseModifier(object):
         Retreives dataDict from json file
         """
         with open(jsonPath, 'r') as jsonDataDict:
-            data = json.load(dataJson)
+            data = json.load(jsonDataDict)
         return data
 
     def updateSandbox(self, jobPKL): 

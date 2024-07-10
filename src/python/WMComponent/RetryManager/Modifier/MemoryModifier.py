@@ -102,10 +102,8 @@ class MemoryModifier(BaseModifier):
         workHelper = WMWorkloadHelper(workload)
 
         for task in workHelper.getAllTasks():
-            
             task.setMaxPSS(newMemory)
             
-
         self.setWorkload(workload, jobPKL)
 
         return
@@ -129,7 +127,7 @@ class MemoryModifier(BaseModifier):
 
         Modifies the pklFile job.pkl by changing the estimatedMemoryUsage to a new_memory value
         """
-        logging.info('MemoryModifier modifying %s job pkl file. Previous value: %d. New value: %d', jobPKL['jobType'], jobPKL['estimatedMemoryUsage'], newMemory)
+        logging.info('Modifying %s job pkl file estimatedMemoryUsage parameter. Previous value: %d. New value: %d', jobPKL['jobType'], jobPKL['estimatedMemoryUsage'], newMemory)
         jobPKL['estimatedMemoryUsage'] = newMemory 
         self.savePKL(pklFile, jobPKL)
 
@@ -153,12 +151,13 @@ class MemoryModifier(BaseModifier):
 
         if newMemPerCore > maxMemPerCore:
             newMemPerCore = maxMemPerCore
+            logging.info('Task %s is now running with the maximum allowed maxPSS by configuration', taskPath)
 
         newMemory = newMemPerCore * numberOfCores
 
         if self.dataDict[taskPath]['maxPSS'][-1] > newMemory:
             newMemory = self.dataDict[taskPath]['maxPSS'][-1] 
-
+            
         return newMemory
     
     def changeMemory(self, job, settings):
@@ -185,11 +184,12 @@ class MemoryModifier(BaseModifier):
         newMemory = self.getNewMemory(taskPath, currentMemory, numberOfCores, settings)
         
         ### TESTING ###
-        logging.info('TEST: current task is {}'.format(taskPath))
-        logging.info('TEST: Pre-Mod dataDict: {}'.format(self.dataDict))
+        logging.info('Checking task {}'.format(taskPath))
+        #logging.info('TEST: Pre-Mod dataDict: {}'.format(self.dataDict))
         ### TESTING ###
 
         # Changing job.pkl estimatedMemoryUsage
+        
         self.changeJobPkl(pklFile, jobPKL, newMemory)
         oldMemory     = currentMemory
         currentMemory = jobPKL['estimatedMemoryUsage'] #i.e. newMemory
@@ -202,32 +202,33 @@ class MemoryModifier(BaseModifier):
         self.dataDict[taskPath]['jobIDs'].append(currentJob)
 
         ### TESTING ###
-        logging.info('TEST: Post-Mod dataDict: {}'.format(self.dataDict))
+        #logging.info('TEST: Post-Mod dataDict: {}'.format(self.dataDict))
         ### TESTING ###
 
         if self.dataDict[taskPath]['maxPSS'][-1] < newMemory:
             self.changeMemoryForTask(taskPath, jobPKL, newMemory)
             self.dataDict[taskPath]['maxPSS'].append(newMemory)
-
+            logging.info('Successfully modified maxPSS. Old maxPSS: %d. New maxPSS: %d', self.dataDict[taskPath]['maxPSS'][-2], self.dataDict[taskPath]['maxPSS'][-1])
+        
         self.writeDataDict(self.dataDictJson, self.dataDict)
-        logging.info('Old maxPSS: %d. New maxPSS: %d', self.dataDict[taskPath]['maxPSS'][-2], self.dataDict[taskPath]['maxPSS'][-1])
+        logging.debug('Done handling job.pkl and task. Now updating dataDict.json')
 
     def modifyJob(self, job):
 
         try:
             settings = self.getModifierParam(job['jobType'], 'settings')
         except:
-            logging.debug('MemoryModifier did not get settings parameter for job type %s. Not modifying memory', job['jobType'])
+            logging.debug('Did not get settings parameter for job type %s. Not modifying memory', job['jobType'])
             return
 
         if not 'requiresModify' in settings:
-            logging.debug('MemoryModifer for job type %s does not specify requiresModify. Not modifying memory for job %d', job['jobType'], job['id'])
+            logging.debug('Configuration for job type %s does not specify requiresModify. Not modifying memory for job %d', job['jobType'], job['id'])
             return 
 
         elif not settings['requiresModify']:
-            logging.debug('MemoryModifier for job type %s has requiresModify set to False. Not modifying memory for job %d', job['jobType'], job['id'])
+            logging.debug('Configuration for job type %s has requiresModify set to False. Not modifying memory for job %d', job['jobType'], job['id'])
             return
         
         else:
-            logging.info('MemoryModifier modifying memory for job %d of job type %s', job['id'], job['jobType'])
+            logging.info('Modifying memory for job %d of job type %s', job['id'], job['jobType'])
             self.changeMemory(job, settings)

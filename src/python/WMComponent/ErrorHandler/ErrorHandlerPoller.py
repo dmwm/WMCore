@@ -8,6 +8,10 @@ based upon:
 
 config.ErrorHandler.maxRetries
 
+If the max retries value should be set by exitCode:
+
+config.ErrorHandler.
+
 However, it can also be used to handle jobs based on properties in the FWJR.
 In order to engage any of this behavior you have to set the config option:
 config.ErrorHandler.readFWJR = True
@@ -81,6 +85,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.maxFailTime = getattr(self.config.ErrorHandler, 'maxFailTime', 32 * 3600)
         self.readFWJR = getattr(self.config.ErrorHandler, 'readFWJR', False)
         self.passCodes = getattr(self.config.ErrorHandler, 'passExitCodes', [])
+
+        self.exitCodesRetry = getattr(self.config.ErrorHandler, 'exitCodesRetry', {})
 
         self.getJobs = self.daoFactory(classname="Jobs.GetAllJobs")
         self.idLoad = self.daoFactory(classname="Jobs.LoadFromIDWithType")
@@ -173,7 +179,16 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         # Retries < max retry count
         for job in jobList:
-            allowedRetries = self.maxRetries.get(job['type'], self.maxRetries['default'])
+
+            report = Report()
+            reportPath = os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count'])
+            report.load(reportPath)
+            exitCode = report.getExitCode()
+
+            if exitCode in self.exitCodesRetry:
+                allowedRetries = self.exitCodesRetry[exitCode]
+            else:
+                allowedRetries = self.maxRetries.get(job['type'], self.maxRetries['default'])
             # Retries < allowed max retry count
             if job['retry_count'] < allowedRetries and state != 'create':
                 cooloffJobs.append(job)

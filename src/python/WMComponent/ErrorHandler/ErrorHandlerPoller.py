@@ -10,7 +10,7 @@ config.ErrorHandler.maxRetries
 
 If the max retries value should be set by exitCode:
 
-config.ErrorHandler.
+config.ErrorHandler.exitCodesRetry = {50660: 10}
 
 However, it can also be used to handle jobs based on properties in the FWJR.
 In order to engage any of this behavior you have to set the config option:

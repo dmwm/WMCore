@@ -858,6 +858,8 @@ class WMTaskTest(unittest.TestCase):
         ### Now set a single value for both tasks
         gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
         task1.setTaskGPUSettings("required", json.dumps(gpuParams))
+        # CUDARuntime returns as a list
+        gpuParams["CUDARuntime"] = [gpuParams["CUDARuntime"]]
         for taskObj in task1.taskIterator():
             # task level check
             self.assertEqual(taskObj.getRequiresGPU(), "required")

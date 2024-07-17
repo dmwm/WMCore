@@ -744,7 +744,7 @@ class Rucio(object):
         """
         _pickRSE_
 
-        Use a weighted random selection algorithm to pick an RSE for a dataset based on an attribute
+        Use a weighted random selection algorithm to pick an RSE for a dataset based on an RSE attribute.
         The attribute should correlate to space available.
         :param rseExpression: Rucio RSE expression to pick RSEs (defaults to production Tape RSEs)
         :param rseAttribute: The RSE attribute to use as a weight. Must be a number
@@ -757,18 +757,21 @@ class Rucio(object):
         rsesWeight = []
 
         for rse in matchingRSEs:
-            attrs = self.cli.list_rse_attributes(rse)
+            rseAttrs = self.cli.list_rse_attributes(rse)
             if rseAttribute:
                 try:
-                    quota = float(attrs.get(rseAttribute, 0))
+                    attrValue = float(rseAttrs.get(rseAttribute, 0))
                 except (TypeError, KeyError):
-                    quota = 0
+                    attrValue = 0
             else:
-                quota = 1
-            requiresApproval = attrs.get('requires_approval', False)
-            if quota > minNeeded:
+                attrValue = 1
+            requiresApproval = rseAttrs.get('requires_approval', False)
+            if rseAttribute == "ddm_quota" and attrValue > minNeeded:
                 rsesWithApproval.append((rse, requiresApproval))
-                rsesWeight.append(quota)
+                rsesWeight.append(attrValue)
+            elif rseAttribute != "ddm_quota":  # e.g. dm_weight
+                rsesWithApproval.append((rse, requiresApproval))
+                rsesWeight.append(attrValue)
 
         return weightedChoice(rsesWithApproval, rsesWeight)
 

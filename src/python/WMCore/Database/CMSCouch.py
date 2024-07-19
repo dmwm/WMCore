@@ -1027,7 +1027,7 @@ class CouchServer(CouchDBRequests):
         check_name(dbname)
         dbname = urllib.parse.quote_plus(dbname)
         if "cmsweb" in self.url:
-            msg = f"You can't be serious that you want to delete a PROODUCTION database!!! "
+            msg = f"You can't be serious that you want to delete a PRODUCTION database!!! "
             msg += f"At url: {self.url}, for database name: {dbname}. Bailing out!"
             raise RuntimeError(msg)
         return self.delete("/%s" % dbname)

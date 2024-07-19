@@ -170,7 +170,7 @@ def myproxy_client(sslctx, op, username, logger, lifetime=43200, host="myproxy.c
         pem_certs = deserialize_certs(d)
         if len(pem_certs) != numcerts:
             raise MyProxyException("%d certs expected, %d received" % (numcerts, len(pem_certs)))
-        logger.debug("debug: certs deserialized successfuly")
+        logger.debug("debug: certs deserialized successfully")
 
         # return proxy, the corresponding privkey, and then the rest of cert chain
         data = pem_certs[0] + privkey

@@ -179,7 +179,7 @@ class DQMUpload(Executor):
                     logException = False
                     raise Exception(msg)
                 else:
-                    msg = 'HTTP upload finished succesfully with response:\n' + msg
+                    msg = 'HTTP upload finished successfully with response:\n' + msg
                     logging.info(msg)
         except HTTPError as ex:
             msg = 'HTTP upload failed with response:\n'

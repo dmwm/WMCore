@@ -466,7 +466,7 @@ class JobCreatorPoller(BaseWorkerThread):
             except Exception as ex:
                 msg = "Had failure loading generators for subscription %i\n" % (subscriptionID)
                 msg += "Exception: %s\n" % str(ex)
-                msg += "Passing over this error.  It will reoccur next interation!\n"
+                msg += "Passing over this error.  It will reoccur next iteration!\n"
                 msg += "Please check or remove this subscription!\n"
                 logging.error(msg)
                 continue

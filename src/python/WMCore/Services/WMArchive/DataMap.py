@@ -304,7 +304,7 @@ def convertStepValue(stepValue):
             stepValue['input'] = convertInput(stepValue['input'][list(stepValue['input'])[0]])
 
         else:
-            raise Exception("Unknow iput key %s" % list(stepValue['input']))
+            raise Exception("Unknown input key %s" % list(stepValue['input']))
 
     if "output" in stepValue:
         # remove output module name layer

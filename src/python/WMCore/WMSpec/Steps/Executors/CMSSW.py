@@ -171,7 +171,7 @@ class CMSSW(Executor):
             architecture=scramArch,
         )
 
-        logging.info("Runing SCRAM")
+        logging.info("Running SCRAM")
         try:
             projectOutcome = scram.project()
         except Exception as ex:

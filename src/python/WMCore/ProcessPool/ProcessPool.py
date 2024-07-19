@@ -304,7 +304,7 @@ class ProcessPool(object):
                 self.runningWork -= 1
                 totalItems -= 1
             except Exception as ex:
-                msg = "Exception while getting slave outputin ProcessPool.\n"
+                msg = "Exception while getting slave output in ProcessPool.\n"
                 msg += str(ex)
                 logging.error(msg)
                 break

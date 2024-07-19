@@ -104,7 +104,7 @@ class ReqMgrAux(Service):
         resp = self["requests"].put('cmsswversions', cmsswVersions)[0]['result']
 
         if resp and resp[0].get("ok", False):
-            self["logger"].info("CMSSW document successfuly updated.")
+            self["logger"].info("CMSSW document successfully updated.")
             return True
 
         msg = "Failed to update CMSSW document. Response: %s" % resp

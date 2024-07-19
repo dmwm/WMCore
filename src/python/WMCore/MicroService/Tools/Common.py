@@ -541,50 +541,6 @@ def postRequest(url, params):
     return data
 
 
-def getIO(request, dbsUrl):
-    "Get input/output info about given request"
-    lhe = False
-    primary = set()
-    parent = set()
-    secondary = set()
-    if 'Chain' in request['RequestType']:
-        base = request['RequestType'].replace('Chain', '')
-        item = 1
-        while '%s%d' % (base, item) in request:
-            alhe, aprimary, aparent, asecondary = \
-                ioForTask(request['%s%d' % (base, item)], dbsUrl)
-            if alhe:
-                lhe = True
-            primary.update(aprimary)
-            parent.update(aparent)
-            secondary.update(asecondary)
-            item += 1
-    else:
-        lhe, primary, parent, secondary = ioForTask(request, dbsUrl)
-    return lhe, primary, parent, secondary
-
-
-def ioForTask(request, dbsUrl):
-    "Return lfn, primary, parent and secondary datasets for given request"
-    lhe = False
-    primary = set()
-    parent = set()
-    secondary = set()
-    if 'InputDataset' in request:
-        datasets = request['InputDataset']
-        datasets = datasets if isinstance(datasets, list) else [datasets]
-        primary = set([r for r in datasets if r])
-    if primary and 'IncludeParent' in request and request['IncludeParent']:
-        parent = findParent(primary, dbsUrl)
-    if 'MCPileup' in request:
-        pileups = request['MCPileup']
-        pileups = pileups if isinstance(pileups, list) else [pileups]
-        secondary = set([r for r in pileups if r])
-    if 'LheInputFiles' in request and request['LheInputFiles'] in ['True', True]:
-        lhe = True
-    return lhe, primary, parent, secondary
-
-
 def findParent(datasets, dbsUrl):
     """
     Helper function to find the parent dataset.

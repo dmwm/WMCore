@@ -371,7 +371,7 @@ class MSPileupData():
         """
         try:
             self.dbColl.delete_one(spec)
-            self.logger.info("Pileup object '%s' (custom name '%s') successfully deleted", spec.get("pileupName"), spec.get('cusomName'))
+            self.logger.info("Pileup object '%s' (custom name '%s') successfully deleted", spec.get("pileupName"), spec.get('customName'))
         except Exception as exp:
             msg = f"Unable to delete with spec {spec}, error {exp}"
             self.logger.exception(msg)

@@ -1,3 +1,11 @@
+2.3.4 to 2.3.5rc1:
+  - Remove CMSCouch functions unused since 2016, see #6928 (Fredrik) #12053
+  - Typo for customName in MSPileupData module (Fredrik) #12052
+  - Only dump CMSSW process attributes in the logs when needed (Alan Malta Rodrigues) #12049
+  - Unused older Unified functions removed (Fredrik) #12047
+  - Do not consider data size for Tape data placement based on dm_weight (Alan Malta Rodrigues) #12045
+
+
 2.3.4rc12 to 2.3.4:
   - Mount /etc/vomses and grid-security in the WMAgent container https://github.com/dmwm/CMSKubernetes/pull/1518
 

@@ -3,13 +3,30 @@ Gets the cache data from server cache. This shouldn't update the server cache.
 Just wait for the server cache to be updated
 """
 from __future__ import (division, print_function)
+from memory_profiler import profile
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Error import DataCacheEmpty
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
+from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+from WMCore.ReqMgr.DataStructs.RequestStatus import WMSTATS_JOB_INFO, WMSTATS_NO_JOB_INFO
 
+
+
+def updateCache():
+    print("This worked")
+    wmstatsDB = WMStatsReader("https://cmsweb-test9.cern.ch/couchdb/wmstats",  reqdbURL = "https://cmsweb-test9.cern.ch/couchdb/reqmgr_workload_cache", reqdbCouchApp="ReqMgr", logger=None)
+    print("This worked two")
+    jobData = wmstatsDB.getActiveData(WMSTATS_JOB_INFO, jobInfoFlag=False)
+    print("This worked three")
+    tempData = wmstatsDB.getActiveData(WMSTATS_NO_JOB_INFO, jobInfoFlag=False)
+    print("This worked four")
+    jobData.update(tempData)
+    print("This worked five")
+    return jobData
+    
 
 class ActiveRequestJobInfo(RESTEntity):
     """
@@ -19,16 +36,19 @@ class ActiveRequestJobInfo(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)
-
+    
     def validate(self, apiobj, method, api, param, safe):
         return
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows([DataCache.getlatestJobData()])
+        x = DataCache()
+        x.setlatestJobData(updateCache())
+        return rows([x.getlatestJobData()])
 
 
 class FilteredActiveRequestJobInfo(RESTEntity):
@@ -49,13 +69,15 @@ class FilteredActiveRequestJobInfo(RESTEntity):
             del param.kwargs[prop]
 
         return
-
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self, mask=None, **input_condition):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows(DataCache.filterDataByRequest(input_condition, mask))
+        x = DataCache()
+        x.setlatestJobData(updateCache())
+        return rows(x.filterDataByRequest(input_condition, mask))
 
 
 class ProtectedLFNList(RESTEntity):
@@ -73,13 +95,16 @@ class ProtectedLFNList(RESTEntity):
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self):
+        x = DataCache()
+        x.setlatestJobData(updateCache())
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        if DataCache.isEmpty():
+        if x.isEmpty():
             raise DataCacheEmpty()
         else:
-            return rows(DataCache.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
+            return rows(x.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
 
 
 class ProtectedLFNListOnlyFinalOutput(RESTEntity):
@@ -94,13 +119,16 @@ class ProtectedLFNListOnlyFinalOutput(RESTEntity):
 
     def validate(self, apiobj, method, api, param, safe):
         return
-
+  
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows(DataCache.getProtectedLFNs())
+        x = DataCache()
+        x.setlatestJobData(updateCache())
+        return rows(x.getProtectedLFNs())
 
 
 class GlobalLockList(RESTEntity):
@@ -110,14 +138,18 @@ class GlobalLockList(RESTEntity):
 
     def validate(self, apiobj, method, api, param, safe):
         return
-
+ 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
+    @profile
     def get(self):
+        x = DataCache()
+        x.setlatestJobData(updateCache())
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        if DataCache.isEmpty():
+        if x.isEmpty():
             raise DataCacheEmpty()
         else:
-            return rows(DataCache.filterData(ACTIVE_STATUS_FILTER,
+            return rows(x.filterData(ACTIVE_STATUS_FILTER,
                                              ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))
+

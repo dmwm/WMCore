@@ -11,7 +11,7 @@ import logging
 import os
 import pickle
 import socket
-
+from pprint import pformat
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.WMTweak import makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
 from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
@@ -705,11 +705,10 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         # Check process.source exists
-        self.logger.info("Debug: Self.process")
-        self.logger.info(dir(self.process))
         if getattr(self.process, "source", None) is None and getattr(self.process, "_Process__source", None) is None:
-            msg = "Error in CMSSW PSet: process is missing attribute 'source'"
-            msg += " or process.source is defined with None value."
+            msg = "Error in CMSSW PSet: process object is either missing or has "
+            msg += "None value for attributes 'source' and '_Process__source'. "
+            msg += f"Details of process object are: {pformat(dir(self.process))}"
             self.logger.error(msg)
             raise RuntimeError(msg)
 

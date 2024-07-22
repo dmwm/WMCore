@@ -518,7 +518,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         failedJobs = [job for job in jobs if job.get('failedOnCreation', False)]
         self.assertEqual(len(failedJobs), 1)
         self.assertEqual(failedJobs[0]['failedReason'],
-                         'File /this/is/file2 has a single lumi 1, in run 1 with too many events 1000 and it woud take 12000 sec to run')
+                         'File /this/is/file2 has a single lumi 1, in run 1 with too many events 1000 and it would take 12000 sec to run')
 
         return
 
@@ -572,7 +572,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
             self.assertEqual(len(finalLumi), 1)
 
             self.assertEqual(jobs[i]['failedReason'],
-                             "File /this/is/file%d has a single lumi %s, in run %s with too many events 1000 and it woud take 12000 sec to run" % (
+                             "File /this/is/file%d has a single lumi %s, in run %s with too many events 1000 and it would take 12000 sec to run" % (
                              i + 1, finalLumi[0], runNums[0]))
 
         return

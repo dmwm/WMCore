@@ -418,7 +418,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
         self.assertTrue(jobs[3]['failedOnCreation'], "The job processing the second file should me marked for failure")
         self.assertEqual(jobs[3]['failedReason'],
-                         'File /this/is/file2 has a single lumi 1, in run 1 with too many events 1000 and it woud take 12000 sec to run')
+                         'File /this/is/file2 has a single lumi 1, in run 1 with too many events 1000 and it would take 12000 sec to run')
 
     def testD_HardLimitSplittingOnly(self):
         """
@@ -462,7 +462,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
             self.assertTrue(jobs[i - 1]['failedOnCreation'],
                             "The job processing the second file should me marked for failure")
             error = 'File /this/is/file%s has a single lumi %d, in run %s' % (i, i - 1, i - 1)
-            error += ' with too many events 1000 and it woud take 12000 sec to run'
+            error += ' with too many events 1000 and it would take 12000 sec to run'
             self.assertEqual(jobs[i - 1]['failedReason'], error)
 
         return

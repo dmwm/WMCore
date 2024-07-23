@@ -187,7 +187,7 @@ class Tier0Plugin(PluginInterface):
                     centralRequestCouchDB.updateRequestStatus(workflowName, workflowStatus)
             except Tier0PluginError as t0ex:
                 # More specific exception, just log it anyway
-                self.logger.error('Error ocurred while processing a doc:\n%s' % str(t0ex))
+                self.logger.error('Error occurred while processing a doc:\n%s' % str(t0ex))
             except Exception as ex:
                 # Plugins are meant to be not-critical
                 # If something fails then just keep going

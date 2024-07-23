@@ -30,7 +30,7 @@ class MSOutputException(WMException):
     General Exception Class for MSOutput Module in WMCore MicroServices
     """
     def __init__(self, message):
-        self.myMessage = "MSOtputException: %s" % message
+        self.myMessage = "MSOutputException: %s" % message
         super(MSOutputException, self).__init__(self.myMessage)
 
 

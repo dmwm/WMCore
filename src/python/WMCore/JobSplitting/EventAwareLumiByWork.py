@@ -152,7 +152,7 @@ class EventAwareLumiByWork(JobFactory):
                     if timePerLumi > jobTimeLimit and len(lumisByFile[lfn].getLumis()):
                         # This lumi has too many events. Output this job and a new one with just that lumi
                         failReason = "File %s has a single lumi %s, in run %s " % (lfn, lumi, run)
-                        failReason += "with too many events %d and it woud take %d sec to run" \
+                        failReason += "with too many events %d and it would take %d sec to run" \
                                       % (self.eventsInLumi, timePerLumi)
                         self.stopAndMakeJob(reason='Lumi too big', runLumi=(run, lumi),
                                             failNextJob=True, failReason=failReason)

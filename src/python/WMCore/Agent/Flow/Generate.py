@@ -61,7 +61,7 @@ Inheritance is preferred.
                 str(self.config.General.srcDir))
             os.makedirs(self.config.General.srcDir)
         except:
-            print('ERROR: Make sure directory does not exists')
+            print('ERROR: Make sure directory does not exist already')
             sys.exit(0)
         self.parse()
         print('Starting generation')

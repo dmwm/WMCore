@@ -594,7 +594,7 @@ class WorkQueue(WorkQueueBase):
             if self.params.get('cancelGraceTime', -1) > 0 and elements:
                 last_update = max([float(x.updatetime) for x in elements])
                 if (time.time() - last_update) > self.params['cancelGraceTime']:
-                    self.logger.info("%s cancelation has stalled, mark as finished", elements[0]['RequestName'])
+                    self.logger.info("%s cancellation has stalled, mark as finished", elements[0]['RequestName'])
                     # Don't update as fails sometimes due to conflicts (#3856)
                     for x in elements:
                         if not x.inEndState():

@@ -309,6 +309,7 @@ class MSUnmerged(MSCore):
         :param rse: MSUnmergedRSE object to be cleaned
         :return:    The MSUnmergedRSE object
         """
+        self.logger.info("Start cleaning files for RSE: %s.", rse['name'])
 
         # Create the gfal2 context object:
         try:
@@ -538,6 +539,7 @@ class MSUnmerged(MSCore):
         :return:    rse or raises MSUnmergedPlineExit
         """
         rseName = rse['name']
+        self.logger.info("Evaluating consistency record agent for RSE: %s.", rse['name'])
 
         if rseName not in self.rseConsStats:
             msg = "RSE: %s Missing in stats records at Rucio Consistency Monitor. " % rseName
@@ -615,7 +617,10 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
+        self.logger.info("Fetching data from Rucio ConMon for RSE: %s.", rse['name'])
         rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
+        if not rse['files']['allUnmerged']:
+            self.logger.error("RSE: %s has an empty list of unmerged files in Rucio ConMon.", rse['name'])
         for filePath in rse['files']['allUnmerged']:
             # Check if what we start with is under /store/unmerged/*
             if self.regStoreUnmergedLfn.match(filePath):
@@ -669,8 +674,11 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
+        self.logger.info("Filtering unmerged files for RSE: %s.", rse['name'])
         rse['dirs']['toDelete'] = rse['dirs']['allUnmerged'] - self.protectedLFNs
         rse['dirs']['protected'] = rse['dirs']['allUnmerged'] & self.protectedLFNs
+        self.logger.info("Pre-filter counts for allUnmerged: %s, toDelete: %s, protected: %s.",
+                         len(rse['dirs']['allUnmerged']), len(rse['dirs']['toDelete']), len(rse['dirs']['protected']))
 
         # The following check may seem redundant, but better stay safe than sorry
         if not (rse['dirs']['toDelete'] | rse['dirs']['protected']) == rse['dirs']['allUnmerged']:
@@ -733,6 +741,9 @@ class MSUnmerged(MSCore):
         # Now apply the filters back to the set in rse['dirs']['toDelete']
         rse['dirs']['toDelete'] = set(rse['files']['toDelete'].keys())
 
+        self.logger.info("Post-filter counts for allUnmerged: %s, toDelete: %s, protected: %s.",
+                         len(rse['dirs']['allUnmerged']), len(rse['dirs']['toDelete']), len(rse['dirs']['protected']))
+
         # Update the counters:
         rse['counters']['dirsToDelete'] = len(rse['files']['toDelete'])
         self.logger.info("RSE: %s: %s", rse['name'], twFormat(rse, maxLength=8))
@@ -747,6 +758,7 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to be checked
         :return:    rse
         """
+        self.logger.info("Fetching PFN map for RSE: %s.", rse['name'])
         # NOTE:  pfnPrefix here is considered the full part of the pfn up to the
         #        beginning of the lfn part rather than just the protocol prefix
         if rse['files']['allUnmerged']:
@@ -771,6 +783,7 @@ class MSUnmerged(MSCore):
         :param dumpRSEToLog: Dump the whole RSEobject into the service log.
         :return:    rse
         """
+        self.logger.info("Purging RSE in-memory information for RSE: %s.", rse['name'])
         msg = "\n----------------------------------------------------------"
         msg += "\nMSUnmergedRSE: \n%s"
         msg += "\n----------------------------------------------------------"
@@ -788,6 +801,8 @@ class MSUnmerged(MSCore):
         :param rse:   The RSE to work on
         :return:      rse
         """
+        self.logger.info("Updating timestamps for RSE: %s. With start: %s, end: %s.", rse['name'], start, end)
+
         rseName = rse['name']
         currTime = time()
 
@@ -820,6 +835,8 @@ class MSUnmerged(MSCore):
         :param pName: The pipeline name whose counters to be updated
         :return:      rse
         """
+        self.logger.info("Updating service counters for RSE: %s.", rse['name'])
+
         pName = self.plineUnmerged.name
         self.plineCounters[pName]['totalNumFiles'] += rse['counters']['totalNumFiles']
         self.plineCounters[pName]['totalNumDirs'] += rse['counters']['totalNumDirs']
@@ -869,7 +886,7 @@ class MSUnmerged(MSCore):
         :return:    rse
         """
         try:
-            self.logger.info("RSE: %s Writing rse data to MongoDB.", rse['name'])
+            self.logger.info("Uploading RSE information to MongoDB for RSE: %s.", rse['name'])
             rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite, retryCount=self.msConfig['mongoDBRetryCount'])
         except NotPrimaryError:
             msg = "Could not write RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']

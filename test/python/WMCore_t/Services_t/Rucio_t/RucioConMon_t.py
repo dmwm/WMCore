@@ -8,7 +8,6 @@ Unit tests for RucioConMon WMCore Service class
 import unittest
 
 from nose.plugins.attrib import attr
-
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 
 
@@ -17,17 +16,17 @@ class RucioConMonTest(unittest.TestCase):
     Unit tests for RucioConMon Service module
     """
 
-    @attr("integration")
+#    @attr("integration")
     def testGetRSEUnmerged(self):
         """
         Test getRSEUnmerged method using both zipped and unzipped requests
         This test uses specific rse name which can be changed to any other RSE.
         """
 #         url = "https://cmsweb.cern.ch/rucioconmon/WM/files?rse=T2_TR_METU&format=raw"
-        mgr = RucioConMon("https://cmsweb.cern.ch/rucioconmon")
-        rseName = "T2_TR_METU"
-        dataUnzipped = mgr.getRSEUnmerged(rseName, zipped=False)
-        dataZipped = mgr.getRSEUnmerged(rseName, zipped=True)
+        mgr = RucioConMon("https://cmsweb.cern.ch/rucioconmon/unmerged")
+        rseName = "T2_RU_ITEP"
+        dataUnzipped = [item for item in mgr.getRSEUnmerged(rseName, zipped=False)]
+        dataZipped = [item for item in mgr.getRSEUnmerged(rseName, zipped=True)]
         self.assertTrue(dataUnzipped == dataZipped)
 
 

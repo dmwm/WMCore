@@ -17,7 +17,7 @@ class RucioConMonTest(unittest.TestCase):
     Unit tests for RucioConMon Service module
     """
 
-    @attr("integration")
+#    @attr("integration")
     def testGetRSEUnmerged(self):
         """
         Test getRSEUnmerged method using both zipped and unzipped requests

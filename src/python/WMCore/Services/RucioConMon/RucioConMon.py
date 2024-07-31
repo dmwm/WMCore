@@ -70,14 +70,12 @@ class RucioConMon(Service):
         results = '{}' # explicitly define results which will be loaded by json.loads below
         if binary:
             with self.refreshCache(cachedApi, apiUrl, decoder=False, binary=True) as istream:
-                results = gzip.decompress(istream.read())
+                results = istream.read()
             return results
         else:
-            with self.refreshCache(cachedApi, apiUrl) as istream:
+            with self.refreshCache(cachedApi, apiUrl, decoder=True, binary=binary) as istream:
                 results = istream.read()
-
-        results = json.loads(results)
-        return results
+            return json.loads(results)
 
     def _getResultZipped(self, uri, callname="", clearCache=True, args=None):
         """

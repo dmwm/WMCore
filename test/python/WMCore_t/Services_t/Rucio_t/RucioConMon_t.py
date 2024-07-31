@@ -24,9 +24,10 @@ class RucioConMonTest(unittest.TestCase):
         This test uses specific rse name which can be changed to any other RSE.
         """
 #         url = "https://cmsweb.cern.ch/rucioconmon/WM/files?rse=T2_TR_METU&format=raw"
-        mgr = RucioConMon("https://cmsweb.cern.ch/rucioconmon")
-        rseName = "T2_TR_METU"
+        mgr = RucioConMon("https://cmsweb.cern.ch/rucioconmon/unmerged")
+        rseName = "T2_ES_IFCA"
         dataUnzipped = mgr.getRSEUnmerged(rseName, zipped=False)
+        print(f"Unzipped data length: {len(dataUnzipped)}")
         dataZipped = mgr.getRSEUnmerged(rseName, zipped=True)
         self.assertTrue(dataUnzipped == dataZipped)
 

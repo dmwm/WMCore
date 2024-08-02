@@ -1,3 +1,8 @@
+2.3.4 to 2.3.4.1:
+  - Check if elements from workqueue workRestrictions are indeed Available (Alan Malta Rodrigues) #12063
+  - Only dump CMSSW process attributes in the logs when needed (Alan Malta Rodrigues) #12063
+
+
 2.3.4rc12 to 2.3.4:
   - Mount /etc/vomses and grid-security in the WMAgent container https://github.com/dmwm/CMSKubernetes/pull/1518
 

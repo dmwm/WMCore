@@ -484,10 +484,14 @@ class WorkQueue(WorkQueueBase):
             ele['WMBSUrl'] = self.params["WMBSUrl"]
             workByRequest.setdefault(ele['RequestName'], 0)
             workByRequest[ele['RequestName']] += 1
-        work = self.parent_queue.saveElements(*elements)
-        self.logger.info("Assigned work to the child queue for:")
-        for reqName, numElem in viewitems(workByRequest):
+        self.logger.info("Setting GQE status to 'Negotiating' and assigning to this child queue for:")
+        for reqName, numElem in workByRequest.items():
             self.logger.info("    %d elements for: %s", numElem, reqName)
+
+        work = self.parent_queue.saveElements(*elements)
+        self.logger.info("GQE successfully saved for:")
+        for ele in work:
+            self.logger.info("    %s under GQE id: %s", ele['RequestName'], ele.id)
         return work
 
     def doneWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None):

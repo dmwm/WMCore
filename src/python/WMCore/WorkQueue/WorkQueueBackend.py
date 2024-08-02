@@ -521,6 +521,10 @@ class WorkQueueBackend(object):
             if element['RequestName'] in excludeWorkflows:
                 msg = "Skipping aborted/force-completed workflow: %s, work id: %s"
                 self.logger.info(msg, element['RequestName'], element._id)
+            elif element['Status'] != 'Available':
+                # Extra safety mechanism, see https://github.com/dmwm/WMCore/pull/12050
+                msg = "Skipping element in unwanted status: %s, work id: %s"
+                self.logger.warning(msg, element['Status'], element._id)
             else:
                 sortedElements.append(element)
         sortAvailableElements(sortedElements)

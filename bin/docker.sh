@@ -80,7 +80,7 @@ if [ "$action" == "push" ] || ( [ "$action" == "push" ] && [ -n "$suffix" ] ); t
            image_exist_stable=`docker images | grep ${tag}${suffix} | grep $service`
            if [ -z "$image_exist_stable" ]; then
                echo "Image ${rurl}:${tag}${suffix} is not found"
-               exit 0
+               exit 1
            fi
            echo "action: docker push ${rurl}:${tag}${suffix}"
            docker push ${rurl}:${tag}${suffix}

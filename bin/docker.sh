@@ -29,7 +29,7 @@ rurl=$registry/cmsweb/$service
 
 # check if action is supported
 case "$action" in
-  "build"|"build-stable"|"push"|"remove"|"delete")
+  "build"|"push")
     ;;
   *)
     echo "action: '$action' is not supported"
@@ -53,7 +53,7 @@ if [ "$action" == "build" ]; then
     fi
     docker images | grep $tag | grep $service
 fi
-if [ "$action" == "build-stable" ] || ( [ "$action" == "build" ] && [ -n "$suffix" ] ); then
+if [ "$action" == "build" ] && [ -n "$suffix" ]; then
     if [ -z "$suffix" ]; then
         echo "Building stable image for tag=$tag is not appropriate as tag is not matched X.Y.Z or X.Y.Z.P pattern"
         exit 0

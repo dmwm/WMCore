@@ -4,7 +4,7 @@
 
 if [ $# -ne 4 ]; then
      echo "Usage: docker.sh <action> <service> <tag> <registry> "
-     echo "Supported actions: build, build-stable, push, remove, delete"
+     echo "Supported actions: build, build-stable, push"
      exit 1;
 fi
 
@@ -53,7 +53,7 @@ if [ "$action" == "build" ]; then
     fi
     docker images | grep $tag | grep $service
 fi
-if [ "$action" == "build-stable" ] || [ "$action" == "build" && -n "suffix" ]; then
+if [ "$action" == "build-stable" ] || ( [ "$action" == "build" ] && [ -n "$suffix" ] ); then
     if [ -z "$suffix" ]; then
         echo "Building stable image for tag=$tag is not appropriate as tag is not matched X.Y.Z or X.Y.Z.P pattern"
         exit 0
@@ -66,21 +66,23 @@ if [ "$action" == "build-stable" ] || [ "$action" == "build" && -n "suffix" ]; t
     fi
     docker images | grep ${tag}${suffix} | grep $service
 fi
-if [ "$action" == "push" ] || [ "$action" == "push" && -n "$suffix" ]; then
+if [ "$action" == "push" ] || ( [ "$action" == "push" ] && [ -n "$suffix" ] ); then
     image_exist=`docker images | grep $tag | grep $service`
-    if [ -z "$image_exit" ]; then
-        echo "Image ${rurl}:${tag}${suffix} is not found"
+    if [ -z "$image_exist" ]; then
+        echo "Images ${rurl}:${tag}${suffix} and/or ${rurl}:${tag}${suffix} are not found"
         exit 0
     fi
-    echo "action: docker push ${rurl}:${tag}"
-    docker push ${rurl}:${tag}
-fi
-if [ "$action" == "remove" ] || [ "$action" == "delete" ]; then
-    echo "action: docker image rm -f ${rurl}:${tag}${suffix}"
-    image_exist=`docker images | grep ${tag}${suffix} | grep $service`
-    if [ -z "$image_exit" ]; then
-        echo "Image ${rurl}:${tag}${suffix} is not found"
-        exit 0
+    if [ -n "$image_exist" ]; then
+        echo "action: docker push ${rurl}:${tag}"
+        docker push ${rurl}:${tag}
+        if [ -n "$suffix" ]; then
+           image_exist_stable=`docker images | grep ${tag}${suffix} | grep $service`
+           if [ -z "$image_exist_stable" ]; then
+               echo "Image ${rurl}:${tag}${suffix} is not found"
+               exit 0
+           fi
+           echo "action: docker push ${rurl}:${tag}${suffix}"
+           docker push ${rurl}:${tag}${suffix}
+        fi
     fi
-    docker rmi ${rurl}:${tag}
 fi

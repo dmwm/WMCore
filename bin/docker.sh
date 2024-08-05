@@ -52,12 +52,12 @@ if [ "$action" == "build" ]; then
         docker build --build-arg TAG=${tag} --tag ${rurl}:${tag} .
     fi
     docker images | grep $tag | grep $service
-fi
-if [ "$action" == "build" ] && [ -n "$suffix" ]; then
+
     if [ -z "$suffix" ]; then
         echo "Building stable image for tag=$tag is not appropriate as tag is not matched X.Y.Z or X.Y.Z.P pattern"
         exit 0
     fi
+
     echo "check if image with service=$service and tag=${tag}${suffix} exist ..."
     image_exist=`docker images | grep ${tag}${suffix} | grep $service`
     if [ -z "$image_exist" ]; then
@@ -66,6 +66,7 @@ if [ "$action" == "build" ] && [ -n "$suffix" ]; then
     fi
     docker images | grep ${tag}${suffix} | grep $service
 fi
+
 if [ "$action" == "push" ] || ( [ "$action" == "push" ] && [ -n "$suffix" ] ); then
     image_exist=`docker images | grep $tag | grep $service`
     if [ -z "$image_exist" ]; then

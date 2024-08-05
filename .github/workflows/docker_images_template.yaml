@@ -47,6 +47,7 @@ jobs:
           echo "Sleeping 5min to ensure that PyPi packages are available..."
           sleep 300
           curl -ksLO https://raw.githubusercontent.com/dmwm/WMCore/master/bin/docker.sh
+          chmod +x docker.sh
           echo "build new image"
           ./docker.sh build ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}
           echo "push new image"

@@ -617,22 +617,40 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
-        self.logger.info("Fetching data from Rucio ConMon for RSE: %s.", rse['name'])
-        rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
-        if not rse['files']['allUnmerged']:
-            self.logger.error("RSE: %s has an empty list of unmerged files in Rucio ConMon.", rse['name'])
-        for filePath in rse['files']['allUnmerged']:
-            # Check if what we start with is under /store/unmerged/*
-            if self.regStoreUnmergedLfn.match(filePath):
-                # Cut the path to the deepest level known to WMStats protected LFNs
-                dirPath = self._cutPath(filePath)
-                # Check if what is left is still under /store/unmerged/*
-                if self.regStoreUnmergedLfn.match(dirPath):
-                    # Add it to the set of allUnmerged
-                    rse['dirs']['allUnmerged'].add(dirPath)
+        rse['counters']['totalNumFiles'] = 0
+        rse['counters']['totalNumDirs'] = 0
+        rse['counters']['dirsToDelete'] = 0
+        rse['counters']['filesToDelete'] = 0
+        rse['dirs']['allUnmerged'] = []  # TODO FIXME: this is supposed to be the union of toDelete and protected
+        rse['dirs']['toDelete'] = set()
+        rse['dirs']['protected'] = set()
 
-        rse['counters']['totalNumFiles'] = len(rse['files']['allUnmerged'])
-        rse['counters']['totalNumDirs'] = len(rse['dirs']['allUnmerged'])
+        self.logger.info("Fetching data from Rucio ConMon for RSE: %s.", rse['name'])
+        for lfn in self.rucioConMon.getRSEUnmerged(rse['name'], zipped=True):
+            dirPath = self._cutPath(lfn)
+            # Check if what is left is still under /store/unmerged/*
+            if not self.regStoreUnmergedLfn.match(dirPath):
+                msg = f"Retrieved file from RucioConMon that does not belong to the unmerged area: {lfn}"
+                self.logger.critical(msg)
+
+            # general counter for possible files and unique directories
+            rse['counters']['totalNumFiles'] += 1
+
+            # now evaluate whether it is deletable or not, and persist it under the right field
+            if self._isDeletable(dirPath):
+                rse['dirs']['toDelete'].add(dirPath)
+                rse['counters']['filesToDelete'] += 1
+            else:
+                rse['dirs']['protected'].add(dirPath)
+
+        if not rse['counters']['totalNumFiles']:
+            self.logger.error("RSE: %s has an empty list of unmerged files in Rucio ConMon.", rse['name'])
+
+        rse['counters']['totalNumDirs'] = len(rse['dirs']['toDelete']) + len(rse['dirs']['protected'])
+        rse['counters']['dirsToDelete'] = len(rse['dirs']['toDelete'])
+
+        self.logger.info("RSE post-filter stats for: %s: %s", rse['name'], twFormat(rse, maxLength=8))
+
         return rse
 
     def _cutPath(self, filePath):
@@ -666,88 +684,33 @@ class MSUnmerged(MSCore):
         finalPath = os.path.join(*newPath)
         return finalPath
 
-    # @profile
-    def filterUnmergedFiles(self, rse):
+    def _isDeletable(self, dirPath):
         """
-        This method is applying set compliment operation to the set of unmerged
-        files per RSE in order to exclude the protected LFNs.
-        :param rse: The RSE to work on
-        :return:    rse
+        Given a short directory path, verify if this directory can be
+        deleted or not. Checks are performed against:
+         * directory inclusion filter
+         * directory exclusion filter
+         * protected lfns
+
+        :param dirPath: string with a shorter version of the LFN
+        :return _type_: True if the directory can be deleted, False otherwise
         """
-        self.logger.info("Filtering unmerged files for RSE: %s.", rse['name'])
-        rse['dirs']['toDelete'] = rse['dirs']['allUnmerged'] - self.protectedLFNs
-        rse['dirs']['protected'] = rse['dirs']['allUnmerged'] & self.protectedLFNs
-        self.logger.info("Pre-filter counts for allUnmerged: %s, toDelete: %s, protected: %s.",
-                         len(rse['dirs']['allUnmerged']), len(rse['dirs']['toDelete']), len(rse['dirs']['protected']))
+        # Check against the inclusion filter
+        if self.msConfig['dirFilterIncl']:
+            respFilter = [dirPath.startswith(filterItem) for filterItem in self.msConfig['dirFilterIncl']]
+            if any(respFilter) is False:
+                # does not match against any of the inclusion filters
+                return False
 
-        # The following check may seem redundant, but better stay safe than sorry
-        if not (rse['dirs']['toDelete'] | rse['dirs']['protected']) == rse['dirs']['allUnmerged']:
-            rse['counters']['dirsToDelete'] = -1
-            msg = "Incorrect set check while trying to estimate the final set for deletion."
-            raise MSUnmergedPlineExit(msg)
+        # Check against the exclusion filter
+        if self.msConfig['dirFilterExcl']:
+            respFilter = [dirPath.startswith(filterItem) for filterItem in self.msConfig['dirFilterExcl']]
+            if any(respFilter) is True:
+                # matches against at least one exclusion filter
+                return False
 
-        # Get rid of 'allUnmerged' directories
-        rse['dirs']['allUnmerged'].clear()
-
-        # NOTE: Here we may want to filter out all protected files from allUnmerged and leave just those
-        #       eligible for deletion. This will minimize the iteration time of the filters
-        #       from toDelete later on.
-        # while rse['files']['allUnmerged'
-
-        # Now create the filters for rse['files']['toDelete'] - those should be pure generators
-        # A simple generator:
-        def genFunc(pattern, iterable):
-            for i in iterable:
-                if i.startswith(pattern):
-                    yield i
-
-        # NOTE: If the 'dirFilterIncl' is non empty then the cleaning process will
-        #       be enclosed only in this part of the tree and will ignore anything
-        #       from /store/unmerged/ which does not belong to the included filter
-        # NOTE: 'dirFilterExcl' is always applied.
-
-        # Merge the additional filters into a final set to be applied:
-        dirFilterIncl = set(self.msConfig['dirFilterIncl'])
-        dirFilterExcl = set(self.msConfig['dirFilterExcl'])
-
-        # Update directory/files with no service filters
-        if not dirFilterIncl and not dirFilterExcl:
-            for dirName in rse['dirs']['toDelete']:
-                rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-            rse['counters']['dirsToDelete'] = len(rse['files']['toDelete'])
-            self.logger.info("RSE: %s: %s", rse['name'], twFormat(rse, maxLength=8))
-            return rse
-
-        # If we are here, then there are service filters...
-        for dirName in rse['dirs']['toDelete']:
-            # apply exclusion filter
-            dirFilterExclMatch = []
-            for pathExcl in dirFilterExcl:
-                dirFilterExclMatch.append(dirName.startswith(pathExcl))
-            if any(dirFilterExclMatch):
-                # then it matched one of the exclusion paths
-                continue
-            if not dirFilterIncl:
-                # there is no inclusion filter, simply add this directory/files
-                rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-                continue
-
-            # apply inclusion filter
-            for pathIncl in dirFilterIncl:
-                if dirName.startswith(pathIncl):
-                    rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-                    break
-
-        # Now apply the filters back to the set in rse['dirs']['toDelete']
-        rse['dirs']['toDelete'] = set(rse['files']['toDelete'].keys())
-
-        self.logger.info("Post-filter counts for allUnmerged: %s, toDelete: %s, protected: %s.",
-                         len(rse['dirs']['allUnmerged']), len(rse['dirs']['toDelete']), len(rse['dirs']['protected']))
-
-        # Update the counters:
-        rse['counters']['dirsToDelete'] = len(rse['files']['toDelete'])
-        self.logger.info("RSE: %s: %s", rse['name'], twFormat(rse, maxLength=8))
-        return rse
+        # Finally, check against the protected LFNs
+        return dirPath in self.protectedLFNs
 
     def getPfn(self, rse):
         """
@@ -761,8 +724,8 @@ class MSUnmerged(MSCore):
         self.logger.info("Fetching PFN map for RSE: %s.", rse['name'])
         # NOTE:  pfnPrefix here is considered the full part of the pfn up to the
         #        beginning of the lfn part rather than just the protocol prefix
-        if rse['files']['allUnmerged']:
-            lfn = next(iter(rse['files']['allUnmerged']))
+        if rse['dirs']['toDelete']:
+            lfn = next(iter(rse['dirs']['toDelete']))
             pfnDict = self.rucio.getPFN(rse['name'], lfn, operation='delete')
             pfnFull = pfnDict[lfn]
             if self.regStoreUnmergedPfn.match(pfnFull):

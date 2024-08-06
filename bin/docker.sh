@@ -4,7 +4,7 @@
 
 if [ $# -ne 4 ]; then
      echo "Usage: docker.sh <action> <service> <tag> <registry> "
-     echo "Supported actions: build, build-stable, push"
+     echo "Supported actions: build, push"
      exit 1;
 fi
 
@@ -45,12 +45,8 @@ fi
 
 # check build/push actions and build the image(s) if it will be required
 if [ "$action" == "build" ]; then
-    echo "check if image with service=$service and tag=$tag exist ..."
-    image_exist=`docker images | grep $tag | grep $service`
-    if [ -z "$image_exist" ]; then
-        echo "action: docker build --build-arg TAG=${tag} --tag ${rurl}:${tag}"
-        docker build --build-arg TAG=${tag} --tag ${rurl}:${tag} .
-    fi
+    echo "action: docker build --build-arg TAG=${tag} --tag ${rurl}:${tag}"
+    docker build --build-arg TAG=${tag} --tag ${rurl}:${tag} .
     docker images | grep $tag | grep $service
 
     if [ -z "$suffix" ]; then
@@ -67,14 +63,13 @@ if [ "$action" == "build" ]; then
     docker images | grep ${tag}${suffix} | grep $service
 fi
 
-if [ "$action" == "push" ] || ( [ "$action" == "push" ] && [ -n "$suffix" ] ); then
+if [ "$action" == "push" ]; then
     image_exist=`docker images | grep $tag | grep $service`
     if [ -z "$image_exist" ]; then
-        echo "Images ${rurl}:${tag}${suffix} and/or ${rurl}:${tag}${suffix} are not found"
+        echo "Images ${rurl}:${tag}${suffix} and ${rurl}:${tag}${suffix} are not found"
         exit 0
     fi
     if [ -n "$image_exist" ]; then
-        echo "action: docker push ${rurl}:${tag}"
         docker push ${rurl}:${tag}
         if [ -n "$suffix" ]; then
            image_exist_stable=`docker images | grep ${tag}${suffix} | grep $service`
@@ -82,7 +77,6 @@ if [ "$action" == "push" ] || ( [ "$action" == "push" ] && [ -n "$suffix" ] ); t
                echo "Image ${rurl}:${tag}${suffix} is not found"
                exit 1
            fi
-           echo "action: docker push ${rurl}:${tag}${suffix}"
            docker push ${rurl}:${tag}${suffix}
         fi
     fi

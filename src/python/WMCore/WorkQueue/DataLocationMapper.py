@@ -136,7 +136,7 @@ class DataLocationMapper(object):
         :param dbsUrl: str, dbs url to check which dbs server
         :return: dict, dict of pileup name keys with location set values
         """
-        self.logger.info(f'Fetching locations from MSPileup for {len(dataItems)}')
+        self.logger.info(f'Fetching locations from MSPileup for {len(dataItems)} containers')
 
         result = defaultdict(set)
         # TODO: Fetch multiple pileups in single request
@@ -148,7 +148,8 @@ class DataLocationMapper(object):
                 msPileupUrl = f"https://cmsweb{pileupInstance}.cern.ch/ms-pileup/data/pileup"
                 doc = getPileupDocs(msPileupUrl, queryDict, method='POST')[0]
                 self.logger.info(f'locationsFromPileup - name: {dataItem}, currentRSEs: {doc["currentRSEs"]}, containerFraction: {doc["containerFraction"]}')
-                result[dataItem] = doc['currentRSEs']
+                # resolve PNNs into PSNs
+                result[dataItem] = self.cric.PNNstoPSNs(doc['currentRSEs'])
             except IndexError:
                 self.logger.error('Did not find any pileup document for query: %s', queryDict['query'])
             except Exception as ex:
@@ -249,6 +250,7 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         for dataMapping in listvalues(dataLocations):
             for data, locations in viewitems(dataMapping):
                 elements = self.backend.getElementsForPileupData(data)
+                self.logger.info("Found %d elements using pileup: %s", len(elements), data)
                 for element in elements:
                     if element.get('NoPileupUpdate', False):
                         continue

@@ -1,3 +1,9 @@
+2.3.5rc1 to 2.3.5rc2:
+  - WorkQueue: convert PNN to PSN for pileup location (Alan Malta Rodrigues) #12066
+  - Check if elements from workqueue workRestrictions are indeed Available (Alan Malta Rodrigues) #12050
+  - Fix log message misspellings (Fredrik) #12054
+
+
 2.3.4 to 2.3.5rc1:
   - Remove CMSCouch functions unused since 2016, see #6928 (Fredrik) #12053
   - Typo for customName in MSPileupData module (Fredrik) #12052

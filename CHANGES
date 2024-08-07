@@ -1,3 +1,7 @@
+2.3.5rc2 to 2.3.5rc3:
+  - Update CD pipeline to used trusted publishers (Alan Malta Rodrigues) #12071
+
+
 2.3.5rc1 to 2.3.5rc2:
   - WorkQueue: convert PNN to PSN for pileup location (Alan Malta Rodrigues) #12066
   - Check if elements from workqueue workRestrictions are indeed Available (Alan Malta Rodrigues) #12050

@@ -31,8 +31,6 @@ jobs:
     uses: ./.github/workflows/pypi_build_publish_template.yaml
     with:
       wmcore_component: ${{ matrix.target }}
-    secrets:
-      pypy_token: ${{ secrets.PYPY_PRODUCTION }}
 
   # second job, depends on build_and_publish_services, builds and upload
   # docker images to CERN registry

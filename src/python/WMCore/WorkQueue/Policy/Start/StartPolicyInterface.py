@@ -290,7 +290,7 @@ class StartPolicyInterface(PolicyInterface):
                             'filters': ['expectedRSEs', 'currentRSEs', 'pileupName', 'containerFraction', 'ruleIds']}
                 try:
                     doc = getPileupDocs(msPileupUrl, queryDict, method='POST')[0]
-                    currentRSEs = doc['currentRSEs']
+                    currentRSEs = self.cric.PNNstoPSNs(doc['currentRSEs'])
                     self.logger.debug(f'Retrieved MSPileup document: {doc}')
                     if len(currentRSEs) == 0:
                         self.logger.warning(f'No RSE has a copy of the desired pileup dataset. Expected RSEs: {doc["expectedRSEs"]}')  

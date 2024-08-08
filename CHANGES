@@ -1,3 +1,7 @@
+2.3.4.1 to 2.3.4.2:
+  - WorkQueue: convert PNN to PSN for pileup location (Alan Malta Rodrigues) #12073
+
+
 2.3.4 to 2.3.4.1:
   - Check if elements from workqueue workRestrictions are indeed Available (Alan Malta Rodrigues) #12063
   - Only dump CMSSW process attributes in the logs when needed (Alan Malta Rodrigues) #12063

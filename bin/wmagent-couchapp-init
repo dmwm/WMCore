@@ -118,7 +118,7 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
         shutil.rmtree(tempDir, ignore_errors=True)
 
 
-def createCronEntries(crontabLines):
+def createCrontabEntries(crontabLines):
     tempDir = tempfile.mkdtemp()
     cname = '%s/crontab' % tempDir
     os.system("crontab -l > %s" % cname)
@@ -131,6 +131,18 @@ def createCronEntries(crontabLines):
     os.system("crontab %s" % cname)
     os.remove(cname)
     os.rmdir(tempDir)
+
+
+def createCronEntries(crontabLines, useCrontab=False):
+    if useCrontab:
+        createCronEntries(crontabLines)
+    else:
+        cname = wmagentConfig.General.cronFile
+        with open(cname, 'a') as astream:
+            for line in crontabLines:
+                line = line.strip()
+                if  line not in entries:
+                    astream.write(line + '\n')
 
 
 def setupCron(couchUrl, couchDBName):

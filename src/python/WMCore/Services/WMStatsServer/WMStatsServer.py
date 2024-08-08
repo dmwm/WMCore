@@ -128,7 +128,7 @@ class WMStatsServer(Service):
     def getProtectedLFNs(self):
         """
         A method to be used for fetching a list of all protected lfns from WMStatServer
-        :returns: A list of lfns
+        :returns: a unique list of protected LFNs
         """
         callname = 'protectedlfns'
-        return self._getResult(callname, verb="GET")
+        return list(set(self._getResult(callname, verb="GET")))

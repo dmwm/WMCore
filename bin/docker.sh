@@ -54,30 +54,28 @@ if [ "$action" == "build" ]; then
         exit 0
     fi
 
-    echo "check if image with service=$service and tag=${tag}${suffix} exist ..."
-    image_exist=`docker images | grep ${tag}${suffix} | grep $service`
-    if [ -z "$image_exist" ]; then
-        echo "action: docker build --build-arg TAG=${tag} --tag ${rurl}:${tag}${suffix}"
-        docker build --build-arg TAG=${tag} --tag ${rurl}:${tag}${suffix} .
-    fi
+    echo "action: docker build --build-arg TAG=${tag} --tag ${rurl}:${tag}${suffix}"
+    docker build --build-arg TAG=${tag} --tag ${rurl}:${tag}${suffix} .
     docker images | grep ${tag}${suffix} | grep $service
 fi
 
 if [ "$action" == "push" ]; then
-    image_exist=`docker images | grep $tag | grep $service`
+    image_exist=`docker images | grep $tag | grep $service | grep -v ${tag}${suffix}`
+    image_exist_stable=`docker images | grep ${tag}${suffix} | grep $service`
+    echo $image_exist
+    echo $image_exist_stable
+    
     if [ -z "$image_exist" ]; then
-        echo "Images ${rurl}:${tag}${suffix} and ${rurl}:${tag}${suffix} are not found"
-        exit 0
+        echo "Images ${rurl}:${tag} not found"
+        exit 1
     fi
-    if [ -n "$image_exist" ]; then
-        docker push ${rurl}:${tag}
-        if [ -n "$suffix" ]; then
-           image_exist_stable=`docker images | grep ${tag}${suffix} | grep $service`
-           if [ -z "$image_exist_stable" ]; then
-               echo "Image ${rurl}:${tag}${suffix} is not found"
-               exit 1
-           fi
-           docker push ${rurl}:${tag}${suffix}
-        fi
+    echo "action: docker push ${rurl}:${tag}"
+    docker push ${rurl}:${tag}
+
+    if [ -n "$suffix" ] && [ -z "$image_exist_stable" ]; then
+        echo "Images ${rurl}:${tag}${suffix} not found"
+        exit 2
     fi
+    echo "action: docker push ${rurl}:${tag}${suffix}"
+    docker push ${rurl}:${tag}${suffix}
 fi

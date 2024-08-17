@@ -728,7 +728,7 @@ class Proxy(Credential):
         if not proxy:
             proxy = self.getProxyFilename()
 
-        timeLeftCmd = 'voms-proxy-info -file ' + proxy + ' -timeleft'
+        timeLeftCmd = 'voms-proxy-info -file ' + proxy + ' -timeleft | tail -1'
         timeLeftLocal, _, self.retcode = execute_command(self.setEnv(timeLeftCmd), self.logger, self.commandTimeout)
 
         if self.retcode != 0:

@@ -1,3 +1,9 @@
+2.3.5 to 2.3.6rc1:
+  - skip possible JVM msg in voms-proxy-info output. Fix #12075 (Stefano Belforte) #12076
+  - Fix patchComponent logic to find the correct python lib && Add logic to zero the codebase before every patch to the version/tag deployed at the host (Todor Ivanov) #12074
+  - Catch exit code for the xrdcp command and use it to generate the exit code of the script (Andrea Piccinelli) #12058
+
+
 2.3.5rc3 to 2.3.5:
   - Just cutting the final stable release
 

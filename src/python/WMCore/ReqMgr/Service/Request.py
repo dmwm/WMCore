@@ -33,6 +33,7 @@ from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, valida
                                             isUserAllowed)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from Utils.Utilities import reduceReport
 
 
 class Request(RESTEntity):

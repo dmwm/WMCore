@@ -10,6 +10,24 @@ import base64
 import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
+from functools import reduce
+
+
+def reduceReport(reportList, expectedValue='OK'):
+    """
+    Simple function to aggregate a list of values (possibly outcomes of multiple
+    calls to couchDB or similar) to a single value.
+    :param report:        A list with accumulated report values
+    :param exepctedValue: The value with which the initial report list is expected
+                          to be filled. (any type) Default: 'OK'
+    :return:              Either the expected value (could be of any type) in the
+                          case when all the entries in the list are identical or
+                          False in the case when any of them deviates from the expected value.
+    """
+    if reduce(lambda x, y: x == y == expectedValue and expectedValue, reportList, expectedValue):
+        return expectedValue
+    return False
+
 
 def lowerCmsHeaders(headers):
     """

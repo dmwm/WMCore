@@ -128,10 +128,10 @@ ALLOWED_ACTIONS_FOR_STATUS = {
                             "NonCustodialSites", "Override",
                             "SubscriptionPriority"],
     "assigned": ["RequestPriority"],
-    "staging": ["RequestPriority"],
+    "staging": ["RequestPriority", "SiteWhitelist", "SiteBlacklist"],
     "staged": ["RequestPriority"],
-    "acquired": ["RequestPriority"],
-    "running-open": ["RequestPriority"],
+    "acquired": ["RequestPriority", "SiteWhitelist", "SiteBlacklist"],
+    "running-open": ["RequestPriority", "SiteWhitelist", "SiteBlacklist"],
     "running-closed": ["RequestPriority"],
     "failed": [],
     "force-complete": [],
@@ -145,6 +145,18 @@ ALLOWED_ACTIONS_FOR_STATUS = {
     "aborted-archived": [],
     "rejected-archived": [],
 }
+
+# NOTE: We need to Explicitly add RequestStatus to reqArgsDiff, since it is
+#       missing from the ALLOWED_ACTIONS_FOR_STATUS mapping. The alternative
+#       would be to add it as allowed action to every state.
+#       The same applies to few more, such as all the keys needed for the
+#       workqueue_stat_validation() calls, but we do this only during
+#       request parameters validation.
+ALLOWED_ACTIONS_ALL_STATUS = ["RequestStatus"]
+
+# NOTE: We need to explicitly add all stat keys during validation
+#       They are needed for the workqueue_stat_validation() calls
+ALLOWED_STAT_KEYS = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
 
 # Workflow state transition automatically controlled by ReqMgr2
 ### NOTE: order of this list matters and it's used for status transition
@@ -184,7 +196,8 @@ def get_modifiable_properties(status=None):
     TODO: Currently gets the result from hardcoded list. change to get from configuration or db
     """
     if status:
-        return ALLOWED_ACTIONS_FOR_STATUS.get(status, 'all_attributes')
+        allowedKeys = ALLOWED_ACTIONS_FOR_STATUS.get(status, 'all_attributes')
+        return allowedKeys
     else:
         return ALLOWED_ACTIONS_FOR_STATUS
 

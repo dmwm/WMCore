@@ -46,8 +46,9 @@ jobs:
           cat Dockerfile
           echo "Sleeping 5min to ensure that PyPi packages are available..."
           sleep 300
-          docker build --build-arg TAG=${PYPI_TAG} --tag ${CERN_REGISTRY}/cmsweb/${SERVICE_NAME}:${PYPI_TAG} .
-          echo "Image build process completed. Current images are:"
-          docker images
-          echo "Now push new image to the CERN registry"
-          docker push ${CERN_REGISTRY}/cmsweb/${SERVICE_NAME}:${PYPI_TAG}
+          curl -ksLO https://raw.githubusercontent.com/dmwm/WMCore/master/bin/docker.sh
+          chmod +x docker.sh
+          echo "build new image"
+          ./docker.sh build ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}
+          echo "push new image"
+          ./docker.sh push ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}

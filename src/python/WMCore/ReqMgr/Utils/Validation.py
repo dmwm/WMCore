@@ -6,6 +6,7 @@ from __future__ import print_function
 from future.utils import viewitems, viewvalues
 
 from hashlib import md5
+from copy import deepcopy
 
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytesConditional
@@ -13,7 +14,7 @@ from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_clone
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, get_modifiable_properties, STATES_ALLOW_ONLY_STATE_TRANSITION, ALLOWED_STAT_KEYS
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.Services.DBS.DBS3Reader import getDataTiers
 from WMCore.WMFactory import WMFactory
@@ -22,9 +23,46 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
 from WMCore.Cache.GenericDataCache import GenericDataCache, MemoryCacheStruct
 
+
 def workqueue_stat_validation(request_args):
     stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
     return set(request_args.keys()) == set(stat_keys)
+
+
+def _validate_request_allowed_args(reqArgs, newReqArgs):
+    """
+    Compares two request configuration dictionaries and returns the difference
+    between them, but only at the first level (no recursive operations are attempted).
+    Returns the key/value pairs taken from the newReqArgs only if they are allowed
+    for the given request status.
+    :param reqArgs:    A dictionary with the current request definition
+    :param newReqArgs: A dictionary with user-provided request parameter changes
+    :return:           A dictionary reflecting the difference between the above two
+    NOTE:    This is asymmetrical operation/comparison, where newReqArs' values
+             are considered to take precedence but not the other way around. They
+             are in fact checked if they differ from the values at reqArgs and only those
+             items which differ are returned.
+    """
+    reqArgsDiff = {}
+    status = reqArgs["RequestStatus"]
+
+    # Checking all keys that differ:
+    reqArgsDiffKeys = []
+    for key in newReqArgs:
+        if key in reqArgs and newReqArgs[key] == reqArgs[key]:
+            continue
+        else:
+            reqArgsDiffKeys.append(key)
+
+    allowedKeys = deepcopy(get_modifiable_properties(status))
+    allowedKeys.extend(ALLOWED_STAT_KEYS)
+
+    # Filter out all fields which are not allowed for the given source status:
+    for key in reqArgsDiffKeys:
+        if key in allowedKeys:
+            reqArgsDiff[key] = newReqArgs[key]
+
+    return reqArgsDiff
 
 
 def validate_request_update_args(request_args, config, reqmgr_db_service, param):
@@ -43,25 +81,30 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     """
     # this needs to be deleted for validation
     request_name = request_args.pop("RequestName")
+
     couchurl = '%s/%s' % (config.couch_host, config.couch_reqmgr_db)
     workload = WMWorkloadHelper()
     workload.loadSpecFromCouch(couchurl, request_name)
 
+    request = reqmgr_db_service.getRequestByNames(request_name)
+    request = request[request_name]
+    reqArgsDiff = _validate_request_allowed_args(request, request_args)
+
     # validate the status
-    if "RequestStatus" in request_args:
-        validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
-        if request_args["RequestStatus"] in STATES_ALLOW_ONLY_STATE_TRANSITION:
+    if "RequestStatus" in reqArgsDiff:
+        validate_state_transition(reqmgr_db_service, request_name, reqArgsDiff["RequestStatus"])
+        if reqArgsDiff["RequestStatus"] in STATES_ALLOW_ONLY_STATE_TRANSITION:
             # if state change doesn't allow other transition nothing else to validate
             args_only_status = {}
-            args_only_status["RequestStatus"] = request_args["RequestStatus"]
-            args_only_status["cascade"] = request_args.get("cascade", False)
+            args_only_status["RequestStatus"] = reqArgsDiff["RequestStatus"]
+            args_only_status["cascade"] = reqArgsDiff.get("cascade", False)
             return workload, args_only_status
-        elif request_args["RequestStatus"] == 'assigned':
-            workload.validateArgumentForAssignment(request_args)
+        elif reqArgsDiff["RequestStatus"] == 'assigned':
+            workload.validateArgumentForAssignment(reqArgsDiff)
 
-    validate_request_priority(request_args)
+    validate_request_priority(reqArgsDiff)
 
-    return workload, request_args
+    return workload, reqArgsDiff
 
 
 def validate_request_priority(reqArgs):

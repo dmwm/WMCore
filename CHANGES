@@ -1,3 +1,7 @@
+2.3.4.2 to 2.3.4.3:
+  - Update restartComponent.sh script to notify everyone in the WMCore team (Alan Malta Rodrigues) #12082
+
+
 2.3.4.1 to 2.3.4.2:
   - WorkQueue: convert PNN to PSN for pileup location (Alan Malta Rodrigues) #12073
 

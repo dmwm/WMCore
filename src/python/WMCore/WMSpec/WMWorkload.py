@@ -896,7 +896,14 @@ class WMWorkloadHelper(PersistencyHelper):
                 mem = memory.get(task.name())
             else:
                 mem = memory
-            task.setJobResourceInformation(memoryReq=mem)
+            
+            # If a task is specified, the ResourceInformation should take into account that
+            # it may not want to be ignored, regardless of the task 
+            if initialTask is not None:
+                task.setJobResourceInformation(memoryReq=mem, taskType=task.taskType()) # Or taskType=initialTask.taskType() ?
+            else:
+                task.setJobResourceInformation(memoryReq=mem)
+
             self.setMemory(memory, task)
 
         return
@@ -2002,6 +2009,10 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if kwargs.get("Memory") is not None:
             self.setMemory(kwargs.get("Memory"))
+        if kwargs.get("TaskMemory") is not None:
+            for taskName in kwargs.get("TaskMemory"):
+                task = self.getTaskByName(taskName)
+                self.setMemory(memory=kwargs.get("TaskMemory"), initialTask=task)
         if kwargs.get("Multicore") is not None:
             self.setCoresAndStreams(kwargs.get("Multicore"), kwargs.get("EventStreams"))
 

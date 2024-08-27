@@ -625,7 +625,7 @@ class WMTaskHelper(TreeHelper):
         if memoryReq or getattr(performanceParams, "memoryRequirement", None):
             performanceParams.memoryRequirement = memoryReq or getattr(performanceParams, "memoryRequirement")
             # if we change memory requirements, then we must change MaxPSS as well
-            self.setMaxPSS(performanceParams.memoryRequirement)
+            self.setMaxPSS(performanceParams.memoryRequirement, taskType)
 
         return
 

@@ -896,7 +896,6 @@ class WMWorkloadHelper(PersistencyHelper):
                 mem = memory.get(task.name())
             else:
                 mem = memory
-                
             task.setJobResourceInformation(memoryReq=mem)
             self.setMemory(memory, task)
 

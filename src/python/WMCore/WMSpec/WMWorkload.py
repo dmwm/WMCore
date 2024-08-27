@@ -893,9 +893,13 @@ class WMWorkloadHelper(PersistencyHelper):
 
         for task in taskIterator:
             if isinstance(memory, dict):
-                mem = memory.get(task.name())
+                if task.name() in memory:
+                    mem = memory.get(task.name())
+                else:
+                    mem = memory.get("default")
             else:
                 mem = memory
+            
             task.setJobResourceInformation(memoryReq=mem)
             self.setMemory(memory, task)
 

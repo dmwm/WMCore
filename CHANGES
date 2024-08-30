@@ -1,3 +1,9 @@
+2.3.6rc1 to 2.3.6rc2:
+  - proper fix for extra line in voms-proxy-info output (Stefano Belforte) #12084
+  - Update restartComponent.sh script to notify everyone in the WMCore team (Alan Malta Rodrigues) #12080
+  - New docker wrapper script to manage docker actions on stable images, and its implementation in the CI/CD template (Valentin Kuznetsov) #12005
+
+
 2.3.5 to 2.3.6rc1:
   - skip possible JVM msg in voms-proxy-info output. Fix #12075 (Stefano Belforte) #12076
   - Fix patchComponent logic to find the correct python lib && Add logic to zero the codebase before every patch to the version/tag deployed at the host (Todor Ivanov) #12074

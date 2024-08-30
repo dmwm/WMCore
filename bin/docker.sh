@@ -60,10 +60,8 @@ if [ "$action" == "build" ]; then
 fi
 
 if [ "$action" == "push" ]; then
-    image_exist=`docker images | grep $tag | grep $service | grep -v ${tag}${suffix}`
-    image_exist_stable=`docker images | grep ${tag}${suffix} | grep $service`
+    image_exist=$(docker images | grep $tag | grep $service | grep -v ${tag}-stable)
     echo $image_exist
-    echo $image_exist_stable
     
     if [ -z "$image_exist" ]; then
         echo "Images ${rurl}:${tag} not found"
@@ -72,10 +70,15 @@ if [ "$action" == "push" ]; then
     echo "action: docker push ${rurl}:${tag}"
     docker push ${rurl}:${tag}
 
-    if [ -n "$suffix" ] && [ -z "$image_exist_stable" ]; then
-        echo "Images ${rurl}:${tag}${suffix} not found"
-        exit 2
+    # now push the stable release
+    if [ -n "$suffix" ]; then
+        image_exist_stable=$(docker images | grep ${tag}${suffix} | grep $service)
+        echo $image_exist_stable
+        if [ -z "$image_exist_stable" ]; then
+            echo "Images ${rurl}:${tag}${suffix} not found"
+            exit 2
+        fi
+        echo "action: docker push ${rurl}:${tag}${suffix}"
+        docker push ${rurl}:${tag}${suffix}
     fi
-    echo "action: docker push ${rurl}:${tag}${suffix}"
-    docker push ${rurl}:${tag}${suffix}
 fi

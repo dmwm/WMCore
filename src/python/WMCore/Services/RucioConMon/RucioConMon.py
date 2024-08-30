@@ -14,7 +14,8 @@ from urllib.parse import urlencode
 import gzip
 import json
 import logging
-from memory_profiler import profile
+#from memory_profiler import profile
+from pympler import asizeof
 
 from WMCore.Services.Service import Service
 from Utils.Utilities import decodeBytesToUnicode
@@ -99,8 +100,8 @@ class RucioConMon(Service):
         rseStats = self._getResult(uri, callname='stats')
         return rseStats
 
-    profileFp = open('getRSEUnmerged.log', 'w+')
-    @profile(stream=profileFp)
+    #profileFp = open('getRSEUnmerged.log', 'w+')
+    #@profile(stream=profileFp)
     def getRSEUnmerged(self, rseName, zipped=False):
         """
         Gets the list of all unmerged files in an RSE
@@ -122,6 +123,8 @@ class RucioConMon(Service):
             uri = "files?rse=%s&format=json" % rseName
             callname = '{}.json'.format(rseName)
             rseUnmerged = self._getResult(uri, callname=callname)
+
+        self['logger'].info(f"Size of rseUnmerged object: {asizeof.asizeof(rseUnmerged)}")
         # now lazily return items
         for item in rseUnmerged:
             yield item

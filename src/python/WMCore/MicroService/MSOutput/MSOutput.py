@@ -81,7 +81,10 @@ class MSOutput(MSCore):
         self.mode = mode
         self.msConfig.setdefault("limitRequestsPerCycle", 500)
         self.msConfig.setdefault("enableDataPlacement", False)
+        # Enable relval workflows to go to tape
         self.msConfig.setdefault("enableRelValCustodial", False)
+        # Enable relval workflows to go to disk
+        self.msConfig.setdefault("enableRelValDisk", False)
         self.msConfig.setdefault("excludeDataTier", [])
         self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
         self.msConfig.setdefault("rucioRSEAttribute", 'dm_weight')
@@ -737,8 +740,10 @@ class MSOutput(MSCore):
         :return: True if the dataset is allowed to pass, False otherwise
         """
         # Bypass every configuration for RelVals, keep everything on disk
+        # unless the disk option for this workflow is not enabled.
         if isRelVal:
-            return True
+            return self.msConfig['enableRelValDisk']
+
         dataTier = dataItem['Dataset'].split('/')[-1]
         if dataTier in self.msConfig['excludeDataTier']:
             self.logger.warning("Skipping dataset: %s because it's excluded in the MS configuration",

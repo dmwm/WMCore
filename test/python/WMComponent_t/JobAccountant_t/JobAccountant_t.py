@@ -1633,41 +1633,39 @@ class JobAccountantTest(EmulatedUnitTestCase):
 
         self.assertFalse(jobSuccess, "Job should have failed because a file has no location")
 
-        from pprint import pformat
         # now verify the WMBS information to be inserted into the database
         self.assertEqual(accountantWorker.parentageBinds, [],
                          "Job report has no parentage relationship to be defined")
-        self.assertEqual(len(accountantWorker.wmbsFilesToBuild), 2,
+        self.assertEqual(len(accountantWorker.wmbsFilesToBuild), 1,
                          "Should have 3 files if all of them had valid location")
-
         self.assertEqual(accountantWorker.wmbsMergeFilesToBuild, [],
                          "Job report has no merge files to register")
         self.assertEqual(accountantWorker.parentageBindsForMerge, [],
                          "Job report has no parentage files to register")
+        self.assertEqual(accountantWorker.mergedOutputFiles, [],
+                         "Job report should have no merged output files")
+        self.assertEqual(len(accountantWorker.filesetAssoc), 1,
+                         "Job report should have no file association")
+        self.assertTrue(accountantWorker.filesetAssoc[0]['lfn'].endswith("logArchive.tar.gz"))
 
         self.assertEqual(len(jobReport.listSteps()), 8)
-        #print("AMR all files: %s" % pformat(jobReport.getAllFiles()))
         # steps that do not have any output files
         for stepName in ['cmsRun1', 'cmsRun2', 'cmsRun3', 'cmsRun4', 'stageOut1']:
             filesForStep = jobReport.getAllFilesFromStep(stepName)
-            logging.info("AMR step: %s, had output: %s", stepName, filesForStep)
             self.assertEqual(filesForStep, [])
 
         # steps that produced output files not have any output files
         filesForStep = jobReport.getAllFilesFromStep('cmsRun5')
-        #logging.info("AMR step: cmsRun5, had output: %s", pformat(filesForStep))
         self.assertEqual(len(filesForStep), 1)
         self.assertTrue('83BC5087-21BD-6140-9118-51204C0B64B9.root' in filesForStep[0]['lfn'])
         self.assertEqual({'T2_CH_CSCS'}, filesForStep[0]['locations'])
 
         filesForStep = jobReport.getAllFilesFromStep('cmsRun6')
-        #logging.info("AMR step: cmsRun6, had output: %s", pformat(filesForStep))
         self.assertEqual(len(filesForStep), 1)
         self.assertTrue('CFC2B499-098E-0143-8A7D-BED766ED7D87.root' in filesForStep[0]['lfn'])
         self.assertEqual(set(), filesForStep[0]['locations'])
 
         filesForStep = jobReport.getAllFilesFromStep('logArch1')
-        #logging.info("AMR step: logArch1, had output: %s", pformat(filesForStep))
         self.assertEqual(len(filesForStep), 1)
         self.assertTrue('e3230232-09ed-40c0-ac47-ddf926edcd57-64-3-logArchive.tar.gz' in filesForStep[0]['lfn'])
         self.assertEqual({'T2_CH_CSCS'}, filesForStep[0]['locations'])

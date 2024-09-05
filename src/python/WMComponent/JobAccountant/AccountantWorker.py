@@ -495,19 +495,16 @@ class AccountantWorker(WMConnectionBase):
         else:
             fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
 
-        # Make sure every file has a valid location
-        # see https://github.com/dmwm/WMCore/issues/9353
-        newList = []
+        # Workaround: make sure every file has a valid location. See:
+        # https://github.com/dmwm/WMCore/issues/9353 and https://github.com/dmwm/WMCore/issues/12092
         for fwjrFile in fileList:
             # T0 has analysis file without any location, see:
             # https://github.com/dmwm/WMCore/issues/9497
             if not fwjrFile.get("locations") and fwjrFile.get("lfn", "").endswith(".root"):
                 logging.warning("The following file does not have any location: %s", fwjrFile)
                 jobSuccess = False
-            else:
-                newList.append(fwjrFile)
-        # save the new list free of ill files (without any location)
-        fileList = newList
+                fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
+                break
 
         if jobSuccess:
             logging.info("Job %d , handle successful job", jobID)

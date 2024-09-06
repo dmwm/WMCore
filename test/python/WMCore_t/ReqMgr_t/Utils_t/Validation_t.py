@@ -8,8 +8,11 @@ from __future__ import division, print_function
 import unittest
 
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
+from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS, get_modifiable_properties
 from WMCore.ReqMgr.Utils.Validation import (validateOutputDatasets,
-                                            validate_request_priority)
+                                            validate_request_priority,
+                                            _validate_request_allowed_args)
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
 class ValidationTests(unittest.TestCase):
@@ -72,6 +75,28 @@ class ValidationTests(unittest.TestCase):
             reqArgs = {'RequestPriority': badPrio}
             with self.assertRaises(InvalidSpecParameterValue):
                 validate_request_priority(reqArgs)
+
+
+    def testValidateRequestAllowedArgs(self):
+        """
+        Tests the `_validate_request_allowed_args` functions, which validates two pairs
+        of request arguments and returns the difference between them and on top of that
+        applies a filter of allowed parameters changes per status
+        :return: nothing, raises an exception if there are problems
+        """
+        defReqArgs = StdBase.getWorkloadAssignArgs()
+        newReqArgs = {key: None for key in defReqArgs.keys()}
+
+        for status in ACTIVE_STATUS:
+            # NOTE: We need to add the RequestStatus artificially and assign it
+            #       to the currently tested active status
+            defReqArgs["RequestStatus"] = status
+            expectedReqArgs = {key: None for key in get_modifiable_properties(status)}
+            reqArgsDiff = _validate_request_allowed_args(defReqArgs, newReqArgs)
+            print(f"reqArgsDiff: {reqArgsDiff}")
+            print(f"expectedReqArgs: {expectedReqArgs}")
+            self.assertDictEqual(reqArgsDiff, expectedReqArgs)
+            print("===============================")
 
 
 if __name__ == '__main__':

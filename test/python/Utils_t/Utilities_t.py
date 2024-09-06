@@ -8,13 +8,59 @@ import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
     safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
-    encodeUnicodeToBytes, diskUse, numberCouchProcess
+    encodeUnicodeToBytes, diskUse, numberCouchProcess, reduceReport
 
 
 class UtilitiesTests(unittest.TestCase):
     """
     unittest for Utilities functions
     """
+
+    def testReduceReport(self):
+        """
+        Test reduceReport function
+        """
+        testList = ['OK', 'OK', 'OK']
+        self.assertEqual(reduceReport(testList), 'OK')
+        self.assertEqual(reduceReport([]), 'OK')
+        testList.append(None)
+        self.assertEqual(reduceReport(testList), False)
+
+        testList = ['nonDefStr', 'nonDefStr', 'nonDefStr']
+        self.assertEqual(reduceReport(testList, expectedValue='nonDefStr'), 'nonDefStr')
+        self.assertEqual(reduceReport([], expectedValue='nonDefStr'), 'nonDefStr')
+        testList.append(False)
+        self.assertEqual(reduceReport(testList, expectedValue='nonDefStr'), False)
+
+        testList = [True, True, True]
+        self.assertEqual(reduceReport(testList, expectedValue=True), True)
+        self.assertEqual(reduceReport([], expectedValue=True), True)
+        testList.append(False)
+        self.assertEqual(reduceReport(testList, expectedValue=True), False)
+
+        testList = [None, None, None]
+        self.assertEqual(reduceReport(testList, expectedValue=None), False)
+        self.assertEqual(reduceReport([], expectedValue=None), False)
+        testList.append(False)
+        self.assertEqual(reduceReport(testList, expectedValue=None), False)
+
+        testList = [False, False, False]
+        self.assertEqual(reduceReport(testList, expectedValue=False), False)
+        self.assertEqual(reduceReport([], expectedValue=False), False)
+        testList.append(True)
+        self.assertEqual(reduceReport(testList, expectedValue=False), False)
+
+        testList = [{'res': 'OK'}, {'res': 'OK'}, {'res': 'OK'}]
+        self.assertDictEqual(reduceReport(testList, expectedValue={'res': 'OK'}), {'res': 'OK'})
+        self.assertDictEqual(reduceReport([], expectedValue={'res': 'OK'}), {'res': 'OK'})
+        testList.append(False)
+        self.assertEqual(reduceReport(testList, expectedValue={'res': 'OK'}), False)
+
+        testList = [['OK'], ['OK'], ['OK']]
+        self.assertListEqual(reduceReport(testList, expectedValue=['OK']), ['OK'])
+        self.assertListEqual(reduceReport([], expectedValue=['OK']), ['OK'])
+        testList.append(False)
+        self.assertEqual(reduceReport(testList, expectedValue=['OK']), False)
 
     def testMakeList(self):
         """

@@ -1,3 +1,9 @@
+2.3.6rc2 to 2.3.6rc3:
+  - Persist only logArch1 step output for jobs marked as failed inside JobAccountant (Alan Malta Rodrigues) #12093
+  - Disable relval workflows going to disk by default in MSOutput. (Kenyi Hurtado) #12090
+  - Fix check for non-stable docker image in the CD pipeline (Alan Malta Rodrigues) #12088
+
+
 2.3.6rc1 to 2.3.6rc2:
   - proper fix for extra line in voms-proxy-info output (Stefano Belforte) #12084
   - Update restartComponent.sh script to notify everyone in the WMCore team (Alan Malta Rodrigues) #12080

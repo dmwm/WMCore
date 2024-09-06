@@ -14,6 +14,8 @@ from urllib.parse import urlencode
 import gzip
 import json
 import logging
+
+import tracemalloc
 #from memory_profiler import profile
 from pympler import asizeof
 
@@ -41,6 +43,7 @@ class RucioConMon(Service):
         configDict['logger'] = logger if logger else logging.getLogger()
         super(RucioConMon, self).__init__(configDict)
         self['logger'].debug("Initializing RucioConMon with url: %s", self['endpoint'])
+        tracemalloc.start()
 
     def _getResult(self, uri, callname="", clearCache=False, args=None):
         """
@@ -81,14 +84,27 @@ class RucioConMon(Service):
         :param clearCache: parameter to control the cache behavior
         :return: yields a single record from the data retrieved
         """
+        snapshot1 = tracemalloc.take_snapshot()
         cachedApi = callname
         if clearCache:
             self.clearCache(cachedApi)
 
         with self.refreshCache(cachedApi, uri, decoder=False, binary=True) as istream:
+            snapshot2 = tracemalloc.take_snapshot()
             for line in istream:
                 line = decodeBytesToUnicode(line).replace("\n", "")
                 yield line
+        snapshot3 = tracemalloc.take_snapshot()
+        
+        print("Memory stats between snapshot2 and snapshot1")
+        top_stats = snapshot2.compare_to(snapshot1, 'lineno')
+        for thisStat in top_stats[:5]:
+            print(thisStat)
+
+        print("Memory stats between snapshot3 and snapshot2")
+        top_stats = snapshot3.compare_to(snapshot2, 'lineno')
+        for thisStat in top_stats[:5]:
+            print(thisStat)
 
     def getRSEStats(self):
         """

@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-#from memory_profiler import profile
+from memory_profiler import profile
 from pympler import asizeof
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 
@@ -18,8 +18,8 @@ def loggerSetup(logLevel=logging.INFO):
     return logger
 
 
-#profileFp = open('getUnmergedFiles.log', 'w+')
-#@profile(stream=profileFp)
+profileFp = open('getUnmergedFiles.log', 'w+')
+@profile(stream=profileFp)
 def getUnmergedFiles(rucioConMon, logger, compressed=False):
     dirs = set()
     counter = 0

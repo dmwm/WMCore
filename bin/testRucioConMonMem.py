@@ -1,12 +1,15 @@
 import os
 import sys
 import logging
+
 from memory_profiler import profile
 from pympler import asizeof
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 
-RSE_NAME = "T2_AT_Vienna"
+RSE_NAME = "T1_US_FNAL_Disk"
 RUCIO_CONMON_URL = "https://cmsweb.cern.ch/rucioconmon/unmerged"
+
+
 
 def loggerSetup(logLevel=logging.INFO):
     logger = logging.getLogger(__name__)
@@ -18,8 +21,9 @@ def loggerSetup(logLevel=logging.INFO):
     return logger
 
 
-profileFp = open('getUnmergedFiles.log', 'w+')
-@profile(stream=profileFp)
+#profileFp = open('getUnmergedFiles.log', 'w+')
+#@profile(stream=profileFp)
+@profile
 def getUnmergedFiles(rucioConMon, logger, compressed=False):
     dirs = set()
     counter = 0
@@ -28,7 +32,7 @@ def getUnmergedFiles(rucioConMon, logger, compressed=False):
         dirPath = _cutPath(lfn)
         dirs.add(dirPath)
         #logger.info(f"Size of dirs object: {asizeof.asizeof(dirs)}")
-        counter =+ 1
+        counter += 1
     logger.info(f"Total files received: {counter}, unique dirs: {len(dirs)}")
     return dirs
 
@@ -53,14 +57,16 @@ def _cutPath(filePath):
 
 def main():
     logger = loggerSetup()
-    zipped=False
     rucioConMon = RucioConMon(RUCIO_CONMON_URL, logger=logger)
-    logger.info(f"Fetching unmerged dump for RSE: {RSE_NAME} with compressed data: {zipped}")
-    getUnmergedFiles(rucioConMon, logger, compressed=zipped)
+    if False:
+        zipped=False
+        logger.info(f"Fetching unmerged dump for RSE: {RSE_NAME} with compressed data: {zipped}")
+        getUnmergedFiles(rucioConMon, logger, compressed=zipped)
 
-    zipped=True
-    logger.info(f"Fetching unmerged dump for RSE: {RSE_NAME} with compressed data: {zipped}")
-    getUnmergedFiles(rucioConMon, logger, compressed=zipped)
+    if True:
+        zipped=True
+        logger.info(f"Fetching unmerged dump for RSE: {RSE_NAME} with compressed data: {zipped}")
+        getUnmergedFiles(rucioConMon, logger, compressed=zipped)
     logger.info("Done!")
 
 

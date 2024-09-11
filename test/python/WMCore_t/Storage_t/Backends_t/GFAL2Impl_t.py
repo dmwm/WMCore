@@ -112,15 +112,17 @@ class GFAL2ImplTest(unittest.TestCase):
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-               echo "Cleaning up failed file:"
-               %s
+                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+                echo "Cleaning up failed file:"
+                {remove_command}
             fi
             exit $EXIT_STATUS
-            """ % createRemoveFileCommandResult
-
+            """.format(
+                remove_command=createRemoveFileCommandResult
+            )
+        
         return result
-
+ 
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.os.path')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')
     def testRemoveFile_isFile(self, mock_executeCommand, mock_path):

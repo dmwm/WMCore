@@ -11,6 +11,7 @@ import stat
 import subprocess
 import time
 import zlib
+import logging
 
 from Utils.Utilities import decodeBytesToUnicode
 
@@ -152,3 +153,30 @@ def getFullPath(name, envPath="PATH"):
         if os.path.exists(fullPath):
             return fullPath
     return None
+
+
+def loadEnvFile(wmaEnvFilePath, logger=None):
+    """
+    _loadEnvFile_
+    A simple function to load an additional bash env file into the current script
+    runtime environment
+    :param wmaEnvFilePath: The path to the environment file to be loaded
+    :return:               True if the script has loaded successfully, False otherwise.
+    """
+    if not logger:
+        logger = logging.getLogger()
+    subProc = subprocess.run(['bash', '-c', f'source {wmaEnvFilePath} && python -c "import os; print(repr(os.environ.copy()))" '],
+                                   capture_output=True, check=False)
+    if subProc.returncode == 0:
+        newEnv = eval(subProc.stdout)
+        os.environ.update(newEnv)
+        if subProc.stderr:
+            logger.warning("Environment file: %s loaded with errors:", wmaEnvFilePath)
+            logger.warning(subProc.stderr.decode())
+        else:
+            logger.info("Environment file: %s loaded successfully", wmaEnvFilePath)
+        return True
+    else:
+        logger.error("Failed to load environment file: %s", wmaEnvFilePath)
+        logger.error(subProc.stderr.decode())
+        return False

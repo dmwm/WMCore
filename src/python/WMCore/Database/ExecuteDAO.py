@@ -24,16 +24,17 @@ Usage:
 import sys
 import os
 import re
-import ast
+
 import threading
 import logging
 import argparse
+import pickle
 from pprint import pformat
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import WMInit
 from WMCore.Agent.Configuration import Configuration, loadConfigurationFile
-
+from Utils.FileTools import loadEnvFile
 
 def parseArgs():
     """
@@ -44,11 +45,18 @@ def parseArgs():
         formatter_class=argparse.RawTextHelpFormatter,
         description=__doc__)
 
-    parser.add_argument('-c', '--config', required=True,
+    parser.add_argument('-c', '--config', required=False,
+                        default=os.environ.get("WMA_CONFIG_FILE", None),
                         help="""\
-                        The path to WMAGENT_CONFIG to be used, e.g.
-                        for production: /data/srv/wmagent/current/config/wmagent/config.py
-                        for tier0:      /data/tier0/srv/wmagent/current/config/tier0/config.py""")
+                        The WMAgent config file to be used for the this execution. Default is taken from
+                        the current's shell environment variable $WMA_CONFIG_FILE
+                        """)
+    parser.add_argument('-e', '--envFile', required=False,
+                        default=os.environ.get("WMA_ENV_FILE", None),
+                        help="""
+                        The WMAgent environment file to be used for the this execution. Default is taken from
+                        the current's shell environment variable $WMA_ENV_FILE
+                        """)
     parser.add_argument('-p', '--package', required=True,
                         help="""\
                         The package from which the DAO factory to be created for this execution, e.g. WMCore.WMBS or WMComponent.DBS3Buffer""")
@@ -70,25 +78,32 @@ def parseArgs():
     parser.add_argument('sqlArgs', nargs=argparse.REMAINDER, default=(),
                         help="""\
                         -- Positional parameters to be forwarded to the DAO execute method and used as SQL arguments in the query.""")
+    parser.add_argument('-f', '--pklFile', default=None,
+                        help="""\
+                        An extra *.pkl file containing any additional python objects needed for the given dao
+                        e.g. WMCore.WMBS.Files.AddRunLumi.
+                        The object is always loaded under the name `pklFile`. One can access the contents of the so loaded pkl file
+                        during the dao execution trough the -s arguent e.g.:
+                        ExecuteDAO.py -p  WMCore.WMBS -m Files.AddRunLumi -c $WMA_CONFIG_FILE -f runLumiBinds_2035-4016.pkl -s "{'file': pklFile['data']}
+                        """)
+    currArgs = parser.parse_args()
 
-    args = parser.parse_args()
-
-    return args
+    return currArgs
 
 
 def loggerSetup(logLevel=logging.INFO):
     """
     Return a logger which writes everything to stdout.
     """
-    logger = logging.getLogger()
+    currLogger = logging.getLogger()
     outHandler = logging.StreamHandler(sys.stdout)
     outHandler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(module)s: %(message)s"))
     outHandler.setLevel(logLevel)
-    if logger.handlers:
-        logger.handlers.clear()
-    logger.addHandler(outHandler)
-    logger.setLevel(logLevel)
-    return logger
+    if currLogger.handlers:
+        currLogger.handlers.clear()
+    currLogger.addHandler(outHandler)
+    currLogger.setLevel(logLevel)
+    return currLogger
 
 
 def getBackendFromDbURL(dburl):
@@ -110,15 +125,12 @@ class ExecuteDAO():
     """
     A generic class to create the DAO Factory and execute the DAO module.
     """
-    def __init__(self, logger=None, configFile=None,
-                 connectUrl=None, socket=None,
-                 package=None, daoModule=None):
+    def __init__(self, connectUrl=None, socket=None, configFile=None,
+                 package=None, daoModule=None, logger=None):
         """
         __init__
         The ExecuteDAO constructor method.
-        :param logger: The logger instance.
         :param package: The Package from which the DAO factory to be initialised.
-        :param configFile: Path to WMAgent configuration file.
         :param connectUrl: Database connection URL (overwrites the connectUrl param from configFile if both present)
         :param socket: Database connection URL (overwrites the socket param from configFile if both present)
         :param module: The DAO module to be executed.
@@ -215,7 +227,13 @@ class ExecuteDAO():
             self.logger.info("DAO SQL arguments provided:\n%s, %s", pformat(sqlArgs), pformat(sqlKwArgs))
         else:
             results = self.dao.execute(*sqlArgs, **sqlKwArgs)
-            self.logger.info("DAO Results:\n%s", pformat(results if isinstance(results, dict) else list(results)))
+            # self.logger.info("DAO Results:\n%s", pformat(results if isinstance(results, dict) else list(results)))
+            if isinstance(results, dict):
+                self.logger.info("DAO Results:\n%s", pformat(results))
+            elif isinstance(results, bool):
+                self.logger.info("DAO Results:\n%s", results)
+            else:
+                self.logger.info("DAO Results:\n%s", list(results))
         return results
 
     def getSqlQuery(self):
@@ -244,27 +262,36 @@ def strToDict(dString, logger=None):
     :param dString: The dictionary string to be parsed. Possible formats are either a string
                     of multiple space separated named values of the form 'name=value':
                     or a srting fully defining the dictionary itself.
-    :param logger:  A logger object to be used for Error message printout
     :return:        The constructed dictionary
     """
-    logger = logger or logging.getLogger()
-    result = ast.literal_eval(dString)
+    if not logger:
+        logger = logging.getLogger()
+    # result = ast.literal_eval(dString)
+    result = eval(dString)
     if not isinstance(result, dict):
         logger.error("The Query named arguments need to be provided as a dictionary. WRONG option: %s", pformat(dString))
         raise TypeError(pformat(dString))
     return result
 
 
-def main():
-    """
-    An Utility to construct a DAO Factory and execute the DAO requested.
-    """
+if __name__ == '__main__':
     args = parseArgs()
 
     if args.debug:
         logger = loggerSetup(logging.DEBUG)
     else:
         logger = loggerSetup()
+
+    # Create an instance of the *.pkl file provided with the dao call, if any.
+    if args.pklFile:
+        pklFilePath = os.path.normpath(args.pklFile)
+        if not os.path.exists(pklFilePath):
+            logger.error("Cannot find the pkl file: %s. Exit!", pklFilePath)
+            sys.exit(1)
+        with open(pklFilePath, 'rb') as fd:
+            pklFile = pickle.load(fd)
+            logger.info('PklFile: %s loaded as: `pklFile`. You can refer to its content through the -s argument.', pklFilePath)
+    # logger.info(pformat(pklFile))
 
     # Remove leading double slash if present:
     if args.sqlArgs and args.sqlArgs[0] == '--':
@@ -276,17 +303,25 @@ def main():
 
     # Parse named arguments to a proper dictionary:
     if not isinstance(args.sqlKwArgs, dict):
-        args.sqlKwArgs = strToDict(args.sqlKwArgs, logger=logger)
+        args.sqlKwArgs = strToDict(args.sqlKwArgs)
 
-    # Try to set the wmagent configuration in the environment
-    if 'WMAGENT_CONFIG' not in os.environ:
+    # Trying to load WMA_ENV_FILE
+    if not args.envFile or not os.path.exists(args.envFile):
+        logger.warning("Missing WMAgent environment file! One may expect DAO misbehavior!")
+    else:
+        logger.info("Trying to source explicitely the WMAgent environment file: %s", args.envFile)
+        try:
+            loadEnvFile(args.envFile)
+        except Exception as ex:
+            logger.error("Failed to load wmaEnvFile: %s", args.envFile)
+            raise
+
+    if not args.config or not os.path.exists(args.config):
+        logger.warning("Missing WMAgent config file! One may expect DAO failure")
+    else:
+        # resetting the configuration file in the env (if the default is overwritten through args)
         os.environ['WMAGENT_CONFIG'] = args.config
-    configFile = os.environ['WMAGENT_CONFIG']
+        os.environ['WMA_CONFIG_FILE'] = args.config
 
-    daoObject = ExecuteDAO(logger=logger, configFile=configFile,
-                           package=args.package, daoModule=args.module)
+    daoObject = ExecuteDAO(package=args.package, daoModule=args.module, configFile=args.config)
     daoObject(*args.sqlArgs, dryRun=args.dryRun, daoHelp=True, **args.sqlKwArgs)
-
-
-if __name__ == '__main__':
-    main()

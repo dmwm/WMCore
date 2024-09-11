@@ -1,0 +1,241 @@
+#!/usr/bin/env python
+"""
+wmagent-component-standalone
+
+Utility script for running a WMAgent component standalone.
+
+Example usage:
+
+interactive mode:
+ipython -i $WMA_DEPLOY_DIR/bin/wmagent-component-standalone -- -c $WMA_CONFIG_FILE  -p JobAccountant -e $WMA_ENV_FILE
+
+daemon mode:
+wmagent-component-standalone -c $WMA_CONFIG_FILE -p JobAccountant -e $WMA_ENV_FILE
+"""
+
+import os
+import sys
+import logging
+import importlib
+import runpy
+import pkgutil
+import inspect
+import subprocess
+from pprint import pprint,pformat
+from distutils.sysconfig import get_python_lib
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.WMInit import connectToDB
+from Utils.FileTools import loadEnvFile
+
+def createOptionParser():
+    """
+    _createOptionParser_
+
+    Creates an option parser to setup the component run parameters
+    """
+    exampleStr = """
+    Examples:
+
+    * interactive mode:
+    ipython -i $WMA_DEPLOY_DIR/bin/wmagent-component-standalone -- -c $WMA_CONFIG_FILE  -p JobAccountant -e $WMA_ENV_FILE
+
+    * daemon mode:
+    wmagent-component-standalone -c $WMA_CONFIG_FILE -p JobAccountant -e $WMA_ENV_FILE
+    """
+    helpStr = """
+    Utility script for running a WMAgent component standalone. It supports two modes:
+    * interactive - it loads all possible sub modules defined within the component's source area
+                    and tries to create a proper set of object instances for each of them
+                    in the global scope of the script, such that they could be used interactively
+    * daemon      - it mimics the normal behavior of a regular component run in the background,
+                    while at the same time giving the ability to overwrite some of the component's configuration parameters
+                    e.g. loglevel or provide an alternative WMA_CONFIG_FILE and/or WMA_ENV_FILE.
+    """
+    optParser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter,
+                               description=helpStr,
+                               epilog=exampleStr)
+    optParser.add_argument("-c", "--config", dest="wmaConfigPath", help="WMAgent configuration file.",
+                           default=os.environ.get("WMA_CONFIG_FILE", None))
+    optParser.add_argument("-e", "--envfile", dest="wmaEnvFilePath", help="WMAgent environment file.",
+                           default=os.environ.get("WMA_ENV_FILE", None))
+    optParser.add_argument("-d", "--daemon", dest="daemon",
+                           default=False, action="store_true",
+                           help="The component would be run as a daemon, similar to how it is run through the standard agent manage scripts.")
+    optParser.add_argument("-p", "--component", dest="wmaComponentName",
+                           default=None,
+                           help="The component/package to be loaded.")
+    optParser.add_argument("-l", "--loglevel", dest="logLevel",
+                           default='INFO',
+                           help="The loglevel at which the component should be run,")
+
+    return optParser
+
+
+def main():
+    """
+    _main_
+    The main function to be used for starting the chosen component as a daemon
+    """
+    # NOTE: There are two methods for running the wmcore daemon
+    #       * The first method forks and assosiates a new shell to the running process
+    #         os.system(f"wmcoreD --start --component {wmaComponentName}")
+    #       * The second method executes the daemon in the very same interpretter:
+    #         runpy("wmcoreD")
+
+    wmaDaemonPath = os.environ.get("WMA_DEPLOY_DIR", None) + "/bin/wmcoreD"
+
+    # Run the daemon:
+    logger.info("Starting the component daemon")
+    sys.argv = ["--", "--restart", "--component", wmaComponentName]
+    runpy.run_path(wmaDaemonPath)
+
+    return
+
+if __name__ == '__main__':
+    optParser = createOptionParser()
+    (options, args) = optParser.parse_known_args()
+    FORMAT = "%(asctime)s:%(levelname)s:%(module)s:%(funcName)s(): %(message)s"
+    LOGLEVEL = logging.INFO
+    # add logfile handler as well:
+    logFilePath = os.path.join(os.getenv('WMA_INSTALL_DIR', '/tmp'), f'{options.wmaComponentName}/ComponentLogStandalone')
+    logFileHandler = logging.FileHandler(logFilePath)
+    logStdoutHandler = logging.StreamHandler(sys.stdout)
+
+    logging.basicConfig(handlers=[logStdoutHandler, logFileHandler], format=FORMAT, level=LOGLEVEL)
+    logger = logging.getLogger(__name__)
+    # logger.setLevel(LOGLEVEL)
+
+    # sourcing $WMA_ENV_FILE explicitely
+    if not options.wmaEnvFilePath or not os.path.exists(options.wmaEnvFilePath):
+        msg = "Missing WMAgent environment file! One may expect component misbehaviour!"
+        logger.warning(msg)
+    else:
+        msg = "Trying to source explicitely the WMAgent environment file: %s"
+        logger.info(msg, options.wmaEnvFilePath)
+        try:
+            loadEnvFile(options.wmaEnvFilePath)
+        except Exception as ex:
+            logger.error("Failed to load wmaEnvFile: %s", options.wmaEnvFilePath)
+            raise
+
+    # checking the existence of wmaConfig file
+    if not options.wmaConfigPath or not os.path.exists(options.wmaConfigPath):
+        msg = "Missing WMAgent config file! One may expect component failure"
+        logger.warning(msg)
+    else:
+        # resetting the configuration in the env (if the default is overwritten through args)
+        os.environ['WMAGENT_CONFIG'] = options.wmaConfigPath
+        os.environ['WMA_CONFIG_FILE'] = options.wmaConfigPath
+
+    wmaConfig = loadConfigurationFile(options.wmaConfigPath)
+    logger.info(f"wmaEnvFilePath: {options.wmaEnvFilePath}")
+    logger.info(f"wmaConfigPath: {options.wmaConfigPath}")
+    logger.info(f"wmaComponent: {options.wmaComponentName}")
+    logger.info(f"logLevel: {options.logLevel}")
+    logger.info(f"daemon: {options.daemon}")
+
+    connectToDB()
+
+    logger.info(f"Creating default component objects.")
+    resourceControl = ResourceControl(config=wmaConfig)
+    wmaComponentName = options.wmaComponentName
+    wmaComponentModule = f"WMComponent.{wmaComponentName}"
+    # wmaComponent = importlib.import_module(wmaComponentModule + "." + wmaComponentName)
+
+    logger.info("Importing all possible modules found for this component")
+
+    # First find all possible locations for the component source
+    # NOTE: We always consider PYTHONPATH first
+    pythonLibPaths = os.getenv('PYTHONPATH', '').split(':')
+    pythonLibPaths.append(get_python_lib())
+    # Normalize paths and remove empty ones
+    pythonLibPaths = [x for x in pythonLibPaths if x]
+    for index, libPath in enumerate(pythonLibPaths):
+        pythonLibPaths[index] = os.path.normpath(libPath)
+
+    wmaComponentPaths = []
+    for comPath in pythonLibPaths:
+        comPath = f"{comPath}/WMComponent/{wmaComponentName}"
+        comPath = os.path.normpath(comPath)
+        if os.path.exists(comPath):
+            wmaComponentPaths.append(comPath)
+
+    modules = {}
+    classDefs = {}
+    # Then try to load all possible modules and submodules under the component's source path
+    # for pkgSource, pkgName, _ in pkgutil.iter_modules(wmaComponentPaths):
+    for pkgSource, pkgName, _ in pkgutil.walk_packages(wmaComponentPaths):
+        fullPkgName =  f"{wmaComponentModule}.{pkgName}"
+        if pkgName == "DefaultConfig":
+            continue
+        logger.info("Loading package: %s", fullPkgName)
+        modSpec = pkgSource.find_spec(fullPkgName)
+        module = importlib.util.module_from_spec(modSpec)
+        modSpec.loader.exec_module(module)
+        modules[pkgName] = module
+
+        # Emulating `from module import *`"
+        logger.info(f"Populating the namespace with all definitions from {pkgName}")
+        if "__all__" in module.__dict__:
+            names = module.__dict__["__all__"]
+        else:
+            names = [x for x in module.__dict__ if not x.startswith("_")]
+        globals().update({k: getattr(module, k) for k in names})
+
+        # Creating instances only for class definitions local to pkgName
+
+        # Note: The method bellow for separating local definitions from imported ones
+        #       won't work for decorated  classes, since the module name of the
+        #       decorated class defintion is considered to be the fully qulified
+        #       module name/path of the decorator rather than the package where the
+        #       the class definition exists:
+        #       e.g.:
+        #       In [10]: modules['DataCollectAPI'].__name__
+        #       Out[10]: 'WMComponent.AnalyticsDataCollector.DataCollectAPI'
+        #
+        #       In [11]: classDefs['DataCollectAPI']['LocalCouchDBData']
+        #       Out[11]: WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch.emulatorHook.<locals>.EmulatorWrapper
+        #
+        #       In [12]: classDefs['DataCollectAPI']['LocalCouchDBData'].__name__
+        #       Out[12]: 'EmulatorWrapper'
+        #
+        #       In [13]: classDefs['DataCollectAPI']['LocalCouchDBData'].__module__
+        #       Out[13]: 'WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch'
+        #
+        #       In [14]: modules['DataCollectAPI'].__name__
+        #       Out[14]: 'WMComponent.AnalyticsDataCollector.DataCollectAPI'
+
+        logger.info("Trying to create an instance of all class definitions inside: %s", pkgName)
+        classDefs[pkgName] = {}
+        for objName, obj in inspect.getmembers(module):
+            if inspect.isclass(obj) and obj.__module__ == modules[pkgName].__name__:
+                classDefs[pkgName][objName]=obj
+
+        for className in classDefs[pkgName]:
+            logger.info(f"{fullPkgName}:{className}")
+            try:
+                exec(f"{className.lower()} = {className}()")
+            except TypeError:
+                try:
+                    exec(f"{className.lower()} = {className}(wmaConfig)")
+                except TypeError:
+                    try:
+                        exec(f"{className.lower()} = {className}(wmaConfig, logger=logger)")
+                    except TypeError:
+                        logger.warning(f"We did our best to create an instance of: {pkgName}. Giving up now!")
+
+    def modReload():
+        for module in modules:
+            modName = modules[module].__name__
+            modInst = sys.modules.get(modName)
+            if modInst:
+                logger.info(f"Reloading module:{modName}")
+                importlib.reload(modInst)
+            else:
+                logger.warning(f"Cannot find module: {modName} in sys.modules")
+
+    if options.daemon:
+        main()

@@ -1,3 +1,8 @@
+2.3.4.3 to 2.3.4.4:
+  - Use PNN to PSN conversion in WQE mapping (Kenyi Hurtado) #12095
+  - Jobs that failed in JobAccountant only persist logArch1 output (Alan Malta Rodrigues) #12095
+
+
 2.3.4.2 to 2.3.4.3:
   - Update restartComponent.sh script to notify everyone in the WMCore team (Alan Malta Rodrigues) #12082
 

@@ -1,3 +1,9 @@
+2.3.6rc3 to 2.3.6rc4:
+  - Update python version to 3.8.20, with dmwm-base and wmagent-base images (Alan Malta Rodrigues) https://github.com/dmwm/CMSKubernetes/pull/1547
+  - Use PNN to PSN conversion in WQE mapping (Kenyi Hurtado) #12094
+  - Add first draft of wmagent-component-standalone script (Todor Ivanov) #12024
+
+
 2.3.6rc2 to 2.3.6rc3:
   - Persist only logArch1 step output for jobs marked as failed inside JobAccountant (Alan Malta Rodrigues) #12093
   - Disable relval workflows going to disk by default in MSOutput. (Kenyi Hurtado) #12090

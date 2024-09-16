@@ -9,6 +9,9 @@ from __future__ import print_function
 
 from builtins import next, range
 from future.utils import viewitems, viewvalues
+from collections  import namedtuple
+import inspect
+
 
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
@@ -59,6 +62,8 @@ class WMWorkloadException(WMException):
     pass
 
 
+setterTuple = namedtuple('SetterTuple', ['reqArg', 'setterFunc', 'setterSignature'])
+
 class WMWorkloadHelper(PersistencyHelper):
     """
     _WMWorkloadHelper_
@@ -68,6 +73,52 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def __init__(self, wmWorkload=None):
         self.data = wmWorkload
+        self.settersMap = {}
+
+    def updateWorkloadArgs(self, reqArgs):
+        """
+        Method to take a dictionary of arguments of the type:
+        {reqArg1: value,
+         reqArg2: value,
+         ...}
+        and update the workload by a predefined map of reqArg to setter methods.
+        :param reqArgs: A Dictionary of request arguments to be updated
+        :return:        Nothing, Raises an error of type WMWorkloadException if
+                        fails to apply the proper setter method
+        """
+        # NOTE: So far we support only a single argument setter methods, like
+        #       setSiteWhitelist or setPriority. This may change in the future,
+        #       but it will require a change in the logic of how we validate and
+        #       call the proper setter methods bellow.
+
+        # populate the current instance settersMap
+        self.settersMap['RequestPriority'] = setterTuple('RequestPriority', self.setPriority, inspect.signature(self.setPriority))
+        self.settersMap['SiteBlacklist'] = setterTuple('SiteBlacklist', self.setSiteBlacklist, inspect.signature(self.setSiteBlacklist))
+        self.settersMap['SiteWhitelist'] = setterTuple('SiteWhitelist', self.setSiteWhitelist, inspect.signature(self.setSiteWhitelist))
+
+        # First validate if we can properly call the setter function given the reqArgs passed.
+        for reqArg, argValue in reqArgs.items():
+            if not self.settersMap.get(reqArg, None):
+                msg = f"Unsupported or missing setter method for updating reqArg: {reqArg}."
+                raise WMWorkloadException(msg)
+            try:
+                self.settersMap[reqArg].setterSignature.bind(argValue)
+            except TypeError as ex:
+                msg = f"Setter's method signature does not match the method calls we currently support: Error: req{str(ex)}"
+                raise WMWorkloadException(msg) from None
+
+        # Now go through the reqArg again and call every setter method according to the map
+        for reqArg, argValue in reqArgs.items():
+            try:
+                self.settersMap[reqArg].setterFunc(argValue)
+            except Exception as ex:
+                currFrame = inspect.currentframe()
+                argsInfo = inspect.getargvalues(currFrame)
+                argVals = {arg: argsInfo.locals.get(arg) for arg in argsInfo.args}
+                msg = f"Failure while calling setter method {self.settersMap[reqArg].setterFunc.__name__} "
+                msg += f"With arguments: {argVals}"
+                msg += f"Full exception string: {str(ex)}"
+                raise WMWorkloadException(msg) from None
 
     def setSpecUrl(self, url):
         self.data.persistency.specUrl = sanitizeURL(url)["url"]

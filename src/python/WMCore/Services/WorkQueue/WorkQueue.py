@@ -256,6 +256,41 @@ class WorkQueue(object):
             wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
         return
 
+    def updateElementsByWorkflow(self, wf, updateParams, status=None):
+        """
+        Update all available WorkQueue elements of a given workflow  with a set
+        of arguments provided through the `updateParams` dictionary
+        :param wf:           The workflow name
+        :param updateParams: A dictionary with parameters  to be updated
+        :param status:       A list of allowed WorkQueue elements statuses to be considered for updating
+                             Default: None - do not filter by status
+        :return:             No value, raises exceptions from internal methods in case of errors.
+        """
+        # Fetch the whole view with Workqueue elements per given workflow
+        data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'startkey': [wf], 'endkey': [wf, {}],
+                                 'reduce': False})
+
+        # Fetch only a list of WorkQueue element Ids && Filter them by allowed status
+        if status:
+            elementsToUpdate = [x['id'] for x in data.get('rows', []) if x['value']['Status'] in status]
+        else:
+            elementsToUpdate = [x['id'] for x in data.get('rows', [])]
+
+        # Update all WorkQueue elements with the parameters provided in a single push
+        if elementsToUpdate:
+            self.updateElements(*elementsToUpdate, **updateParams)
+
+        # Update the spec, if it exists
+        if self.db.documentExists(wf):
+            wmspec = WMWorkloadHelper()
+            wmspec.load(self.hostWithAuth + "/%s/%s/spec" % (self.db.name, wf))
+            wmspec.updateWorkloadArgs(updateParams)
+            dummy_values = {'name': wmspec.name()}
+            wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
+        return
+
+
     def getWorkflowNames(self, inboxFlag=False):
         """Get workflow names from workqueue db"""
         if inboxFlag:

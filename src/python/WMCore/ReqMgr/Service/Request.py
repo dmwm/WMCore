@@ -424,27 +424,39 @@ class Request(RESTEntity):
             cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), reqArgs))
             return report
 
-        reqArgsNothandled = []
-        for reqArg in reqArgs:
-            if reqArg == 'RequestPriority':
-                validate_request_priority(reqArgs)
-                # must update three places: GQ elements, workload_cache and workload spec
-                self.gq_service.updatePriority(workload.name(), reqArgs['RequestPriority'])
-                workload.setPriority(reqArgs['RequestPriority'])
-                cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), reqArgs['RequestPriority']))
-            elif reqArg == "SiteWhitelist":
-                workload.setSiteWhitelist(reqArgs["SiteWhitelist"])
-                cherrypy.log('Updated SiteWhitelist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteWhitelist']))
-            elif reqArg == "SiteBlacklist":
-                workload.setSiteBlacklist(reqArgs["SiteBlacklist"])
-                cherrypy.log('Updated SiteBlacklist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteBlacklist']))
-            else:
-                reqArgsNothandled.append(reqArg)
-                cherrypy.log("Unhandled argument for no-status update: %s" % reqArg)
+        # reqArgsNothandled = []
+        # for reqArg in reqArgs:
+        #     if reqArg == 'RequestPriority':
+        #         validate_request_priority(reqArgs)
+        #         # must update three places: GQ elements, workload_cache and workload spec
+        #         self.gq_service.updatePriority(workload.name(), reqArgs['RequestPriority'])
+        #         workload.setPriority(reqArgs['RequestPriority'])
+        #         cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), reqArgs['RequestPriority']))
+        #     elif reqArg == "SiteWhitelist":
+        #         workload.setSiteWhitelist(reqArgs["SiteWhitelist"])
+        #         cherrypy.log('Updated SiteWhitelist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteWhitelist']))
+        #     elif reqArg == "SiteBlacklist":
+        #         workload.setSiteBlacklist(reqArgs["SiteBlacklist"])
+        #         cherrypy.log('Updated SiteBlacklist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteBlacklist']))
+        #     else:
+        #         reqArgsNothandled.append(reqArg)
+        #         cherrypy.log("Unhandled argument for no-status update: %s" % reqArg)
 
-        if reqArgsNothandled:
-            msg = "There were unhandled arguments left for no-status update: %s" % reqArgsNothandled
-            raise InvalidSpecParameterValue(msg)
+        # TODO:  map setters to key names:
+        # Creating a setter method map - directly in the workload object.
+
+        # Update all workload parameters based on the full reqArgsDiff dictionary
+        workload.updateWorkloadArgs(reqArgsDiff)
+
+        # Commit the changes of the current workload object to the database:
+        workload.saveCouchUrl(workload.specUrl())
+
+        # Commit all Global WorkQueue changes per workflow in a single go:
+        # self.gq_service.updateElementsByWorkflow(workload.name(), reqArgsDiff)
+
+        # if reqArgsNothandled:
+        #     msg = "There were unhandled arguments left for no-status update: %s" % reqArgsNothandled
+        #     raise InvalidSpecParameterValue(msg)
 
         # Commit the changes of the current workload object to the database:
         workload.saveCouchUrl(workload.specUrl())

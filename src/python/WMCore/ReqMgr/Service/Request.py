@@ -33,6 +33,7 @@ from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, valida
                                             isUserAllowed)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.WMSpec.WMWorkload import WMWorkloadUnhandledException
 
 
 class Request(RESTEntity):
@@ -413,6 +414,8 @@ class Request(RESTEntity):
         request_args will be ignored.
         """
         reqArgs = deepcopy(request_args)
+        reqStatus = workload.getStatus()
+        cherrypy.log(f"Handling request: {workload.name()} with CurrentRequest status: {reqStatus}")
 
         if not reqArgs:
             cherrypy.log(f"Nothing to be changed at this stage for {workload.name()}")
@@ -423,37 +426,19 @@ class Request(RESTEntity):
             cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), reqArgs))
             return report
 
-        reqArgsNothandled = []
-        for reqArg in reqArgs:
-            if reqArg == 'RequestPriority':
-                validate_request_priority(reqArgs)
-                # must update three places: GQ elements, workload_cache and workload spec
-                self.gq_service.updatePriority(workload.name(), reqArgs['RequestPriority'])
-                workload.setPriority(reqArgs['RequestPriority'])
-                cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), reqArgs['RequestPriority']))
-            elif reqArg == "SiteWhitelist":
-                workload.setSiteWhitelist(reqArgs["SiteWhitelist"])
-                cherrypy.log('Updated SiteWhitelist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteWhitelist']))
-            elif reqArg == "SiteBlacklist":
-                workload.setSiteBlacklist(reqArgs["SiteBlacklist"])
-                cherrypy.log('Updated SiteBlacklist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteBlacklist']))
-            else:
-                reqArgsNothandled.append(reqArg)
-                cherrypy.log("Unhandled argument for no-status update: %s" % reqArg)
-
-        reqStatus = self.reqmgr_db_service.getRequestByNames(workload.name())[workload.name()]['RequestStatus']
-        cherrypy.log(f"CurrentRequest status: {reqStatus}")
-        if reqArgsNothandled:
+        try:
+            # Commit all Global WorkQueue changes per workflow in a single go:
+            self.gq_service.updateElementsByWorkflow(workload, reqArgs, status=['Available', 'Negotiating', 'Acquired'])
+        except WMWorkloadUnhandledException as ex:
+            # Handling assignment-approved arguments differently to avoid code duplication
             if reqStatus == 'assignment-approved':
-                cherrypy.log(f"Handling assignment-approved arguments differently!")
+                cherrypy.log("Handling assignment-approved arguments differently!")
                 self._handleAssignmentStateTransition(workload, request_args, dn)
             else:
-                msg = "There were unhandled arguments left for no-status update: %s" % reqArgsNothandled
-                raise InvalidSpecParameterValue(msg)
+                msg = "There were unhandled arguments left for no-status update."
+                raise InvalidSpecParameterValue(msg) from ex
 
-        # Commit the changes of the current workload object to the database:
-        workload.saveCouchUrl(workload.specUrl())
-
+        # Finally update ReqMgr Database
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), reqArgs, dn)
 
         return report
@@ -481,7 +466,7 @@ class Request(RESTEntity):
         except Exception as ex:
             msg = traceback.format_exc()
             cherrypy.log("Error for request args %s: %s" % (request_args, msg))
-            raise InvalidSpecParameterValue(str(ex))
+            raise InvalidSpecParameterValue(str(ex)) from ex
 
         # validate/update OutputDatasets after ProcessingString and AcquisionEra is updated
         request_args['OutputDatasets'] = workload.listOutputDatasets()

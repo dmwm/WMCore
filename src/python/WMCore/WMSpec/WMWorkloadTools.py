@@ -279,7 +279,7 @@ def validateArgumentsCreate(arguments, argumentDefinition, checkInputDset=True):
     return
 
 
-def validateArgumentsUpdate(arguments, argumentDefinition):
+def validateArgumentsUpdate(arguments, argumentDefinition, optionKey="assign_optional"):
     """
     _validateArgumentsUpdate_
 
@@ -290,7 +290,7 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     otherwise returns None.
     """
     validateUnknownArgs(arguments, argumentDefinition)
-    _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
+    _validateArgumentOptions(arguments, argumentDefinition, optionKey)
     validateSiteLists(arguments)
 
     return

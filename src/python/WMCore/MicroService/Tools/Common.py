@@ -25,10 +25,6 @@ from Utils.CertTools import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
-# DBS agregators
-from dbs.apis.dbsClient import aggRuns, aggFileLumis
-
-
 # static variables
 STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
@@ -279,6 +275,11 @@ def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
     :param validFileOnly: integer flag for valid files only or not
     :return: a dict of blocks with list of file/run/lumi info
     """
+    # importing dbs3-client only in the functions where it is used so that 
+    # we do not need to add it to the docker images of microservices that do
+    # not use it.
+    from dbs.apis.dbsClient import aggFileLumis
+
     runLumisByBlock = {}
     urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(b)) for b in blocks]
     # limit it to 10 concurrent calls not to overload DBS
@@ -343,6 +344,11 @@ def getRunsInBlock(blocks, dbsUrl):
     :param dbsUrl: string with the DBS URL
     :return: a dictionary of block names and a list of run numbers
     """
+    # importing dbs3-client only in the functions where it is used so that 
+    # we do not need to add it to the docker images of microservices that do
+    # not use it.
+    from dbs.apis.dbsClient import aggRuns
+
     runsByBlock = {}
     urls = ['%s/runs?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
     logging.info("Executing %d requests against DBS 'runs' API", len(urls))

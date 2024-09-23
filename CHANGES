@@ -1,3 +1,10 @@
+2.3.6rc5 to 2.3.6rc6:
+  - Fix dbs3-client to version 4.0.19 and update imports for Microservices (Dario Mapelli) #12102
+  - Update WM Dockerfiles to tag pypi-20240923-stable (Alan Malta Rodrigues) https://github.com/dmwm/CMSKubernetes/pull/1551
+  - Remove unversioned dbs3-client from WM base images (Dario Mapelli) https://github.com/dmwm/CMSKubernetes/pull/1550
+  - Add SiteList actions to transient statuses in ReqMgr2 (Todor Ivanov) #12077
+
+
 2.3.6rc4 to 2.3.6rc5:
   - Update dbs3-client version to 4.0.19 (Valentin Kuznetsov) #12098
 

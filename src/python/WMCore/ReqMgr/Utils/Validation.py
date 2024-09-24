@@ -14,7 +14,7 @@ from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_clone
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, get_modifiable_properties, STATES_ALLOW_ONLY_STATE_TRANSITION, ALLOWED_STAT_KEYS
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, get_modifiable_properties, STATES_ALLOW_ONLY_STATE_TRANSITION, ALLOWED_STAT_KEYS, ALLOWED_ACTIONS_ALL_STATUS
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.Services.DBS.DBS3Reader import getDataTiers
 from WMCore.WMFactory import WMFactory
@@ -56,6 +56,7 @@ def _validate_request_allowed_args(reqArgs, newReqArgs):
 
     allowedKeys = deepcopy(get_modifiable_properties(status))
     allowedKeys.extend(ALLOWED_STAT_KEYS)
+    allowedKeys.extend(ALLOWED_ACTIONS_ALL_STATUS)
 
     # Filter out all fields which are not allowed for the given source status:
     for key in reqArgsDiffKeys:

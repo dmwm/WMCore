@@ -1,3 +1,7 @@
+2.3.6rc6 to 2.3.6rc7:
+  - Exclude RequestStatus from the returned values of get_modifiable_properties (Todor Ivanov) #12108
+
+
 2.3.6rc5 to 2.3.6rc6:
   - Fix dbs3-client to version 4.0.19 and update imports for Microservices (Dario Mapelli) #12102
   - Update WM Dockerfiles to tag pypi-20240923-stable (Alan Malta Rodrigues) https://github.com/dmwm/CMSKubernetes/pull/1551

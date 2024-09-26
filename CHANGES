@@ -1,3 +1,12 @@
+2.3.5 to 2.3.5.1:
+  - dbs3-client - import it only in the functions that need it (Dario Mapelli) #12117
+  - dbs3-client - msoutput and mstransferor are the only ms that use it (Dario Mapelli) #12117
+  - dbs3-client - fix specific version in requirements.txt with == (Dario Mapelli) #12117
+  - Update dbs3-client version (Valentin Kuznetsov) #12117
+  - Use PNN to PSN conversion in WQE mapping (Kenyi Hurtado) #12116
+  - Disable relval workflows going to disk by default in MSOutput. (Kenyi Hurtado) #12116
+
+
 2.3.5rc3 to 2.3.5:
   - Just cutting the final stable release
 

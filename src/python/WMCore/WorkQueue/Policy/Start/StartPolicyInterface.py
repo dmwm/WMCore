@@ -294,7 +294,7 @@ class StartPolicyInterface(PolicyInterface):
                     self.logger.debug(f'Retrieved MSPileup document: {doc}')
                     if len(currentRSEs) == 0:
                         self.logger.warning(f'No RSE has a copy of the desired pileup dataset. Expected RSEs: {doc["expectedRSEs"]}')  
-                    result[dataset] = doc['currentRSEs']
+                    result[dataset] = currentRSEs
                 except IndexError:
                     self.logger.warning('Did not find any pileup document for query: %s', queryDict['query'])
                     result[dataset] = []

@@ -19,7 +19,7 @@ patchNum=$1
 shift
 
 [[ -z $patchNum ]] && patchNum=temp
-echo "Patching WMCore code with PR: $pathcNum"
+echo "Patching WMCore code with PR: $patchNum"
 
 currTag=$(python -c "from WMCore import __version__ as WMCoreVersion; print(WMCoreVersion)")
 echo "Current WMCoreTag: $currTag"
@@ -63,7 +63,7 @@ do
     echo dest: $pythonLibPath/$file
     curl -f https://raw.githubusercontent.com/dmwm/WMCore/$currTag/src/python/$file  -o $pythonLibPath/$file || { \
         echo file: $file missing at the origin.
-        echo Seems to be a new file for the curren patch.
+        echo Seems to be a new file for the current patch.
         echo Removing it from the destination as well!
         rm -f $pythonLibPath/$file
     }

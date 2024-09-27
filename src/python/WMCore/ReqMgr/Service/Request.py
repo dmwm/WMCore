@@ -433,7 +433,7 @@ class Request(RESTEntity):
         workload.saveCouchUrl(workload.specUrl())
 
         # Commit all Global WorkQueue changes per workflow in a single go:
-        self.gq_service.updateElementsByWorkflow(workload.name(), reqArgs)
+        self.gq_service.updateElementsByWorkflow(workload.name(), reqArgs, status=['Available', 'Negotiating', 'Acquired'])
 
         # Finally update ReqMgr Database
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), reqArgs, dn)

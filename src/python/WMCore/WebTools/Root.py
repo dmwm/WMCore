@@ -96,16 +96,17 @@ class WTLogger(LogManager):
         if not rbytes:
             try:
                 # request.rfile.rfile.bytes_read is a custom CMS web
-                #  cherrypy patch not always available, hence the test
-                rbytes = (getattr(request.rfile, 'rfile', None)
-                        and getattr(request.rfile.rfile, "bytes_read", None)
-                        and request.rfile.rfile.bytes_read) or "-"
+                # cherrypy patch not always available, hence the test
+                if request.rfile.rfile.bytes_read:
+                    rbytes = request.rfile.rfile.bytes_read
+                else:
+                    rbytes = "-"
             except:
                 try:
                     # this will work only when body is read from request
                     rbytes = cherrypy.request.body.fp.bytes_read
                 except:
-                    rbytes = "-"        
+                    rbytes = "-"
         msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
                + ' [data: %(i)s in %(b)s out %(T).0f us ]'
                + ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'

@@ -673,6 +673,19 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.tasklist.remove(taskName)
         return
 
+    def getSiteWhitelist(self):
+        """
+        Get the site white list for the workflow
+        :return: site white list
+        """
+        # loop over tasks to see if there is white lists
+        taskIterator = self.taskIterator()
+        siteList = []
+        for task in taskIterator:
+            for site in task.siteWhitelist():
+                siteList.append(site)
+        return list(set(siteList))
+
     def setSiteWhitelist(self, siteWhitelist):
         """
         _setSiteWhitelist_
@@ -688,6 +701,19 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setSiteWhitelist(siteWhitelist)
 
         return
+
+    def getSiteBlacklist(self):
+        """
+        Get the site black list for the workflow
+        :return: site black list
+        """
+        # loop over tasks to see if there is black lists
+        taskIterator = self.getAllTasks(cpuOnly=False)
+        siteList = []
+        for task in taskIterator:
+            for site in task.siteBlacklist():
+                siteList.append(site)
+        return list(set(siteList))
 
     def setSiteBlacklist(self, siteBlacklist):
         """

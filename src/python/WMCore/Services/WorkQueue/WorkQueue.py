@@ -237,6 +237,33 @@ class WorkQueue(object):
         elements = [x['id'] for x in data.get('rows', []) if x['key'][1] not in nonCancelableElements]
         return self.updateElements(*elements, Status='CancelRequested')
 
+    def updateSiteLists(self, wf, siteWhiteList=None, siteBlackList=None):
+        """
+        Update site lists of a workflow
+
+        :param wf: workflow name
+        :param siteWhiteList: new site white list (optional)
+        :param siteBlackList: new site black list (optional)
+        :return: None
+        """
+        # Update elements in Available status
+        data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'startkey': [wf], 'endkey': [wf, {}],
+                                 'reduce': False})
+        elementsToUpdate = [x['id'] for x in data.get('rows', [])]
+        if elementsToUpdate:
+            self.updateElements(*elementsToUpdate, SiteWhiteList=siteWhiteList, SiteBlackList=siteBlackList)
+        # Update the spec, if it exists
+        if self.db.documentExists(wf):
+            wmspec = WMWorkloadHelper()
+            # update local workqueue couchDB
+            wmspec.load(self.hostWithAuth + "/%s/%s/spec" % (self.db.name, wf))
+            wmspec.setSiteWhiteList(siteWhiteList)
+            wmspec.setSiteBlackList(siteBlackList)
+            dummy_values = {'name': wmspec.name()}
+            wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
+        return
+
     def updatePriority(self, wf, priority):
         """Update priority of a workflow, this implies
            updating the spec and the priority of the Available elements"""

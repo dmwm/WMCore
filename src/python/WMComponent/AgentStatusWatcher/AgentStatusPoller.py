@@ -14,6 +14,7 @@ import threading
 from pprint import pformat
 from Utils.Timers import timeFunction
 from Utils.Utilities import numberCouchProcess
+from Utils.PortForward import PortForward
 from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, initAgentInfo
 from WMCore.Credential.Proxy import Proxy
@@ -54,6 +55,9 @@ class AgentStatusPoller(BaseWorkerThread):
         self.credThresholds = {'proxy': {'error': 3, 'warning': 5},
                                'certificate': {'error': 10, 'warning': 20}}
 
+        # create a portForwarder to be used for rerouting the replication process
+        self.portForwarder = PortForward(8443)
+
         # Monitoring setup
         self.userAMQ = getattr(config.AgentStatusWatcher, "userAMQ", None)
         self.passAMQ = getattr(config.AgentStatusWatcher, "passAMQ", None)
@@ -85,6 +89,8 @@ class AgentStatusPoller(BaseWorkerThread):
         # set up common replication code
         wmstatsSource = self.config.JobStateMachine.jobSummaryDBName
         wmstatsTarget = self.config.General.centralWMStatsURL
+        wmstatsTarget = self.portForwarder(wmstatsTarget)
+
         self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget,
                                     'filter': "WMStatsAgent/repfilter"})
         if self.isT0agent:
@@ -96,7 +102,9 @@ class AgentStatusPoller(BaseWorkerThread):
             # set up workqueue replication
             wqfilter = 'WorkQueue/queueFilter'
             parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
+            parentQURL = self.portForwarder(parentQURL)
             childURL = self.config.WorkQueueManager.queueParams["QueueURL"]
+            childURL = self.portForwarder(childURL)
             query_params = {'childUrl': childURL, 'parentUrl': sanitizeURL(parentQURL)['url']}
             localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
             self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL,

@@ -82,7 +82,7 @@ class Job(WMBSBase, WMJob):
         self['mask'].save(jobID=self['id'])
 
         self.associateFiles()
-        # self.associateWorkUnits()
+        self.associateWorkUnits()
         self.commitTransaction(existingTransaction)
         return
 
@@ -119,7 +119,7 @@ class Job(WMBSBase, WMJob):
         if MaskAndFiles:
             self['mask'].save(jobID=self['id'])
             self.associateFiles()
-            # self.associateWorkUnits()
+            self.associateWorkUnits()
 
         self.commitTransaction(existingTransaction)
         return

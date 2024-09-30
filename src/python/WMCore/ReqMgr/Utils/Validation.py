@@ -14,7 +14,7 @@ from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_clone
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, get_modifiable_properties, STATES_ALLOW_ONLY_STATE_TRANSITION, ALLOWED_STAT_KEYS, ALLOWED_ACTIONS_ALL_STATUS
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, get_modifiable_properties, STATES_ALLOW_ONLY_STATE_TRANSITION, ALLOWED_STAT_KEYS
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.Services.DBS.DBS3Reader import getDataTiers
 from WMCore.WMFactory import WMFactory
@@ -56,7 +56,6 @@ def _validate_request_allowed_args(reqArgs, newReqArgs):
 
     allowedKeys = deepcopy(get_modifiable_properties(status))
     allowedKeys.extend(ALLOWED_STAT_KEYS)
-    allowedKeys.extend(ALLOWED_ACTIONS_ALL_STATUS)
 
     # Filter out all fields which are not allowed for the given source status:
     for key in reqArgsDiffKeys:
@@ -87,25 +86,28 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     workload = WMWorkloadHelper()
     workload.loadSpecFromCouch(couchurl, request_name)
 
-    request = reqmgr_db_service.getRequestByNames(request_name)
-    request = request[request_name]
-    reqArgsDiff = _validate_request_allowed_args(request, request_args)
-
     # validate the status
-    if "RequestStatus" in reqArgsDiff:
-        validate_state_transition(reqmgr_db_service, request_name, reqArgsDiff["RequestStatus"])
-        if reqArgsDiff["RequestStatus"] in STATES_ALLOW_ONLY_STATE_TRANSITION:
+    # NOTE: For state transition validation we do not consider request parameter
+    #       difference, but we rather act against the request parameter changes
+    #       as they have been requested
+    if "RequestStatus" in request_args:
+        validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
+        if request_args["RequestStatus"] in STATES_ALLOW_ONLY_STATE_TRANSITION:
             # if state change doesn't allow other transition nothing else to validate
             args_only_status = {}
-            args_only_status["RequestStatus"] = reqArgsDiff["RequestStatus"]
-            args_only_status["cascade"] = reqArgsDiff.get("cascade", False)
+            args_only_status["RequestStatus"] = request_args["RequestStatus"]
+            args_only_status["cascade"] = request_args.get("cascade", False)
             return workload, args_only_status
-        elif reqArgsDiff["RequestStatus"] == 'assigned':
-            workload.validateArgumentForAssignment(reqArgsDiff)
-
-    validate_request_priority(reqArgsDiff)
-
-    return workload, reqArgsDiff
+        elif request_args["RequestStatus"] == 'assigned':
+            workload.validateArgumentForAssignment(request_args)
+        validate_request_priority(request_args)
+        return workload, request_args
+    else:
+        request = reqmgr_db_service.getRequestByNames(request_name)
+        request = request[request_name]
+        reqArgsDiff = _validate_request_allowed_args(request, request_args)
+        validate_request_priority(reqArgsDiff)
+        return workload, reqArgsDiff
 
 
 def validate_request_priority(reqArgs):

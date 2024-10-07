@@ -93,7 +93,6 @@ class ValidationTests(unittest.TestCase):
             defReqArgs["RequestStatus"] = status
             expectedReqArgs = {key: None for key in get_modifiable_properties(status)}
             reqArgsDiff = _validate_request_allowed_args(defReqArgs, newReqArgs)
-            reqArgsDiff.pop("RequestStatus")
             print(f"reqArgsDiff: {reqArgsDiff}")
             print(f"expectedReqArgs: {expectedReqArgs}")
             self.assertDictEqual(reqArgsDiff, expectedReqArgs)

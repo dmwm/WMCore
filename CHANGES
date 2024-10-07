@@ -1,3 +1,14 @@
+2.3.6rc7 to 2.3.6rc8:
+  - Revert "Add SiteList actions to transient statuses in ReqMgr2" (Alan Malta Rodrigues) #12133
+  - Revert "Exclude RequestStatus from the returned values of get_modifiable_properties" (Alan Malta Rodrigues) #12132
+  - Revert "Remove commented lines" (Alan Malta Rodrigues) #12131
+  - Revert "Unit tests" (Alan Malta Rodrigues) #12131
+  - Fix unit test threading monitor (Kenyi Hurtado) #12122
+  - Add method to find maxEvents input value and change scram EL9 architecture accordingly (Kenyi Hurtado) #12106
+  - Log the Pull Request number correctly (Fredrik) #12119
+  - Remove commented lines (Todor Ivanov) #12111
+
+
 2.3.6rc6 to 2.3.6rc7:
   - Exclude RequestStatus from the returned values of get_modifiable_properties (Todor Ivanov) #12108
 

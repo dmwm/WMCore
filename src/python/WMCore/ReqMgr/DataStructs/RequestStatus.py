@@ -197,6 +197,8 @@ def get_modifiable_properties(status=None):
     """
     if status:
         allowedKeys = ALLOWED_ACTIONS_FOR_STATUS.get(status, 'all_attributes')
+        # if not allowedKeys == 'all_attributes':
+        #     allowedKeys.extend(ALLOWED_ACTIONS_ALL_STATUS)
         return allowedKeys
     else:
         return ALLOWED_ACTIONS_FOR_STATUS

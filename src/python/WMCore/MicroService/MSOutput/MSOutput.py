@@ -705,8 +705,8 @@ class MSOutput(MSCore):
 
         # if there were containers not found in Rucio, create an email alert
         if notFoundDIDs:
-            # log and send alert via AlertManager API
-            self.alertDIDNotFound(msOutDoc["RequestName"], notFoundDIDs)
+            # only log warning msg, the previous alerts to AlertManager were too noisy
+            self.logDIDNotFound(msOutDoc["RequestName"], notFoundDIDs)
 
         try:
             msOutDoc.updateDoc({"OutputMap": updatedOutputMap}, throw=True)
@@ -975,23 +975,19 @@ class MSOutput(MSCore):
         """
         return doc.clear()
 
-    def alertDIDNotFound(self, wflowName, containerList):
+    def logDIDNotFound(self, wflowName, containerList):
         """
-        Send an alert to Prometheus for output containers not found within
+        Log a warning message for output containers not found within
         a given workflow.
         :param wflowName: string with the workflow name
         :param containerList: list of container names
         :return: none
         """
-        alertName = "ms-output: output containers not found for workflow: {}".format(wflowName)
-        alertSeverity = "high"
-        alertSummary = "[MSOutput] Workflow '{}' has output datasets unknown to Rucio".format(wflowName)
-        alertDescription = "Dataset(s): {} cannot be found in Rucio. ".format(containerList)
-        alertDescription += "Thus, we are skipping these datasets from the final output "
-        alertDescription += "data placement, such that this workflow can get archived."
-        self.logger.warning(alertDescription)
-        if self.msConfig["sendNotification"]:
-            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+        msg = "[MSOutput] Workflow '{}' has output datasets unknown to Rucio ".format(wflowName)
+        msg += "Dataset(s): {} cannot be found in Rucio. ".format(containerList)
+        msg += "Thus, we are skipping these datasets from the final output "
+        msg += "data placement, such that this workflow can get archived."
+        self.logger.warning(msg)
 
     def alertCampaignNotFound(self, campaignName, containerName):
         """

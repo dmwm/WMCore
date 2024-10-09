@@ -34,7 +34,7 @@ class StageOutImpl(object):
     """
 
     def __init__(self, stagein=False):
-        self.numRetries = 3
+        self.numRetries = 0
         self.retryPause = 600
         self.stageIn = stagein
 

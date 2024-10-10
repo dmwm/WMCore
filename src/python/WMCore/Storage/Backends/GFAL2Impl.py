@@ -174,13 +174,10 @@ class GFAL2Impl(StageOutImpl):
 
         result = "#!/bin/bash\n"
         result += """
-        echo "gfal-cp command which failed: {copy_command}"
-        echo "gfal-cp location:"
-        which gfal-cp
-        echo "gfal-cp location: $(which gfal-cp)".
+        echo "gfal-copy command which failed: {copy_command}"
+        echo "gfal-copy location: $(which gfal-copy)".
         echo "Source PFN: {source}"
         echo "Target PFN: {destination}"
-        echo "Proxy and JOBSTARTDIR: {setup_info}"
         echo "Hostname:   $(hostname -f)"
         echo "OS:  $(uname -n -r -s)"
         """.format(

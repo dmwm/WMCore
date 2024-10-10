@@ -162,15 +162,15 @@ class GFAL2Impl(StageOutImpl):
         try:
             stdout, stderr, returnCode = runCommand("voms-proxy-info -file $X509_USER_PROXY", timeout=10)
             if returnCode == 0:
-                logging.debug("Success! voms-proxy-info output:\n%s", stdout)       
+                logging.info("Success! voms-proxy-info output:\n%s", stdout)       
             else:
-                logging.debug("Failure! voms-proxy-info failed with return code: %s", returnCode)
-                logging.debug("Error output: %s", stderr)
+                logging.error("Failure! voms-proxy-info failed with return code: %s", returnCode)
+                logging.error("Error output: %s", stderr)
         except SubprocessAlgoException as e:
-            logging.debug("An exception occurred while running voms-proxy-info:")
-            logging.debug(e)
+            logging.error("An exception occurred while running voms-proxy-info:")
+            logging.error(e)
 
-        logging.debug("Actual gfal-cp command which failed: %s", copyCommand)
+        logging.error("Actual gfal-cp command which failed: %s", copyCommand)
 
         result = "#!/bin/bash\n"
         result += """

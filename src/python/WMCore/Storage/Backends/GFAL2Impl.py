@@ -182,7 +182,7 @@ class GFAL2Impl(StageOutImpl):
         echo "Target PFN: {destination}"
         echo "Proxy and JOBSTARTDIR: {setup_info}"
         echo "Hostname:   $(hostname -f)"
-        echo "OS:  $(uname -n -r -s)
+        echo "OS:  $(uname -n -r -s)"
         """.format(
             copy_command=copyCommand,
             source=copyCommandDict['source'],

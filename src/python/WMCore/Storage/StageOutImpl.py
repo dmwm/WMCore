@@ -88,7 +88,7 @@ class StageOutImpl(object):
             msg = "Command exited with status: %s\nOutput message: %s" % (exitCode, output)
             logging.info(msg)
         except Exception as ex:
-            raise StageOutError(str(ex), Command=command, ExitCode=60311)
+            raise StageOutError(str(ex), Command=command, ExitCode=60311) from ex
 
         if exitCode:
             msg = "Command exited non-zero, ExitCode:%s\nOutput: %s " % (exitCode, output)
@@ -131,7 +131,6 @@ class StageOutImpl(object):
 
         If no directory is required, do not implement this method
         """
-        pass
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
@@ -142,6 +141,13 @@ class StageOutImpl(object):
 
         """
         raise NotImplementedError("StageOutImpl.createStageOutCommand")
+
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Build a shell command that will report in the logs the details about
+        failing stageOut commands
+        """
+        raise NotImplementedError("StageOutImpl.createDebuggingCommand")
 
     def removeFile(self, pfnToRemove):
         """
@@ -183,7 +189,7 @@ class StageOutImpl(object):
         # destination may also need PFN changed
         # i.e. if we are staging in a file from an SE
         targetPFN = self.createTargetName(protocol, targetPFN)
-
+        self.numRetries = 0
         #  //
         # // Create the output directory if implemented
         # //
@@ -212,22 +218,30 @@ class StageOutImpl(object):
         # // Run the command
         # //
 
+        stageOutEx = None  # variable to store the possible StageOutError
         for retryCount in range(self.numRetries + 1):
             try:
                 logging.info("Running the stage out...")
+                # Intentionally raise StageOutError to simulate failure
+                raise StageOutError("Simulated stage out failure")
                 self.executeCommand(command)
-                break
+                break  # This line won't be reached due to the raised error
             except StageOutError as ex:
                 msg = "Attempt %s to stage out failed.\n" % retryCount
-                msg += "Automatically retrying in %s secs\n " % self.retryPause
                 msg += "Error details:\n%s\n" % str(ex)
                 logging.error(msg)
                 if retryCount == self.numRetries:
-                    #  //
-                    # // last retry, propagate exception
-                    # //
-                    raise ex
+                    # Last retry, propagate the information outside of the for loop
+                    stageOutEx = ex
+                msg += "Automatically retrying in %s secs\n " % self.retryPause 
                 time.sleep(self.retryPause)
+
+        # This block will now always be executed after retries are exhausted
+        if stageOutEx is not None:
+            logging.error("Maximum number of retries exhausted. Further details on the failed command reported below.")
+            command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums)
+            self.executeCommand(command)
+            raise stageOutEx from None
 
         # should never reach this point
         return

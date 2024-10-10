@@ -5,9 +5,11 @@ Implementation of StageOutImpl interface for gfal-copy
 """
 import argparse
 import os
+import logging
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
+from WMCore.Algorithms.SubprocessAlgos import SubprocessAlgoException, runCommand
 
 _CheckExitCodeOption = True
 
@@ -26,7 +28,6 @@ class GFAL2Impl(StageOutImpl):
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
         self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '%s'"
         self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '
-        self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure %(checksum)s %(options)s %(source)s %(destination)s'
         self.copyCommand = self.setups % ('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
 
@@ -79,21 +80,16 @@ class GFAL2Impl(StageOutImpl):
         else:
             return self.removeCommand % self.createFinalPFN(pfn)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def buildCopyCommandDict(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
-        _createStageOutCommand_
-        Build a gfal-copy command
+        Build the gfal-cp command for stageOut
 
-        gfal-copy options used:
-          -t   maximum time for the operation to terminate
-          -T   global timeout for the transfer operation
-          -p   if the destination directory does not exist, create it
-          -K   checksum algorithm to use, or algorithm:value
-          -v   enable the verbose mode (-v for warning level)
-          --abort-on-failure  abort the whole copy as soon as one failure is encountered
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for gfal-cp
+        :checksums: dict, collect checksums according to the algorithms saved as keys
         """
-        result = "#!/bin/bash\n"
-
+        
         copyCommandDict = {'checksum': '', 'options': '', 'source': '', 'destination': ''}
 
         useChecksum = (checksums is not None and 'adler32' in checksums and not self.stageIn)
@@ -113,27 +109,85 @@ class GFAL2Impl(StageOutImpl):
                 copyCommandDict['checksum'] = "-K adler32"
 
         copyCommandDict['options'] = ' '.join(unknown)
-
         copyCommandDict['source'] = self.createFinalPFN(sourcePFN)
         copyCommandDict['destination'] = self.createFinalPFN(targetPFN)
 
+        return copyCommandDict
+
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Create gfal-cp command for stageOut
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for gfal-cp
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+
+
+        copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
         copyCommand = self.copyCommand % copyCommandDict
-        result += copyCommand
+        result = "#!/bin/bash\n" + copyCommand
 
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-               echo "Cleaning up failed file:"
-               %s
+                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+                echo "Cleaning up failed file:"
+                {remove_command}
             fi
             exit $EXIT_STATUS
-            """ % self.createRemoveFileCommand(targetPFN)
-
+            """.format(
+                remove_command=self.createRemoveFileCommand(targetPFN)
+            )
+        
         return result
 
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed gfal-cp command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for gfal-cp
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        
+        copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
+        copyCommand = self.copyCommand % copyCommandDict
+
+        try:
+            stdout, stderr, returnCode = runCommand("voms-proxy-info -file $X509_USER_PROXY", timeout=10)
+            if returnCode == 0:
+                logging.info("Success! voms-proxy-info output:\n%s", stdout)       
+            else:
+                logging.error("Failure! voms-proxy-info failed with return code: %s", returnCode)
+                logging.error("Error output: %s", stderr)
+        except SubprocessAlgoException as e:
+            logging.error("An exception occurred while running voms-proxy-info:")
+            logging.error(e)
+
+        logging.error("Actual gfal-cp command which failed: %s", copyCommand)
+
+        result = "#!/bin/bash\n"
+        result += """
+        echo "gfal-copy command which failed: {copy_command}"
+        echo "gfal-copy location: $(which gfal-copy)".
+        echo "Source PFN: {source}"
+        echo "Target PFN: {destination}"
+        echo "Hostname:   $(hostname -f)"
+        echo "OS:  $(uname -n -r -s)"
+        """.format(
+            copy_command=copyCommand,
+            source=copyCommandDict['source'],
+            destination=copyCommandDict['destination'],
+            setup_info=self.setups
+        )
+        return result
+    
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

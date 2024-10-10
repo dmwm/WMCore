@@ -1,3 +1,7 @@
+2.3.6rc8 to 2.3.6:
+  - Disable MS-output DID not found (Muhammad Hassan Ahmed) #12135
+
+
 2.3.6rc7 to 2.3.6rc8:
   - Revert "Add SiteList actions to transient statuses in ReqMgr2" (Alan Malta Rodrigues) #12133
   - Revert "Exclude RequestStatus from the returned values of get_modifiable_properties" (Alan Malta Rodrigues) #12132

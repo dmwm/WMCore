@@ -99,7 +99,9 @@ def diskUse():
     for x in output:
         split = x.split()
         if split != [] and split[0] != 'Filesystem':
-            diskPercent.append({'mounted': split[5], 'percent': split[4]})
+            diskPercent.append({'filesystem': split[0],
+                                'mounted':    split[5], 
+                                'percent':    split[4]})
 
     return diskPercent
 

@@ -21,7 +21,7 @@ WMStats.namespace("AgentDetailList");
     var diskFullFormat = function(diskList) {
         var formatStr = "<details> <summary> disk list</summary> <ul>";
         for (var i in diskList) {
-            formatStr += "<li><b>" + diskList[i].mounted +"</b>:" + diskList[i].percent +"</li>";
+            formatStr += "<li><b>" + diskList[i].filesystem +"</b>:" + diskList[i].percent +"</li>";
         }
         formatStr += "</ul></details>";
         return formatStr;

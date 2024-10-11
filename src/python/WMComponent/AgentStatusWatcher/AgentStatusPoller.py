@@ -5,10 +5,11 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
-from __future__ import division
 from future.utils import viewitems
 
+import os
 import time
+import json
 import logging
 import threading
 from pprint import pformat
@@ -61,6 +62,15 @@ class AgentStatusPoller(BaseWorkerThread):
         self.topicAMQ = getattr(config.AgentStatusWatcher, "topicAMQ", None)
         self.hostPortAMQ = getattr(config.AgentStatusWatcher, "hostPortAMQ", [('cms-mb.cern.ch', 61313)])
 
+        # Load CouchDB replication filters
+        jsonDir = os.path.dirname(os.path.abspath(__file__))
+        replicationFile = os.path.join(jsonDir, "replication_selector.json")
+        if os.path.exists(replicationFile):
+            with open(replicationFile, 'r') as fd:
+                self.replicationDict = json.load(fd)
+        else:
+            raise RuntimeError(f"Could not find CouchDB replication JSON file at: {replicationFile}")
+
         # T0 doesn't have WorkQueue, so some monitoring/replication code has to be skipped here
         if hasattr(self.config, "Tier0Feeder"):
             self.isT0agent = True
@@ -83,33 +93,39 @@ class AgentStatusPoller(BaseWorkerThread):
 
         self.replicatorDocs = []
         # set up common replication code
-        wmstatsSource = self.config.JobStateMachine.jobSummaryDBName
-        wmstatsTarget = self.config.General.centralWMStatsURL
-        self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget,
-                                    'filter': "WMStatsAgent/repfilter"})
-        if self.isT0agent:
-            t0Source = self.config.Tier0Feeder.requestDBName
-            t0Target = self.config.AnalyticsDataCollector.centralRequestDBURL
-            self.replicatorDocs.append({'source': t0Source, 'target': t0Target,
-                                        'filter': "T0Request/repfilter"})
-        else:
-            # set up workqueue replication
-            wqfilter = 'WorkQueue/queueFilter'
-            parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
-            childURL = self.config.WorkQueueManager.queueParams["QueueURL"]
-            query_params = {'childUrl': childURL, 'parentUrl': sanitizeURL(parentQURL)['url']}
-            localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
-            self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL,
-                                        'filter': wqfilter, 'query_params': query_params})
-            self.replicatorDocs.append({'source': localQInboxURL, 'target': parentQURL,
-                                        'filter': wqfilter, 'query_params': query_params})
+        self.replicatorDocs.append({'source': self.config.JobStateMachine.jobSummaryDBName,
+                                    'target': self.config.General.centralWMStatsURL,
+                                    'selector': self.replicationDict["WMStatsAgent/repfilter"]})
 
-        logging.info("Going to create %d new replication documents", len(self.replicatorDocs))
+        if self.isT0agent:
+            # Tier0 specific replication
+            self.replicatorDocs.append({'source': self.config.Tier0Feeder.requestDBName,
+                                        'target': self.config.AnalyticsDataCollector.centralRequestDBURL,
+                                        'selector': self.replicationDict["T0Request/repfilter"]})
+        else:
+            # Production specific workqueue replication
+            parentQueueUrl = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
+            childQueueUrl = self.config.WorkQueueManager.queueParams["QueueURL"]
+            localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
+            # Update the selector filter
+            workqueueEscapedKey = "WMCore\.WorkQueue\.DataStructs\.WorkQueueElement\.WorkQueueElement"
+            self.replicationDict['WorkQueue/queueFilter'][workqueueEscapedKey]["ParentQueueUrl"] = parentQueueUrl
+            self.replicationDict['WorkQueue/queueFilter'][workqueueEscapedKey]["ChildQueueUrl"] = childQueueUrl
+            self.replicatorDocs.append({'source': parentQueueUrl,
+                                        'target': localQInboxURL,
+                                        'selector': self.replicationDict['WorkQueue/queueFilter']})
+            self.replicatorDocs.append({'source': localQInboxURL,
+                                        'target': parentQueueUrl,
+                                        'selector': self.replicationDict['WorkQueue/queueFilter']})
+
         for rp in self.replicatorDocs:
+            # ensure credentials don't get exposed in the logs
+            msg = f"Creating continuous replication for source: {sanitizeURL(rp['source'])['url']}, "
+            msg += f"target: {sanitizeURL(rp['target'])['url']} and selector filter: {rp['selector']}"
+            logging.info(msg)
             resp = self.localCouchMonitor.couchServer.replicate(rp['source'], rp['target'],
                                                                 continuous=True,
-                                                                filter=rp['filter'],
-                                                                query_params=rp.get('query_params', False))
+                                                                selector=rp.get('selector', False))
             logging.info(".. response for the replication document creation was: %s", resp)
 
     def setup(self, parameters):

@@ -7,13 +7,6 @@ class RequestDBWriter(RequestDBReader):
         # set the connection for local couchDB call
         # inherited from WMStatsReader
         self._commonInit(couchURL, couchapp)
-        self._propertyNeedToBeEncoded = ["RequestTransition",
-                                         "PriorityTransition",
-                                         "SiteWhitelist",
-                                         "SiteBlacklist",
-                                         "BlockWhitelist",
-                                         "InputDatasetTypes",
-                                         "OutputDatasets"]
 
     def insertGenericRequest(self, doc):
 
@@ -31,7 +24,7 @@ class RequestDBWriter(RequestDBReader):
 
     def updateRequestStats(self, request, stats):
         """
-        This functionis only available ReqMgr couch app currutly (not T0)
+        This function is only available ReqMgr couch app currently (not T0)
         WQ specific function
         param: stats: dict of {'total_jobs': 0, 'input_lumis': 0,
                                'input_events': 0, 'input_num_files': 0}

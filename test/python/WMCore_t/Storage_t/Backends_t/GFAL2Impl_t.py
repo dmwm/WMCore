@@ -9,16 +9,16 @@ from WMCore.Storage.Backends.GFAL2Impl import GFAL2Impl
 class GFAL2ImplTest(unittest.TestCase):
     def setUp(self):
         self.GFAL2Impl = GFAL2Impl()
-        self.removeCommand = self.GFAL2Impl.removeCommand = "removeCommand %s"
-        self.copyCommand = self.GFAL2Impl.copyCommand = "copyCommand %(checksum)s %(options)s %(source)s %(destination)s"
+        self.removeCommand = self.GFAL2Impl.removeCommand = "removeCommand {}"
+        self.copyCommand = self.GFAL2Impl.copyCommand = "copyCommand {checksum} {options} {source} {destination}"
 
     def testInit(self):
         testGFAL2Impl = GFAL2Impl()
         removeCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c " \
-                        "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '"
+                "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}'"
         copyCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
-                      ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p " \
-                      "-v --abort-on-failure %(checksum)s %(options)s %(source)s %(destination)s'"
+              ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p " \
+              "-v --abort-on-failure {checksum} {options} {source} {destination}'"
         self.assertEqual(removeCommand, testGFAL2Impl.removeCommand)
         self.assertEqual(copyCommand, testGFAL2Impl.copyCommand)
 
@@ -105,22 +105,22 @@ class GFAL2ImplTest(unittest.TestCase):
     def getStageOutCommandResult(self, copyCommandDict, createRemoveFileCommandResult):
         result = "#!/bin/bash\n"
 
-        copyCommand = self.copyCommand % copyCommandDict
+        copyCommand = self.copyCommand.format_map(copyCommandDict)
         result += copyCommand
 
         result += """
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-               echo "Cleaning up failed file:"
-               %s
+                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+                echo "Cleaning up failed file:"
+                {remove_command}
             fi
             exit $EXIT_STATUS
-            """ % createRemoveFileCommandResult
-
+            """.format(remove_command=createRemoveFileCommandResult)
+        
         return result
-
+    
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.os.path')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')
     def testRemoveFile_isFile(self, mock_executeCommand, mock_path):

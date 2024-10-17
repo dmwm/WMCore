@@ -1,3 +1,12 @@
+2.3.6 to 2.3.7:
+  - Augmentation of gfal-cp debuggin for StageOutImpl and GFAL2Impl scripts (Andrea Piccinelli) #12081
+  - Provide JSON file with CouchDB replication selector function (Alan Malta Rodrigues) #12143
+  - Replace WorkQueue replication filter by selector function (Alan Malta Rodrigues) #12143
+  - check UserDrainMode before updating AgentDrainMode (Muhammad Hassan Ahmed) #12142
+  - make documentation a list of the code review (Alan Malta Rodrigues) #
+  - wmstats - consistent reporting of wmagent disk use (Dario Mapelli) #12140
+
+
 2.3.6rc8 to 2.3.6:
   - Disable MS-output DID not found (Muhammad Hassan Ahmed) #12135
 

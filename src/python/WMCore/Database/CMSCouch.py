@@ -1016,7 +1016,7 @@ class CouchServer(CouchDBRequests):
 
     def replicate(self, source, destination, continuous=False,
                   create_target=False, cancel=False, doc_ids=False,
-                  filter=False, query_params=False, sleepSecs=0):
+                  filter=False, query_params=False, sleepSecs=0, selector=False):
         """
         Trigger replication between source and destination. CouchDB options are
         defined in: https://docs.couchdb.org/en/3.1.2/api/server/common.html#replicate
@@ -1039,6 +1039,7 @@ class CouchServer(CouchDBRequests):
                        this filter is expected to have been defined in the design doc.
         :param query_params: dictionary of parameters to pass over to the filter function
         :param sleepSecs: amount of seconds to sleep after the replication job is created
+        :param selector: a new'ish feature for filter functions in Erlang
         :return: status of the replication creation
         """
         listDbs = self.listDatabases()
@@ -1064,6 +1065,8 @@ class CouchServer(CouchDBRequests):
             data["filter"] = filter
             if query_params:
                 data["query_params"] = query_params
+        if selector: data["selector"] = selector
+
         resp = self.post('/_replicator', data)
         # Sleep required for CouchDB 3.x unit tests
         time.sleep(sleepSecs)

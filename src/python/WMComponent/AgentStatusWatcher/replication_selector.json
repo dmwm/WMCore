@@ -1,0 +1,18 @@
+
+{
+    "_comment": "This corresponds to a set of selector filter functions for CouchDB database replication",
+    "WMStatsAgent/repfilter": {
+        "_deleted": {"$exists": false},
+        "_id": {"$regex": "^(?!_design/)"}
+    },
+    "T0Request/repfilter": {
+        "_id": {"$regex": "^(?!_design/)"}
+    },
+    "WorkQueue/queueFilter": {
+        "_deleted": {"$exists": false},
+        "type": "WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement",
+        "WMCore\\.WorkQueue\\.DataStructs\\.WorkQueueElement\\.WorkQueueElement":
+            {"ParentQueueUrl": "config.WorkQueueManager.queueParams['ParentQueueCouchUrl']",
+            "ChildQueueUrl": "config.WorkQueueManager.queueParams['QueueURL']"}
+    }
+}

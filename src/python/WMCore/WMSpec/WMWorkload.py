@@ -673,6 +673,15 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.tasklist.remove(taskName)
         return
 
+    def getSiteWhitelist(self):
+        """
+        Get the site white list from our data
+        :return: site white list
+        """
+        if getattr(self.data, 'SiteWhiteList', None):
+            return getattr(self.data, "SiteWhiteList")
+        return []
+
     def setSiteWhitelist(self, siteWhitelist):
         """
         _setSiteWhitelist_
@@ -688,6 +697,15 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setSiteWhitelist(siteWhitelist)
 
         return
+
+    def getSiteBlacklist(self):
+        """
+        Get the site black list from our data
+        :return: site black list
+        """
+        if getattr(self.data, 'SiteBlackList', None):
+            return getattr(self.data, "SiteBlackList")
+        return []
 
     def setSiteBlacklist(self, siteBlacklist):
         """

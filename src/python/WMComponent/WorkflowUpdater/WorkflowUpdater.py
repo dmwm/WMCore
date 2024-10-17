@@ -35,3 +35,7 @@ class WorkflowUpdater(Harness):
         myThread = threading.currentThread()
         myThread.workerThreadManager.addWorker(WorkflowUpdaterPoller(self.config),
                                                pollInterval)
+
+        myThread = threading.currentThread()
+        myThread.workerThreadManager.addWorker(SiteListUpdaterPoller(self.config),
+                                               pollInterval)

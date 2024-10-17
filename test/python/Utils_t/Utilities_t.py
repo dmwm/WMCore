@@ -169,8 +169,56 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         Test the `diskUse` function.
         """
         data = diskUse()
+
+        # `data` is a list of dictionaries with three keys each:
+        # [
+        #   {
+        #    "filesystem": "devtmpfs",
+        #    "mounted": "/dev",
+        #    "percent": "0%"
+        #  },
+        #  {
+        #    "filesystem": "/dev/vda1",
+        #    "mounted": "/",
+        #    "percent": "76%"
+        #  }
+        #  [...]
+        # ]
+        print(data)
+
         # assuming nodes will always have at least 3 partitions/mount points
         self.assertTrue(len(data) > 2)
+
+        # - 1. every dictionary in the list needs to contain all of the 
+        #   expexted keys and their values must be a non-empty string
+        # - 2. the value of the "percent" key needs to be either "100" 
+        #   or a one or two digits int, followed by a percentage character "%"
+        # - 3. there must be at least one entry whose filesystem contains `/dev/*`
+        filesystem_is_dev = 0
+        for entry in data:
+            print(entry)
+
+            # check 1.
+            self.assertTrue("filesystem" in entry)
+            self.assertTrue("mounted" in entry)
+            self.assertTrue("percent" in entry)
+            for value in entry.values():
+                self.assertTrue(isinstance(value, str))
+                self.assertTrue(len(value) > 0)
+
+            import re
+            # ref: https://docs.python.org/3/library/re.html#re.search
+            # re.search() returns None if no position in the string matches the pattern
+
+            # check 2.
+            self.assertTrue(re.search("^(100|[0-9]{1,2})%$", entry["percent"]) is not None)
+
+            # check 3.
+            if re.search("^/dev/.+$" , entry["filesystem"]):
+                filesystem_is_dev += 1
+
+        self.assertTrue(filesystem_is_dev > 0)
+
 
     def testNumberCouchProcess(self):
         """

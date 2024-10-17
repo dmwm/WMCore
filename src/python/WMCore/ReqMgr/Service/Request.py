@@ -10,6 +10,7 @@ import json
 import traceback
 
 import cherrypy
+from copy import deepcopy
 
 import WMCore.ReqMgr.Service.RegExp as rx
 from WMCore.Database.CMSCouch import CouchError
@@ -404,24 +405,50 @@ class Request(RESTEntity):
         """
         For no-status update, we only support the following parameters:
          1. RequestPriority
-         2. Global workqueue statistics, while acquiring a workflow
+         2. SiteWhitelist
+         3. SiteBlacklist
+         4. Global workqueue statistics, while acquiring a workflow
+        As Global workqueue statistics updates are exclusive to the rest of the
+        parameters. Meaning if it is about to be updated all the rest of the
+        request_args will be ignored.
         """
-        if 'RequestPriority' in request_args:
-            # Yes, we completely ignore any other arguments posted by the user (web UI case)
-            request_args = {'RequestPriority': request_args['RequestPriority']}
-            validate_request_priority(request_args)
-            # must update three places: GQ elements, workload_cache and workload spec
-            self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
-            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
-            workload.setPriority(request_args['RequestPriority'])
-            workload.saveCouchUrl(workload.specUrl())
-            cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), request_args['RequestPriority']))
-        elif workqueue_stat_validation(request_args):
-            report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
-            cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), request_args))
-        else:
-            msg = "There are invalid arguments for no-status update: %s" % request_args
+        reqArgs = deepcopy(request_args)
+
+        if not reqArgs:
+            cherrypy.log("Nothing to be changed at this stage")
+            return 'OK'
+
+        if workqueue_stat_validation(reqArgs):
+            report = self.reqmgr_db_service.updateRequestStats(workload.name(), reqArgs)
+            cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), reqArgs))
+            return report
+
+        reqArgsNothandled = []
+        for reqArg in reqArgs:
+            if reqArg == 'RequestPriority':
+                validate_request_priority(reqArgs)
+                # must update three places: GQ elements, workload_cache and workload spec
+                self.gq_service.updatePriority(workload.name(), reqArgs['RequestPriority'])
+                workload.setPriority(reqArgs['RequestPriority'])
+                cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), reqArgs['RequestPriority']))
+            elif reqArg == "SiteWhitelist":
+                workload.setSiteWhitelist(reqArgs["SiteWhitelist"])
+                cherrypy.log('Updated SiteWhitelist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteWhitelist']))
+            elif reqArg == "SiteBlacklist":
+                workload.setSiteBlacklist(reqArgs["SiteBlacklist"])
+                cherrypy.log('Updated SiteBlacklist of "{}", with:  {}'.format(workload.name(), reqArgs['SiteBlacklist']))
+            else:
+                reqArgsNothandled.append(reqArg)
+                cherrypy.log("Unhandled argument for no-status update: %s" % reqArg)
+
+        if reqArgsNothandled:
+            msg = "There were unhandled arguments left for no-status update: %s" % reqArgsNothandled
             raise InvalidSpecParameterValue(msg)
+
+        # Commit the changes of the current workload object to the database:
+        workload.saveCouchUrl(workload.specUrl())
+
+        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), reqArgs, dn)
 
         return report
 

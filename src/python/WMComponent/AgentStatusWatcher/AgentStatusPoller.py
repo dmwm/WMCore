@@ -63,8 +63,9 @@ class AgentStatusPoller(BaseWorkerThread):
         self.hostPortAMQ = getattr(config.AgentStatusWatcher, "hostPortAMQ", [('cms-mb.cern.ch', 61313)])
 
         # Load CouchDB replication filters
-        jsonDir = os.path.dirname(os.path.abspath(__file__))
-        replicationFile = os.path.join(jsonDir, "replication_selector.json")
+        # see: https://github.com/dmwm/CMSKubernetes/blob/69f0a02a52101ef/docker/pypi/wmagent/Dockerfile#L34
+        jsonDir = os.environ.get("WMA_DEPLOY_DIR", "/usr/local")
+        replicationFile = os.path.join(jsonDir, "etc/replication_selector.json")
         if os.path.exists(replicationFile):
             with open(replicationFile, 'r') as fd:
                 self.replicationDict = json.load(fd)

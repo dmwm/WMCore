@@ -12,7 +12,6 @@
         "_deleted": {"$exists": false},
         "type": "WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement",
         "WMCore\\.WorkQueue\\.DataStructs\\.WorkQueueElement\\.WorkQueueElement":
-            {"ParentQueueUrl": "config.WorkQueueManager.queueParams['ParentQueueCouchUrl']",
-            "ChildQueueUrl": "config.WorkQueueManager.queueParams['QueueURL']"}
+            {"ChildQueueUrl": "config.WorkQueueManager.queueParams['QueueURL']"}
     }
 }

@@ -26,6 +26,7 @@ def getTestBase(importFlag = True):
     Returns a base that can be used for testing.  Defaults to
     getWMBase if no environment variables WMCORE_TEST_ROOT is defined
     """
+    print('dennis was here')
     basePath = os.path.normpath(os.path.join(getWMBASE(), 'test/python'))
     envPath  = os.environ.get("WMCORE_TEST_ROOT", None)
 

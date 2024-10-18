@@ -29,9 +29,9 @@ class MSAuthTest(unittest.TestCase):
         # REST/Auth.py module calculates checksum based on provided hmac
         # for instnace for self.hmac we will expect self.chkSum
         # with all CMS headers we setup below
-        # d357b299194ec4bed4e4fc73fc9ceab10139c16f vs. 4311773080ea12f4ea31a096da49de105083bb9e
-        self.hmac = 'd357b299194ec4bed4e4fc73fc9ceab10139c16f'
-        self.chkSum = '4311773080ea12f4ea31a096da49de105083bb9e'
+        # ERROR: authz hmac mismatch, 169d02b96265caf05894b526f99a22549dcd38ed vs. d357b299194ec4bed4e4fc73fc9ceab10139c16f
+        self.hmac = '169d02b96265caf05894b526f99a22549dcd38ed'
+        self.chkSum = 'd357b299194ec4bed4e4fc73fc9ceab10139c16f'
         self.fname = '/tmp/ms-authz.json'
 
         # for testing purposes we need to setup cherrypy headers

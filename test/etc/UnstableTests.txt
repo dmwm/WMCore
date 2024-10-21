@@ -20,6 +20,7 @@ WMCore_t.Services_t.pycurlFileUpload_t.PyCurlRESTServer:testFailingFileUpload
 WMCore_t.Services_t.LogDB_t.LogDB_t.LogDBTest:test_heartbeat
 WMCore_t.WorkerThreads_t.WorkerThreads_t.WorkerThreadsTest:testWorkerError
 WMCore_t.ReqMgr_t.Service_t.Auxiliary_t.AuxiliaryTest:testAllTransferDocs
+WMCore_t.Services_t.Rucio_t.RucioUtils_t.RucioUtilsTest:testWeightedChoice
 ### Starting here, we have the Python3 unstable tests
 WMCore_t.JobSplitting_t.RunBased_t.RunBasedTest:testMultipleRunsCombine
 WMCore_t.MicroService_t.MSRuleCleaner_t.MSRuleCleanerWflow_t.MSRuleCleanerWflowTest:testMultiPU

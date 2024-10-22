@@ -34,6 +34,7 @@ from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.MicroService.MSCore.TaskManager import start_new_thread
 from Utils.Utilities import strToBool
 
+
 def daemon(func, reqStatus, interval, logger):
     "Daemon to perform given function action for all request in our store"
     while True:

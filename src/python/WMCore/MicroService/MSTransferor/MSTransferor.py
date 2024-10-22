@@ -15,6 +15,8 @@ from future import standard_library
 standard_library.install_aliases()
 
 # system modules
+import os
+import json
 from operator import itemgetter
 from pprint import pformat
 from retry import retry
@@ -22,7 +24,6 @@ from copy import deepcopy
 
 # WMCore modules
 from Utils.IteratorTools import grouper
-from Utils.CertTools import ckey, cert
 from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
     TRANSFER_RECORD, TRANSFER_COUCH_DOC
 from WMCore.MicroService.Tools.Common import (teraBytes, isRelVal)
@@ -32,7 +33,6 @@ from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
-from WMCore.Services.pycurl_manager import RequestHandler
 
 
 def newTransferRec(dataIn):
@@ -78,7 +78,6 @@ class MSTransferor(MSCore):
         wdir = '{}/storage'.format(os.getcwd())
         self.storage = self.msConfig.get('persistentArea', wdir)
         os.makedirs(self.storage)
-        self.reqmgr2Url = self.msConfig.get('reqmgr2Url')
 
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
@@ -720,7 +719,7 @@ class MSTransferor(MSCore):
         """
         try:
             fname = '{}/{}'.format(self.storage, wflow)
-            with open(fname, 'w') as ostream:
+            with open(fname, 'w', encoding="utf-8") as ostream:
                 ostream.write(doc)
             return 'ok'
         except Exception as exp:
@@ -735,7 +734,7 @@ class MSTransferor(MSCore):
         """
         fname = '{}/{}'.format(self.storage, wflow)
         data = None
-        with open() as istream:
+        with open(fname, 'r', encoding="utf-8") as istream:
             data = json.load(istream.read())
         return data
 
@@ -765,7 +764,7 @@ class MSTransferor(MSCore):
                 errors.append(err)
                 continue
             siteWhiteList = data['SiteWhiteList']
-            witeBlackList = data['SiteBlackList']
+            siteBlackList = data['SiteBlackList']
             # skip action if no site lists are provided
             if not siteWhiteList and not siteBlackList:
                 continue
@@ -801,7 +800,7 @@ class MSTransferor(MSCore):
                         if rseExp != rse:
                             continue
                         ruleIds = self.rucio.createReplicationRule(wflowName, rse)
-                        for rid in doc['ruleIds']:
+                        for rid in rdoc['ruleIds']:
                             opts = {}
                             self.rucio.updateRule(rid, opts)
                             newRSEs[rse] = None

@@ -760,8 +760,9 @@ class MSTransferor(MSCore):
             # read workflow payload
             data = self.readData(wflowName)
             if not data:
-                err = {'workflow': wflowName, 'error': 'unable to read its payload'}
-                errors.append(err)
+                err = f"unable to read {wflowName} payload from storage {self.storage}"
+                self.logger.error(err)
+                errors.append({'workflow': wflowName, 'error': err})
                 continue
             siteWhiteList = data['SiteWhiteList']
             siteBlackList = data['SiteBlackList']
@@ -790,7 +791,11 @@ class MSTransferor(MSCore):
                         if rseExp != rse:
                             continue
                         rid = rdoc['id']
-                        self.rucio.deleteRule(rid)
+                        status = self.rucio.deleteRule(rid)
+                        if not status:
+                            err = f"Unable to delete rule {rid} (RSE={rse} for {wflowName}"
+                            self.logger.error(err)
+                            errors.append({'workflow': wflowName, 'error': err})
                         del newRSEs[rse]
 
                 # if site was added to SiteWhtieList add new rule id
@@ -802,8 +807,12 @@ class MSTransferor(MSCore):
                         ruleIds = self.rucio.createReplicationRule(wflowName, rse)
                         for rid in rdoc['ruleIds']:
                             opts = {}
-                            self.rucio.updateRule(rid, opts)
+                            status = self.rucio.updateRule(rid, opts)
                             newRSEs[rse] = None
+                            if not status:
+                                err = f"Unable to update rule {rid} (RSE={rse} for {wflowName}"
+                                self.logger.error(err)
+                                errors.append({'workflow': wflowName, 'error': err})
 
             # persist new rule ids in a transfer document
             wflow.pileupRSEList = set(newRSEs.keys())

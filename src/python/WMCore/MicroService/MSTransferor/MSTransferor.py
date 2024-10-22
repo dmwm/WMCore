@@ -22,6 +22,7 @@ from copy import deepcopy
 
 # WMCore modules
 from Utils.IteratorTools import grouper
+from Utils.CertTools import ckey, cert
 from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
     TRANSFER_RECORD, TRANSFER_COUCH_DOC
 from WMCore.MicroService.Tools.Common import (teraBytes, isRelVal)
@@ -31,6 +32,7 @@ from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
+from WMCore.Services.pycurl_manager import RequestHandler
 
 
 def newTransferRec(dataIn):
@@ -76,6 +78,8 @@ class MSTransferor(MSCore):
         wdir = '{}/storage'.format(os.getcwd())
         self.storage = self.msConfig.get('persistentArea', wdir)
         os.makedirs(self.storage)
+        self.reqmgr2Url = self.msConfig.get('reqmgr2Url')
+
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
         # minimum available storage to consider a resource good for receiving data
@@ -199,6 +203,13 @@ class MSTransferor(MSCore):
             self.logger.info("%d requests information completely processed.", len(reqResults))
 
             for wflow in reqResults:
+                # perform site list updates
+                errors = self._updateSites(wflow)
+                if len(errors) == 0:
+                    self.updateReportDict(summary, "site_list_update", "success")
+                else:
+                    self.updateReportDict(summary, "site_list_update", errors)
+
                 if not self.verifyCampaignExist(wflow):
                     counterProblematicRequests += 1
                     continue
@@ -256,14 +267,6 @@ class MSTransferor(MSCore):
         self.updateReportDict(summary, "num_datasets_subscribed", self.dsetCounter)
         self.updateReportDict(summary, "num_blocks_subscribed", self.blockCounter)
         self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
-
-        # perform site list updates
-        errors = self._updateSites()
-        if len(errors) == 0:
-            self.updateReportDict(summary, "site_list_update", "success")
-        else:
-            self.updateReportDict(summary, "site_list_update", errors)
-
         return summary
 
     def getRequestRecords(self, reqStatus):
@@ -699,7 +702,7 @@ class MSTransferor(MSCore):
         """
         # preserve provided payload to local file system
         errors = []
-        for rec in range doc:
+        for rec in doc:
             wflow = rec['workflow']
             status = self.saveData(wflow)
             if status != 'ok':
@@ -736,7 +739,7 @@ class MSTransferor(MSCore):
             data = json.load(istream.read())
         return data
 
-    def _updateSites(self):
+    def _updateSites(self, wflow):
         """
         Internal update sites API to perform actual work (to be called from execute daemon):
         - read persistent storage area
@@ -746,20 +749,35 @@ class MSTransferor(MSCore):
           2. if a site was added to the SiteBlacklist, that site needs to be removed from the rule ids RSE expression
           3. if a site was added to the SiteWhitelist, that site needs to be added to the rule ids RSE expression
           4. the new rule ids need to be persisted in the transfer document, replacing those rules that are no longer valid.
+
+        :param wflow: workflow object defined in MSTransferor/DataStructs/Workflow.py
         :return: list of errors
         """
         errors = []
-        for wflow in os.listdir(self.storage):
+        for wflowName in os.listdir(self.storage):
+            if wflowName != wflow.getName():
+                continue
+
             # read workflow payload
-            data = self.readData(wflow)
+            data = self.readData(wflowName)
             if not data:
-                err = {'workflow': wflow, 'error': 'unable to read its payload'}
+                err = {'workflow': wflowName, 'error': 'unable to read its payload'}
                 errors.append(err)
                 continue
-            # process workflow payload
-            # get workflow transfer document and find out its rule ids
+            siteWhiteList = data['SiteWhiteList']
+            witeBlackList = data['SiteBlackList']
+
             # compare rule ids with new site lists
-            # if site was added to SiteBlackList remove associated rule id
-            # if site was added to SiteWhtieList add new rule id
+            rseList = self.getAcceptedRSEs(wflow)
+            for rse in rseList:
+                # if site was added to SiteBlackList remove associated rule id
+                if rse in siteBlackList:
+                    # do something here
+                    pass
+                # if site was added to SiteWhtieList add new rule id
+                if rse in siteWhiteList:
+                    # do something here
+                    pass
+
             # persist new rule ids
         return errors

@@ -34,6 +34,7 @@ from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.MicroService.MSCore.TaskManager import start_new_thread
 from Utils.Utilities import strToBool
 
+
 def daemon(func, reqStatus, interval, logger):
     "Daemon to perform given function action for all request in our store"
     while True:
@@ -398,16 +399,18 @@ class MSManager(object):
         :param doc: input JSON doc for HTTP POST request
         :return: list of results
         """
+        res = []
         if 'pileup' in self.services:
-            res = []
             if 'pileupName' in doc:
                 # this is create POST request
                 res = self.msPileup.createPileup(doc)
             if 'query' in doc:
                 # this is POST request to get data for a given JSON query
                 res = self.msPileup.queryDatabase(doc)
-            return res
-        return []
+        elif 'transferor' in self.services:
+            if 'workflow' in doc:
+                res = self.msTransferor.updateSites(doc)
+        return res
 
     def update(self, doc):
         """

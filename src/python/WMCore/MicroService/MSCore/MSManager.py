@@ -406,7 +406,7 @@ class MSManager(object):
             if 'query' in doc:
                 # this is POST request to get data for a given JSON query
                 res = self.msPileup.queryDatabase(doc)
-        else if 'transferor' in self.services:
+        elif 'transferor' in self.services:
             res = self.msTransferor.updateSites(doc)
         return res
 

@@ -766,18 +766,46 @@ class MSTransferor(MSCore):
                 continue
             siteWhiteList = data['SiteWhiteList']
             witeBlackList = data['SiteBlackList']
+            # skip action if no site lists are provided
+            if not siteWhiteList and not siteBlackList:
+                continue
 
             # compare rule ids with new site lists
             rseList = self.getAcceptedRSEs(wflow)
+
+            # we set newRSEs from original rse list of workflow and it will be adjusted
+            # according to action we'll perform with site lists
+            newRSEs = {key: None for key in rseList}
+
+            # to perform any actions with site list we need rucio rules
+            rules = self.rucio.listDataRules(wflowName)
+
+            # loop over rseList and perform action based on provided site lists
             for rse in rseList:
                 # if site was added to SiteBlackList remove associated rule id
                 if rse in siteBlackList:
                     # do something here
-                    pass
+                    self.logger.info("Discard rse %s from workflow %s", rse, wflowName)
+                    for rdoc in rules:
+                        rseExp = rdoc['rse_expression']
+                        if rseExp != rse:
+                            continue
+                        rid = rdoc['id']
+                        self.rucio.deleteRule(rid)
+                        del newRSEs[rse]
+
                 # if site was added to SiteWhtieList add new rule id
                 if rse in siteWhiteList:
-                    # do something here
-                    pass
+                    self.logger.info("Add rse %s to workflow %s", rse, wflowName)
+                    for rdoc in rules:
+                        if rseExp != rse:
+                            continue
+                        ruleIds = self.rucio.createReplicationRule(wflowName, rse)
+                        for rid in doc['ruleIds']:
+                            opts = {}
+                            self.rucio.updateRule(rid, opts)
+                            newRSEs[rse] = None
 
-            # persist new rule ids
+            # persist new rule ids in a transfer document
+            wflow.pileupRSEList = set(newRSEs.keys())
         return errors

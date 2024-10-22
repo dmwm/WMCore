@@ -398,16 +398,17 @@ class MSManager(object):
         :param doc: input JSON doc for HTTP POST request
         :return: list of results
         """
+        res = []
         if 'pileup' in self.services:
-            res = []
             if 'pileupName' in doc:
                 # this is create POST request
                 res = self.msPileup.createPileup(doc)
             if 'query' in doc:
                 # this is POST request to get data for a given JSON query
                 res = self.msPileup.queryDatabase(doc)
-            return res
-        return []
+        else if 'transferor' in self.services:
+            res = self.msTransferor.updateSites(doc)
+        return res
 
     def update(self, doc):
         """

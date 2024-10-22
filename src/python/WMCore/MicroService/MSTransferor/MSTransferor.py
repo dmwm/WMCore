@@ -72,6 +72,10 @@ class MSTransferor(MSCore):
         """
         super(MSTransferor, self).__init__(msConfig, logger=logger)
 
+        # persistent area for site list processing
+        wdir = '{}/storage'.format(os.getcwd())
+        self.storage = self.msConfig.get('persistentArea', wdir)
+        os.makedirs(self.storage)
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
         # minimum available storage to consider a resource good for receiving data
@@ -252,6 +256,14 @@ class MSTransferor(MSCore):
         self.updateReportDict(summary, "num_datasets_subscribed", self.dsetCounter)
         self.updateReportDict(summary, "num_blocks_subscribed", self.blockCounter)
         self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
+
+        # perform site list updates
+        errors = self._updateSites()
+        if len(errors) == 0:
+            self.updateReportDict(summary, "site_list_update", "success")
+        else:
+            self.updateReportDict(summary, "site_list_update", errors)
+
         return summary
 
     def getRequestRecords(self, reqStatus):
@@ -676,3 +688,78 @@ class MSTransferor(MSCore):
             else:
                 diskPNNs.add(pnn)
         return diskPNNs
+
+    def updateSites(self, doc):
+        """
+        Update sites API provides asynchronous update of Site info.
+
+        :param doc: JSON payload with the following data structures:
+                    [{'workflow': <wflow name>, 'SiteWhiteList' ['T1', ...], 'SiteBlackList': ['T2',...]}, {...}]
+        :return: acknowledge dict to upstream caller (ReqMgr2)
+        """
+        # preserve provided payload to local file system
+        errors = []
+        for rec in range doc:
+            wflow = rec['workflow']
+            status = self.saveData(wflow)
+            if status != 'ok':
+                errors.append({'workflow': wflow, 'error': status})
+        # send acknowledged message back to upstream caller
+        resp = {'status': 'ok'}
+        if len(errors) != 0:
+            resp = {'status': 'fail', 'errors': errors}
+        return resp
+
+    def saveData(self, wflow):
+        """
+        Save workflow data to persistent storage
+        :return: status of this operation
+        """
+        try:
+            fname = '{}/{}'.format(self.storage, wflow)
+            with open(fname, 'w') as ostream:
+                ostream.write(doc)
+            return 'ok'
+        except Exception as exp:
+            msg = "Unable to save workflow '%s' to %s.Error: %s", wflow, self.storage, str(exp)
+            self.logger.exception(msg)
+            return str(exp)
+
+    def readData(self, wflow):
+        """
+        Read workflow data from persistent storage
+        :return: data or None
+        """
+        fname = '{}/{}'.format(self.storage, wflow)
+        data = None
+        with open() as istream:
+            data = json.load(istream.read())
+        return data
+
+    def _updateSites(self):
+        """
+        Internal update sites API to perform actual work (to be called from execute daemon):
+        - read persistent storage area
+        - for every found workflow area read its payload
+        - for every workflow perform the following set of steps:
+          1. accessing the workflow transfer document to find out the rule ids
+          2. if a site was added to the SiteBlacklist, that site needs to be removed from the rule ids RSE expression
+          3. if a site was added to the SiteWhitelist, that site needs to be added to the rule ids RSE expression
+          4. the new rule ids need to be persisted in the transfer document, replacing those rules that are no longer valid.
+        :return: list of errors
+        """
+        errors = []
+        for wflow in os.listdir(self.storage):
+            # read workflow payload
+            data = self.readData(wflow)
+            if not data:
+                err = {'workflow': wflow, 'error': 'unable to read its payload'}
+                errors.append(err)
+                continue
+            # process workflow payload
+            # get workflow transfer document and find out its rule ids
+            # compare rule ids with new site lists
+            # if site was added to SiteBlackList remove associated rule id
+            # if site was added to SiteWhtieList add new rule id
+            # persist new rule ids
+        return errors

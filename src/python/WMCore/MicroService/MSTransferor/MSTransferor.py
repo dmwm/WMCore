@@ -703,7 +703,7 @@ class MSTransferor(MSCore):
         errors = []
         for rec in doc:
             wflow = rec['workflow']
-            status = self.saveData(wflow)
+            status = self.saveData(wflow, rec)
             if status != 'ok':
                 errors.append({'workflow': wflow, 'error': status})
         # send acknowledged message back to upstream caller
@@ -712,15 +712,17 @@ class MSTransferor(MSCore):
             resp = {'status': 'fail', 'errors': errors}
         return resp
 
-    def saveData(self, wflow):
+    def saveData(self, wflow, rec):
         """
         Save workflow data to persistent storage
+        :param wflow: name of workflow
+        :param rec: record to save
         :return: status of this operation
         """
         try:
             fname = '{}/{}'.format(self.storage, wflow)
             with open(fname, 'w', encoding="utf-8") as ostream:
-                ostream.write(doc)
+                ostream.write(rec)
             return 'ok'
         except Exception as exp:
             msg = "Unable to save workflow '%s' to %s.Error: %s", wflow, self.storage, str(exp)
@@ -804,7 +806,7 @@ class MSTransferor(MSCore):
                     for rdoc in rules:
                         if rseExp != rse:
                             continue
-                        ruleIds = self.rucio.createReplicationRule(wflowName, rse)
+                        self.rucio.createReplicationRule(wflowName, rse)
                         for rid in rdoc['ruleIds']:
                             opts = {}
                             status = self.rucio.updateRule(rid, opts)

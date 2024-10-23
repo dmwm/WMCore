@@ -16,7 +16,6 @@ from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -33,7 +32,7 @@ class SiteListPoller(BaseWorkerThread):
 
         # the reqmgr2Url should be points to ReqMgr2 data services, i.e. /reqmgr2 end-point
         self.wmstatsUrl = getattr(config.SiteListPoller, "wmstatsUrl")
-        slef.wmstatsSrv = WMStatsServer(config.wmstatsSvc_url, logger=self.logger)
+        self.wmstatsSrv = WMStatsServer(config.wmstatsSvc_url, logger=self.logger)
 
         # provide access to WMBS in local WMAgent
         self.daoFactory = DAOFactory(package="WMCore.WMBS",

@@ -203,7 +203,7 @@ class WorkQueue(object):
         eleParams[self.eleKey] = updatedParams
         conflictIDs = self.db.updateBulkDocumentsWithConflictHandle(elementIds, eleParams, maxConflictLimit=20)
         if conflictIDs:
-            raise CouchConflictError("WQ update failed with conflict", data=updatedParams, result=conflictIDs)
+            raise CouchConflictError("WQ update failed with conflict", data=updatedParams, result=conflictIDs, status=400)
         return
 
     def getAvailableWorkflows(self):

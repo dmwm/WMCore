@@ -6,19 +6,16 @@ Description: module to update of site lists within a WMAgent
 """
 
 # system modules
-import os
 import json
 import shutil
 import logging
 import threading
 
 # WMCore modules
-from Utils.CertTools import ckey, cert
 from Utils.Timers import timeFunction
-from WMCore.Agent.Harness import Harness
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.pycurl_manager import getdata
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -36,6 +33,7 @@ class SiteListPoller(BaseWorkerThread):
 
         # the reqmgr2Url should be points to ReqMgr2 data services, i.e. /reqmgr2 end-point
         self.wmstatsUrl = getattr(config.SiteListPoller, "wmstatsUrl")
+        slef.wmstatsSrv = WMStatsServer(config.wmstatsSvc_url, logger=self.logger)
 
         # provide access to WMBS in local WMAgent
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
@@ -78,7 +76,7 @@ class SiteListPoller(BaseWorkerThread):
         wsList = []
         for state in states:
             inputConditions = {"RequestStatus": state}
-            resp = getFilteredActiveData(inputCoditions, outputMask)
+            resp = self.wmstatsSrv.getFilteredActiveData(inputConditions, outputMask)
             data = json.loads(resp['data'])
             for rdict in data['result']:
                 # rdict here has the following structure: list of records where each record is
@@ -127,15 +125,14 @@ class SiteListPoller(BaseWorkerThread):
             wmaWhiteList = wHelper.getSiteWhiteList()
             wmaBlackList = wHelper.getSiteBlackList()
             if set(wmaWhiteList) != set(siteWhiteList) or set(wmaBlackList) != set(siteBlackList):
-                self.logger.info(f"Updating {wflow}:")
-                self.logger.info(f"  siteWhiteList {wmaWhiteList} => {siteWhiteList}")
-                self.logger.info(f"  siteBlackList {wmaBlackList} => {siteBlackList}")
+                self.logger.info("Updating %s:", wflow)
+                self.logger.info("  siteWhiteList %s => %s", wmaWhiteList, siteWhiteList)
+                self.logger.info("  siteBlackList %s => %s", wmaBlackList, siteBlackList)
                 try:
                     # update local WorkQueue first
                     self.localWQ.updateSiteLists(wflow, siteWhiteList, siteBlackList)
                 except Exception as ex:
-                    msg = f"Unexpected exception while updating elements in local workqueue Details:\n{str(ex)}"
-                    logging.exception(msg)
+                    logging.exception("Unexpected exception while updating elements in local workqueue Details:\n%s", str(ex))
                     continue
 
                 # update workload only if we updated local WorkQueue
@@ -147,15 +144,14 @@ class SiteListPoller(BaseWorkerThread):
 
                 try:
                     # persist the spec in local CouchDB
-                    self.logger.info(f"Updating {self.localCouchUrl} with new site lists for {wflow}")
+                    self.logger.info("Updating %s with new site lists for %s", self.localCouchUrl, wflow)
                     wHelper.saveCouchUrl(self.localCouchUrl)
 
                     # save back pickle file
-                    self.logger.info(f"Updated {pklFileName}")
+                    self.logger.info("Updated %s", pklFileName)
                     newPklFileName = pklFileName.split('.pkl')[0] + '_new.pkl'
                     wHelper.save(newPklFileName)
                     shutil.move(newPklFileName, pklFileName)
                 except Exception as ex:
-                    msg = f"Caught unexpected exception in SiteListPoller. Details:\n{str(ex)}"
-                    logging.exception(msg)
+                    logging.exception("Caught unexpected exception in SiteListPoller. Details:\n%s", str(ex))
                     continue

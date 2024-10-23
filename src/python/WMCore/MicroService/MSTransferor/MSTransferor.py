@@ -15,6 +15,8 @@ from future import standard_library
 standard_library.install_aliases()
 
 # system modules
+import os
+import json
 from operator import itemgetter
 from pprint import pformat
 from retry import retry
@@ -71,6 +73,11 @@ class MSTransferor(MSCore):
         :param microConfig: microservice configuration
         """
         super(MSTransferor, self).__init__(msConfig, logger=logger)
+
+        # persistent area for site list processing
+        wdir = '{}/storage'.format(os.getcwd())
+        self.storage = self.msConfig.get('persistentArea', wdir)
+        os.makedirs(self.storage)
 
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
@@ -195,6 +202,13 @@ class MSTransferor(MSCore):
             self.logger.info("%d requests information completely processed.", len(reqResults))
 
             for wflow in reqResults:
+                # perform site list updates
+                errors = self._updateSites(wflow)
+                if len(errors) == 0:
+                    self.updateReportDict(summary, "site_list_update", "success")
+                else:
+                    self.updateReportDict(summary, "site_list_update", errors)
+
                 if not self.verifyCampaignExist(wflow):
                     counterProblematicRequests += 1
                     continue
@@ -676,3 +690,132 @@ class MSTransferor(MSCore):
             else:
                 diskPNNs.add(pnn)
         return diskPNNs
+
+    def updateSites(self, doc):
+        """
+        Update sites API provides asynchronous update of Site info.
+
+        :param doc: JSON payload with the following data structures:
+                    [{'workflow': <wflow name>, 'SiteWhiteList' ['T1', ...], 'SiteBlackList': ['T2',...]}, {...}]
+        :return: acknowledge dict to upstream caller (ReqMgr2)
+        """
+        # preserve provided payload to local file system
+        errors = []
+        for rec in doc:
+            wflow = rec['workflow']
+            status = self.saveData(wflow, rec)
+            if status != 'ok':
+                errors.append({'workflow': wflow, 'error': status})
+        # send acknowledged message back to upstream caller
+        resp = {'status': 'ok'}
+        if len(errors) != 0:
+            resp = {'status': 'fail', 'errors': errors}
+        return resp
+
+    def saveData(self, wflow, rec):
+        """
+        Save workflow data to persistent storage
+        :param wflow: name of workflow
+        :param rec: record to save
+        :return: status of this operation
+        """
+        try:
+            fname = '{}/{}'.format(self.storage, wflow)
+            with open(fname, 'w', encoding="utf-8") as ostream:
+                ostream.write(rec)
+            return 'ok'
+        except Exception as exp:
+            msg = "Unable to save workflow '%s' to %s.Error: %s", wflow, self.storage, str(exp)
+            self.logger.exception(msg)
+            return str(exp)
+
+    def readData(self, wflow):
+        """
+        Read workflow data from persistent storage
+        :return: data or None
+        """
+        fname = '{}/{}'.format(self.storage, wflow)
+        data = None
+        with open(fname, 'r', encoding="utf-8") as istream:
+            data = json.load(istream.read())
+        return data
+
+    def _updateSites(self, wflow):
+        """
+        Internal update sites API to perform actual work (to be called from execute daemon):
+        - read persistent storage area
+        - for every found workflow area read its payload
+        - for every workflow perform the following set of steps:
+          1. accessing the workflow transfer document to find out the rule ids
+          2. if a site was added to the SiteBlacklist, that site needs to be removed from the rule ids RSE expression
+          3. if a site was added to the SiteWhitelist, that site needs to be added to the rule ids RSE expression
+          4. the new rule ids need to be persisted in the transfer document, replacing those rules that are no longer valid.
+
+        :param wflow: workflow object defined in MSTransferor/DataStructs/Workflow.py
+        :return: list of errors
+        """
+        errors = []
+        for wflowName in os.listdir(self.storage):
+            if wflowName != wflow.getName():
+                continue
+
+            # read workflow payload
+            data = self.readData(wflowName)
+            if not data:
+                err = f"unable to read {wflowName} payload from storage {self.storage}"
+                self.logger.error(err)
+                errors.append({'workflow': wflowName, 'error': err})
+                continue
+            siteWhiteList = data['SiteWhiteList']
+            siteBlackList = data['SiteBlackList']
+            # skip action if no site lists are provided
+            if not siteWhiteList and not siteBlackList:
+                continue
+
+            # compare rule ids with new site lists
+            rseList = self.getAcceptedRSEs(wflow)
+
+            # we set newRSEs from original rse list of workflow and it will be adjusted
+            # according to action we'll perform with site lists
+            newRSEs = {key: None for key in rseList}
+
+            # to perform any actions with site list we need rucio rules
+            rules = self.rucio.listDataRules(wflowName)
+
+            # loop over rseList and perform action based on provided site lists
+            for rse in rseList:
+                # if site was added to SiteBlackList remove associated rule id
+                if rse in siteBlackList:
+                    # do something here
+                    self.logger.info("Discard rse %s from workflow %s", rse, wflowName)
+                    for rdoc in rules:
+                        rseExp = rdoc['rse_expression']
+                        if rseExp != rse:
+                            continue
+                        rid = rdoc['id']
+                        status = self.rucio.deleteRule(rid)
+                        if not status:
+                            err = f"Unable to delete rule {rid} (RSE={rse} for {wflowName}"
+                            self.logger.error(err)
+                            errors.append({'workflow': wflowName, 'error': err})
+                        del newRSEs[rse]
+
+                # if site was added to SiteWhtieList add new rule id
+                if rse in siteWhiteList:
+                    self.logger.info("Add rse %s to workflow %s", rse, wflowName)
+                    for rdoc in rules:
+                        if rseExp != rse:
+                            continue
+                        self.rucio.createReplicationRule(wflowName, rse)
+                        for rid in rdoc['ruleIds']:
+                            opts = {}
+                            status = self.rucio.updateRule(rid, opts)
+                            newRSEs[rse] = None
+                            if not status:
+                                err = f"Unable to update rule {rid} (RSE={rse} for {wflowName}"
+                                self.logger.error(err)
+                                errors.append({'workflow': wflowName, 'error': err})
+
+            # persist new rule ids in a transfer document
+            wflow.pileupRSEList = set(newRSEs.keys())
+        return errors

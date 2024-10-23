@@ -358,7 +358,7 @@ class WMWorkloadTest(unittest.TestCase):
         newSiteWhiteList = ["T1_US_FNAL", "T0_CH_CERN"]
         newSiteBlackList = ["T1_DE_KIT"]
         testWorkload.setSiteWhitelist(newSiteWhiteList)
-        testWorkload.setSiteBlacklist([newSiteBlackList)
+        testWorkload.setSiteBlacklist(newSiteBlackList)
 
         siteWhiteList = procTestTask.getSiteWhitelist()
         siteBlackList = procTestTask.getSiteWhitelist()

@@ -207,11 +207,11 @@ class SimpleCondorPlugin(BasePlugin):
 
         schedd = htcondor.Schedd()
 
-        logging.debug("Start: Retrieving classAds using Condor Python XQuery")
+        logging.debug("Start: Retrieving classAds using Condor Python query")
         try:
-            itobj = schedd.xquery("WMAgent_AgentName == %s" % classad.quote(self.agent),
+            jobAds = schedd.query("WMAgent_AgentName == %s" % classad.quote(self.agent),
                                   ['ClusterId', 'ProcId', 'JobStatus', 'MachineAttrGLIDEIN_CMSSite0'])
-            for jobAd in itobj:
+            for jobAd in jobAds:
                 gridId = "%s.%s" % (jobAd['ClusterId'], jobAd['ProcId'])
                 jobStatus = SimpleCondorPlugin.exitCodeMap().get(jobAd.get('JobStatus'), 'Unknown')
                 location = jobAd.get('MachineAttrGLIDEIN_CMSSite0', None)
@@ -372,10 +372,10 @@ class SimpleCondorPlugin(BasePlugin):
         origSiteLists = set()
 
         try:
-            itobj = sd.xquery('WMAgent_AgentName =?= %s && JobStatus =?= 1' % classad.quote(self.agent),
+            jobAds = sd.query('WMAgent_AgentName =?= %s && JobStatus =?= 1' % classad.quote(self.agent),
                               ['WMAgent_JobID', 'DESIRED_Sites', 'ExtDESIRED_Sites'])
 
-            for jobAd in itobj:
+            for jobAd in jobAds:
                 jobAdId = jobAd.get('WMAgent_JobID')
                 desiredSites = jobAd.get('DESIRED_Sites')
                 extDesiredSites = jobAd.get('ExtDESIRED_Sites')

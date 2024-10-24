@@ -37,7 +37,6 @@ class PyCondorAPI(object):
         Retrieves a job summary from the HTCondor Schedd object
         :return: a list of classads representing the matching jobs, or None if failed
         """
-        ### NOTE: SummaryOnly does not work with xquery method
         jobs = None  # return None to signalize the query failed
         queryOpts = htcondor.htcondor.QueryOpts.SummaryOnly
         try:
@@ -68,12 +67,12 @@ class PyCondorAPI(object):
         msg = "Querying condor schedd with params: constraint=%s, attrList=%s, limit=%s, opts=%s"
         logging.info(msg, constraint, attrList, limit, opts)
         try:
-            return self.schedd.xquery(constraint, attrList, limit, opts=opts)
+            return self.schedd.query(constraint, attrList, limit, opts=opts)
         except Exception:
             self.recreateSchedd()
 
         # if we hit another exception, let it be raised up in the chain
-        return self.schedd.xquery(constraint, attrList, limit, opts=opts)
+        return self.schedd.query(constraint, attrList, limit, opts=opts)
 
     def editCondorJobs(self, job_spec, attr, value):
         """

@@ -596,7 +596,7 @@ class WMTaskHelper(TreeHelper):
 
         return splittingParams
 
-    def setJobResourceInformation(self, timePerEvent=None, sizePerEvent=None, memoryReq=None):
+    def setJobResourceInformation(self, timePerEvent=None, sizePerEvent=None, memoryReq=None, taskType=None):
         """
         _setJobResourceInformation_
 
@@ -604,7 +604,11 @@ class WMTaskHelper(TreeHelper):
         the three key values are main memory usage, time per processing unit (e.g. time per event) and
         disk usage per processing unit (e.g. size per event).
         """
-        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
+
+        # If task type is specified, it may be that we dont want "Merge" tasks to be ignored, 
+        # or that the task type is not one of the three to ignore
+
+        if self.taskType() in ["Merge", "Cleanup", "LogCollect"] and taskType is None:
             # don't touch job requirements for these task types
             return
 
@@ -621,7 +625,7 @@ class WMTaskHelper(TreeHelper):
         if memoryReq or getattr(performanceParams, "memoryRequirement", None):
             performanceParams.memoryRequirement = memoryReq or getattr(performanceParams, "memoryRequirement")
             # if we change memory requirements, then we must change MaxPSS as well
-            self.setMaxPSS(performanceParams.memoryRequirement)
+            self.setMaxPSS(performanceParams.memoryRequirement, taskType)
 
         return
 
@@ -1215,14 +1219,17 @@ class WMTaskHelper(TreeHelper):
             self.monitoring.section_("PerformanceMonitor")
         return
 
-    def setMaxPSS(self, maxPSS):
+    def setMaxPSS(self, maxPSS, taskType=None):
         """
         _setMaxPSS_
 
         Set MaxPSS performance monitoring for this task.
         :param maxPSS: maximum Proportional Set Size (PSS) memory consumption in MiB
         """
-        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
+        # If task type is specified, it may be that we dont want "Merge" tasks to be ignored, 
+        # or that the task type is not one of the three to ignore
+        
+        if self.taskType() in ["Merge", "Cleanup", "LogCollect"] and taskType is None:
             # keep the default settings (from StdBase) for these task types
             return
 

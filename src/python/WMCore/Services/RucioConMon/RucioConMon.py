@@ -40,14 +40,13 @@ class RucioConMon(Service):
         super(RucioConMon, self).__init__(configDict)
         self['logger'].debug("Initializing RucioConMon with url: %s", self['endpoint'])
 
-    def _getResult(self, uri, callname="", clearCache=False, args=None, binary=False):
+    def _getResult(self, uri, callname="", clearCache=False, args=None):
         """
         Either fetch data from the cache file or query the data-service
         :param uri: The endpoint uri
         :param callname: alias for caller function
         :param clearCache: parameter to control the cache behavior
         :param args: additional parameters to HTTP request call
-        :param binary: specifies request for binary object from HTTP requests (e.g. zipped content)
         :return:    A dictionary
         """
 
@@ -68,31 +67,26 @@ class RucioConMon(Service):
         if clearCache:
             self.clearCache(cachedApi, args)
         results = '{}' # explicitly define results which will be loaded by json.loads below
-        if binary:
-            with self.refreshCache(cachedApi, apiUrl, decoder=False, binary=True) as istream:
-                results = gzip.decompress(istream.read())
-            return results
-        else:
-            with self.refreshCache(cachedApi, apiUrl) as istream:
-                results = istream.read()
+        with self.refreshCache(cachedApi, apiUrl, decoder=True, binary=False) as istream:
+            results = istream.read()
+        return json.loads(results)
 
-        results = json.loads(results)
-        return results
-
-    def _getResultZipped(self, uri, callname="", clearCache=True, args=None):
+    def _getResultZipped(self, uri, callname="", clearCache=True):
         """
-        This method is retrieving a zipped file from the uri privided, instead
-        of the normal json
+        This method retrieves gzipped content, instead of the standard json format.
         :param uri: The endpoint uri
         :param callname: alias for caller function
         :param clearCache: parameter to control the cache behavior
-        :param args: additional parameters to HTTP request call
-        :return:    a list of LFNs
+        :return: yields a single record from the data retrieved
         """
-        data = self._getResult(uri, callname, clearCache, args, binary=True)
-        # convert bytes which we received upstream to string
-        data = decodeBytesToUnicode(data)
-        return [f for f in data.split('\n') if f]
+        cachedApi = callname
+        if clearCache:
+            self.clearCache(cachedApi)
+
+        with self.refreshCache(cachedApi, uri, decoder=False, binary=True) as istream:
+            for line in istream:
+                line = decodeBytesToUnicode(line).replace("\n", "")
+                yield line
 
     def getRSEStats(self):
         """
@@ -109,7 +103,7 @@ class RucioConMon(Service):
         Gets the list of all unmerged files in an RSE
         :param rseName: The RSE whose list of unmerged files to be retrieved
         :param zipped:  If True the interface providing the zipped lists will be called
-        :return:        A list of unmerged files for the RSE in question
+        :return: a generator of unmerged files for the RSE in question
         """
         # NOTE: The default API provided by Rucio Consistency Monitor is in a form of a
         #       zipped file/stream. Currently we are using the newly provided json API
@@ -117,12 +111,14 @@ class RucioConMon(Service):
         #       implement the method with the zipped API and use disc cache for
         #       reading/streaming from file. This will prevent any set arithmetic
         #       in the future.
-        if not zipped:
-            uri = "files?rse=%s&format=json" % rseName
-            rseUnmerged = self._getResult(uri, callname=rseName)
-            return rseUnmerged
-        else:
+        if zipped:
             uri = "files?rse=%s&format=raw" % rseName
             callname = '{}.zipped'.format(rseName)
-            rseUnmerged = self._getResultZipped(uri,  callname=callname, clearCache=True)
-            return rseUnmerged
+            rseUnmerged = self._getResultZipped(uri, callname=callname, clearCache=True)
+        else:
+            uri = "files?rse=%s&format=json" % rseName
+            callname = '{}.json'.format(rseName)
+            rseUnmerged = self._getResult(uri, callname=callname)
+        # now lazily return items
+        for item in rseUnmerged:
+            yield item

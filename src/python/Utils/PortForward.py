@@ -7,6 +7,7 @@ A decorator for swapping ports in an url
 
 from builtins import str, bytes
 
+
 def portForward(port):
     """
     Decorator wrapper function for port forwarding of the REST calls of any
@@ -27,6 +28,7 @@ def portForward(port):
 
     param port: The port to which the REST call should be forwarded.
     """
+
     def portForwardDecorator(callFunc):
         """
         The actual decorator
@@ -50,14 +52,14 @@ def portForward(port):
             forwarded = False
             try:
                 if isinstance(url, str):
-                    urlToMangle = 'https://cmsweb'
+                    urlToMangle = "https://cmsweb"
                     if url.startswith(urlToMangle):
-                        newUrl = url.replace('.cern.ch/', '.cern.ch:%d/' % port, 1)
+                        newUrl = url.replace(".cern.ch/", ".cern.ch:%d/" % port, 1)
                         forwarded = True
                 elif isinstance(url, bytes):
-                    urlToMangle = b'https://cmsweb'
+                    urlToMangle = b"https://cmsweb"
                     if url.startswith(urlToMangle):
-                        newUrl = url.replace(b'.cern.ch/', b'.cern.ch:%d/' % port, 1)
+                        newUrl = url.replace(b".cern.ch/", b".cern.ch:%d/" % port, 1)
                         forwarded = True
 
             except Exception:
@@ -66,11 +68,13 @@ def portForward(port):
                 return callFunc(callObj, newUrl, *args, **kwargs)
             else:
                 return callFunc(callObj, url, *args, **kwargs)
+
         return portMangle
+
     return portForwardDecorator
 
 
-class PortForward():
+class PortForward:
     """
     A class with a call method implementing a simple way to use the functionality
     provided by the protForward decorator as a pure functional call:
@@ -81,6 +85,7 @@ class PortForward():
         url = 'https://cmsweb-testbed.cern.ch/couchdb'
         url = portForwarder(url)
     """
+
     def __init__(self, port):
         """
         The init method for the PortForward call class. This one is supposed
@@ -92,6 +97,8 @@ class PortForward():
         """
         The call method for the PortForward class
         """
+
         def dummyCall(self, url):
             return url
+
         return portForward(self.port)(dummyCall)(self, url)

@@ -44,8 +44,10 @@ class ExtendedUnitTestCase(unittest.TestCase):
             return
 
         if not isinstance(expected_obj, type(actual_obj)):
-            self.fail(msg="The two objects are different type and cannot be compared: %s and %s" % (
-            type(expected_obj), type(actual_obj)))
+            self.fail(
+                msg="The two objects are different type and cannot be compared: %s and %s"
+                % (type(expected_obj), type(actual_obj))
+            )
 
         expected = copy.deepcopy(expected_obj)
         actual = copy.deepcopy(actual_obj)
@@ -57,6 +59,9 @@ class ExtendedUnitTestCase(unittest.TestCase):
             traverse_list(expected)
             traverse_list(actual)
         else:
-            self.fail(msg="The two objects are different type (%s) and cannot be compared." % type(expected_obj))
+            self.fail(
+                msg="The two objects are different type (%s) and cannot be compared."
+                % type(expected_obj)
+            )
 
         return self.assertEqual(expected, actual)

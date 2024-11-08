@@ -39,27 +39,30 @@ try:
 except ImportError:
     pass
 
+
 def _baseProcessStatusFormat(pid=None):
     if not pid:
         pid = os.getpid()
     ttime = time.localtime()
-    tstamp = time.strftime('%d/%b/%Y:%H:%M:%S', ttime)
-    return {'pid': pid, 'timestamp': tstamp, 'time': time.time()}
+    tstamp = time.strftime("%d/%b/%Y:%H:%M:%S", ttime)
+    return {"pid": pid, "timestamp": tstamp, "time": time.time()}
+
 
 def processStatus(pid=None):
     "Return status of the process in a dictionary format"
 
     pdict = _baseProcessStatusFormat(pid)
-    if 'psutil' not in sys.modules:
+    if "psutil" not in sys.modules:
         return pdict
     proc = psutil.Process(pid)
     pdict.update(proc.as_dict())
     return pdict
 
+
 def processStatusDict(pid=None):
     "Return status of the process in a dictionary format"
     pdict = _baseProcessStatusFormat(pid)
-    if 'psutil' not in sys.modules:
+    if "psutil" not in sys.modules:
         return pdict
     proc = psutil.Process(pid)
     pdict.update({"cpu_times": dict(proc.cpu_times()._asdict())})
@@ -68,6 +71,7 @@ def processStatusDict(pid=None):
     pdict.update({"memory_full_info": dict(proc.memory_full_info()._asdict())})
     pdict.update({"memory_percent": proc.memory_percent()})
     return pdict
+
 
 def threadStack():
     """
@@ -89,9 +93,10 @@ def threadStack():
         threads.append(tdict)
     return dict(threads=threads)
 
+
 def main():
     "Main function to use this module as a stand-along script."
-    parser = argparse.ArgumentParser(prog='PROG')
+    parser = argparse.ArgumentParser(prog="PROG")
     parser.add_argument("--pid", action="store", dest="pid", help="process id")
     opts = parser.parse_args()
 
@@ -99,5 +104,6 @@ def main():
     pdict.update(threadStack())
     print(json.dumps(pdict))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

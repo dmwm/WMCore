@@ -6,7 +6,6 @@ This class does not work from kubernetes pods. The AlertManagerAPI class should 
 More details at: https://github.com/dmwm/WMCore/issues/10234
 """
 
-
 from builtins import str, object
 import smtplib
 import logging
@@ -47,4 +46,3 @@ class EmailAlert(object):
         except UnboundLocalError:
             # it means our client failed connecting to the SMTP server
             pass
-

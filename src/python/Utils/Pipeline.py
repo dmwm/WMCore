@@ -54,6 +54,7 @@ class Functor(object):
 
 
     """
+
     def __init__(self, func, *args, **kwargs):
         """
         The init method for class Functor
@@ -77,6 +78,7 @@ class Pipeline(object):
     A simple Functional Pipeline Class: applies a set of functions to an object,
     where the output of every previous function is an input to the next one.
     """
+
     # NOTE:
     #    Similar and inspiring approaches but yet some different implementations
     #    are discussed in the following two links [1] & [2]. With a quite good

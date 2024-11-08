@@ -12,7 +12,6 @@ data type.
 
 from copy import copy
 
-from builtins import object
 from time import time
 
 
@@ -20,8 +19,8 @@ class MemoryCacheException(Exception):
     def __init__(self, message):
         super(MemoryCacheException, self).__init__(message)
 
-class MemoryCache():
 
+class MemoryCache:
     __slots__ = ["lastUpdate", "expiration", "_cache"]
 
     def __init__(self, expiration, initialData=None):
@@ -51,7 +50,11 @@ class MemoryCache():
         if isinstance(self._cache, dict):
             return copy(self._cache.get(keyName))
         else:
-            raise MemoryCacheException("Cannot retrieve an item from a non-dict MemoryCache object: {}".format(self._cache))
+            raise MemoryCacheException(
+                "Cannot retrieve an item from a non-dict MemoryCache object: {}".format(
+                    self._cache
+                )
+            )
 
     def reset(self):
         """
@@ -62,7 +65,9 @@ class MemoryCache():
         elif isinstance(self._cache, list):
             del self._cache[:]
         else:
-            raise MemoryCacheException("The cache needs to be reset manually, data type unknown")
+            raise MemoryCacheException(
+                "The cache needs to be reset manually, data type unknown"
+            )
 
     def isCacheExpired(self):
         """
@@ -78,7 +83,9 @@ class MemoryCache():
         """
         if self.isCacheExpired():
             expiredSince = int(time()) - (self.lastUpdate + self.expiration)
-            raise MemoryCacheException("Memory cache expired for %d seconds" % expiredSince)
+            raise MemoryCacheException(
+                "Memory cache expired for %d seconds" % expiredSince
+            )
         return self._cache
 
     def setCache(self, inputData):
@@ -88,8 +95,10 @@ class MemoryCache():
         :param inputData: data to store in the cache
         """
         if not isinstance(self._cache, type(inputData)):
-            raise TypeError("Current cache data type: %s, while new value is: %s" %
-                            (type(self._cache), type(inputData)))
+            raise TypeError(
+                "Current cache data type: %s, while new value is: %s"
+                % (type(self._cache), type(inputData))
+            )
         self.reset()
         self.lastUpdate = int(time())
         self._cache = inputData
@@ -115,5 +124,8 @@ class MemoryCache():
         elif isinstance(self._cache, dict) and isinstance(inputItem, dict):
             self._cache.update(inputItem)
         else:
-            msg = "Input item type: %s cannot be added to a cache type: %s" % (type(self._cache), type(inputItem))
+            msg = "Input item type: %s cannot be added to a cache type: %s" % (
+                type(self._cache),
+                type(inputItem),
+            )
             raise TypeError("Cache and input item data type mismatch. %s" % msg)

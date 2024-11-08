@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
-#pylint: disable=
+# -*- coding: utf-8 -*-
+# pylint: disable=
 """
 File       : Signals.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
@@ -17,6 +17,7 @@ import signal
 import threading
 import traceback
 
+
 def dumpthreads(isignal, iframe):
     """
     Dump context of all threads upon given signal
@@ -26,11 +27,12 @@ def dumpthreads(isignal, iframe):
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
     code = []
     for tid, stack in list(sys._current_frames().items()):
-        code.append("\n# Thread: %s(%d)" % (id2name.get(tid,""), tid))
+        code.append("\n# Thread: %s(%d)" % (id2name.get(tid, ""), tid))
         for filename, lineno, name, line in traceback.extract_stack(stack):
             code.append('File: "%s", line %d, in %s' % (filename, lineno, name))
-            if  line:
+            if line:
                 code.append("  %s" % (line.strip()))
     print("\n".join(code))
+
 
 signal.signal(signal.SIGUSR1, dumpthreads)

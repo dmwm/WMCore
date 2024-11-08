@@ -3,7 +3,6 @@
 Utilities related to file handling
 """
 
-
 import io
 import os
 import glob
@@ -40,9 +39,9 @@ def tarMode(tfile, opMode):
     :return: mode of operation
     """
     ext = tfile.split(".")[-1]
-    if ext == 'tar':
+    if ext == "tar":
         return opMode
-    mode = opMode + ':' + ext
+    mode = opMode + ":" + ext
     return mode
 
 
@@ -62,12 +61,14 @@ def calculateChecksums(filename):
 
     """
     adler32Checksum = 1  # adler32 of an empty string
-    cksumProcess = subprocess.Popen("cksum", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    cksumProcess = subprocess.Popen(
+        "cksum", stdin=subprocess.PIPE, stdout=subprocess.PIPE
+    )
 
     # the lambda basically creates an iterator function with zero
     # arguments that steps through the file in 4096 byte chunks
-    with open(filename, 'rb') as f:
-        for chunk in iter((lambda: f.read(4096)), b''):
+    with open(filename, "rb") as f:
+        for chunk in iter((lambda: f.read(4096)), b""):
             adler32Checksum = zlib.adler32(chunk, adler32Checksum)
             cksumProcess.stdin.write(chunk)
 
@@ -83,7 +84,7 @@ def calculateChecksums(filename):
         raise RuntimeError("Something went wrong with the cksum calculation !")
 
     cksumStdout[0] = decodeBytesToUnicode(cksumStdout[0])
-    return (format(adler32Checksum & 0xffffffff, '08x'), cksumStdout[0])
+    return (format(adler32Checksum & 0xFFFFFFFF, "08x"), cksumStdout[0])
 
 
 def tail(filename, nLines=20):
@@ -97,7 +98,7 @@ def tail(filename, nLines=20):
     pos, lines = nLines + 1, []
 
     # make sure only valid utf8 encoded chars will be passed along
-    with io.open(filename, 'r', encoding='utf8', errors='ignore') as f:
+    with io.open(filename, "r", encoding="utf8", errors="ignore") as f:
         while len(lines) <= nLines:
             try:
                 f.seek(-pos, 2)
@@ -122,10 +123,16 @@ def getFileInfo(filename):
 
     filestats = os.stat(filename)
 
-    fileInfo = {'Name': filename,
-                'Size': filestats[stat.ST_SIZE],
-                'LastModification': time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(filestats[stat.ST_MTIME])),
-                'LastAccess': time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(filestats[stat.ST_ATIME]))}
+    fileInfo = {
+        "Name": filename,
+        "Size": filestats[stat.ST_SIZE],
+        "LastModification": time.strftime(
+            "%m/%d/%Y %I:%M:%S %p", time.localtime(filestats[stat.ST_MTIME])
+        ),
+        "LastAccess": time.strftime(
+            "%m/%d/%Y %I:%M:%S %p", time.localtime(filestats[stat.ST_ATIME])
+        ),
+    }
     return fileInfo
 
 
@@ -135,7 +142,7 @@ def findMagicStr(filename, matchString):
 
     Parse a log file looking for a pattern string
     """
-    with io.open(filename, 'r', encoding='utf8', errors='ignore') as logfile:
+    with io.open(filename, "r", encoding="utf8", errors="ignore") as logfile:
         # TODO: can we avoid reading the whole file
         for line in logfile:
             if matchString in line:
@@ -165,8 +172,15 @@ def loadEnvFile(wmaEnvFilePath, logger=None):
     """
     if not logger:
         logger = logging.getLogger()
-    subProc = subprocess.run(['bash', '-c', f'source {wmaEnvFilePath} && python -c "import os; print(repr(os.environ.copy()))" '],
-                                   capture_output=True, check=False)
+    subProc = subprocess.run(
+        [
+            "bash",
+            "-c",
+            f'source {wmaEnvFilePath} && python -c "import os; print(repr(os.environ.copy()))" ',
+        ],
+        capture_output=True,
+        check=False,
+    )
     if subProc.returncode == 0:
         newEnv = eval(subProc.stdout)
         os.environ.update(newEnv)

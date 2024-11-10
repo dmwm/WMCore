@@ -35,6 +35,14 @@ from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
 
 
+def errorString(reason, data, result, status=None)):
+    """Stringify the error"""
+    errorMsg = ""
+    errorMsg = f"Status: {status}\n"
+    errorMsg += f"Error type: {type}, Status code: {status}, "
+    errorMsg += f"Reason: {reason}, Data: {repr(data)}"
+    return errorMsg
+
 def newTransferRec(dataIn):
     """
     Create a basic transfer record to be appended to a transfer document
@@ -194,6 +202,7 @@ class MSTransferor(MSCore):
             return summary
 
         # process all requests
+        siteUpdateErrorCount = 0
         for reqSlice in grouper(requestRecords, 100):
             self.logger.info("Processing workflows from %d to %d.",
                              counterWorkflows + 1, counterWorkflows + len(reqSlice))
@@ -204,10 +213,7 @@ class MSTransferor(MSCore):
             for wflow in reqResults:
                 # perform site list updates
                 errors = self._updateSites(wflow)
-                if len(errors) == 0:
-                    self.updateReportDict(summary, "site_list_update", "success")
-                else:
-                    self.updateReportDict(summary, "site_list_update", errors)
+                siteUpdateErrorCount += len(errors)
 
                 if not self.verifyCampaignExist(wflow):
                     counterProblematicRequests += 1
@@ -266,6 +272,7 @@ class MSTransferor(MSCore):
         self.updateReportDict(summary, "num_datasets_subscribed", self.dsetCounter)
         self.updateReportDict(summary, "num_blocks_subscribed", self.blockCounter)
         self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
+        self.updateReportDict(summary, "site_list_update_errors", siteUpdateErrorCount)
         return summary
 
     def getRequestRecords(self, reqStatus):
@@ -800,7 +807,7 @@ class MSTransferor(MSCore):
                             errors.append({'workflow': wflowName, 'error': err})
                         del newRSEs[rse]
 
-                # if site was added to SiteWhtieList add new rule id
+                # if site was added to SiteWhiteList add new rule id
                 if rse in siteWhiteList:
                     self.logger.info("Add rse %s to workflow %s", rse, wflowName)
                     for rdoc in rules:

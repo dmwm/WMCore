@@ -10,13 +10,14 @@ from __future__ import division
 
 import json
 import os
+from tempfile import mkstemp
 import threading
 import time
 import unittest
-from tempfile import mkstemp
+
+import pytest
 
 from dbs.apis.dbsClient import DbsApi
-from nose.plugins.attrib import attr
 
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
@@ -335,7 +336,7 @@ class DBSUploadTest(unittest.TestCase):
                                                MaxEvents, MaxSize)
         return workflowID
 
-    @attr("integration")
+    @pytest.mark.integration
     def testBasicUpload(self):
         """
         _testBasicUpload_
@@ -387,7 +388,7 @@ class DBSUploadTest(unittest.TestCase):
         self.verifyData(childFiles[0]["datasetPath"], childFiles)
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testDualUpload(self):
         """
         _testDualUpload_

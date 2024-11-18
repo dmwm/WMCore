@@ -6,7 +6,7 @@ from __future__ import print_function, division
 
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from Utils.PythonVersion import PY3
 
@@ -47,7 +47,7 @@ class CRICTest(EmulatedUnitTestCase):
         self.assertEqual(cric['cacheduration'], newParams['cacheduration'])
         self.assertEqual(cric['requests'].pycurl, False)
 
-    @attr('integration')
+    @pytest.mark.integration
     def testWhoAmI(self):
         """
         Test user mapping information from the request headers

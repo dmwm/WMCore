@@ -2,9 +2,9 @@ import os
 import unittest
 from json import loads
 
-import nose
+import pytest
+
 from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t, recordException
-from nose.plugins.attrib import attr
 
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Database.CMSCouch import Database
@@ -24,7 +24,7 @@ class ACDCLifeCycle_t(RequestLifeCycleBase_t, unittest.TestCase):
                         'Requestor' : 'integration', 'Group' : 'DMWM'
                     }
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test06UploadACDC(self):
         # get previous request we can piggyback on
@@ -34,7 +34,7 @@ class ACDCLifeCycle_t(RequestLifeCycleBase_t, unittest.TestCase):
                 self.__class__.requestParams['OriginalRequestName'] = request
                 break
         else:
-            raise nose.SkipTest("no suitable request in reqmgr to resubmit")
+            raise pytest.skip("no suitable request in reqmgr to resubmit")
 
         self.__class__.requestParams['InitialTaskPath'] = self.__class__.requestParams['InitialTaskPath'] % self.__class__.requestParams['OriginalRequestName']
         self.__class__.requestParams['ACDCServer'] = self.__class__.endpoint + '/couchdb'

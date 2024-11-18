@@ -24,7 +24,7 @@ import threading
 import time
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 import WMCore.Storage.StageOutError as StageOutError
 import WMCore.WMSpec.Steps.Builders.CMSSW as CMSSWBuilder
@@ -418,7 +418,7 @@ class otherStageOutTexst(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
         return
 
-    @attr('workerNodeTest')
+    @pytest.mark.workerNodeTest
     def testOnWorkerNodes(self):
         raise RuntimeError
         # Stage a file out, stage it back in, check it, delete it

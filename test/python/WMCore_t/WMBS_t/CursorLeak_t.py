@@ -9,7 +9,7 @@ from builtins import range
 import threading
 import unittest
 
-import nose
+import pytest
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
@@ -52,6 +52,7 @@ class CursorLeakTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
+    @pytest.mark.skip
     def testCursor(self):
         """
         _testCursor_
@@ -65,7 +66,6 @@ class CursorLeakTest(unittest.TestCase):
 
         """
 
-        raise nose.SkipTest
         fileList = []
         parentFile = None
         for i in range(100):
@@ -91,6 +91,7 @@ class CursorLeakTest(unittest.TestCase):
 
         return
 
+    @pytest.mark.skip
     def testLotsOfAncestors(self):
         """
         _testLotsOfAncestors_
@@ -98,7 +99,6 @@ class CursorLeakTest(unittest.TestCase):
         Create a file with 15 parents with each parent having 100 parents to
         verify that the query to return grandparents works correctly.
         """
-        raise nose.SkipTest
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10,
                          checksums={"cksum": "1"}, locations="se1.fnal.gov")
         testFileA.create()

@@ -10,9 +10,9 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 from builtins import range
 import unittest
 
-from Utils.PythonVersion import PY3
+import pytest
 
-from nose.plugins.attrib import attr
+from Utils.PythonVersion import PY3
 
 from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFilesInfo
 from WMCore.DataStructs.File import File
@@ -450,7 +450,7 @@ class DataCollectionService_t(unittest.TestCase):
 
         return testJob
 
-    @attr('integration')
+    @pytest.mark.integration
     def testFailedJobsUniqueWf(self):
         """
         Performance test of failedJobs with all failed jobs belonging
@@ -464,7 +464,7 @@ class DataCollectionService_t(unittest.TestCase):
         dcs.failedJobs(loadList)
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testFailedJobsScrambledWf(self):
         """
         Performance test of failedJobs where jobs belong to 10 different

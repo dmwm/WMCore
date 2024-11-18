@@ -23,7 +23,7 @@ import threading
 import time
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 import WMCore.Storage.StageOutError as StageOutError
 import WMCore.WMSpec.Steps.Builders.CMSSW as CMSSWBuilder
@@ -328,7 +328,7 @@ class otherLogArchiveTexst(unittest.TestCase):
         if hasattr(myThread, "factory"):
             myThread.factory = {}
 
-    @attr('integration')
+    @pytest.mark.integration
     def testCPBackendLogArchiveAgainstReportNew(self):
         myReport = Report()
         myReport.unpersist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
@@ -343,7 +343,7 @@ class otherLogArchiveTexst(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.testDir, 'hosts')))
         self.assertTrue(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
 
-    @attr('integration')
+    @pytest.mark.integration
     def testCPBackendLogArchiveAgainstReportFailedStepNew(self):
         myReport = Report()
         myReport.unpersist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
@@ -359,7 +359,7 @@ class otherLogArchiveTexst(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testCPBackendLogArchiveAgainstReportOld(self):
 
         myReport = Report()
@@ -375,7 +375,7 @@ class otherLogArchiveTexst(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testCPBackendLogArchiveAgainstReportFailedStepOld(self):
         myReport = Report()
         myReport.unpersist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
@@ -391,7 +391,7 @@ class otherLogArchiveTexst(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
         return
 
-    @attr('workerNodeTest')
+    @pytest.mark.workerNodeTest
     def testOnWorkerNodes(self):
         raise RuntimeError
         # Stage a file out, stage it back in, check it, delete it

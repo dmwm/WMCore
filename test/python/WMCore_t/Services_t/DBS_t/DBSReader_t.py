@@ -7,8 +7,9 @@ Unit test for the DBS helper class.
 
 import unittest
 
+import pytest
+
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
-from nose.plugins.attrib import attr
 
 from Utils.PythonVersion import PY3
 
@@ -394,7 +395,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         with self.assertRaises(DBSReaderError):
             self.dbs.listDatasetParents(BLOCK)
 
-    @attr('integration')  # too much data to mock
+    @pytest.mark.integration # too much data to mock
     def testGetParentFilesGivenParentDataset(self):
         """Test the getParentFilesGivenParentDataset method"""
         self.dbs = DBSReader(self.endpoint)
@@ -410,7 +411,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertItemsEqual(results[0]['ParentDataset'], PARENT_DATASET)
         self.assertItemsEqual(results[0]['ParentFiles'], ['/store/data/ComissioningHI/Cosmics/RAW/v1/000/180/841/721E482F-A407-E111-8C0C-BCAEC518FF6E.root'])
 
-    @attr('integration')  # too much data to mock
+    @pytest.mark.integration # too much data to mock
     def testListBlocksWithNoParents(self):
         """Test the listBlocksWithNoParents method"""
         self.dbs = DBSReader(self.endpoint)

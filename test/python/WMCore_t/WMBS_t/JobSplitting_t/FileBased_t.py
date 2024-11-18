@@ -6,20 +6,20 @@ File based splitting test.
 """
 
 
-import unittest
 import threading
+import unittest
 
+
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.DataStructs.Run import Run
-
-from WMCore.DAOFactory import DAOFactory
-from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-from WMCore.Services.UUIDLib import makeUUID
 from WMQuality.TestInit import TestInit
-#from nose.plugins.attrib import attr
+
 
 class FileBasedTest(unittest.TestCase):
     """

@@ -16,10 +16,11 @@ import threading
 import time
 import unittest
 
+import pytest
+
 from Utils.PythonVersion import PY3
 
 from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
-from nose.plugins.attrib import attr
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
@@ -926,7 +927,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         result = getJobsAction.execute(state='created', jobType="Processing")
         self.assertEqual(len(result), 0)
 
-    @attr('integration')
+    @pytest.mark.integration
     def testF_PollerProfileTest(self):
         """
         _testF_PollerProfileTest_
@@ -977,7 +978,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testMemoryProfile(self):
         """
         _testMemoryProfile_

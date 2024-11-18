@@ -13,7 +13,7 @@ import logging
 import unittest
 import threading
 
-from nose.plugins.attrib import attr
+import pytest
 
 import WMCore.WMInit
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
@@ -171,7 +171,7 @@ class ConfigTest(unittest.TestCase):
         return
 
 
-    @attr('integration')
+    @pytest.mark.integration
     def testA_WMAgentConfig(self):
         """
         _WMAgentConfig_

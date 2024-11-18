@@ -13,10 +13,11 @@ import threading
 import time
 import unittest
 
+import pytest
+
 from Utils.PythonVersion import PY3
 
 from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
-from nose.plugins.attrib import attr
 
 import WMCore.WMBase
 from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
@@ -492,7 +493,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testZ_Profile(self):
         """
         _testProfile_

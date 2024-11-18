@@ -4,6 +4,8 @@ Created on Nov. 7, 2023 by Duong Nguyen
 import os
 import unittest
 
+import pytest
+
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.SiteLocalConfig import stageOutStr
 from WMCore.Storage.StageInMgr import StageInMgr
@@ -73,6 +75,7 @@ class StageInMgrUnitTest(unittest.TestCase):
         os.putenv('CMS_PATH', os.getcwd())
         os.putenv('SITECONFIG_PATH', os.getcwd())
 
+    @pytest.mark.cvmfs
     def testStageInMgr(self):
         os.environ['SITECONFIG_PATH'] = '/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL'
         stageInMgr = StageInMgrTest()

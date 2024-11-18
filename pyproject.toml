@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wmcore"
+dynamic = ["version"]
+authors = [
+    { name="CMS DMWM Group", email="hn-cms-wmDevelopment@cern.ch" },
+]
+description = "Core libraries for Workload Management Packages"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+license = { file = "LICENSE" }
+
+[project.urls]
+Documentation = "https://cms-wmcore.docs.cern.ch"
+Source = "https://github.com/dmwm/WMCore"
+Issues = "https://github.com/dmwm/WMCore/issues"
+
+[tool.pytest.ini_options]
+markers = [
+  "integration: marks integration tests",
+  "lifecycle",
+  "performance",
+  "workerNodeTest",
+  "cvmfs"
+]
+testpaths = [
+  "test/python"
+]
+norecursedirs = "test/python/WMStats"
+python_files = "*_t.py"
+pythonpath = [
+  "src/python"
+]
+
+[tool.setuptools.packages.find]
+where = [
+  "src/python"
+]

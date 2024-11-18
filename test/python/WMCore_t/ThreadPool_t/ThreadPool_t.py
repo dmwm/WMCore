@@ -9,21 +9,20 @@ Unit tests for threadpool.
 from __future__ import absolute_import
 from __future__ import print_function
 
-
-
-
 from builtins import str, range
-import unittest
 import threading
 import time
+import unittest
+
+import pytest
 
 from WMCore.ThreadPool.ThreadPool import ThreadPool
-
 from WMQuality.TestInit import TestInit
 
 # local import
 from .Dummy import Dummy
-import nose
+
+
 class ThreadPoolTest(unittest.TestCase):
     """
     _ThreadPool_t_
@@ -52,14 +51,13 @@ class ThreadPoolTest(unittest.TestCase):
 
         self.testInit.clearDatabase()
 
+    @pytest.mark.skip
     def testA(self):
         """
         __testSubscribe__
 
         Test subscription of a component.
         """
-        raise nose.SkipTest
-
         myThread = threading.currentThread()
         # create a 'fake' component that contains a arg dictionary.
         component = Dummy()

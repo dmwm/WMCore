@@ -3,21 +3,20 @@ from __future__ import print_function
 from builtins import range
 from future import standard_library
 
-from WMCore.REST.Error import InvalidUnifiedSchema
-
 standard_library.install_aliases()
 
-import unittest
-import time
 from http.client import HTTPException
+import time
+import unittest
 
-from WMCore_t.ReqMgr_t.TestConfig import config
-from nose.plugins.attrib import attr
-
-from Utils.PythonVersion import PY3
+import pytest
 
 import WMCore
+from WMCore_t.ReqMgr_t.TestConfig import config
+from WMCore.REST.Error import InvalidUnifiedSchema
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
+from Utils.PythonVersion import PY3
+
 
 
 class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
@@ -98,7 +97,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "WMAGENT_CONFIG")
         self.assertItemsEqual(list(res[0]["result"][0]), ["key1", "ConfigType"])
 
-    @attr("integration")
+    @pytest.mark.integration
     def testPutWMAgentConfig(self):
         """
         Same as testWMAgentConfig, but test the PUT call in a different unit
@@ -127,7 +126,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "CAMPAIGN_CONFIG")
         self.assertItemsEqual(list(res[0]["result"][0]), ["campName", "keyblah", "ConfigType"])
 
-    @attr("integration")
+    @pytest.mark.integration
     def testPutCampaignConfig(self):
         """
         Same as testCampaignConfig, but test the PUT call in a different unit
@@ -165,7 +164,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         self.assertItemsEqual(list(res[0]["result"][0]),
                               ["tiers_to_DDM", "tiers_no_DDM", "tiers_with_no_custodial", "ConfigType"])
 
-    @attr("integration")
+    @pytest.mark.integration
     def testPutUnifiedConfig(self):
         """
         Same as testUnifiedConfig, but test the PUT call in a different unit
@@ -193,7 +192,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "TRANSFER")
         self.assertItemsEqual(list(res[0]["result"][0]), ["key1", "ConfigType"])
 
-    @attr("integration")
+    @pytest.mark.integration
     def testPutTransferInfo(self):
         """
         Same as testTransferInfo, but test the PUT call in a different unit

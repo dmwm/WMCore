@@ -9,7 +9,7 @@ import time
 import unittest
 import mock
 
-from nose.plugins.attrib import attr
+import pytest
 
 import WMCore.Services.DBS.DBSUtils
 from WMCore.Services.DBS.DBSUtils import urlParams, DBSErrors
@@ -36,7 +36,7 @@ class DBSUtilsTest(unittest.TestCase):
         results = urlParams(url)
         self.assertCountEqual(results, {'d': ['1', '2'], 'f': 'bla'})
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetParallelListDatasetFileDetails(self):
         """
         test parallel execution of listDatasetFileDetails DBS API
@@ -75,7 +75,7 @@ class DBSUtilsTest(unittest.TestCase):
         self.assertTrue(time2 > 0)  # to avoid pyling complaining about not used varaiable
         self.assertTrue(res1 == res2)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetParallelListFileBlockLocation(self):
         """
         test parallel execution of listFileBlockLocation DBS API
@@ -109,7 +109,7 @@ class DBSUtilsTest(unittest.TestCase):
         self.assertTrue(time2 > 0)  # to avoid pyling complaining about not used varaiable
         self.assertTrue(res1 == res2)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetParallelGetParentFilesGivenParentDataset(self):
         """
         test parallel execution of getParentFilesGivenParentDataset DBS API

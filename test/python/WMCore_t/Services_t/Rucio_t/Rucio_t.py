@@ -8,7 +8,7 @@ import os
 from builtins import range
 
 from future.utils import viewitems
-from nose.plugins.attrib import attr
+import pytest
 from rucio.client import Client as testClient
 
 from Utils.PythonVersion import PY3
@@ -173,7 +173,7 @@ class RucioTest(EmulatedUnitTestCase):
         res = self.myRucio.getAccountLimits("any_random_account")
         self.assertEqual(res, {})
 
-    # @attr('integration')
+    #@pytest.mark.integration
     def testWhoAmI(self):
         """
         Test user mapping information from the request headers
@@ -272,7 +272,7 @@ class RucioTest(EmulatedUnitTestCase):
         # resp = self.myRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='xrootd')
         # self.assertEqual(resp[lfn1], "davs://xrootd-local.unl.edu:1094/store/test/rucio/int" + lfn1)
 
-    @attr('integration')
+    @pytest.mark.integration
     def testProdGetPFN(self):
         """
         Test `getPFN` method using the production server, hence set
@@ -332,7 +332,7 @@ class RucioTest(EmulatedUnitTestCase):
         res = self.myRucio.listDataRules(DSET)
         self.assertItemsEqual(res, [])
 
-    @attr('integration')
+    @pytest.mark.integration
     def testListDataRules2(self):
         """
         Test `listDataRules` method with data from production
@@ -414,7 +414,7 @@ class RucioTest(EmulatedUnitTestCase):
         resp = self.myRucio.requiresApproval("T1_IT_CNAF_Tape_Input")
         self.assertFalse(resp)
 
-    @attr('integration')  # jenkins cannot access this rucio account
+    @pytest.mark.integration # jenkins cannot access this rucio account
     def testGetPileupLockedAndAvailable(self):
         """
         Test `getPileupLockedAndAvailable` method
@@ -429,7 +429,7 @@ class RucioTest(EmulatedUnitTestCase):
         for block, rses in viewitems(resp):
             self.assertTrue(len(rses) >= 2)
 
-    @attr('integration')  # jenkins cannot access this rucio account
+    @pytest.mark.integration # jenkins cannot access this rucio account
     def testGetDataLockedAndAvailable(self):
         """
         Test `getDataLockedAndAvailable` method

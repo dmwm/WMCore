@@ -9,7 +9,7 @@ from __future__ import print_function
 import os
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMCore.Storage.SiteLocalConfig import SiteLocalConfig, SiteConfigError
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
@@ -95,7 +95,8 @@ class SiteLocalConfigTest(unittest.TestCase):
                          "Error: Wrong site name.")
 
     # this test requires access to CVMFS
-    @attr("integration")
+    @pytest.mark.integration
+    @pytest.mark.cvmfs
     def testSlcPhedexNodesEqualPhedexApiNodes(self):
         """
         For each site, verify that the stageout node specified in

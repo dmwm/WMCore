@@ -11,13 +11,12 @@ from future.utils import viewitems
 
 import os.path
 import re
+from subprocess import Popen, PIPE
 import threading
 import time
 import unittest
-from subprocess import Popen, PIPE
 
-from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getCondorRunningJobs
-from nose.plugins.attrib import attr
+import pytest
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
@@ -25,6 +24,7 @@ from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.BossAir.StatusPoller import StatusPoller
 from WMCore.BossAir.Plugins.SimpleCondorPlugin import activityToType
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getCondorRunningJobs
 
 
 class SimpleCondorPluginTest(BossAirTest):
@@ -34,7 +34,7 @@ class SimpleCondorPluginTest(BossAirTest):
     Inherit everything from BossAir
     """
 
-    @attr('integration')
+    @pytest.mark.integration
     def testC_CondorTest(self):
         """
         _CondorTest_
@@ -159,7 +159,7 @@ class SimpleCondorPluginTest(BossAirTest):
         self.assertEqual(len(newJobs), nJobs)
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testD_PrototypeChain(self):
         """
         _PrototypeChain_
@@ -260,7 +260,7 @@ class SimpleCondorPluginTest(BossAirTest):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testE_FullChain(self):
         """
         _FullChain_
@@ -331,7 +331,7 @@ class SimpleCondorPluginTest(BossAirTest):
         self.assertEqual(len(result), nJobs * nSubs)
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testF_WMSMode(self):
         """
         _WMSMode_
@@ -383,7 +383,7 @@ class SimpleCondorPluginTest(BossAirTest):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testT_updateJobInfo(self):
         """
         _updateJobInfo_

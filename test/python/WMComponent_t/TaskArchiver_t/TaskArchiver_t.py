@@ -16,8 +16,9 @@ import threading
 import time
 import unittest
 
+import pytest
+
 from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
-from nose.plugins.attrib import attr
 
 import WMCore.WMBase
 from WMComponent.TaskArchiver.CleanCouchPoller import CleanCouchPoller
@@ -658,7 +659,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
                 '8020'], 0)
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testC_Profile(self):
         """
         _Profile_
@@ -685,7 +686,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
         p.print_stats()
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testD_Timing(self):
         """
         _Timing_

@@ -11,7 +11,8 @@ import os
 import logging
 import re
 
-from nose.plugins.attrib import attr
+import pytest
+
 from WMCore.Credential.SimpleMyProxy import SimpleMyProxy
 
 MYPROXYSERVER = os.environ.get('MYPROXY_SERVER', 'myproxy.cern.ch')
@@ -46,7 +47,7 @@ class SimpleMyProxyTest(unittest.TestCase):
         """
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testgetMyProxyInfo(self):
         """
         Test if it's possible to get myproxy information
@@ -59,7 +60,7 @@ class SimpleMyProxyTest(unittest.TestCase):
         assert 'end' in myproxyinfo
         assert myproxyinfo['end'] > myproxyinfo['start']
 
-    @attr("integration")
+    @pytest.mark.integration
     def testgetMyProxy(self):
         """
         Test if it is possible to retrieve a proxy from an existing myproxy

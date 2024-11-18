@@ -10,8 +10,9 @@ import os.path
 import pstats
 import unittest
 
+import pytest
+
 from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getCondorRunningJobs
-from nose.plugins.attrib import attr
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMCore.BossAir.BossAirAPI import BossAirAPI
@@ -25,7 +26,7 @@ class CondorPluginProfileTest(BossAirTest):
     Inherit everything from BossAir
     """
 
-    @attr('integration')
+    @pytest.mark.integration
     def testF_WMSMode(self):
         """
         _WMSMode_
@@ -78,7 +79,7 @@ class CondorPluginProfileTest(BossAirTest):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testT_updateJobInfo(self):
         """
         _updateJobInfo_

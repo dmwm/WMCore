@@ -7,8 +7,6 @@ Unit test for the DBSError class.
 
 import unittest
 
-# from nose.plugins.attrib import attr
-
 from dbs.apis.dbsClient import DbsApi
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from WMCore.Services.DBS.DBSErrors import DBSError

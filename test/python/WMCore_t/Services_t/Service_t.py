@@ -4,6 +4,7 @@ from builtins import object
 from future import standard_library
 standard_library.install_aliases()
 
+from http.client import BadStatusLine, IncompleteRead, HTTPException
 from io import BytesIO
 import logging
 import logging.config
@@ -13,10 +14,9 @@ import socket
 import tempfile
 import time
 import unittest
-from http.client import BadStatusLine, IncompleteRead, HTTPException
 
 import cherrypy
-from nose.plugins.attrib import attr
+import pytest
 
 from WMCore.Services.Requests import Requests
 from WMCore.Services.Service import Service, isfile, cache_expired
@@ -336,7 +336,7 @@ class ServiceTest(unittest.TestCase):
         out = service.refreshCache('shouldntbeused', '/').read()
         self.assertTrue('html' in out)
 
-    @attr("integration")
+    @pytest.mark.integration
     def notestTruncatedResponse(self):
         """
         _TruncatedResponse_
@@ -354,7 +354,7 @@ class ServiceTest(unittest.TestCase):
         cherrypy.engine.exit()
         cherrypy.engine.stop()
 
-    @attr("integration")
+    @pytest.mark.integration
     def notestSlowResponse(self):
         """
         _SlowResponse_
@@ -391,7 +391,7 @@ class ServiceTest(unittest.TestCase):
         myService['requests'] = CrappyRequest('http://bad.com', {})
         self.assertRaises(BadStatusLine, myService.getData, 'foo', '')
 
-    @attr("integration")
+    @pytest.mark.integration
     def notestZ_InterruptedConnection(self):
         """
         _InterruptedConnection_

@@ -10,7 +10,7 @@ import os
 import os.path
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMCore.WMBase import getWMBASE, getTestBase
 
@@ -26,7 +26,7 @@ class WMBaseTest(unittest.TestCase):
 
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testB_TestBase(self):
         """
         _TestBase_

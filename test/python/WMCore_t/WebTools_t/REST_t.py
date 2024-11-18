@@ -10,13 +10,13 @@ TODO: duplicate all direct call tests to ones that use HTTP
 from future import standard_library
 standard_library.install_aliases()
 
-import unittest
-import logging
-import urllib.request, urllib.error
 import json
+import logging
+import unittest
+import urllib.request, urllib.error
 
 from cherrypy import HTTPError
-from nose.plugins.attrib import attr
+import pytest
 from tempfile import NamedTemporaryFile
 
 from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
@@ -317,7 +317,7 @@ class RESTTest(RESTBaseUnitTest):
 
     # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
     # Disabling for now
-    @attr("integration")
+    @pytest.mark.integration
     def testDAOBasedHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
@@ -375,7 +375,7 @@ class RESTTest(RESTBaseUnitTest):
                  '. Returned data: %s' % response[0]
 
     @cherrypySetup(secureConfig)
-    @attr("integration")
+    @pytest.mark.integration
     def testAuthentication(self):
         verb ='PUT'
         url = self.urlbase + 'list1'

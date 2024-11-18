@@ -29,6 +29,7 @@ class TestComponent(Harness):
     components.
 
     """
+    __test__ = False
 
     def __init__(self, config):
         # call the base class

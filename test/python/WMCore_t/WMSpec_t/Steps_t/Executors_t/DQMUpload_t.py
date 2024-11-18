@@ -2,16 +2,17 @@ from __future__ import print_function
 import logging
 from future import standard_library
 standard_library.install_aliases()
-import urllib.request
-
-import unittest
-from nose.plugins.attrib import attr
 
 import os
 from functools import reduce
 from hashlib import md5
+import unittest
+import urllib.request
+
+import pytest
 
 from WMCore.WMSpec.Steps.Executors.DQMUpload import DQMUpload
+
 
 class StepPatch():
     def __init__(self, upload=None):
@@ -28,7 +29,7 @@ class DQMUpload_t(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @attr("integration")
+    @pytest.mark.integration
     def test_upload(self):
         """
         test_upload
@@ -76,7 +77,7 @@ class DQMUpload_t(unittest.TestCase):
         # Dqm-Status-Code == 300 was related to " File name does not match the expected convention"
         self.assertEqual(headers.get("Dqm-Status-Code", None), '100')
 
-    @attr("integration")
+    @pytest.mark.integration
     def test_httppost(self):
         """
         test_httppost

@@ -16,7 +16,8 @@ import logging.config
 import time
 import subprocess
 
-from nose.plugins.attrib import attr
+import pytest
+
 from WMCore.Credential.Proxy import Proxy
 from Utils.PythonVersion import PY3
 from Utils.Utilities import decodeBytesToUnicode
@@ -87,7 +88,7 @@ class ProxyTest(unittest.TestCase):
         stdout = decodeBytesToUnicode(stdout) if PY3 else stdout
         return stdout[0:-1]
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetUserCertEnddate( self ):
         """
         Test if getTimeLeft method returns correctly the proxy time left.
@@ -97,7 +98,7 @@ class ProxyTest(unittest.TestCase):
         daysleft = self.proxy.getUserCertEnddate(openSSL=False)
         self.assertEqual(daysleft, 58) #set this as the number of days left in .globus/usercert.pem
 
-    @attr("integration")
+    @pytest.mark.integration
     def testAAACreateProxy( self ):
         """
         Test if create method creates correctly the proxy.
@@ -109,7 +110,7 @@ class ProxyTest(unittest.TestCase):
         proxyPath = self.proxy.getProxyFilename()
         self.assertTrue(os.path.exists(proxyPath))
 
-    @attr("integration")
+    @pytest.mark.integration
     def testCheckProxyTimeLeft( self ):
         """
         Test if getTimeLeft method returns correctly the proxy time left.
@@ -117,7 +118,7 @@ class ProxyTest(unittest.TestCase):
         timeLeft = self.proxy.getTimeLeft()
         self.assertEqual(int(int(timeLeft) // 3600), 191)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testRenewProxy( self ):
         """
         Test if the renew method renews correctly the user proxy.
@@ -128,7 +129,7 @@ class ProxyTest(unittest.TestCase):
         timeLeft = self.proxy.getTimeLeft()
         self.assertEqual(int(int(timeLeft) // 3600), 191)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testDestroyProxy(self ):
         """
         Test the proxy destroy method.
@@ -139,7 +140,7 @@ class ProxyTest(unittest.TestCase):
         # Create the proxy after the destroy
         self.proxy.create()
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetSubject(self):
         """
         _testGetSubject_
@@ -150,7 +151,7 @@ class ProxyTest(unittest.TestCase):
                          "Error: Wrong subject.")
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetUserName( self ):
         """
         _testGetUserName_
@@ -163,7 +164,7 @@ class ProxyTest(unittest.TestCase):
                          "Error: User name is wrong: |%s|\n|%s|" % (user, identity))
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testCheckAttribute( self ):
         """
         Test if the checkAttribute  method checks correctly the attributes validity.
@@ -171,7 +172,7 @@ class ProxyTest(unittest.TestCase):
         valid = self.proxy.checkAttribute( )
         self.assertTrue(valid)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testCheckTimeLeft( self ):
         """
         Test if the check method checks correctly the proxy validity.
@@ -179,7 +180,7 @@ class ProxyTest(unittest.TestCase):
         valid = self.proxy.check( self.proxyPath )
         self.assertTrue(valid)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testVomsRenewal( self ):
         """
         Test if vomsExtensionRenewal method renews correctly the voms-proxy.
@@ -191,7 +192,7 @@ class ProxyTest(unittest.TestCase):
         vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
         self.assertEqual(int(int(vomsTimeLeft) // 3600), 191)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testElevateAttribute( self ):
         """
         Test if the vomsExtensionRenewal method elevate last attributes given.
@@ -203,7 +204,7 @@ class ProxyTest(unittest.TestCase):
         # Restore the original configuration of the proxy
         self.proxy.create()
 
-    @attr("integration")
+    @pytest.mark.integration
     def testUserGroupInProxy( self ):
         """
         Test if getUserAttributes method returns correctly the user group.
@@ -211,14 +212,14 @@ class ProxyTest(unittest.TestCase):
         self.assertTrue(self.proxy.group, 'No group set. Testing incomplete.')
         self.assertEqual(self.proxy.group, self.getUserAttributes().split('\n')[0].split('/')[2])
 
-    @attr("integration")
+    @pytest.mark.integration
     def testUserRoleInProxy( self ):
         """
         Test if getUserAttributes method returns correctly the user role.
         """
         self.assertEqual(self.proxy.role, self.getUserAttributes().split('\n')[0].split('/')[3].split('=')[1])
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetAttributes( self ):
         """
         Test getAttributeFromProxy method.
@@ -240,7 +241,7 @@ class ProxyTest(unittest.TestCase):
         #test with the allAttributes flag
         self.assertTrue(self.proxy.getAttributeFromProxy(proxyPath, allAttributes=True)>1)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetUserGroupAndRole( self ):
         """
         Test GetUserGroupAndRoleFromProxy method.
@@ -254,7 +255,7 @@ class ProxyTest(unittest.TestCase):
             self.assertEqual(self.proxy.getUserGroupAndRoleFromProxy(proxyPath)[0], self.dict['group'])
             self.assertEqual(self.proxy.getUserGroupAndRoleFromProxy(proxyPath)[1], role)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetAllUserGroups( self ):
         """
         Test GetAllUserGroups method.

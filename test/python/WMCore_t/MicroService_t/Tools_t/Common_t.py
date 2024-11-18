@@ -8,7 +8,7 @@ from __future__ import division, print_function
 import json
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMCore.MicroService.Tools.Common import (dbsInfo, getEventsLumis, findParent,
                                               hasHTTPFailed, isRelVal)
@@ -23,7 +23,7 @@ class CommonTest(unittest.TestCase):
                          '/ZMM_14TeV/Summer12-DESIGN42_V17_SLHCTk-v1/GEN-SIM']
         self.child = ['/SingleElectron/Run2016B-18Apr2017_ver2-v1/AOD']
 
-    @attr("integration")
+    @pytest.mark.integration
     def testDbsInfo(self):
         "Test function for dbsInfo()"
         datasetBlocks, datasetSizes, datasetTransfers = dbsInfo(self.datasets, self.dbsUrl)
@@ -35,7 +35,7 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(expect, sizes)
         self.assertEqual(len(self.datasets), len(datasetTransfers))
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetEventsLumis(self):
         "Test function for getEventsLumis()"
         totEvts = totLumis = 0
@@ -49,7 +49,7 @@ class CommonTest(unittest.TestCase):
         expect = 16 + 0
         self.assertEqual(expect, totLumis)
 
-    @attr("integration")
+    @pytest.mark.integration
     def test_findParent(self):
         "Test function for findParent()"
         parents = findParent(self.child, self.dbsUrl)

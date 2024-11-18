@@ -1,11 +1,11 @@
 from builtins import range
-import unittest
+from datetime import timedelta
 import os
 import sys
-from datetime import timedelta
 from time import sleep
+import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMCore.Database.CMSCouch import RotatingDatabase, CouchServer, CouchNotFoundError
 
@@ -48,7 +48,7 @@ class RotatingDatabaseTest(unittest.TestCase):
 
     # This test repeatably inserts either 20 or 25 documents into couch.
     # Disabled until it's stable
-    @attr("integration")
+    @pytest.mark.integration
     def testArchive(self):
         """
         Test that archiving views works
@@ -95,7 +95,7 @@ class RotatingDatabaseTest(unittest.TestCase):
         self.assertEqual(0, len(self.db.archived_dbs()))
         self.assertFalse(archived[0] in self.server.listDatabases())
 
-    @attr("integration")
+    @pytest.mark.integration
     def testCycle(self):
         """
         Test that committing data to different databases happens

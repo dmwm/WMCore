@@ -7,7 +7,7 @@ Unit tests for RucioConMon WMCore Service class
 
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
 
@@ -17,7 +17,7 @@ class RucioConMonTest(unittest.TestCase):
     Unit tests for RucioConMon Service module
     """
 
-    @attr("integration")
+    @pytest.mark.integration
     def testGetRSEUnmerged(self):
         """
         Test getRSEUnmerged method using both zipped and unzipped requests

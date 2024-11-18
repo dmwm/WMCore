@@ -3,8 +3,8 @@ from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t
 
 import time
 import unittest
-import nose
-from nose.plugins.attrib import attr
+
+import pytest
 
 
 class RequestCancellation_t(RequestLifeCycleBase_t, unittest.TestCase):
@@ -18,18 +18,18 @@ class RequestCancellation_t(RequestLifeCycleBase_t, unittest.TestCase):
                     }
 
     # instead of checking its running cancel it.
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     def test60CancelRequest(self):
         """Cancel workflow"""
         self.__class__.reqmgr.reportRequestStatus(self.__class__.request_name, 'aborted')
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual(self.__class__.request['RequestStatus'], 'aborted')
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     def test70WorkQueueFinished(self):
         """Request canceled in workqueue"""
         if not self.__class__.request_name:
-            raise nose.SkipTest
+            raise pytest.skip()
         start = time.time()
         while True:
             request = [x for x in self.__class__.workqueue.getElementsCountAndJobsByWorkflow() if \
@@ -41,11 +41,11 @@ class RequestCancellation_t(RequestLifeCycleBase_t, unittest.TestCase):
                 raise RuntimeError('timeout waiting for request to finish')
             time.sleep(15)
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     def test80RequestFinished(self):
         """Request canceled"""
         if not self.__class__.request_name:
-            raise nose.SkipTest
+            raise pytest.skip()
         start = time.time()
         while True:
             self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)

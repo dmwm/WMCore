@@ -11,7 +11,7 @@ import json
 import unittest
 import logging
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMCore.WebTools.RESTFormatter import RESTFormatter
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
@@ -51,7 +51,7 @@ class RESTFormatTest(RESTBaseUnitTest):
 
     # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
     # Disabling for now
-    @attr("integration")
+    @pytest.mark.integration
     def testEncodedInput(self):
         textType = 'text/plain'
 

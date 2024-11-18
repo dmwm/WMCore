@@ -2,14 +2,15 @@ from __future__ import print_function
 import logging
 logging.basicConfig(level = logging.DEBUG)
 import unittest
+
 from mock import mock
+import pytest
+
 from WMCore.Storage.Plugins.LCGImpl import LCGImpl as ourPlugin
 import WMCore.Storage.Plugins.LCGImpl
+from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 moduleWeAreTesting = WMCore.Storage.Plugins.LCGImpl
 
-from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
-
-from nose.plugins.attrib import attr
 
 def getPluginObject(mock_os, mock_Popen, localSize, remoteSize):
 
@@ -30,7 +31,7 @@ def getPluginObject(mock_os, mock_Popen, localSize, remoteSize):
 
 class SRMV2ImplTest(unittest.TestCase):
 
-    @attr("integration")
+    @pytest.mark.integration
     @mock.patch('WMCore.Storage.Plugins.LCGImpl.subprocess.Popen')
     @mock.patch('WMCore.Storage.Plugins.LCGImpl.os')
     def testFailSrmCopy(self, mock_os, mock_Popen):
@@ -51,7 +52,7 @@ class SRMV2ImplTest(unittest.TestCase):
                               None)
 
 
-    @attr("integration")
+    @pytest.mark.integration
     @mock.patch('WMCore.Storage.Plugins.LCGImpl.subprocess.Popen')
     @mock.patch('WMCore.Storage.Plugins.LCGImpl.os')
     def testFailOnFileSize(self, mock_os, mock_Popen, localSize=9001, remoteSize=9002):
@@ -69,7 +70,7 @@ class SRMV2ImplTest(unittest.TestCase):
                               None,
                               None)
 
-    @attr("integration")
+    @pytest.mark.integration
     @mock.patch('WMCore.Storage.Plugins.LCGImpl.subprocess.Popen')
     @mock.patch('WMCore.Storage.Plugins.LCGImpl.os')
     def testWin(self, mock_os, mock_Popen, localSize=9001, remoteSize=9001):

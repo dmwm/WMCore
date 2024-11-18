@@ -17,7 +17,7 @@ import time
 import unittest
 from http.client import HTTPException
 
-import nose
+import pytest
 
 import WMCore.Services.Requests as Requests
 from WMCore.DataStructs.Job import Job as DataStructsJob
@@ -26,6 +26,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Services.Requests import JSONRequests
 from WMCore.WMInit import getWMBASE
 from WMQuality.TestInit import TestInit
+from WMQuality.Markers import noproxy
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
@@ -252,11 +253,13 @@ class testJSONRequests(unittest.TestCase):
 
 
 class TestRequests(unittest.TestCase):
+
+    @noproxy
     def testGetKeyCert(self):
         """test existance of key/cert"""
         proxy = os.environ.get('X509_USER_PROXY')
         if not proxy:
-            raise nose.SkipTest('Only run if an X509 proxy is present')
+            raise pytest.skip('Only run if an X509 proxy is present')
         os.environ.pop('X509_HOST_CERT', None)
         os.environ.pop('X509_HOST_KEY', None)
         os.environ.pop('X509_USER_CERT', None)
@@ -266,11 +269,12 @@ class TestRequests(unittest.TestCase):
         self.assertNotEqual(None, key)
         self.assertNotEqual(None, cert)
 
+    @noproxy
     def testSecureWithProxy(self):
         """https with proxy"""
         proxy = os.environ.get('X509_USER_PROXY')
         if not proxy:
-            raise nose.SkipTest('Only run if an X509 proxy is present')
+            raise pytest.skip('Only run if an X509 proxy is present')
         os.environ.pop('X509_HOST_CERT', None)
         os.environ.pop('X509_HOST_KEY', None)
         os.environ.pop('X509_USER_CERT', None)
@@ -281,11 +285,12 @@ class TestRequests(unittest.TestCase):
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
         self.assertNotEqual(out[0].find('certificate is a proxy'), -1)
 
+    @noproxy
     def testSecureWithProxy_with_pycurl(self):
         """https with proxy with pycurl"""
         proxy = os.environ.get('X509_USER_PROXY')
         if not proxy:
-            raise nose.SkipTest('Only run if an X509 proxy is present')
+            raise pytest.skip('Only run if an X509 proxy is present')
         os.environ.pop('X509_HOST_CERT', None)
         os.environ.pop('X509_HOST_KEY', None)
         os.environ.pop('X509_USER_CERT', None)
@@ -317,11 +322,12 @@ class TestRequests(unittest.TestCase):
         # we should get an html page in response
         self.assertNotEqual(out[0].find('html'), -1)
 
+    @noproxy
     def testSecureOddPort(self):
         """https with odd port"""
         proxy = os.environ.get('X509_USER_PROXY')
         if not proxy:
-            raise nose.SkipTest('Only run if an X509 proxy is present')
+            raise pytest.skip('Only run if an X509 proxy is present')
         os.environ.pop('X509_HOST_CERT', None)
         os.environ.pop('X509_HOST_KEY', None)
         os.environ.pop('X509_USER_CERT', None)
@@ -331,11 +337,12 @@ class TestRequests(unittest.TestCase):
         self.assertEqual(out[1], 200)
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
 
+    @noproxy
     def testSecureOddPort_with_pycurl(self):
         """https with odd port"""
         proxy = os.environ.get('X509_USER_PROXY')
         if not proxy:
-            raise nose.SkipTest('Only run if an X509 proxy is present')
+            raise pytest.skip('Only run if an X509 proxy is present')
         os.environ.pop('X509_HOST_CERT', None)
         os.environ.pop('X509_HOST_KEY', None)
         os.environ.pop('X509_USER_CERT', None)

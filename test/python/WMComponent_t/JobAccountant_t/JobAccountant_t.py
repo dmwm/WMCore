@@ -14,7 +14,7 @@ import time
 import unittest
 import logging
 
-from nose.plugins.attrib import attr
+import pytest
 
 import WMCore.WMBase
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
@@ -1280,7 +1280,8 @@ class JobAccountantTest(EmulatedUnitTestCase):
         inputFileset.commit()
         return
 
-    @attr('performance', 'integration')
+    @pytest.mark.performance
+    @pytest.mark.integration
     def testOneProcessLoadTest(self):
         """
         _testOneProcessLoadTest_

@@ -17,7 +17,8 @@ import getpass
 import time
 import cProfile
 import pstats
-from nose.plugins.attrib import attr
+
+import pytest
 
 import WMCore.WMInit
 from WMCore.DAOFactory    import DAOFactory
@@ -288,9 +289,7 @@ class JobTrackerTest(EmulatedUnitTestCase):
 
         return testJobGroup
 
-
-
-    @attr('integration')
+    @pytest.mark.integration
     def testA_CondorTest(self):
         """
         _CondorTest_
@@ -441,7 +440,7 @@ class JobTrackerTest(EmulatedUnitTestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testB_ReallyLongTest(self):
         """
         _ReallyLongTest_

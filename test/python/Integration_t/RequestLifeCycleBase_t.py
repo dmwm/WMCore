@@ -7,8 +7,8 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.WMBase import getTestBase
 
-import nose
-from nose.plugins.attrib import attr
+import pytest
+
 import time
 import os
 import importlib
@@ -39,7 +39,7 @@ class RequestLifeCycleBase_t(object):
     @recordException
     def setUp(self):
         if self.__class__._failure_detected:
-            raise nose.SkipTest
+            raise pytest.skip()
         # simple ping check - check reqmgr up
         tries = 0
         while True:
@@ -50,7 +50,7 @@ class RequestLifeCycleBase_t(object):
             except:
                 tries += 1
                 if tries >= 3:
-                    raise nose.SkipTest("Unable to contact reqmgr")
+                    raise pytest.skip("Unable to contact reqmgr")
                 time.sleep(15)
 
     def _configCacheId(self, label):
@@ -87,13 +87,13 @@ class RequestLifeCycleBase_t(object):
                 config[field] = self._convertLabelsToId(config[field])
         return config
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test05InjectConfigs(self):
         """Inject configs to cache"""
         self.__class__.requestParams = self._convertLabelsToId(self.__class__.requestParams)
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test10InjectRequest(self):
         """Can inject a request"""
@@ -114,7 +114,7 @@ class RequestLifeCycleBase_t(object):
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual(self.__class__.request['RequestStatus'], 'new')
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test20ApproveRequest(self):
         """Approve request"""
@@ -122,7 +122,7 @@ class RequestLifeCycleBase_t(object):
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual(self.__class__.request['RequestStatus'], 'assignment-approved')#
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test30AssignRequest(self):
         """Assign request"""
@@ -131,12 +131,12 @@ class RequestLifeCycleBase_t(object):
         self.__class__.request = self.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual(self.__class__.request['RequestStatus'], 'assigned')
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test40WorkQueueAcquires(self):
         """WorkQueue picks up request"""
         if not self.__class__.request_name:
-            raise nose.SkipTest
+            raise pytest.skip()
         start = time.time()
         while True:
             workqueue = self.reqmgr.getWorkQueue(request = self.__class__.request_name)
@@ -152,14 +152,14 @@ class RequestLifeCycleBase_t(object):
                 raise RuntimeError('timeout waiting for workqueue to acquire')
             time.sleep(15)
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test50AgentAcquires(self):
         """Elements acquired by agent"""
         # skip if request already running
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
         if self.__class__.request['RequestStatus'] == 'running':
-            raise nose.SkipTest
+            raise pytest.skip()
         start = time.time()
         while True:
             request = [x for x in self.__class__.workqueue.getElementsCountAndJobsByWorkflow() if \
@@ -171,7 +171,7 @@ class RequestLifeCycleBase_t(object):
             time.sleep(15)
         self.assertTrue([x for x in request if x['status'] in ('Acquired', 'Running')])
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test60RequestRunning(self):
         """Request running"""
@@ -188,7 +188,7 @@ class RequestLifeCycleBase_t(object):
                 raise RuntimeError('timeout waiting for request to run')
             time.sleep(15)
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test70WorkQueueFinished(self):
         """Request completed in workqueue"""
@@ -203,7 +203,7 @@ class RequestLifeCycleBase_t(object):
                 raise RuntimeError('timeout waiting for request to finish')
             time.sleep(15)
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test80RequestFinished(self):
         """Request completed"""
@@ -217,7 +217,7 @@ class RequestLifeCycleBase_t(object):
                 raise RuntimeError('timeout waiting for request to finish')
             time.sleep(15)
 
-    @attr("lifecycle")
+    @pytest.mark.lifecycle
     @recordException
     def test90RequestCloseOut(self):
         """Closeout request"""

@@ -4,7 +4,9 @@ Test case for McM service
 """
 
 import unittest
-from nose.plugins.attrib import attr
+
+import pytest
+
 from WMCore.Services.McM.McM import McM
 
 prepID = 'BTV-Upg2023SHCAL14DR-00002'
@@ -15,7 +17,7 @@ class McMTest(unittest.TestCase):
     Unit tests for McM Service
     """
 
-    @attr("integration")
+    @pytest.mark.integration
     def testHistory(self):
         """
         Test that the history URL is working
@@ -32,7 +34,7 @@ class McMTest(unittest.TestCase):
 
         self.assertTrue(isAnnounced)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testRequest(self):
         """
         Test that the request URL is working
@@ -43,7 +45,7 @@ class McMTest(unittest.TestCase):
 
         self.assertTrue('total_events' in request)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testHistoryDevelopmentEnv(self):
         """
         Test that the history URL is working.
@@ -63,7 +65,7 @@ class McMTest(unittest.TestCase):
 
         self.assertTrue(isAnnounced)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testRequestDevelopmentEnv(self):
         """
         Test that the request URL is working.

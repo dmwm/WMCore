@@ -13,7 +13,7 @@ import threading
 import unittest
 from subprocess import PIPE, Popen
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
 from WMCore.DAOFactory import DAOFactory
@@ -245,7 +245,7 @@ class JobArchiverTest(EmulatedUnitTestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testSpeedTest(self):
         """
         _SpeedTest_

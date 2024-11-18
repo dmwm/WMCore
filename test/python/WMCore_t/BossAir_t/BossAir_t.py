@@ -7,12 +7,12 @@ from __future__ import print_function
 
 import getpass
 import os.path
+import pickle
 import subprocess
 import threading
 import unittest
-import pickle
 
-from nose.plugins.attrib import attr
+import pytest
 
 import WMCore.WMInit
 from WMCore.DAOFactory import DAOFactory
@@ -359,7 +359,7 @@ class BossAirTest(unittest.TestCase):
 
         return jobList
 
-    @attr('integration')
+    @pytest.mark.integration
     def testA_APITest(self):
         """
         _APITest_
@@ -436,7 +436,7 @@ class BossAirTest(unittest.TestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testB_PluginTest(self):
         """
         _PluginTest_

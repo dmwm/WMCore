@@ -16,10 +16,11 @@ import threading
 import time
 import unittest
 
+import pytest
+
 from Utils.PythonVersion import PY3
 
 from WMCore_t.WMSpec_t.TestSpec import createTestWorkload
-from nose.plugins.attrib import attr
 
 from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller, capResourceEstimates
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
@@ -383,7 +384,9 @@ class JobCreatorTest(EmulatedUnitTestCase):
         self.assertEqual(job['physicsTaskType'], None)
 
         return
-    @attr('performance', 'integration')
+
+    @pytest.mark.performance
+    @pytest.mark.integration
     def testProfilePoller(self):
         """
         Profile your performance
@@ -418,7 +421,7 @@ class JobCreatorTest(EmulatedUnitTestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testProfileWorker(self):
         """
         Profile where the work actually gets done
@@ -454,7 +457,7 @@ class JobCreatorTest(EmulatedUnitTestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testHugeTest(self):
         """
         Don't run this one either

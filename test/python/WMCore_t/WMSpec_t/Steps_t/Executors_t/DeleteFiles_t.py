@@ -3,8 +3,15 @@ Created on Aug 10, 2010
 
 @author: meloam
 '''
-import unittest
+
+import inspect
+import os.path
 import shutil
+import sys
+import unittest
+
+import pytest
+
 from WMQuality.TestInit import TestInit
 
 from WMCore.WMSpec.WMStep import WMStep
@@ -15,11 +22,6 @@ from WMCore.WMSpec.Steps.Templates.DeleteFiles import DeleteFiles as DeleteTempl
 from WMCore.WMSpec.Steps.Executors.DeleteFiles import DeleteFiles as DeleteExecutor
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-
-import os.path
-import sys
-import inspect
-from nose.plugins.attrib import attr
 
 import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 
@@ -74,7 +76,7 @@ class deleteFileTest(unittest.TestCase):
         step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
-    @attr('integration')
+    @pytest.mark.integration
     def testManualDeleteOld(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.step.section_('filesToDelete')
@@ -85,7 +87,7 @@ class deleteFileTest(unittest.TestCase):
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testManualDeleteNew(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.step.section_('filesToDelete')
@@ -97,7 +99,7 @@ class deleteFileTest(unittest.TestCase):
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testJobDeleteOld(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.setLocalOverride(self.step)
@@ -107,7 +109,7 @@ class deleteFileTest(unittest.TestCase):
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testJobDeleteNew(self):
         self.assertTrue(os.path.exists( os.path.join(self.testDir, 'testfile')))
         self.setLocalOverride(self.step)

@@ -5,7 +5,7 @@ Unittests for the Services/MSPileup/MSPileupUtils module
 import logging
 import unittest
 
-from nose.plugins.attrib import attr
+import pytest
 
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import schema
@@ -29,7 +29,7 @@ class MSPileupUtilsTest(EmulatedUnitTestCase):
         Nothing to be done for this case
         """
 
-    @attr('integration')
+    @pytest.mark.integration
     def testGetPileupDocs(self):
         """
         Test getting pileup docs from testbed.

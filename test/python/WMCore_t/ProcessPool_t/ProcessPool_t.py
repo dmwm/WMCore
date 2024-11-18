@@ -6,7 +6,8 @@ Unit tests for the ProcessPool class.
 
 from builtins import range
 import unittest
-import nose
+
+import pytest
 
 from WMCore.ProcessPool.ProcessPool import ProcessPool
 from WMQuality.TestInit import TestInit
@@ -32,12 +33,12 @@ class ProcessPoolTest(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
+    @pytest.mark.skip
     def testA_ProcessPool(self):
         """
         _testProcessPool_
 
         """
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
@@ -58,12 +59,12 @@ class ProcessPoolTest(unittest.TestCase):
 
         return
 
+    @pytest.mark.skip
     def testB_ProcessPoolStress(self):
         """
         _testProcessPoolStress_
 
         """
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)
@@ -93,14 +94,13 @@ class ProcessPoolTest(unittest.TestCase):
 
         return
 
-
+    @pytest.mark.skip
     def testC_MultiPool(self):
         """
         _testMultiPool_
 
         Run a test with multiple workers
         """
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.Agent.useHeartbeat = False
         self.testInit.generateWorkDir(config)

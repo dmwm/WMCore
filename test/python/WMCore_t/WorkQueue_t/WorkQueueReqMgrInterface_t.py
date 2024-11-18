@@ -6,11 +6,12 @@ WorkQueueRegMgrInterface test
 
 import unittest
 
-from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-from nose.plugins.attrib import attr
+import pytest
+
 
 from WMCore.WorkQueue.WorkQueue import globalQueue, localQueue
 from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
+from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.ReqMgrClient.ReqMgr import ReqMgr as fakeReqMgr
 
@@ -86,7 +87,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
                             CacheDir=self.testInit.testDir)
         return localQ
 
-    @attr('integration')  # BROKEN
+    @pytest.mark.integration # BROKEN
     def testReqMgrPollerAlgorithm(self):
         """ReqMgr reporting"""
         # don't actually talk to ReqMgr - mock it.
@@ -130,7 +131,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         reqMgrInt(globalQ)
         reqMgr._removeSpecs()
 
-    @attr('integration')  # BROKEN
+    @pytest.mark.integration # BROKEN
     def testReqMgrProgress(self):
         """ReqMgr interaction with block level splitting"""
         globalQ = self.setupGlobalWorkqueue()
@@ -169,7 +170,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         self.assertEqual(reqMgr.status[reqMgr.names[0]], 'completed')
         reqMgr._removeSpecs()
 
-    @attr('integration')  # BROKEN
+    @pytest.mark.integration # BROKEN
     def testInvalidSpec(self):
         """Report invalid spec back to ReqMgr"""
         globalQ = self.setupGlobalWorkqueue()
@@ -190,7 +191,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         self.assertTrue('DBS config error' in reqMgr.msg[reqMgr.names[0]])
         reqMgr._removeSpecs()
 
-    @attr('integration')  # BROKEN
+    @pytest.mark.integration # BROKEN
     def testCancelPickedUp(self):
         """WorkQueue cancels if canceled in ReqMgr"""
         globalQ = self.setupGlobalWorkqueue()
@@ -207,7 +208,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         reqMgrInt(globalQ)
         self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Canceled')
 
-    @attr('integration')  # BROKEN
+    @pytest.mark.integration # BROKEN
     def testReqMgrWaitTime(self):
         """If running request finished in Reqmgr and no update locally for a long time decalre request done"""
         globalQ = self.setupGlobalWorkqueue()
@@ -236,7 +237,7 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         reqMgrInt(globalQ)
         self.assertEqual(globalQ.status(WorkflowName=reqMgr.names[0])[0]['Status'], 'Done')
 
-    @attr('integration')  # BROKEN
+    @pytest.mark.integration # BROKEN
     def testReqMgrOpenRequests(self):
         """Check the mechanics of open running requests"""
         # don't actually talk to ReqMgr - mock it.

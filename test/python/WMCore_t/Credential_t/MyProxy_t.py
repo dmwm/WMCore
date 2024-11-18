@@ -7,13 +7,14 @@ The user Proxy and MyProxy is initialized in testCreateMyProxy method and they a
 """
 from __future__ import division
 
-import unittest
-import os
 import logging
 import logging.config
+import os
 import time
+import unittest
 
-from nose.plugins.attrib import attr
+import pytest
+
 from WMCore.Credential.Proxy import Proxy, myProxyEnvironment
 
 # You may have to change these variables to run in a local environment
@@ -53,7 +54,7 @@ class MyProxyTest(unittest.TestCase):
         """
         return
 
-    @attr("integration")
+    @pytest.mark.integration
     def testAAACreateMyProxy( self ):
         """
         Test if delegate method create correctly the MyProxy.
@@ -63,7 +64,7 @@ class MyProxyTest(unittest.TestCase):
         valid = self.proxy.checkMyProxy( )
         self.assertTrue(valid, 'Could not create MyProxy')
 
-    @attr("integration")
+    @pytest.mark.integration
     def testDelegateServer( self ):
         """
         Test if delegate method create MyProxy and delegate
@@ -73,7 +74,7 @@ class MyProxyTest(unittest.TestCase):
         valid = self.proxy.checkMyProxy( checkRenewer = True )
         self.assertTrue(valid)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testCheckMyProxy( self ):
         """
         Test if checkMyProxy checks correctly the MyProxy validity.
@@ -81,7 +82,7 @@ class MyProxyTest(unittest.TestCase):
         valid = self.proxy.checkMyProxy( )
         self.assertTrue(valid)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testRenewMyProxy( self ):
         """
         Test if renewMyProxy method renews correctly the MyProxy.
@@ -91,7 +92,7 @@ class MyProxyTest(unittest.TestCase):
         timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath )
         self.assertEqual(int(int(timeLeft) // 3600), 167)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testRenewMyProxyForServer( self ):
         """
         Renew MyProxy which the retrieval is delegated to a server.
@@ -102,7 +103,7 @@ class MyProxyTest(unittest.TestCase):
         timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath, serverRenewer = True )
         self.assertEqual(int(int(timeLeft) // 3600), 167)
 
-    @attr("integration")
+    @pytest.mark.integration
     def testMyProxyEnvironment(self):
         """
         Test the myProxyEnvironment context manager

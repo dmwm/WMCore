@@ -10,7 +10,7 @@ import threading
 import time
 import unittest
 
-import nose
+import pytest
 
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.Transaction import Transaction
@@ -40,8 +40,8 @@ class HarnessTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
+    @pytest.mark.skip
     def testB(self):
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
@@ -83,8 +83,8 @@ class HarnessTest(unittest.TestCase):
             errorMsg = str(ex)
         self.assertTrue(errorMsg.startswith('Message NonExistingMessageType with payload'))
 
+    @pytest.mark.skip
     def testC(self):
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
@@ -106,8 +106,8 @@ class HarnessTest(unittest.TestCase):
         details.killWithPrejudice()
         print('Daemon killed')
 
+    @pytest.mark.skip
     def testD(self):
-        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.component_("TestComponent")
         config.TestComponent.logLevel = 'INFO'

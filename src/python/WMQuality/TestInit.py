@@ -67,6 +67,7 @@ class TestInit(object):
     initialize their default environment so to
     minimize code duplication.
     """
+    __test__ = False
 
     def __init__(self, testClassName = "Unknown Class"):
         self.testClassName = testClassName

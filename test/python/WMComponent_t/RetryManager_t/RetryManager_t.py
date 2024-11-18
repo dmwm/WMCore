@@ -13,7 +13,8 @@ import os.path
 import threading
 import time
 import unittest
-from nose.plugins.attrib import attr
+
+import pytest
 
 import WMCore.WMBase
 from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
@@ -966,7 +967,7 @@ class RetryManagerTest(EmulatedUnitTestCase):
 
         return
 
-    @attr('integration')
+    @pytest.mark.integration
     def testZ_Profile(self):
         """
         _Profile_

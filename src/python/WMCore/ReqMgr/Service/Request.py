@@ -423,6 +423,13 @@ class Request(RESTEntity):
             cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), reqArgs))
             return report
 
+        # Handling assignment-approved arguments differently to avoid code duplication
+        reqStatus = self.reqmgr_db_service.getRequestByNames(workload.name())[workload.name()]['RequestStatus']
+        cherrypy.log(f"CurrentRequest status: {reqStatus}")
+        if reqStatus == 'assignment-approved':
+            cherrypy.log(f"Handling assignment-approved arguments differently!")
+            self._handleAssignmentStateTransition(workload, request_args, dn)
+
         # Update all workload parameters based on the full reqArgs dictionary
         workload.updateWorkloadArgs(reqArgs)
 

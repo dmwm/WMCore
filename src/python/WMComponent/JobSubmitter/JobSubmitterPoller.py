@@ -754,7 +754,16 @@ class JobSubmitterPoller(BaseWorkerThread):
         myThread.transaction.begin()
 
         # Run the actual underlying submit code using bossAir
-        successList, failList = self.bossAir.submit(jobs=jobList)
+        try:
+            successList, failList = self.bossAir.submit(jobs=jobList)
+ 
+        except Exception as ex:
+            msg = "Error submitting jobs: %s" % str(ex)
+            logging.error(msg)
+            myThread.logdbClient.post("JobSubmitter_submitWork", msg, "error")
+            myThread.transaction.rollback()
+            raise WMException(msg) from ex
+
         logging.info("Jobs that succeeded/failed submission: %d/%d.", len(successList), len(failList))
 
         # Propagate states in the WMBS database

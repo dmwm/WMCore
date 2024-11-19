@@ -90,8 +90,14 @@ class StatusPoller(BaseWorkerThread):
         and then check for jobs that have timed out.
         """
 
+        try:
+            runningJobs = self.bossAir.track()
+        except Exception as ex:
+            msg = "Error in BossAir track call: %s" % str(ex)
+            logging.error(msg)
+            runningJobs = []
+            raise WMException(msg)from ex
 
-        runningJobs = self.bossAir.track()
 
         if len(runningJobs) < 1:
             # Then we have no jobs

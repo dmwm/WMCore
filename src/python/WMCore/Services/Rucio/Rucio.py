@@ -454,6 +454,27 @@ class Rucio(object):
             self.logger.error("Exception closing container/block: %s. Error: %s", name, str(ex))
         return response
 
+    def moveReplicationRule(self, ruleId, rseExpression, scope='cms', **kwargs):
+        """
+        Perform move operation for provided rule id and rse expression
+        :param ruleId" rule id
+        :param rseExpression: rse expression
+        :param scope: rucio scope, default cms
+        :param kwargs: positional arguments for rucio API
+        :return: None
+        """
+        try:
+            self.cli.move_replication_rule(dids, copies, rseExpression, **kwargs)
+        except RuleNotFound as ex:
+            msg = "RuleNotFound move DID replication rule. Error: %s" % str(ex)
+            raise WMRucioException(msg)
+        except RuleReplaceFailed as ex:
+            msg = "RuleReplaceFailed move DID replication rule. Error: %s" % str(ex)
+            raise WMRucioException(msg)
+        except Exception as ex:
+            msg = "Unsupported exception from Rucio API. Error: %s" % str(ex)
+            raise WMRucioException(msg)
+
     def createReplicationRule(self, names, rseExpression, scope='cms', copies=1, **kwargs):
         """
         _createReplicationRule_

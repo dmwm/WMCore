@@ -1,3 +1,10 @@
+2.3.7 to 2.3.8rc1:
+  - Fix str to bytes comparisons in checkProxy.py (Todor Ivanov) #12174
+  - Replace xquery with query, due to deprecation of the former since HTCondor 10.7.0 (Kenyi Hurtado) #12158
+  - add RucioUtils_t.RucioUtilsTest:testWeightedChoice to the unstable test (Alan Malta Rodrigues) #12150
+  - Update workqueue selector filter to no longer use ParentQueueUrl (Alan Malta Rodrigues) #12150
+
+
 2.3.6 to 2.3.7:
   - Augmentation of gfal-cp debuggin for StageOutImpl and GFAL2Impl scripts (Andrea Piccinelli) #12081
   - Provide JSON file with CouchDB replication selector function (Alan Malta Rodrigues) #12143

@@ -79,7 +79,7 @@ def main(argv):
     command = ["voms-proxy-info", "-file", str(proxy)]
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, _err = p.communicate()
-    proxyInfo = [line for line in out.split('\n') if line]
+    proxyInfo = [line for line in out.split(b'\n') if line]
     processTimeLeft(sendMail, verbose, proxyInfo, time, mail)
 
     if myproxy:
@@ -88,7 +88,7 @@ def main(argv):
         command = ["myproxy-info", "-v", "-l", "amaltaro", "-s", "myproxy.cern.ch", "-k", "amaltaroCERN"]
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
-        proxyInfo = [line for line in out.split('\n') if line]
+        proxyInfo = [line for line in out.split(b'\n') if line]
         processTimeLeft(sendMail, verbose, proxyInfo, time, mail)
 
 
@@ -121,10 +121,10 @@ def processTimeLeft(sendMail, verbose, proxyInfo, time, mail):
             print('Proxy information: {}'.format(proxyInfo))
         timeLeft = []
         for line in proxyInfo:
-            if line.find('timeleft') > -1:
-                dateReg = re.compile('\d{1,3}[:/]\d{2}[:/]\d{2}')
+            if line.find(b'timeleft') > -1:
+                dateReg = re.compile(b'\d{1,3}[:/]\d{2}[:/]\d{2}')
                 timeLeft = dateReg.findall(line)[0]
-                timeLeft = timeLeft.split(':')[0]
+                timeLeft = timeLeft.split(b':')[0]
                 continue
     else:
         msg = "No valid proxy found in %s. " % HOST

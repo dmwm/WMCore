@@ -14,7 +14,6 @@ jobs:
       name: production
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
-      attestations: write  # IMPORTANT: necessary to persist the attestation
     steps:
       - uses: actions/checkout@v4
       - name: Setup python 3.8
@@ -33,13 +32,5 @@ jobs:
           awk "/(${{ inputs.wmcore_component }}$)|(${{ inputs.wmcore_component }},)/ {print \$1}" requirements.wmcore.txt > requirements.txt
       - name: Build sdist
         run: python3 setup.py clean sdist
-      - name: List contents before attestation
-        run: |
-          ls ${{ github.workspace }}
-          ls ${{ github.workspace }}/dist
-      - name: Attest package
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-path: '${{ github.workspace }}/dist/${{ inputs.wmcore_component }}-*'
       - name: Upload package distribution to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1

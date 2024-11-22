@@ -1,3 +1,7 @@
+2.3.8rc3 to 2.3.8rc4:
+  - Grant attestation write access - CI/CD pipeline (Alan Malta Rodrigues) #12178
+
+
 2.3.8rc2 to 2.3.8rc3:
   - Integrate package attestations in the CI/CD pipeline (Alan Malta Rodrigues) #12177
   - Unit tests (Todor Ivanov) #12120

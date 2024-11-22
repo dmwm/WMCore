@@ -24,13 +24,36 @@ jobs:
   # first job performs build and upload of packages to PyPI
   build_and_publish_services:
     name: Build_and_upload_to_pypi
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     strategy:
       matrix:
         target: [wmagent, wmagent-devtools, wmcore, reqmon, reqmgr2, global-workqueue, acdcserver, reqmgr2ms-unmerged,
                  reqmgr2ms-output, reqmgr2ms-pileup, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
-    uses: ./.github/workflows/pypi_build_publish_template.yaml
-    with:
-      wmcore_component: ${{ matrix.target }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+      - name: Upgrade pip3
+        run: |
+          python3 -m pip install --upgrade pip
+      - name: Update the setup script template with package name
+        run: |
+          sed "s/PACKAGE_TO_BUILD/${{ matrix.target }}/" setup_template.py > setup.py
+      - name: Create requirements file
+        run: |
+          cp requirements.txt requirements.wmcore.txt
+          awk "/(${{ matrix.target }}$)|(${{ matrix.target }},)/ {print \$1}" requirements.wmcore.txt > requirements.txt
+      - name: Build sdist
+        run: python3 setup.py clean sdist
+      - name: Upload package distribution to PyPi
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   # second job, depends on build_and_publish_services, builds and upload
   # docker images to CERN registry

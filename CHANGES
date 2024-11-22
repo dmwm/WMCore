@@ -1,4 +1,11 @@
+2.3.8rc2 to 2.3.8rc3:
+  - Integrate package attestations in the CI/CD pipeline (Alan Malta Rodrigues) #12177
+  - Unit tests (Todor Ivanov) #12120
+  - Add SiteList actions to transient statuses in ReqMgr2 (Todor Ivanov) #12120
+
+
 2.3.8rc1 to 2.3.8rc2:
+  - Changed truster publisher configuration in pypi (Alan Malta Rodrigues) 
 
 
 2.3.7 to 2.3.8rc1:

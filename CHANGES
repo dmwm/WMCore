@@ -1,3 +1,6 @@
+2.3.8rc1 to 2.3.8rc2:
+
+
 2.3.7 to 2.3.8rc1:
   - Fix str to bytes comparisons in checkProxy.py (Todor Ivanov) #12174
   - Replace xquery with query, due to deprecation of the former since HTCondor 10.7.0 (Kenyi Hurtado) #12158

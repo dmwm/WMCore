@@ -1,3 +1,8 @@
+2.3.8rc4 to 2.3.8rc5:
+  - Convert reusable to non-reusable GitHub Action (Alan Malta Rodrigues) #12180
+  - Revert changes for attestation in CD pipeline (Alan Malta Rodrigues) #12180
+
+
 2.3.8rc3 to 2.3.8rc4:
   - Grant attestation write access - CI/CD pipeline (Alan Malta Rodrigues) #12178
 

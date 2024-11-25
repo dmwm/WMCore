@@ -22,30 +22,41 @@ def getKeyCertFromEnv():
     First preference to HOST Certificate, This is how it set in Tier0
 
     """
-    envPairs = [('X509_HOST_KEY', 'X509_HOST_CERT'),  # First preference to HOST Certificate,
-                ('X509_USER_PROXY', 'X509_USER_PROXY'),  # Second preference to User Proxy, very common
-                ('X509_USER_KEY', 'X509_USER_CERT')]  # Third preference to User Cert/Proxy combinition
+    envPairs = [
+        ("X509_HOST_KEY", "X509_HOST_CERT"),  # First preference to HOST Certificate,
+        (
+            "X509_USER_PROXY",
+            "X509_USER_PROXY",
+        ),  # Second preference to User Proxy, very common
+        ("X509_USER_KEY", "X509_USER_CERT"),
+    ]  # Third preference to User Cert/Proxy combinition
 
     for keyEnv, certEnv in envPairs:
         localKey = os.environ.get(keyEnv)
         localCert = os.environ.get(certEnv)
-        if localKey and localCert and os.path.exists(localKey) and os.path.exists(localCert):
+        if (
+            localKey
+            and localCert
+            and os.path.exists(localKey)
+            and os.path.exists(localCert)
+        ):
             # if it is found in env return key, cert
             return localKey, localCert
 
     # TODO: only in linux, unix case, add other os case
     # look for proxy at default location /tmp/x509up_u$uid
-    localKey = localCert = '/tmp/x509up_u' + str(os.getuid())
+    localKey = localCert = "/tmp/x509up_u" + str(os.getuid())
     if os.path.exists(localKey):
         return localKey, localCert
 
     # Finary look for globaus location
-    if (os.environ.get('HOME') and
-        os.path.exists(os.environ['HOME'] + '/.globus/usercert.pem')  and
-        os.path.exists(os.environ['HOME'] + '/.globus/userkey.pem')):
-
-        localKey = os.environ['HOME'] + '/.globus/userkey.pem'
-        localCert = os.environ['HOME'] + '/.globus/usercert.pem'
+    if (
+        os.environ.get("HOME")
+        and os.path.exists(os.environ["HOME"] + "/.globus/usercert.pem")
+        and os.path.exists(os.environ["HOME"] + "/.globus/userkey.pem")
+    ):
+        localKey = os.environ["HOME"] + "/.globus/userkey.pem"
+        localCert = os.environ["HOME"] + "/.globus/usercert.pem"
         return localKey, localCert
     # couldn't find the key, cert files
     return None, None

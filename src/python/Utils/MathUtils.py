@@ -3,7 +3,6 @@
 Module containing mathematical and physics utils
 """
 
-
 from builtins import int, str
 from math import ceil
 

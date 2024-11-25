@@ -16,7 +16,7 @@ from copy import deepcopy
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
-                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound)
+                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound, RuleReplaceFailed)
 from Utils.MemoryCache import MemoryCache
 from Utils.IteratorTools import grouper
 from WMCore.Services.Rucio.RucioUtils import (validateMetaData, weightedChoice,
@@ -457,7 +457,7 @@ class Rucio(object):
     def moveReplicationRule(self, ruleId, rseExpression, scope='cms', **kwargs):
         """
         Perform move operation for provided rule id and rse expression
-        :param ruleId" rule id
+        :param ruleId: rule id
         :param rseExpression: rse expression
         :param scope: rucio scope, default cms
         :param kwargs: positional arguments for rucio API

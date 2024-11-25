@@ -102,9 +102,9 @@ class MSTransferor(MSCore):
         self.pileupQuery = self.msConfig.get("pileupQuery",
                                              {"query": {"active": True}, "filters": ["expectedRSEs", "pileupName"]})
 
-        quotaAccount = self.msConfig["rucioAccount"]
+        self.quotaAccount = self.msConfig["rucioAccount"]
 
-        self.rseQuotas = RSEQuotas(quotaAccount, self.msConfig["quotaUsage"],
+        self.rseQuotas = RSEQuotas(self.quotaAccount, self.msConfig["quotaUsage"],
                                    minimumThreshold=self.msConfig["minimumThreshold"],
                                    verbose=self.msConfig['verbose'], logger=logger)
         self.reqInfo = RequestInfo(self.msConfig, self.rucio, self.logger)
@@ -525,7 +525,7 @@ class MSTransferor(MSCore):
                     for rid in rids:
                         # the moveReplcationRule will raise different exceptions
                         # if move operation is not normal
-                        self.rucio.moveReplicationRule(rid, rseExpr)
+                        self.rucio.moveReplicationRule(rid, rseExpr, self.quotaAccount)
                 else:
                     res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
             except Exception as exc:

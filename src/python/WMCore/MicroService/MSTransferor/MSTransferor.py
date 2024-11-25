@@ -33,15 +33,8 @@ from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
+from WMCore.Services.pycurl_manager import RequestHandler
 
-
-def errorString(reason, data, result, status=None)):
-    """Stringify the error"""
-    errorMsg = ""
-    errorMsg = f"Status: {status}\n"
-    errorMsg += f"Error type: {type}, Status code: {status}, "
-    errorMsg += f"Reason: {reason}, Data: {repr(data)}"
-    return errorMsg
 
 def newTransferRec(dataIn):
     """
@@ -86,6 +79,9 @@ class MSTransferor(MSCore):
         wdir = '{}/storage'.format(os.getcwd())
         self.storage = self.msConfig.get('persistentArea', wdir)
         os.makedirs(self.storage)
+
+        # transferor url
+        self.transferrorUrl = self.msConfig.get('transferrorUrl')
 
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
@@ -211,10 +207,6 @@ class MSTransferor(MSCore):
             self.logger.info("%d requests information completely processed.", len(reqResults))
 
             for wflow in reqResults:
-                # perform site list updates
-                errors = self._updateSites(wflow)
-                siteUpdateErrorCount += len(errors)
-
                 if not self.verifyCampaignExist(wflow):
                     counterProblematicRequests += 1
                     continue
@@ -229,6 +221,12 @@ class MSTransferor(MSCore):
 
                 # now check where input primary and parent blocks will need to go
                 self.checkDataLocation(wflow, rseList)
+
+                # perform site list updates which may update workflow state: wflow.updatedWorkflow
+                # if it is update the makeTransferRequest API which calls makeTransferRucio
+                # will perform rucio moveReplicationRule API calls
+                errors = self._updateSites(wflow, rseList)
+                siteUpdateErrorCount += len(errors)
 
                 try:
                     success, transfers = self.makeTransferRequest(wflow, rseList)
@@ -523,12 +521,11 @@ class MSTransferor(MSCore):
                 # make decision about current workflow, if it is new request we'll create
                 # new replication rule, otherwise we'll move replication rule
                 if wflow.updatedWorkflow:
-                    rules = self.rucio.listDataRules(wflow.getName())
-                    for rdoc in rules:
-                        for rid in rdoc['ruleIds']:
-                            # the moveReplcationRule will raise different exceptions
-                            # if move operation is not normal
-                            self.rucio.moveReplicationRule(rid, rseExpr, **ruleAttrs)
+                    rids = self.getRids(wflow.getName())
+                    for rid in rids:
+                        # the moveReplcationRule will raise different exceptions
+                        # if move operation is not normal
+                        self.rucio.moveReplicationRule(rid, rseExpr)
                 else:
                     res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
             except Exception as exc:
@@ -551,6 +548,31 @@ class MSTransferor(MSCore):
             msg = "DRY-RUN: making Rucio rule for workflow: %s, dids: %s, rse: %s, kwargs: %s"
             self.logger.info(msg, wflow.getName(), dids, rseExpr, ruleAttrs)
         return success, transferId
+
+    def getRids(self, workflowName):
+        """
+        Obtain transfer IDs for given workflow name
+        :param workflowName: workflow name
+        :return: list of transfer IDs
+        """
+        # make request to MSTransferor service
+        # https://xxx.cern.ch/ms-transferor/data/info?request=<workflowName>
+        tids = []
+        mgr = RequestHandler()
+        if not self.transferrorUrl:
+            self.logger.error("transferrorUrl is not found in MSTransferor service configuration")
+            return tids
+        url = f"{self.transferrorUrl}/data/info"
+        params = {"request": workflowName}
+        header, data = mgr.request(url, params)
+        if header.status != 200:
+            self.logger.error("Failed to query MSTransferrror service with request %s header %s", workflowName, header)
+            return tids
+        for row in data['result']:
+            transfers = row['transferDoc']['transfers']
+            for rec in transfers:
+                tids += rec['transferIDs']
+        return list(set(tids))
 
     def alertPUMisconfig(self, workflowName):
         """
@@ -757,7 +779,7 @@ class MSTransferor(MSCore):
             data = json.load(istream.read())
         return data
 
-    def _updateSites(self, wflow):
+    def _updateSites(self, wflow, rseList):
         """
         Internal update sites API to perform actual work (to be called from execute daemon):
         - read persistent storage area
@@ -788,9 +810,6 @@ class MSTransferor(MSCore):
             # skip action if no site lists are provided
             if not siteWhiteList and not siteBlackList:
                 continue
-
-            # compare rule ids with new site lists
-            rseList = self.getAcceptedRSEs(wflow)
 
             # we set newRSEs from original rse list of workflow and it will be adjusted
             # according to action we'll perform with site lists

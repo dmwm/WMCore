@@ -730,26 +730,18 @@ class MSTransferor(MSCore):
                 diskPNNs.add(pnn)
         return diskPNNs
 
-    def updateSites(self, doc):
+    def updateSites(self, rec):
         """
         Update sites API provides asynchronous update of Site info.
 
-        :param doc: JSON payload with the following data structures:
-                    [{'workflow': <wflow name>, 'SiteWhiteList' ['T1', ...], 'SiteBlackList': ['T2',...]}, {...}]
+        :param rec: JSON payload with the following data structures:
+                    {'workflow': <wflow name>, 'SiteWhiteList' ['T1', ...], 'SiteBlackList': ['T2',...]}
         :return: acknowledge dict to upstream caller (ReqMgr2)
         """
         # preserve provided payload to local file system
-        errors = []
-        for rec in doc:
-            wflow = rec['workflow']
-            status = self.saveData(wflow, rec)
-            if status != 'ok':
-                errors.append({'workflow': wflow, 'error': status})
-        # send acknowledged message back to upstream caller
-        resp = {'status': 'ok'}
-        if len(errors) != 0:
-            resp = {'status': 'fail', 'errors': errors}
-        return resp
+        wflow = rec['workflow']
+        status = self.saveData(wflow, rec)
+        return status
 
     def saveData(self, wflow, rec):
         """
@@ -761,10 +753,10 @@ class MSTransferor(MSCore):
         try:
             fname = '{}/{}'.format(self.storage, wflow)
             with open(fname, 'w', encoding="utf-8") as ostream:
-                ostream.write(rec)
+                ostream.write(json.dumps(rec))
             return 'ok'
         except Exception as exp:
-            msg = "Unable to save workflow '%s' to %s.Error: %s", wflow, self.storage, str(exp)
+            msg = "Unable to save workflow '%s' to storage=%s. Error: %s", wflow, self.storage, str(exp)
             self.logger.exception(msg)
             return str(exp)
 
@@ -776,7 +768,7 @@ class MSTransferor(MSCore):
         fname = '{}/{}'.format(self.storage, wflow)
         data = None
         with open(fname, 'r', encoding="utf-8") as istream:
-            data = json.load(istream.read())
+            data = json.load(istream)
         return data
 
     def _updateSites(self, wflow, rseList):

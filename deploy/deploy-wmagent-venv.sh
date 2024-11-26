@@ -11,7 +11,7 @@ help(){
       -s                             Bool flag to setup run from source [Default: false]
       -n                             Bool flag to skip virtual environment space cleanup before deployment [Default: false - ALWAYS cleanup before deployment]
       -v                             Bool flag to set verbose mode [Default: false]
-      -y                             Bool flag to assume 'Yes' to all deployment questions.
+      -y                             Bool flag to assume 'Yes' to all deployment questions. [Default: false]
       -r  <wmcore_source_repository> WMCore source repository [Default: git://github.com/dmwm/wmcore.git"]
       -b  <wmcore_source_branch>     WMCore source branch [Default: master]
       -t  <wmcore_tag>               WMCore tag to be used for this deployment [Default: None]
@@ -469,7 +469,7 @@ printVenvSetup(){
         do
             spaceNewLine="$spaceNewLine "
         done
-        echo -e "WMCoreVenvVars[$var]${space}: ${WMCoreVenvVars[$var]//:/\n$spaceNewLine}"
+        echo -e "WMCoreVenvVars[$var]${space}: ${WMCoreVenvVars[$var]//:/\\n$spaceNewLine}"
 
     done
 }
@@ -506,6 +506,8 @@ wmaInstall() {
     _addWMCoreVenvVar  WMA_BASE_DIR $WMA_ROOT_DIR/srv/wmagent
     _addWMCoreVenvVar  WMA_ADMIN_DIR $WMA_ROOT_DIR/admin/wmagent
     _addWMCoreVenvVar  WMA_CERTS_DIR $WMA_ROOT_DIR/certs
+    _addWMCoreVenvVar  X509_HOST_CERT $WMA_CERTS_DIR/servicecert.pem
+    _addWMCoreVenvVar  X509_HOST_KEY  $WMA_CERTS_DIR/servicekey.pem
     _addWMCoreVenvVar  X509_USER_CERT $WMA_CERTS_DIR/servicecert.pem
     _addWMCoreVenvVar  X509_USER_KEY $WMA_CERTS_DIR/servicekey.pem
     _addWMCoreVenvVar  X509_USER_PROXY $WMA_CERTS_DIR/myproxy.pem
@@ -519,6 +521,9 @@ wmaInstall() {
     _addWMCoreVenvVar  WMA_MANAGE_DIR $WMA_DEPLOY_DIR/bin
     _addWMCoreVenvVar  WMA_ENV_FILE $WMA_DEPLOY_DIR/deploy/env.sh
     _addWMCoreVenvVar  WMA_SECRETS_FILE $WMA_ADMIN_DIR/WMAgent.secrets
+
+    _addWMCoreVenvVar  RUCIO_HOME $WMA_CONFIG_DIR
+    _addWMCoreVenvVar  ORACLE_PATH $WMA_DEPLOY_DIR/etc/oracle
 
     # # Setting up users and previleges
     # sudo groupadd -g ${WMA_GID} ${WMA_GROUP}
@@ -552,7 +557,7 @@ wmaInstall() {
 
     # add $wmSrcPath in front of everything if we are running from source
     if $runFromSource; then
-        _addWMCoreVenvVar PYTHONPATH ${wmSrcPath}/src/python/:$PYTHONPATH
+        _addWMCoreVenvVar PYTHONPATH ${wmSrcPath}/src/python/:${wmSrcPath}/test/python/:$PYTHONPATH
         _addWMCoreVenvVar PATH ${wmSrcPath}/bin/:$PATH
     fi
 }
@@ -561,11 +566,12 @@ tweakVenv(){
     # # A function to tweak some Virtual Environment specific things, which are
     # # in general hard coded in the Docker image
 
-    # TODO: To be removed once we have the Docker based deployment merged at CMSKubernetes
     echo "Copy certificates and WMAgent.secrets file from an old agent"
     cp -v /data/certs/servicekey.pem  $WMA_CERTS_DIR/
-    cp -v /data/admin/wmagent/WMAgent.secrets $WMA_ROOT_DIR/admin/wmagent/
     cp -v /data/certs/servicecert.pem  $WMA_CERTS_DIR/
+    # Try to find the WMAgent.secrets file at /data/dockerMount first
+    cp -v /data/dockerMount/admin/wmagent/WMAgent.secrets $WMA_ROOT_DIR/admin/wmagent/ ||
+        cp -v /data/admin/wmagent/WMAgent.secrets $WMA_ROOT_DIR/admin/wmagent/
     echo "-------------------------------------------------------"
 
     echo "Eliminate mount points checks"

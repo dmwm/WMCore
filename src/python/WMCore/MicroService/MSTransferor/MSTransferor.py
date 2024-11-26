@@ -29,6 +29,7 @@ from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
 from WMCore.MicroService.Tools.Common import (teraBytes, isRelVal)
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
+from WMCore.MicroService.MSTransferor.MSTransferorError import MSTransferorStorageError
 from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
@@ -743,7 +744,7 @@ class MSTransferor(MSCore):
         status = self.saveData(wflow, rec)
         if status == 'ok':
             return []
-        err = MSTransferorStorageError(rec, msg)
+        err = MSTransferorStorageError(rec)
         self.logger.error(err)
         return [err.error()]
 

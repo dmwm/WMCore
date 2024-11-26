@@ -146,12 +146,33 @@ class TransferorTest(EmulatedUnitTestCase):
         Test the saveData and readData methods. We should be able to save and read
         JSON objects to persistent storage of MSTransferor.
         """
+        # use default storage and check save/read operations
         wflow = 'wflowTest'
-        rec = {'data': [1,2,3]}
+        rec = {'data': [1, 2, 3]}
         status = self.msTransferor.saveData(wflow, rec)
-        self.assertItemsEqual(status, 'ok')
+        self.assertEqual(status, 'ok')
         res = self.msTransferor.readData(wflow)
-        self.assertItemsEqual(rec, res)
+        self.assertEqual(rec, res)
+
+        # used fake storage and check that proper exception is thrown
+        self.msTransferor.storage = '/bla'
+        with self.assertRaises(Exception):
+            self.msTransferor.saveData(wflow, rec)
+
+    def testUpdateSites(self):
+        """
+        Test the updateSites method.
+        """
+        wflow = 'wflowTest'
+        rec = {'data': [1, 2, 3]}
+        res = self.msTransferor.updateSites(rec)
+        self.assertEqual(res, [])
+
+        # now let's test transferor error
+        self.msTransferor.storage = '/bla'
+        res = self.msTransferor.updateSites(rec)
+        err = MSTransferorStorageError(rec, 'test error')
+        self.assertEqual(res, [err.error()]
 
 
 if __name__ == '__main__':

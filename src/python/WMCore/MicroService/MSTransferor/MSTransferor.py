@@ -741,7 +741,11 @@ class MSTransferor(MSCore):
         # preserve provided payload to local file system
         wflow = rec['workflow']
         status = self.saveData(wflow, rec)
-        return status
+        if status == 'ok':
+            return []
+        err = MSTransferorStorageError(rec, msg)
+        self.logger.error(err)
+        return [err.error()]
 
     def saveData(self, wflow, rec):
         """

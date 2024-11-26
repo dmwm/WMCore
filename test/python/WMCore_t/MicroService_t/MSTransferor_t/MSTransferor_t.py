@@ -141,6 +141,18 @@ class TransferorTest(EmulatedUnitTestCase):
         for idx in range(len(resp)):
             self.assertItemsEqual(resp[idx], expectedRes[idx])
 
+    def testReadSaveData(self):
+        """
+        Test the saveData and readData methods. We should be able to save and read
+        JSON objects to persistent storage of MSTransferor.
+        """
+        wflow = 'wflowTest'
+        rec = {'data': [1,2,3]}
+        status = self.msTransferor.saveData(wflow, rec)
+        self.assertItemsEqual(status, 'ok')
+        res = self.msTransferor.readData(wflow)
+        self.assertItemsEqual(rec, res)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -78,7 +78,7 @@ class MSTransferor(MSCore):
         # persistent area for site list processing
         wdir = '{}/storage'.format(os.getcwd())
         self.storage = self.msConfig.get('persistentArea', wdir)
-        os.makedirs(self.storage)
+        os.makedirs(self.storage, exist_ok=True)
 
         # transferor url
         self.transferrorUrl = self.msConfig.get('transferrorUrl')

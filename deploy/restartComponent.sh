@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ### Script to check the tail of each WMAgent component and evaluate
 # whether they are running or not, based on file meta-data (stat).
 # Component is automatically restarted if deemed down.
@@ -10,15 +10,12 @@ HOST=$(hostname)
 DATENOW=$(date +%s)
 DEST_NAME=cms-wmcore-team
 
-# Figure whether it's a python2 or python3 agent
-if [ ! -d "$install" ]; then
-  install="/data/srv/wmagent/current/install/"
-fi
+[[ -z $WMA_INSTALL_DIR ]] && { echo "ERROR: Trying to run without having the full WMAgent environment set!";  exit 1 ;}
 
 echo -e "\n###Checking agent logs at: $(date)"
-comps=$(ls $install)
+comps=$(ls $WMA_INSTALL_DIR)
 for comp in $comps; do
-  COMPLOG=$install/$comp/ComponentLog
+  COMPLOG=$WMA_INSTALL_DIR/$comp/ComponentLog
   if [ ! -f $COMPLOG ]; then
     echo "Not a component or $COMPLOG does not exist"
     continue
@@ -34,7 +31,8 @@ for comp in $comps; do
     fi
 
     TAIL_LOG=$(tail -n100 $COMPLOG)
-    $manage execute-agent wmcoreD --restart --components=$comp
+    echo -e "Restarting component: $comp"
+    manage execute-agent wmcoreD --restart --components=$comp
     echo -e "ComponentLog quiet for $INTERVAL secs\n\nTail of the log is:\n$TAIL_LOG" |
       mail -s "$HOST : $comp restarted" $DEST_NAME@cern.ch
   fi

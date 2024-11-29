@@ -236,7 +236,7 @@ class StageOutImpl:
                 if os.getenv("X509_USER_PROXY"):
                     logging.info("Retrying with X509_USER_PROXY after unsetting BEARER_TOKEN...")
                     os.system("unset BEARER_TOKEN; unset BEARER_TOKEN_FILE")
-                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, "X509")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="X509")
                     try:
                         self.executeCommand(command)
                         logging.info("Stage-out succeeded with X509 after unsetting BEARER_TOKEN.")
@@ -247,7 +247,7 @@ class StageOutImpl:
                 if os.getenv("BEARER_TOKEN") or os.getenv("BEARER_TOKEN_FILE"):
                     logging.info("Retrying with BEARER_TOKEN after unsetting X509_USER_PROXY...")
                     os.system("unset X509_USER_PROXY")
-                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, "TOKEN")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
                     try:
                         self.executeCommand(command)
                         logging.info("Stage-out succeeded with TOKEN after unsetting X509_USER_PROXY.")
@@ -265,6 +265,6 @@ class StageOutImpl:
         # This block will now always be executed after retries are exhausted
         if stageOutEx is not None:
             logging.error("Maximum number of retries exhausted. Further details on the failed command reported below.")
-            command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums)
+            command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
             self.executeCommand(command)
             raise stageOutEx from None

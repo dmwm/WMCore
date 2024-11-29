@@ -178,10 +178,9 @@ class StageOutImpl:
 
         This operator does the actual stage out by invoking the overridden
         plugin methods of the derived object.
-
-
         """
-        #  //
+
+        # //
         # // Generate the source PFN from the plain PFN if needed
         # //
         sourcePFN = self.createSourceName(protocol, inputPFN)
@@ -189,7 +188,7 @@ class StageOutImpl:
         # destination may also need PFN changed
         # i.e. if we are staging in a file from an SE
         targetPFN = self.createTargetName(protocol, targetPFN)
-        #  //
+        # //
         # // Create the output directory if implemented
         # //
         for retryCount in range(self.numRetries + 1):
@@ -203,9 +202,10 @@ class StageOutImpl:
                 msg += "Error details:\n{}\n".format(str(ex))
                 logging.error(msg)
                 if retryCount == self.numRetries:
-                    #  //
+                    # //
                     # // last retry, propagate exception
                     # //
+                    logging.error("Maximum retries exhausted when trying to create the output directory")
                     raise ex
                 time.sleep(self.retryPause)
 
@@ -213,20 +213,49 @@ class StageOutImpl:
         # // Create the command to be used.
         # //
         command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
-        #  //
+        # //
         # // Run the command
         # //
 
         stageOutEx = None  # variable to store the possible StageOutError
         for retryCount in range(self.numRetries + 1):
             try:
-                logging.info("Running the stage out...")
+                logging.info(f"Running the stage out (attempt {retryCount + 1})...")
                 self.executeCommand(command)
+                logging.info("Stage-out succeeded with the current environment.")
                 break
+
             except StageOutError as ex:
-                msg = "Attempt {} to stage out failed.\n".format(retryCount)
+                msg = "Attempt {} to stage out failed with default setup.\n".format(retryCount)
                 msg += "Error details:\n{}\n".format(str(ex))
                 logging.error(msg)
+
+                logging.info("Retrying with authentication-safe logic...")
+
+                # Authentication-safe fallback logic
+                if os.getenv("X509_USER_PROXY"):
+                    logging.info("Retrying with X509_USER_PROXY after unsetting BEARER_TOKEN...")
+                    os.system("unset BEARER_TOKEN; unset BEARER_TOKEN_FILE")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, "X509")
+                    try:
+                        self.executeCommand(command)
+                        logging.info("Stage-out succeeded with X509 after unsetting BEARER_TOKEN.")
+                        return
+                    except StageOutError as fallbackEx:
+                        logging.warning(f"Fallback with X509_USER_PROXY failed: \n{fallbackEx}")
+
+                if os.getenv("BEARER_TOKEN") or os.getenv("BEARER_TOKEN_FILE"):
+                    logging.info("Retrying with BEARER_TOKEN after unsetting X509_USER_PROXY...")
+                    os.system("unset X509_USER_PROXY")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, "TOKEN")
+                    try:
+                        self.executeCommand(command)
+                        logging.info("Stage-out succeeded with TOKEN after unsetting X509_USER_PROXY.")
+                        return
+                    except StageOutError as fallbackEx:
+                        logging.warning(f"Fallback with BEARER_TOKEN failed: \n{fallbackEx}")
+
+
                 if retryCount == self.numRetries:
                     # Last retry, propagate the information outside of the for loop
                     stageOutEx = ex

@@ -1,3 +1,9 @@
+2.3.8rc5 to 2.3.8rc6:
+  - Few minor environment fixes at deploy time. (Todor Ivanov) #12183
+  - Properly run restartComponent.sh avoiding hardwired paths (Todor Ivanov) #12185
+  - Fix delayed $WMA_DEPLOY_DIR env virable (Todor Ivanov) #12167
+
+
 2.3.8rc4 to 2.3.8rc5:
   - Convert reusable to non-reusable GitHub Action (Alan Malta Rodrigues) #12180
   - Revert changes for attestation in CD pipeline (Alan Malta Rodrigues) #12180

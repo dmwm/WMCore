@@ -132,7 +132,7 @@ class StageOutImpl:
         If no directory is required, do not implement this method
         """
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
         """
         _createStageOutCommand_
 
@@ -220,7 +220,7 @@ class StageOutImpl:
         stageOutEx = None  # variable to store the possible StageOutError
         for retryCount in range(self.numRetries + 1):
             try:
-                logging.info(f"Running the stage out (attempt {retryCount + 1})...")
+                logging.info("Running the stage out (attempt %d)...", retryCount + 1)
                 self.executeCommand(command)
                 logging.info("Stage-out succeeded with the current environment.")
                 break
@@ -242,7 +242,7 @@ class StageOutImpl:
                         logging.info("Stage-out succeeded with X509 after unsetting BEARER_TOKEN.")
                         return
                     except StageOutError as fallbackEx:
-                        logging.warning(f"Fallback with X509_USER_PROXY failed: \n{fallbackEx}")
+                        logging.warning("Fallback with X509_USER_PROXY failed:\n%s", str(fallbackEx))
 
                 if os.getenv("BEARER_TOKEN") or os.getenv("BEARER_TOKEN_FILE"):
                     logging.info("Retrying with BEARER_TOKEN after unsetting X509_USER_PROXY...")
@@ -253,9 +253,8 @@ class StageOutImpl:
                         logging.info("Stage-out succeeded with TOKEN after unsetting X509_USER_PROXY.")
                         return
                     except StageOutError as fallbackEx:
-                        logging.warning(f"Fallback with BEARER_TOKEN failed: \n{fallbackEx}")
-
-
+                        logging.warning("Fallback with BEARER_TOKEN failed:\n%s", str(fallbackEx))
+    
                 if retryCount == self.numRetries:
                     # Last retry, propagate the information outside of the for loop
                     stageOutEx = ex

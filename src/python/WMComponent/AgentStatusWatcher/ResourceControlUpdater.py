@@ -214,8 +214,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         for site in set(infoRC).intersection(set(infoSSB)):
             if self.tier0Mode and site.startswith('T1_'):
                 # T1 cores utilization for Tier0
-                infoSSB[site]['slotsCPU'] *= self.t1SitesCores // 100
-                infoSSB[site]['slotsIO'] *= self.t1SitesCores // 100
+                infoSSB[site]['slotsCPU'] = int(infoSSB[site]['slotsCPU'] * self.t1SitesCores / 100)
+                infoSSB[site]['slotsIO'] = int(infoSSB[site]['slotsIO'] * self.t1SitesCores / 100)
             else:
                 # round very small sites to the bare minimum
                 infoSSB[site]['slotsCPU'] = max(infoSSB[site]['slotsCPU'], self.minCPUSlots)

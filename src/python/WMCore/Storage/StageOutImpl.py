@@ -142,7 +142,7 @@ class StageOutImpl:
         """
         raise NotImplementedError("StageOutImpl.createStageOutCommand")
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
         """
         Build a shell command that will report in the logs the details about
         failing stageOut commands
@@ -254,7 +254,7 @@ class StageOutImpl:
                         return
                     except StageOutError as fallbackEx:
                         logging.warning("Fallback with BEARER_TOKEN failed:\n%s", str(fallbackEx))
-    
+
                 if retryCount == self.numRetries:
                     # Last retry, propagate the information outside of the for loop
                     stageOutEx = ex

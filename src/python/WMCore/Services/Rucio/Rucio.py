@@ -461,10 +461,13 @@ class Rucio(object):
         :param rseExpression: rse expression
         :param issuer: rucio quota account
         :param kwargs: positional arguments for rucio API
-        :return: None
+        :return: it returns either an empty list or a list with a string id for the rule created
+        Please note, we made return type from this wrapper compatible with createReplicateRule
         """
+        ruleIds = []
         try:
-            self.cli.move_replication_rule(ruleId, rseExpression, issuer)
+            rid = self.cli.move_replication_rule(ruleId, rseExpression, issuer)
+            ruleIds.append(rid)
         except RuleNotFound as ex:
             msg = "RuleNotFound move DID replication rule. Error: %s" % str(ex)
             raise WMRucioException(msg) from ex
@@ -474,6 +477,7 @@ class Rucio(object):
         except Exception as ex:
             msg = "Unsupported exception from Rucio API. Error: %s" % str(ex)
             raise WMRucioException(msg) from ex
+        return ruleIds
 
     def createReplicationRule(self, names, rseExpression, scope='cms', copies=1, **kwargs):
         """

@@ -222,11 +222,9 @@ class MSTransferor(MSCore):
                 # now check where input primary and parent blocks will need to go
                 self.checkDataLocation(wflow, rseList)
 
-                # perform site list updates which may update workflow state: wflow.dataReplacement
-                # if it is update the makeTransferRequest API which calls makeTransferRucio
-                # to perform rucio moveReplicationRule API calls
-                errors = self._updateSites(wflow, rseList)
-                siteUpdateErrorCount += len(errors)
+                # check if our workflow needs and update, if so wflow.dataReplacement flag is set
+                # which will be used by makeTransferRucio->moveReplicationRule chain of API calls
+                self.checkDataReplacement(wflow)
 
                 try:
                     success, transfers = self.makeTransferRequest(wflow, rseList)
@@ -237,6 +235,9 @@ class MSTransferor(MSCore):
                     msg = "\tError: %s" % str(ex)
                     self.logger.exception(msg)
                 if success:
+                    # clean-up local persistent storage if move operation was successful
+                    if wflow.dataReplacement:
+                        self.cleanupStorage(wflow.getName())
                     # then create a document in ReqMgr Aux DB
                     self.logger.info("Transfer requests successful for %s. Summary: %s",
                                      wflow.getName(), pformat(transfers))
@@ -731,93 +732,46 @@ class MSTransferor(MSCore):
         """
         # preserve provided payload to local file system
         wflow = rec['workflow']
-        status = self.saveData(wflow, rec)
+        status = self.updateStorage(wflow)
         if status == 'ok':
             return []
         err = MSTransferorStorageError(rec)
         self.logger.error(err)
         return [err.error()]
 
-    def saveData(self, wflow, rec):
+    def updateStorage(self, wflow):
         """
         Save workflow data to persistent storage
         :param wflow: name of workflow
-        :param rec: record to save
         :return: status of this operation
         """
         try:
             fname = '{}/{}'.format(self.storage, wflow)
             with open(fname, 'w', encoding="utf-8") as ostream:
-                ostream.write(json.dumps(rec))
+                # we perform touch operation on file system, i.e. create empty file
+                os.utime(fname, None)
             return 'ok'
         except Exception as exp:
             msg = "Unable to save workflow '%s' to storage=%s. Error: %s", wflow, self.storage, str(exp)
             self.logger.exception(msg)
             return str(exp)
 
-    def readData(self, wflow):
+    def checkDataReplacement(self, wflow):
         """
-        Read workflow data from persistent storage
-        :return: data or None
+        Check if given workflow exists on local storage and set dataReplacement flag if it is the case
+        :param wflow: workflow object
+        :return: nothing
+        """
+        fname = '{}/{}'.format(self.storage, wflow.getName())
+        if os.path.exists(fname):
+            wflow.dataReplacement = True
+
+    def cleanupStorage(self, wflow):
+        """
+        Remove workflow from persistent storage
+        :param wflow: name of workflow
+        :return: nothing
         """
         fname = '{}/{}'.format(self.storage, wflow)
-        data = None
-        with open(fname, 'r', encoding="utf-8") as istream:
-            data = json.load(istream)
-        return data
-
-    def _updateSites(self, wflow, rseList):
-        """
-        Internal update sites API to perform actual work (to be called from execute daemon):
-        - read persistent storage area
-        - for every found workflow area read its sites lists
-        - compare site lists with wflow rseList and update workflow
-        :param wflow: workflow object defined in MSTransferor/DataStructs/Workflow.py
-        :param rseList: list of RSEs
-        :return: list of errors
-        """
-        errors = []
-        for wflowName in os.listdir(self.storage):
-            if wflowName != wflow.getName():
-                continue
-
-            # read workflow payload
-            data = self.readData(wflowName)
-            if not data:
-                err = f"unable to read {wflowName} payload from storage {self.storage}"
-                self.logger.error(err)
-                errors.append({'workflow': wflowName, 'error': err})
-                continue
-            siteWhiteList = data['SiteWhiteList']
-            siteBlackList = data['SiteBlackList']
-            # skip action if no site lists are provided
-            if not siteWhiteList and not siteBlackList:
-                continue
-
-            # we set newRSEs from original rse list of workflow and it will be adjusted
-            # according to action we'll perform with site lists
-            newRSEs = {key: None for key in rseList}
-
-            from rucio.core.rse_expression_parser import parse_expression
-            if siteBlackList:
-                # if site was added to SiteBlackList remove it from final list of RSEs
-                for site in siteBlackList:
-                    rses = parse_expression("site=%s" % site)
-                    for rse in rses:
-                        if rse in rseList:
-                            del newRSEs[rse]
-            if siteWhiteList:
-                # if site was added to SiteWhiteList keep it in final list of RSEs
-                for site in siteWhiteList:
-                    rses = parse_expression("site=%s" % site)
-                    for rse in rses:
-                        if rse in rseList:
-                            newRSEs[rse] = None
-
-            # update workflow with new set of RSEs
-            if len(newRSEs) > 0:
-                self.logger.info("Workflow %s is updated with new RSE list %s", wflowName, set(newRSEs.keys()))
-                # Question to Alan: do I need to update pileupRSEList with new RSEs or not here?
-                wflow.pileupRSEList = set(newRSEs.keys())
-                wflow.dataReplacement = True
-        return errors
+        if os.path.exists(fname):
+            os.remove(fname)

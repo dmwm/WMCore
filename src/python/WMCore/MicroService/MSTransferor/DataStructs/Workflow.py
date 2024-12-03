@@ -36,7 +36,7 @@ class Workflow(object):
 
         # flag to indicate if workflow is updated, e.g. see MSTransferor when we
         # update site white/black lists and setup this flag
-        self.updatedWorkflow = False
+        self.dataReplacement = False
 
         self.campaigns = set()
         self.dataCampaignMap = []

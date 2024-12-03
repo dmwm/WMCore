@@ -223,7 +223,7 @@ class MSTransferor(MSCore):
                 # now check where input primary and parent blocks will need to go
                 self.checkDataLocation(wflow, rseList)
 
-                # perform site list updates which may update workflow state: wflow.updatedWorkflow
+                # perform site list updates which may update workflow state: wflow.dataReplacement
                 # if it is update the makeTransferRequest API which calls makeTransferRucio
                 # will perform rucio moveReplicationRule API calls
                 errors = self._updateSites(wflow, rseList)
@@ -521,12 +521,12 @@ class MSTransferor(MSCore):
             try:
                 # make decision about current workflow, if it is new request we'll create
                 # new replication rule, otherwise we'll move replication rule
-                if wflow.updatedWorkflow:
-                    rids = self.getRids(wflow.getName())
+                if wflow.dataReplacement:
+                    rids = self.getRuleIdsFromDoc(wflow.getName())
                     for rid in rids:
                         # the moveReplcationRule will raise different exceptions
                         # if move operation is not normal
-                        self.rucio.moveReplicationRule(rid, rseExpr, self.quotaAccount)
+                        res = self.rucio.moveReplicationRule(rid, rseExpr, self.quotaAccount)
                 else:
                     res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
             except Exception as exc:
@@ -550,7 +550,7 @@ class MSTransferor(MSCore):
             self.logger.info(msg, wflow.getName(), dids, rseExpr, ruleAttrs)
         return success, transferId
 
-    def getRids(self, workflowName):
+    def getRuleIdsFromDoc(self, workflowName):
         """
         Obtain transfer IDs for given workflow name
         :param workflowName: workflow name
@@ -840,5 +840,5 @@ class MSTransferor(MSCore):
             if len(newRSEs) > 0:
                 self.logger.info("Workflow %s is updated with new RSE list %s", wflowName, set(newRSEs.keys()))
                 wflow.pileupRSEList = set(newRSEs.keys())
-                wflow.updatedWorkflow = True
+                wflow.dataReplacement = True
         return errors

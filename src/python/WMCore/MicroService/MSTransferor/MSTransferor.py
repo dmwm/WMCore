@@ -34,7 +34,6 @@ from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
 from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
-from WMCore.Services.pycurl_manager import RequestHandler
 
 
 def newTransferRec(dataIn):
@@ -556,19 +555,10 @@ class MSTransferor(MSCore):
         :param workflowName: workflow name
         :return: list of transfer IDs
         """
-        # make request to MSTransferor service
-        # https://xxx.cern.ch/ms-transferor/data/info?request=<workflowName>
+        # make request to ReqMgr2 service
+        # https://xxx.cern.ch/reqmgr2/data/transferinfo/<workflowName>
         tids = []
-        mgr = RequestHandler()
-        if not self.transferrorUrl:
-            self.logger.error("transferrorUrl is not found in MSTransferor service configuration")
-            return tids
-        url = f"{self.transferrorUrl}/data/info"
-        params = {"request": workflowName}
-        header, data = mgr.request(url, params)
-        if header.status != 200:
-            self.logger.error("Failed to query MSTransferrror service with request %s header %s", workflowName, header)
-            return tids
+        data = self.reqmgrAux.getTransferInfo(workflowName)
         for row in data['result']:
             transfers = row['transferDoc']['transfers']
             for rec in transfers:

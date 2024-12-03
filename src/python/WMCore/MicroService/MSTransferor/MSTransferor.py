@@ -224,7 +224,7 @@ class MSTransferor(MSCore):
 
                 # perform site list updates which may update workflow state: wflow.dataReplacement
                 # if it is update the makeTransferRequest API which calls makeTransferRucio
-                # will perform rucio moveReplicationRule API calls
+                # to perform rucio moveReplicationRule API calls
                 errors = self._updateSites(wflow, rseList)
                 siteUpdateErrorCount += len(errors)
 
@@ -770,14 +770,10 @@ class MSTransferor(MSCore):
         """
         Internal update sites API to perform actual work (to be called from execute daemon):
         - read persistent storage area
-        - for every found workflow area read its payload
-        - for every workflow perform the following set of steps:
-          1. accessing the workflow transfer document to find out the rule ids
-          2. if a site was added to the SiteBlacklist, that site needs to be removed from the rule ids RSE expression
-          3. if a site was added to the SiteWhitelist, that site needs to be added to the rule ids RSE expression
-          4. the new rule ids need to be persisted in the transfer document, replacing those rules that are no longer valid.
-
+        - for every found workflow area read its sites lists
+        - compare site lists with wflow rseList and update workflow
         :param wflow: workflow object defined in MSTransferor/DataStructs/Workflow.py
+        :param rseList: list of RSEs
         :return: list of errors
         """
         errors = []
@@ -802,33 +798,26 @@ class MSTransferor(MSCore):
             # according to action we'll perform with site lists
             newRSEs = {key: None for key in rseList}
 
-            # to perform any actions with site list we need rucio rules
-            rules = self.rucio.listDataRules(wflowName)
+            from rucio.core.rse_expression_parser import parse_expression
+            if siteBlackList:
+                # if site was added to SiteBlackList remove it from final list of RSEs
+                for site in siteBlackList:
+                    rses = parse_expression("site=%s" % site)
+                    for rse in rses:
+                        if rse in rseList:
+                            del newRSEs[rse]
+            if siteWhiteList:
+                # if site was added to SiteWhiteList keep it in final list of RSEs
+                for site in siteWhiteList:
+                    rses = parse_expression("site=%s" % site)
+                    for rse in rses:
+                        if rse in rseList:
+                            newRSEs[rse] = None
 
-            # loop over rseList and perform action based on provided site lists
-            for rse in rseList:
-                # if site was added to SiteBlackList remove associated rule id
-                if rse in siteBlackList:
-                    # do something here
-                    self.logger.info("Discard rse %s from workflow %s", rse, wflowName)
-                    for rdoc in rules:
-                        rseExp = rdoc['rse_expression']
-                        if rseExp != rse:
-                            continue
-                        del newRSEs[rse]
-
-                # if site was added to SiteWhiteList add new rule id
-                if rse in siteWhiteList:
-                    self.logger.info("Add rse %s to workflow %s", rse, wflowName)
-                    for rdoc in rules:
-                        rseExp = rdoc['rse_expression']
-                        if rseExp != rse:
-                            continue
-                        newRSEs[rse] = None
-
-            # persist new rule ids in a transfer document
+            # update workflow with new set of RSEs
             if len(newRSEs) > 0:
                 self.logger.info("Workflow %s is updated with new RSE list %s", wflowName, set(newRSEs.keys()))
+                # Question to Alan: do I need to update pileupRSEList with new RSEs or not here?
                 wflow.pileupRSEList = set(newRSEs.keys())
                 wflow.dataReplacement = True
         return errors

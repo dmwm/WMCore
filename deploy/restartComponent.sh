@@ -13,8 +13,8 @@ DEST_NAME=cms-wmcore-team
 [[ -z $WMA_INSTALL_DIR ]] && { echo "ERROR: Trying to run without having the full WMAgent environment set!";  exit 1 ;}
 
 echo -e "\n###Checking agent logs at: $(date)"
-compsRunning=$(manage execute-agent wmcoreD --status |grep -E "Running:[0-9]+" |awk '{print $1}' |awk -F \: '{print $2}')
-for comp in $compsRunning; do
+comps=$(manage execute-agent wmcoreD --status |awk '{print $1}' |awk -F \: '{print $2}')
+for comp in $comps; do
   COMPLOG=$WMA_INSTALL_DIR/$comp/ComponentLog
   if [ ! -f $COMPLOG ]; then
     echo "Not a component or $COMPLOG does not exist"

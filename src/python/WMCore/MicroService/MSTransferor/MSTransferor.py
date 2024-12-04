@@ -222,9 +222,9 @@ class MSTransferor(MSCore):
                 # now check where input primary and parent blocks will need to go
                 self.checkDataLocation(wflow, rseList)
 
-                # check if our workflow needs and update, if so wflow.dataReplacement flag is set
+                # check if our workflow needs an update, if so wflow.dataReplacement flag is set
                 # which will be used by makeTransferRucio->moveReplicationRule chain of API calls
-                self.checkDataReplacement(wflow)
+                self.checkDataReplacement(wflow.getName())
 
                 try:
                     success, transfers = self.makeTransferRequest(wflow, rseList)
@@ -724,29 +724,28 @@ class MSTransferor(MSCore):
 
     def updateSites(self, rec):
         """
-        Update sites API provides asynchronous update of Site info.
-
+        Update sites API provides asynchronous update of site list information
         :param rec: JSON payload with the following data structures:
                     {'workflow': <wflow name>, 'SiteWhiteList' ['T1', ...], 'SiteBlackList': ['T2',...]}
-        :return: acknowledge dict to upstream caller (ReqMgr2)
+        :return: either empty list (no errors) or list of errors
         """
         # preserve provided payload to local file system
-        wflow = rec['workflow']
-        status = self.updateStorage(wflow)
+        wflowName = rec['workflow']
+        status = self.updateStorage(wflowName)
         if status == 'ok':
             return []
         err = MSTransferorStorageError(rec)
         self.logger.error(err)
         return [err.error()]
 
-    def updateStorage(self, wflow):
+    def updateStorage(self, wflowName):
         """
         Save workflow data to persistent storage
-        :param wflow: name of workflow
+        :param wflowName: name of the workflow
         :return: status of this operation
         """
         try:
-            fname = '{}/{}'.format(self.storage, wflow)
+            fname = '{}/{}'.format(self.storage, wflowName)
             with open(fname, 'w', encoding="utf-8") as ostream:
                 # we perform touch operation on file system, i.e. create empty file
                 os.utime(fname, None)
@@ -756,22 +755,22 @@ class MSTransferor(MSCore):
             self.logger.exception(msg)
             return str(exp)
 
-    def checkDataReplacement(self, wflow):
+    def checkDataReplacement(self, wflowName):
         """
         Check if given workflow exists on local storage and set dataReplacement flag if it is the case
-        :param wflow: workflow object
+        :param wflowName: workflow name
         :return: nothing
         """
-        fname = '{}/{}'.format(self.storage, wflow.getName())
+        fname = '{}/{}'.format(self.storage, wflowName)
         if os.path.exists(fname):
             wflow.dataReplacement = True
 
-    def cleanupStorage(self, wflow):
+    def cleanupStorage(self, wflowName):
         """
         Remove workflow from persistent storage
-        :param wflow: name of workflow
+        :param wflowName: name of workflow
         :return: nothing
         """
-        fname = '{}/{}'.format(self.storage, wflow)
+        fname = '{}/{}'.format(self.storage, wflowName)
         if os.path.exists(fname):
             os.remove(fname)

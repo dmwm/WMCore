@@ -33,6 +33,7 @@ from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, valida
                                             isUserAllowed)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.WMSpec.WMWorkload import WMWorkloadUnhandledException
 
 
 class Request(RESTEntity):
@@ -413,6 +414,8 @@ class Request(RESTEntity):
         request_args will be ignored.
         """
         reqArgs = deepcopy(request_args)
+        reqStatus = self.reqmgr_db_service.getRequestByNames(workload.name())[workload.name()]['RequestStatus']
+        cherrypy.log(f"CurrentRequest status: {reqStatus}")
 
         if not reqArgs:
             cherrypy.log(f"Nothing to be changed at this stage for {workload.name()}")
@@ -423,18 +426,14 @@ class Request(RESTEntity):
             cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), reqArgs))
             return report
 
-        # Handling assignment-approved arguments differently to avoid code duplication
-        reqStatus = self.reqmgr_db_service.getRequestByNames(workload.name())[workload.name()]['RequestStatus']
-        cherrypy.log(f"CurrentRequest status: {reqStatus}")
-        if reqStatus == 'assignment-approved':
-            cherrypy.log(f"Handling assignment-approved arguments differently!")
-            self._handleAssignmentStateTransition(workload, request_args, dn)
-
-        # Update all workload parameters based on the full reqArgs dictionary
-        workload.updateWorkloadArgs(reqArgs)
-
-        # Commit the changes of the current workload object to the database:
-        workload.saveCouchUrl(workload.specUrl())
+        try:
+            # Update all workload parameters based on the full reqArgs dictionary
+            workload.updateWorkloadArgs(reqArgs)
+        except WMWorkloadUnhandledException as ex:
+            # Handling assignment-approved arguments differently to avoid code duplication
+            if reqStatus == 'assignment-approved':
+                cherrypy.log(f"Handling assignment-approved arguments differently!")
+                self._handleAssignmentStateTransition(workload, request_args, dn)
 
         # Commit the changes of the current workload object to the database:
         workload.saveCouchUrl(workload.specUrl())

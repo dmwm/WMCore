@@ -61,6 +61,14 @@ class WMWorkloadException(WMException):
     """
     pass
 
+class WMWorkloadUnhandledException(WMException):
+    """
+    _WMWorkloadUnhandledException_
+
+    Exceptions raised by the Workload during filling
+    """
+    pass
+
 
 setterTuple = namedtuple('SetterTuple', ['reqArg', 'setterFunc', 'setterSignature'])
 
@@ -96,16 +104,21 @@ class WMWorkloadHelper(PersistencyHelper):
         self.settersMap['SiteBlacklist'] = setterTuple('SiteBlacklist', self.setSiteBlacklist, inspect.signature(self.setSiteBlacklist))
         self.settersMap['SiteWhitelist'] = setterTuple('SiteWhitelist', self.setSiteWhitelist, inspect.signature(self.setSiteWhitelist))
 
+        reqArgsNothandled = []
         # First validate if we can properly call the setter function given the reqArgs passed.
         for reqArg, argValue in reqArgs.items():
-            if not self.settersMap.get(reqArg, None):
-                msg = f"Unsupported or missing setter method for updating reqArg: {reqArg}."
-                raise WMWorkloadException(msg)
+            if reqArg not in self.settersMap:
+                reqArgsNothandled.append(reqArg)
+                continue
             try:
                 self.settersMap[reqArg].setterSignature.bind(argValue)
             except TypeError as ex:
                 msg = f"Setter's method signature does not match the method calls we currently support: Error: req{str(ex)}"
                 raise WMWorkloadException(msg) from None
+
+        if reqArgsNothandled:
+            msg = f"Unsupported or missing setter method for updating request arguments: {reqArgsNothandled}."
+            raise WMWorkloadUnhandledException(msg)
 
         # Now go through the reqArg again and call every setter method according to the map
         for reqArg, argValue in reqArgs.items():

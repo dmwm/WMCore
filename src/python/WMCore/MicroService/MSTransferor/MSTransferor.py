@@ -16,7 +16,6 @@ standard_library.install_aliases()
 
 # system modules
 import os
-import json
 from operator import itemgetter
 from pprint import pformat
 from retry import retry
@@ -224,7 +223,7 @@ class MSTransferor(MSCore):
 
                 # check if our workflow needs an update, if so wflow.dataReplacement flag is set
                 # which will be used by makeTransferRucio->moveReplicationRule chain of API calls
-                self.checkDataReplacement(wflow.getName())
+                self.checkDataReplacement(wflow)
 
                 try:
                     success, transfers = self.makeTransferRequest(wflow, rseList)
@@ -746,22 +745,22 @@ class MSTransferor(MSCore):
         """
         try:
             fname = '{}/{}'.format(self.storage, wflowName)
-            with open(fname, 'w', encoding="utf-8") as ostream:
+            with open(fname, 'w', encoding="utf-8"):
                 # we perform touch operation on file system, i.e. create empty file
                 os.utime(fname, None)
             return 'ok'
         except Exception as exp:
-            msg = "Unable to save workflow '%s' to storage=%s. Error: %s", wflow, self.storage, str(exp)
+            msg = "Unable to save workflow '%s' to storage=%s. Error: %s", wflowName, self.storage, str(exp)
             self.logger.exception(msg)
             return str(exp)
 
-    def checkDataReplacement(self, wflowName):
+    def checkDataReplacement(self, wflow):
         """
         Check if given workflow exists on local storage and set dataReplacement flag if it is the case
-        :param wflowName: workflow name
+        :param wflow: workflow object
         :return: nothing
         """
-        fname = '{}/{}'.format(self.storage, wflowName)
+        fname = '{}/{}'.format(self.storage, wflow.getName())
         if os.path.exists(fname):
             wflow.dataReplacement = True
 

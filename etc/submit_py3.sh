@@ -192,6 +192,31 @@ else
 fi
 echo -e "======== WMAgent Python bootstrap finished at $(TZ=GMT date) ========\n"
 
+echo -e "======= WMAgent token verification at $(TZ=GMT date) ========\n"
+echo "Content under _CONDOR_CREDS: ${_CONDOR_CREDS}"
+ls -l ${_CONDOR_CREDS}
+
+if [ -f "${_CONDOR_CREDS}/cms.use" ]
+then
+    echo "CMS token found, setting BEARER_TOKEN_FILE=${_CONDOR_CREDS}/cms.use"
+    export BEARER_TOKEN_FILE=${_CONDOR_CREDS}/cms.use
+
+    # Show token information
+    # This tool requires htgettoken package in the cmssw runtime apptainer image
+    if command -v httokendecode ls 2>&1 > /dev/null
+    then
+        httokendecode -H ${BEARER_TOKEN_FILE}
+    else
+        echo "Warning: [WMAgent Token verification] httokendecode tool could not be found."
+        echo "Warning: Token exists and can be used, but details will not be displayed."
+    fi
+else
+    echo "[WMAgent token verification]: The bearer token file could not be found."
+    # Do not fail, we still support x509 proxies
+    # if we fail here in the future, we need to define an exit code number
+    # exit 1106
+fi
+
 
 echo "======== WMAgent Unpack the job starting at $(TZ=GMT date) ========"
 # Should be ready to unpack and run this

@@ -336,6 +336,37 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(url, "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
         return
 
+    def testGetSiteWhitelist(self):
+        """
+        Test getSiteWhitelist and getSiteBlackList functionality of the task.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+
+        procTestTask = testWorkload.newTask("ProcessingTask")
+        procTestTaskCMSSW = procTestTask.makeStep("cmsRun1")
+        procTestTaskCMSSW.setStepType("CMSSW")
+
+        procTestTask.addInputDataset(name="/PrimaryDataset/ProcessedDataset/DATATIER",
+                                     primary="PrimaryDataset",
+                                     processed="ProcessedDataset",
+                                     tier="DATATIER",
+                                     block_whitelist=["Block1", "Block2"],
+                                     black_blacklist=["Block3"],
+                                     run_whitelist=[1, 2],
+                                     run_blacklist=[3])
+
+        newSiteWhiteList = ["T1_US_FNAL", "T0_CH_CERN"]
+        newSiteBlackList = ["T1_DE_KIT"]
+        testWorkload.setSiteWhitelist(newSiteWhiteList)
+        testWorkload.setSiteBlacklist(newSiteBlackList)
+
+        siteWhiteList = testWorkload.getSiteWhitelist()
+        siteBlackList = testWorkload.getSiteBlacklist()
+        self.assertTrue(set(newSiteWhiteList) == set(siteWhiteList),
+                        "Error: Site white list mismatch")
+        self.assertTrue(set(newSiteBlackList) == set(siteBlackList),
+                        "Error: Site black list mismatch")
+
     def testWhiteBlacklists(self):
         """
         _testWhiteBlacklists_

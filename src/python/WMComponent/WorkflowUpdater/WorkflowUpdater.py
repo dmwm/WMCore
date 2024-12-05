@@ -8,6 +8,7 @@ import threading
 from pprint import pformat
 
 from WMComponent.WorkflowUpdater.WorkflowUpdaterPoller import WorkflowUpdaterPoller
+from WMComponent.WorkflowUpdater.SiteListPoller import SiteListPoller
 from WMCore.Agent.Harness import Harness
 
 
@@ -34,4 +35,8 @@ class WorkflowUpdater(Harness):
 
         myThread = threading.currentThread()
         myThread.workerThreadManager.addWorker(WorkflowUpdaterPoller(self.config),
+                                               pollInterval)
+
+        myThread = threading.currentThread()
+        myThread.workerThreadManager.addWorker(SiteListPoller(self.config),
                                                pollInterval)

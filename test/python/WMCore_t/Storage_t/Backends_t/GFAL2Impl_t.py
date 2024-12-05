@@ -14,9 +14,9 @@ class GFAL2ImplTest(unittest.TestCase):
 
     def testInit(self):
         testGFAL2Impl = GFAL2Impl()
-        removeCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c " \
+        removeCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c " \
                 "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}'"
-        copyCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
+        copyCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
               ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p " \
               "-v --abort-on-failure {checksum} {options} {source} {destination}'"
         self.assertEqual(removeCommand, testGFAL2Impl.removeCommand)

@@ -96,15 +96,17 @@ class PileupFetcherTest(EmulatedUnitTestCase):
 
             for dataset in datasets:
                 dbsBlocks = reader.listFileBlocks(dataset=dataset)
-                rucioBlocksLocation = rucioObj.getPileupLockedAndAvailable(dataset,
-                                                                           account=self.rucioAcct)
+                rucioBlocks = rucioObj.getBlocksInContainer(container=dataset)
+                print(f"DBS knows {len(dbsBlocks)} while Rucio knows {len(rucioBlocks)} blocks for {dataset}")
+                # now pileup data location comes from MSPileup (from MockMSPileupAPI)
+                rucioBlocksLocation = ["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"]
 
                 # first, validate the number of blocks and their names
                 self.assertItemsEqual(list(blockDict), dbsBlocks)
-                self.assertItemsEqual(list(blockDict), list(rucioBlocksLocation))
+                self.assertItemsEqual(list(blockDict), rucioBlocks)
                 # now validate the block location between Rucio and PileupFetcher
                 for block, blockLocation in viewitems(blockDict):
-                    self.assertItemsEqual(blockLocation['PhEDExNodeNames'], rucioBlocksLocation[block])
+                    self.assertItemsEqual(blockLocation['PhEDExNodeNames'], rucioBlocksLocation)
 
                     # finally, validate the files
                     fileList = []

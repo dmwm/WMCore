@@ -528,6 +528,7 @@ class MSOutput(MSCore):
                 #    start using those here so we do not mix with general errors
                 try:
                     pipeLine.run(docOut)
+                    wfCounters += 1
                 except (KeyError, TypeError) as ex:
                     msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
                     msg += "Continue to the next document."
@@ -542,8 +543,9 @@ class MSOutput(MSCore):
                     msg = "%s General error from pipeline. Err: %s. " % (pipeLineName, str(ex))
                     msg += "Will retry again in the next cycle."
                     self.logger.exception(msg)
-                    break
-                wfCounters += 1
+                    workflowname = docOut.get("_id", "none")
+                    self.alertGenericError("consumer", workflowname, msg, str(ex), str(docOut))
+                    continue
             self.logger.info("Processed %d workflows from pipeline: %s", wfCounters, pipeLineName)
             wfCounterTotal += wfCounters
 
@@ -581,10 +583,10 @@ class MSOutput(MSCore):
         #    To generate the object from within the Function scope see above.
         counter = 0
         for request in requestRecords:
-            counter += 1
             pipeLineName = msPipeline.getPipelineName()
             try:
                 msPipeline.run(request)
+                counter += 1
             except (KeyError, TypeError) as ex:
                 msg = "%s Possibly broken read from ReqMgr2 API or other. Err: %s." % (pipeLineName, str(ex))
                 msg += " Continue to the next document."
@@ -594,7 +596,9 @@ class MSOutput(MSCore):
                 msg = "%s General Error from pipeline. Err: %s. " % (pipeLineName, str(ex))
                 msg += "Giving up Now."
                 self.logger.exception(str(ex))
-                break
+                workflowname = request.get("_id", "none")
+                self.alertGenericError("producer", workflowname, msg, str(ex), str(request))
+                continue
         return counter
 
     def docTransformer(self, doc):
@@ -1023,3 +1027,20 @@ class MSOutput(MSCore):
         self.logger.critical(alertDescription)
         if self.msConfig["sendNotification"] and not isRelVal:
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+
+    def alertGenericError(self, caller, workflowname, msg, ex_str, document_str):
+        """
+        Send an alert in the case of a generic error with ms-output 
+        :param msg: string
+        :return: none
+        """
+        alertName = "ms-output: Generic MSOutput error inside {} while processing workflow '{}'".format(caller, workflowname)
+        alertSeverity = "high"
+        alertSummary = "[MSOutput] Generic MSOutput error inside {} while processing workflow '{}'".format(caller, workflowname)
+        alertDescription = "wf: {}\n\nmsg: {}\n\nex: {}\n\n{}".format(workflowname, msg, ex_str, document_str)
+        self.logger.error("%s\n%s\n%s", alertName, alertSummary, alertDescription)
+        if self.msConfig["sendNotification"]:
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+
+
+

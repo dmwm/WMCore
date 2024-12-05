@@ -15,6 +15,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 # system modules
+import os
 from operator import itemgetter
 from pprint import pformat
 from retry import retry
@@ -27,6 +28,7 @@ from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
 from WMCore.MicroService.Tools.Common import (teraBytes, isRelVal)
 from WMCore.MicroService.MSCore.MSCore import MSCore
 from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
+from WMCore.MicroService.MSTransferor.MSTransferorError import MSTransferorStorageError
 from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
@@ -72,6 +74,14 @@ class MSTransferor(MSCore):
         """
         super(MSTransferor, self).__init__(msConfig, logger=logger)
 
+        # persistent area for site list processing
+        wdir = '{}/storage'.format(os.getcwd())
+        self.storage = self.msConfig.get('persistentArea', wdir)
+        os.makedirs(self.storage, exist_ok=True)
+
+        # transferor url
+        self.transferrorUrl = self.msConfig.get('transferrorUrl')
+
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
         # minimum available storage to consider a resource good for receiving data
@@ -91,9 +101,9 @@ class MSTransferor(MSCore):
         self.pileupQuery = self.msConfig.get("pileupQuery",
                                              {"query": {"active": True}, "filters": ["expectedRSEs", "pileupName"]})
 
-        quotaAccount = self.msConfig["rucioAccount"]
+        self.quotaAccount = self.msConfig["rucioAccount"]
 
-        self.rseQuotas = RSEQuotas(quotaAccount, self.msConfig["quotaUsage"],
+        self.rseQuotas = RSEQuotas(self.quotaAccount, self.msConfig["quotaUsage"],
                                    minimumThreshold=self.msConfig["minimumThreshold"],
                                    verbose=self.msConfig['verbose'], logger=logger)
         self.reqInfo = RequestInfo(self.msConfig, self.rucio, self.logger)
@@ -187,6 +197,7 @@ class MSTransferor(MSCore):
             return summary
 
         # process all requests
+        siteUpdateErrorCount = 0
         for reqSlice in grouper(requestRecords, 100):
             self.logger.info("Processing workflows from %d to %d.",
                              counterWorkflows + 1, counterWorkflows + len(reqSlice))
@@ -210,6 +221,10 @@ class MSTransferor(MSCore):
                 # now check where input primary and parent blocks will need to go
                 self.checkDataLocation(wflow, rseList)
 
+                # check if our workflow needs an update, if so wflow.dataReplacement flag is set
+                # which will be used by makeTransferRucio->moveReplicationRule chain of API calls
+                self.checkDataReplacement(wflow)
+
                 try:
                     success, transfers = self.makeTransferRequest(wflow, rseList)
                 except Exception as ex:
@@ -219,6 +234,9 @@ class MSTransferor(MSCore):
                     msg = "\tError: %s" % str(ex)
                     self.logger.exception(msg)
                 if success:
+                    # clean-up local persistent storage if move operation was successful
+                    if wflow.dataReplacement:
+                        self.cleanupStorage(wflow.getName())
                     # then create a document in ReqMgr Aux DB
                     self.logger.info("Transfer requests successful for %s. Summary: %s",
                                      wflow.getName(), pformat(transfers))
@@ -252,6 +270,7 @@ class MSTransferor(MSCore):
         self.updateReportDict(summary, "num_datasets_subscribed", self.dsetCounter)
         self.updateReportDict(summary, "num_blocks_subscribed", self.blockCounter)
         self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
+        self.updateReportDict(summary, "site_list_update_errors", siteUpdateErrorCount)
         return summary
 
     def getRequestRecords(self, reqStatus):
@@ -499,7 +518,16 @@ class MSTransferor(MSCore):
             self.logger.info("Creating rule for workflow %s with %d DIDs in container %s, RSEs: %s, grouping: %s",
                              wflow.getName(), len(dids), dataIn['name'], rseExpr, grouping)
             try:
-                res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
+                # make decision about current workflow, if it is new request we'll create
+                # new replication rule, otherwise we'll move replication rule
+                if wflow.dataReplacement:
+                    rids = self.getRuleIdsFromDoc(wflow.getName())
+                    for rid in rids:
+                        # the moveReplcationRule will raise different exceptions
+                        # if move operation is not normal
+                        res = self.rucio.moveReplicationRule(rid, rseExpr, self.quotaAccount)
+                else:
+                    res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
             except Exception as exc:
                 msg = "Hit a bad exception while creating replication rules for DID: %s. Error: %s"
                 self.logger.error(msg, dids, str(exc))
@@ -520,6 +548,22 @@ class MSTransferor(MSCore):
             msg = "DRY-RUN: making Rucio rule for workflow: %s, dids: %s, rse: %s, kwargs: %s"
             self.logger.info(msg, wflow.getName(), dids, rseExpr, ruleAttrs)
         return success, transferId
+
+    def getRuleIdsFromDoc(self, workflowName):
+        """
+        Obtain transfer IDs for given workflow name
+        :param workflowName: workflow name
+        :return: list of transfer IDs
+        """
+        # make request to ReqMgr2 service
+        # https://xxx.cern.ch/reqmgr2/data/transferinfo/<workflowName>
+        tids = []
+        data = self.reqmgrAux.getTransferInfo(workflowName)
+        for row in data['result']:
+            transfers = row['transferDoc']['transfers']
+            for rec in transfers:
+                tids += rec['transferIDs']
+        return list(set(tids))
 
     def alertPUMisconfig(self, workflowName):
         """
@@ -676,3 +720,56 @@ class MSTransferor(MSCore):
             else:
                 diskPNNs.add(pnn)
         return diskPNNs
+
+    def updateSites(self, rec):
+        """
+        Update sites API provides asynchronous update of site list information
+        :param rec: JSON payload with the following data structures:
+                    {'workflow': <wflow name>, 'SiteWhiteList' ['T1', ...], 'SiteBlackList': ['T2',...]}
+        :return: either empty list (no errors) or list of errors
+        """
+        # preserve provided payload to local file system
+        wflowName = rec['workflow']
+        status = self.updateStorage(wflowName)
+        if status == 'ok':
+            return []
+        err = MSTransferorStorageError(rec)
+        self.logger.error(err)
+        return [err.error()]
+
+    def updateStorage(self, wflowName):
+        """
+        Save workflow data to persistent storage
+        :param wflowName: name of the workflow
+        :return: status of this operation
+        """
+        try:
+            fname = '{}/{}'.format(self.storage, wflowName)
+            with open(fname, 'w', encoding="utf-8"):
+                # we perform touch operation on file system, i.e. create empty file
+                os.utime(fname, None)
+            return 'ok'
+        except Exception as exp:
+            msg = "Unable to save workflow '%s' to storage=%s. Error: %s", wflowName, self.storage, str(exp)
+            self.logger.exception(msg)
+            return str(exp)
+
+    def checkDataReplacement(self, wflow):
+        """
+        Check if given workflow exists on local storage and set dataReplacement flag if it is the case
+        :param wflow: workflow object
+        :return: nothing
+        """
+        fname = '{}/{}'.format(self.storage, wflow.getName())
+        if os.path.exists(fname):
+            wflow.dataReplacement = True
+
+    def cleanupStorage(self, wflowName):
+        """
+        Remove workflow from persistent storage
+        :param wflowName: name of workflow
+        :return: nothing
+        """
+        fname = '{}/{}'.format(self.storage, wflowName)
+        if os.path.exists(fname):
+            os.remove(fname)

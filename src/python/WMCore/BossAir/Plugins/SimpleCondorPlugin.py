@@ -139,6 +139,8 @@ class SimpleCondorPlugin(BasePlugin):
         #self.x509userproxysubject = proxy.getSubject()
         #self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
 
+        self.useCMSToken = getattr(config.JobSubmitter, 'useOauthToken', False)
+
         return
 
     def submit(self, jobs, info=None):
@@ -520,6 +522,11 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['Requirements'] = self.reqStr
 
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
+
+            # Allow oauth based token authentication
+            if self.useCMSToken:
+                ad['use_oauth_services'] = "cms"
+
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))

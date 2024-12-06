@@ -118,6 +118,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
             patchMSPileupAt = ['WMCore.MicroService.MSTransferor.MSTransferor.getPileupDocs',
                                'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.getPileupDocs',
                                'WMCore.WorkQueue.DataLocationMapper.getPileupDocs',
+                               'WMCore.WMSpec.Steps.Fetchers.PileupFetcher.getPileupDocs',
                                'WMComponent.WorkflowUpdater.WorkflowUpdaterPoller.getPileupDocs',
                                'WMCore_t.Services_t.MSPileup_t.MSPileupUtils_t.getPileupDocs']
             for module in patchMSPileupAt:

@@ -3,14 +3,10 @@
 """
 Script to produce a json file to mock Rucio data
 """
-
-from __future__ import (division, print_function)
-
 import json
 import os
 import sys
 
-from future.utils import viewitems
 
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMBase import getTestBase
@@ -18,8 +14,9 @@ from WMCore.WMBase import getTestBase
 
 ### Here goes a list of data that we want to fetch from Rucio and
 ### persist in our json file to mock those calls/data
-CONTAINERS = [u"/MinimumBias/ComissioningHI-v1/RAW",
-              u"/Cosmics/ComissioningHI-PromptReco-v1/RECO"]
+CONTAINERS = ["/MinimumBias/ComissioningHI-v1/RAW",
+              "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
+              "/GammaGammaToEE_Elastic_Pt15_8TeV-lpair/Summer12-START53_V7C-v1/GEN-SIM"]
 BLOCKS = []
 
 ### The output file which will contain all the Rucio mock data
@@ -45,6 +42,7 @@ def main():
     for container in CONTAINERS:
         print("Building call list for container: {}".format(container))
         calls.append(['getBlocksInContainer', {'container': container}])
+        calls.append(['getBlocksInContainer', {'container': container, 'scope': SCOPE}])
         calls.append(['isContainer', {'didName': container}])
         calls.append(['getDID', {'didName': container, 'dynamic': False}])
         calls.append(['didExist', {'didName': container}])
@@ -66,7 +64,7 @@ def main():
     for call in calls:
         func = getattr(rucio, call[0])
         if len(call) > 1:
-            signature = '%s:%s' % (call[0], sorted(viewitems(call[1])))
+            signature = '%s:%s' % (call[0], sorted(call[1].items()))
             result = func(**call[1])
         else:
             result = func()

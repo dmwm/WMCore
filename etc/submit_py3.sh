@@ -216,7 +216,8 @@ else
     # if we fail here in the future, we need to define an exit code number
     # exit 1106
 fi
-
+# Token stage-in test: Unset X509 in order to test reading data from the storage via tokens
+# unset X509_USER_PROXY
 
 echo "======== WMAgent Unpack the job starting at $(TZ=GMT date) ========"
 # Should be ready to unpack and run this

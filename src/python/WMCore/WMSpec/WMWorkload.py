@@ -1240,6 +1240,25 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return getattr(self.data.request.schema, "DbsUrl")
 
+    def setStatus(self, status):
+        """
+        _setStatus_
+
+        Set the status of the workflow
+        Optional
+        :param: Request status
+        """
+        self.data.request.status = status
+        return
+
+    def getStatus(self):
+        """
+        _getStatus_
+
+        Get the Status for the workflow
+        """
+        return getattr(self.data.request, 'status', None)
+
     def setCampaign(self, campaign):
         """
         _setCampaign_
@@ -2160,6 +2179,7 @@ class WMWorkload(ConfigSection):
         # //
         self.section_("request")
         self.request.priority = None  # what should be the default value
+        self.request.status = None
         #  //
         # // owner related information
         # //

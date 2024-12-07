@@ -414,7 +414,7 @@ class Request(RESTEntity):
         request_args will be ignored.
         """
         reqArgs = deepcopy(request_args)
-        reqStatus = self.reqmgr_db_service.getRequestByNames(workload.name())[workload.name()]['RequestStatus']
+        reqStatus = workload.getStatus()
         cherrypy.log(f"CurrentRequest status: {reqStatus}")
 
         if not reqArgs:

@@ -108,6 +108,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
         request = request[request_name]
         workload.setStatus(request['RequestStatus'])
         reqArgsDiff = _validate_request_allowed_args(request, request_args)
+        workload.validateArgumentsPartialUpdate(reqArgsDiff)
         validate_request_priority(reqArgsDiff)
         return workload, reqArgsDiff
 

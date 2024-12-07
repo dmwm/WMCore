@@ -8,14 +8,16 @@ def getPileupDocs(mspileupUrl, queryDict=None, method='GET'):
     """
     Returns list of Pileup Documents.
     """
-    print(f"Mocking MSPileup getPileupDocs: \
-          url: {mspileupUrl}, query: {queryDict}, method: {method}")
+    print(f"Mocking MSPileup getPileupDocs: url: {mspileupUrl}, query: {queryDict}, method: {method}")
 
     queryDict = queryDict or {}
-
+    if 'pileupName' in queryDict.get("query", {}):
+        pileupName = queryDict['query']['pileupName']
+    else:
+        pileupName = "/GammaGammaToEE_Elastic_Pt15_8TeV-lpair/Summer12-START53_V7C-v1/GEN-SIM"
+    print(f"pileupName: {pileupName}")
     pdict = {
-        # "pileupName": "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM",
-        "pileupName": "/GammaGammaToEE_Elastic_Pt15_8TeV-lpair/Summer12-START53_V7C-v1/GEN-SIM",
+        "pileupName": pileupName,
         "pileupType": "classic",
         "insertTime": 1680873642,
         "lastUpdateTime": 1706216047,

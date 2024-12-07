@@ -106,15 +106,6 @@ class MockRucioApi(object):
 
         return genericLookup
 
-    def getBlocksInContainer(self, container, scope='cms'):
-        """
-        Returns list of block names for given container
-        """
-        cname = self.__class__.__name__
-        blockNames = [container + '#123', container + '#456']
-        logging.info("%s getBlocksInContainer %s", cname, blockNames)
-        return blockNames
-
     def listDataRules(self, name, **kwargs):
         """
         Emulate listDataRules Rucio API

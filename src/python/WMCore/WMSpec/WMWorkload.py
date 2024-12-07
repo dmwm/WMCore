@@ -2054,6 +2054,26 @@ class WMWorkloadHelper(PersistencyHelper):
         validateArgumentsUpdate(schema, argumentDefinition)
         return
 
+    def validateArgumentsPartialUpdate(self, schema):
+        """
+        Validates the provided parameters schema for workflow arguments update, using
+        the arguments definitions for assignment as provided at StdBase.getWorkloadAssignArgs
+        :param schema: Workflow arguments schema to be validated - Must be a properly
+                       defined dictionary of {arg: value} pairs.
+        :return:       Nothing. Raises proper exceptions when argument validation fails
+
+        NOTE: In order to avoid full schema validation and enforcing mandatory arguments,
+              we set the optionKey argument for this call to NONE. This way it is ignored
+              during the next step of the validation process (namely at
+              WMWorkloadTools._validateArgumentOptions), and all of the so provided
+              arguments in the schema are considered optional, but nonetheless they
+              still go through the full value validation process.
+        """
+        specClass = loadSpecClassByType(self.getRequestType())
+        argumentDefinition = specClass.getWorkloadAssignArgs()
+        validateArgumentsUpdate(schema, argumentDefinition, optionKey=None)
+        return
+
     def updateArguments(self, kwargs):
         """
         set up all the argument related to assigning request.

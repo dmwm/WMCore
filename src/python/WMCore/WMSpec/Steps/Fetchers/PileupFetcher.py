@@ -71,13 +71,16 @@ class PileupFetcher(FetcherInterface):
             blockDict = {}
             for dataset in datasets:
                 # using the original dataset, resolve blocks, files and number of events with DBS
+                fCounter = 0
                 for fileInfo in dbsReader.getFileListByDataset(dataset=dataset, detail=True):
                     blockDict.setdefault(fileInfo['block_name'], {'FileList': [],
                                                                   'NumberOfEvents': 0,
                                                                   'PhEDExNodeNames': []})
                     blockDict[fileInfo['block_name']]['FileList'].append(fileInfo['logical_file_name'])
                     blockDict[fileInfo['block_name']]['NumberOfEvents'] += fileInfo['event_count']
+                    fCounter += 1
 
+                logging.info(f"Found {len(blockDict)} blocks in DBS for dataset {dataset} with {fCounter} files")
                 self._getDatasetLocation(dataset, blockDict, msPileupUrl)
 
             resultDict[pileupType] = blockDict
@@ -112,12 +115,15 @@ class PileupFetcher(FetcherInterface):
         blockReplicas = self.rucio.getBlocksInContainer(container=dset, scope=puScope)
         logging.info(f"Found {len(blockReplicas)} blocks in container {dset} for scope {puScope}")
 
-        # Finally, update blocks present in Rucio with the MSPileup currentRSEs
-        for blockName in blockReplicas:
-            try:
+        # Finally, update blocks present in Rucio with the MSPileup currentRSEs.
+        # Blocks not present in Rucio - hence only in DBS - are meant to be removed.
+        for blockName in list(blockDict):
+            if blockName not in blockReplicas:
+                logging.warning(f"Block {blockName} present in DBS but not in Rucio. Removing it.")
+                blockDict.pop(blockName)
+            else:
                 blockDict[blockName]['PhEDExNodeNames'] = doc["currentRSEs"]
-            except KeyError:
-                logging.warning(f"Block {blockName} present in Rucio but not in DBS")
+        logging.info(f"Final pileup dataset {dset} has a total of {len(blockDict)} blocks.")
 
     def _getCacheFilePath(self, stepHelper):
 

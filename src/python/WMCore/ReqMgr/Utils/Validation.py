@@ -26,8 +26,7 @@ from WMCore.Cache.GenericDataCache import GenericDataCache, MemoryCacheStruct
 
 
 def workqueue_stat_validation(request_args):
-    stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
-    return set(request_args.keys()) == set(stat_keys)
+    return set(request_args.keys()) == set(ALLOWED_STAT_KEYS)
 
 
 def _validate_request_allowed_args(reqArgs, newReqArgs):

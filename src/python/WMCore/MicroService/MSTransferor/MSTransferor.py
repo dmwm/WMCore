@@ -78,9 +78,7 @@ class MSTransferor(MSCore):
         wdir = '{}/storage'.format(os.getcwd())
         self.storage = self.msConfig.get('persistentArea', wdir)
         os.makedirs(self.storage, exist_ok=True)
-
-        # transferor url
-        self.transferrorUrl = self.msConfig.get('transferrorUrl')
+        self.logger.info("Using directory %s as workflow persistent area", self.storage)
 
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
@@ -234,20 +232,21 @@ class MSTransferor(MSCore):
                     msg = "\tError: %s" % str(ex)
                     self.logger.exception(msg)
                 if success:
-                    # clean-up local persistent storage if move operation was successful
-                    if wflow.dataReplacement:
-                        self.cleanupStorage(wflow.getName())
                     # then create a document in ReqMgr Aux DB
                     self.logger.info("Transfer requests successful for %s. Summary: %s",
                                      wflow.getName(), pformat(transfers))
                     if self.createTransferDoc(wflow.getName(), transfers):
                         self.logger.info("Transfer document successfully created in CouchDB for: %s", wflow.getName())
-                        # then move this request to staging status
-                        self.change(wflow.getName(), 'staging', self.__class__.__name__)
+                        # then move this request to staging status but only if we did't do data replacement
+                        if not wflow.dataReplacement:
+                            self.change(wflow.getName(), 'staging', self.__class__.__name__)
                         counterSuccessRequests += 1
                     else:
                         counterFailedRequests += 1
                         self.alertTransferCouchDBError(wflow.getName())
+                    # clean-up local persistent storage if move operation was successful
+                    if wflow.dataReplacement:
+                        self.cleanupStorage(wflow.getName())
                 else:
                     counterFailedRequests += 1
             # it can go slightly beyond the limit. It's evaluated for every slice
@@ -522,9 +521,10 @@ class MSTransferor(MSCore):
                 # new replication rule, otherwise we'll move replication rule
                 if wflow.dataReplacement:
                     rids = self.getRuleIdsFromDoc(wflow.getName())
+                    self.logger.info("Going to move %s rules for workflow: %s", len(rids), wflow.getName())
                     for rid in rids:
-                        # the moveReplcationRule will raise different exceptions
-                        # if move operation is not normal
+                        # the self.rucio.moveReplicationRule may raise different exceptions
+                        # based on different outcome of the operation
                         res = self.rucio.moveReplicationRule(rid, rseExpr, self.quotaAccount)
                 else:
                     res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
@@ -724,8 +724,7 @@ class MSTransferor(MSCore):
     def updateSites(self, rec):
         """
         Update sites API provides asynchronous update of site list information
-        :param rec: JSON payload with the following data structures:
-                    {'workflow': <wflow name>, 'SiteWhiteList' ['T1', ...], 'SiteBlackList': ['T2',...]}
+        :param rec: JSON payload with the following data structures: {'workflow': <wflow name>}
         :return: either empty list (no errors) or list of errors
         """
         # preserve provided payload to local file system
@@ -747,6 +746,7 @@ class MSTransferor(MSCore):
             fname = '{}/{}'.format(self.storage, wflowName)
             with open(fname, 'w', encoding="utf-8"):
                 # we perform touch operation on file system, i.e. create empty file
+                self.logger.info("for workflow %s add entry to persistent storage", wflowName)
                 os.utime(fname, None)
             return 'ok'
         except Exception as exp:
@@ -762,6 +762,7 @@ class MSTransferor(MSCore):
         """
         fname = '{}/{}'.format(self.storage, wflow.getName())
         if os.path.exists(fname):
+            self.logger.info("for workflow %s will perform data replacement", wflow.getName())
             wflow.dataReplacement = True
 
     def cleanupStorage(self, wflowName):
@@ -772,4 +773,5 @@ class MSTransferor(MSCore):
         """
         fname = '{}/{}'.format(self.storage, wflowName)
         if os.path.exists(fname):
+            self.logger.info("for workflow %s cleanup persistent storage entry", wflowName)
             os.remove(fname)

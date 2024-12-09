@@ -408,7 +408,8 @@ class MSManager(object):
                 # this is POST request to get data for a given JSON query
                 res = self.msPileup.queryDatabase(doc)
         elif 'transferor' in self.services:
-            res = self.msTransferor.updateSites(doc)
+            if 'workflow' in doc:
+                res = self.msTransferor.updateSites(doc)
         return res
 
     def update(self, doc):

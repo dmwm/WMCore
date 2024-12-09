@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#pylint: disable=W0212
+# pylint: disable=W0212
 """
 File       : TokenManager.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
@@ -41,7 +41,7 @@ def readToken(name=None):
     """
     if name and os.path.exists(name):
         token = None
-        with open(name, 'r', encoding='utf-8') as istream:
+        with open(name, "r", encoding="utf-8") as istream:
             token = istream.read()
         return token
     if name:
@@ -49,7 +49,11 @@ def readToken(name=None):
     return os.environ.get("IAM_TOKEN")
 
 
-def tokenData(token, url="https://cms-auth.web.cern.ch/jwk", audUrl="https://wlcg.cern.ch/jwt/v1/any"):
+def tokenData(
+    token,
+    url="https://cms-auth.web.cern.ch/jwk",
+    audUrl="https://wlcg.cern.ch/jwt/v1/any",
+):
     """
     inspect and extract token data
     :param token: token string
@@ -64,14 +68,14 @@ def tokenData(token, url="https://cms-auth.web.cern.ch/jwk", audUrl="https://wlc
     signingKey = jwksClient.get_signing_key_from_jwt(token)
     key = signingKey.key
     headers = jwt.get_unverified_header(token)
-    alg = headers.get('alg', 'RS256')
+    alg = headers.get("alg", "RS256")
     data = jwt.decode(
         token,
         key,
         algorithms=[alg],
         audience=audUrl,
         options={"verify_exp": True},
-        )
+    )
     return data
 
 
@@ -84,22 +88,24 @@ def isValidToken(token):
     """
     tokenDict = {}
     tokenDict = tokenData(token)
-    exp = tokenDict.get('exp', 0)  # expire, seconds since epoch
+    exp = tokenDict.get("exp", 0)  # expire, seconds since epoch
     if not exp or exp < time.time():
         return False
     return True
 
 
-class TokenManager():
+class TokenManager:
     """
     TokenManager class handles IAM tokens
     """
 
-    def __init__(self,
-                 name=None,
-                 url="https://cms-auth.web.cern.ch/jwk",
-                 audUrl="https://wlcg.cern.ch/jwt/v1/any",
-                 logger=None):
+    def __init__(
+        self,
+        name=None,
+        url="https://cms-auth.web.cern.ch/jwk",
+        audUrl="https://wlcg.cern.ch/jwt/v1/any",
+        logger=None,
+    ):
         """
         Token manager reads IAM tokens either from file or env.
         It caches token along with expiration timestamp.
@@ -133,7 +139,7 @@ class TokenManager():
         except Exception as exc:
             self.logger.exception(str(exc))
             raise
-        self.expire = tokenDict.get('exp', 0)
+        self.expire = tokenDict.get("exp", 0)
         return self.token
 
     def getLifetime(self):

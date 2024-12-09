@@ -4,6 +4,7 @@ from builtins import str, map
 import collections
 from itertools import islice, chain, groupby
 
+
 def grouper(iterable, n):
     """
     :param iterable: List of other iterable to slice
@@ -27,7 +28,7 @@ def getChunk(arr, step):
     :return: generator, set of slices with number of entries equal to step of iteration
     """
     for i in range(0, len(arr), step):
-        yield arr[i:i + step]
+        yield arr[i : i + step]
 
 
 def flattenList(doubleList):
@@ -50,13 +51,14 @@ def nestedDictUpdate(d, u):
             d[k] = u[k]
     return d
 
+
 def convertFromUnicodeToBytes(data):
     """
     code fram
     http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
     """
     if isinstance(data, str):
-        return data.encode('utf-8')
+        return data.encode("utf-8")
     elif isinstance(data, collections.Mapping):
         return dict(list(map(convertFromUnicodeToBytes, list(data.items()))))
     elif isinstance(data, collections.Iterable):

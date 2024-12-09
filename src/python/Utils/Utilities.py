@@ -11,19 +11,21 @@ import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
 
+
 def lowerCmsHeaders(headers):
     """
     Lower CMS headers in provided header's dict. The WMCore Authentication
     code check only cms headers in lower case, e.g. cms-xxx-yyy.
     """
     lheaders = {}
-    for hkey, hval in list(headers.items()): # perform lower-case
+    for hkey, hval in list(headers.items()):  # perform lower-case
         # lower header keys since we check lower-case in headers
-        if hkey.startswith('Cms-') or hkey.startswith('CMS-'):
+        if hkey.startswith("Cms-") or hkey.startswith("CMS-"):
             lheaders[hkey.lower()] = hval
         else:
             lheaders[hkey] = hval
     return lheaders
+
 
 def makeList(stringList):
     """
@@ -36,10 +38,10 @@ def makeList(stringList):
     if isinstance(stringList, list):
         return stringList
     if isinstance(stringList, str):
-        toks = stringList.lstrip(' [').rstrip(' ]').split(',')
-        if toks == ['']:
+        toks = stringList.lstrip(" [").rstrip(" ]").split(",")
+        if toks == [""]:
             return []
-        return [str(tok.strip(' \'"')) for tok in toks]
+        return [str(tok.strip(" '\"")) for tok in toks]
     raise ValueError("Can't convert to list %s" % stringList)
 
 
@@ -98,10 +100,10 @@ def diskUse():
     output = decodeBytesToUnicode(output).split("\n")
     for x in output:
         split = x.split()
-        if split != [] and split[0] != 'Filesystem':
-            diskPercent.append({'filesystem': split[0],
-                                'mounted':    split[5], 
-                                'percent':    split[4]})
+        if split != [] and split[0] != "Filesystem":
+            diskPercent.append(
+                {"filesystem": split[0], "mounted": split[5], "percent": split[4]}
+            )
 
     return diskPercent
 
@@ -112,7 +114,7 @@ def numberCouchProcess():
     """
     ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
     process = ps.communicate()[0]
-    process = decodeBytesToUnicode(process).count('couchjs')
+    process = decodeBytesToUnicode(process).count("couchjs")
 
     return process
 
@@ -132,7 +134,9 @@ def rootUrlJoin(base, extend):
     return None
 
 
-def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndicator=" (...)"):
+def zipEncodeStr(
+    message, maxLen=5120, compressLevel=9, steps=100, truncateIndicator=" (...)"
+):
     """
     _zipEncodeStr_
     Utility to zip a string and encode it.
@@ -146,7 +150,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     if len(encodedStr) < maxLen or maxLen == -1:
         return encodedStr
 
-    compressRate = 1. * len(encodedStr) / len(base64.b64encode(message))
+    compressRate = 1.0 * len(encodedStr) / len(base64.b64encode(message))
 
     # Estimate new length for message zip/encoded version
     # to be less than maxLen.
@@ -160,7 +164,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     # If new length is not short enough, truncate
     # recursively by steps
     while len(encodedStr) > maxLen:
-        message = message[:-steps - len(truncateIndicator)] + truncateIndicator
+        message = message[: -steps - len(truncateIndicator)] + truncateIndicator
         encodedStr = zipEncodeStr(message, maxLen=-1)
 
     return encodedStr
@@ -183,7 +187,7 @@ def getSize(obj):
     BLACKLIST = type, ModuleType, FunctionType
 
     if isinstance(obj, BLACKLIST):
-        raise TypeError('getSize() does not take argument of type: '+ str(type(obj)))
+        raise TypeError("getSize() does not take argument of type: " + str(type(obj)))
     seen_ids = set()
     size = 0
     objects = [obj]
@@ -229,11 +233,12 @@ def decodeBytesToUnicode(value, errors="strict"):
         return value.decode("utf-8", errors)
     return value
 
+
 def decodeBytesToUnicodeConditional(value, errors="ignore", condition=True):
     """
     if *condition*, then call decodeBytesToUnicode(*value*, *errors*),
     else return *value*
-    
+
     This may be useful when we want to conditionally apply decodeBytesToUnicode,
     maintaining brevity.
 
@@ -249,6 +254,7 @@ def decodeBytesToUnicodeConditional(value, errors="ignore", condition=True):
     if condition:
         return decodeBytesToUnicode(value, errors)
     return value
+
 
 def encodeUnicodeToBytes(value, errors="strict"):
     """
@@ -269,7 +275,7 @@ def encodeUnicodeToBytes(value, errors="strict"):
     - "errors" can be: "strict", "ignore", "replace", "xmlcharrefreplace"
     - ref: https://docs.python.org/2/howto/unicode.html#the-unicode-type
     py3:
-    - "errors" can be: "strict", "ignore", "replace", "backslashreplace", 
+    - "errors" can be: "strict", "ignore", "replace", "backslashreplace",
       "xmlcharrefreplace", "namereplace"
     - ref: https://docs.python.org/3/howto/unicode.html#the-string-type
     """
@@ -277,11 +283,12 @@ def encodeUnicodeToBytes(value, errors="strict"):
         return value.encode("utf-8", errors)
     return value
 
+
 def encodeUnicodeToBytesConditional(value, errors="ignore", condition=True):
     """
     if *condition*, then call encodeUnicodeToBytes(*value*, *errors*),
     else return *value*
-    
+
     This may be useful when we want to conditionally apply encodeUnicodeToBytes,
     maintaining brevity.
 

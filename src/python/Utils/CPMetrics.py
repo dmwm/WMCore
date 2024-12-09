@@ -203,18 +203,19 @@ def promMetrics(data, exporter):
         metrics = json.loads(metrics)
     # the following keys will be skipped
     skip = [
-        'cherrypy_app_enabled',
-        'cherrypy_http_server_bind_address',
-        'cherrypy_app_requests',
-        'cherrypy_app_server_version',
-        'cherrypy_http_server_enabled']
+        "cherrypy_app_enabled",
+        "cherrypy_http_server_bind_address",
+        "cherrypy_app_requests",
+        "cherrypy_app_server_version",
+        "cherrypy_http_server_enabled",
+    ]
     # our prometheus data representation
     pdata = ""
     for key, val in list(metrics.items()):
         if key in skip:
             continue
         # add exporter name as a prefix for each key
-        key = '{}_{}'.format(exporter, key)
+        key = "{}_{}".format(exporter, key)
         mhelp = "# HELP {}\n".format(key)
         if isinstance(val, list):
             mtype = "# TYPE {} histogram\n".format(key)
@@ -224,7 +225,7 @@ def promMetrics(data, exporter):
                 entries = []
                 for kkk, vvv in list(wdict.items()):
                     entries.append('{}="{}"'.format(kkk, vvv))
-                entry = "{%s}" % ','.join(entries)
+                entry = "{%s}" % ",".join(entries)
                 pdata += "{}{} 1\n".format(key, entry)
         elif isinstance(val, (str, tuple)):
             continue
@@ -245,18 +246,23 @@ def flattenStats(cpdata):
         cpdata = json.loads(decodeBytesToUnicode(cpdata))
     data = {}
     for cpKey, cpVal in list(cpdata.items()):
-        if cpKey.lower().find('cherrypy') != -1:
+        if cpKey.lower().find("cherrypy") != -1:
             for cpnKey, cpnVal in list(cpVal.items()):
-                nkey = 'cherrypy_app_%s' % cpnKey
+                nkey = "cherrypy_app_%s" % cpnKey
                 nkey = nkey.lower().replace(" ", "_").replace("/", "_")
                 data[nkey] = cpnVal
-        if cpKey.lower().find('cheroot') != -1:
+        if cpKey.lower().find("cheroot") != -1:
             for cpnKey, cpnVal in list(cpVal.items()):
-                if cpnKey == 'Worker Threads':
+                if cpnKey == "Worker Threads":
                     wdata = []
                     for workerKey, threadValue in list(cpnVal.items()):
-                        workerKey = workerKey.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
-                        threadValue['thread_name'] = workerKey
+                        workerKey = (
+                            workerKey.lower()
+                            .replace(" ", "_")
+                            .replace("/", "_")
+                            .replace("-", "_")
+                        )
+                        threadValue["thread_name"] = workerKey
                         nval = {}
                         for tkey, tval in list(threadValue.items()):
                             tkey = tkey.lower().replace(" ", "_").replace("/", "_")
@@ -264,7 +270,7 @@ def flattenStats(cpdata):
                         wdata.append(nval)
                     data["cherrypy_server_worker_threads"] = wdata
                 else:
-                    nkey = 'cherrypy_http_server_%s' % cpnKey
+                    nkey = "cherrypy_http_server_%s" % cpnKey
                     nkey = nkey.lower().replace(" ", "_").replace("/", "_")
                     data[nkey] = cpnVal
     return data

@@ -25,7 +25,9 @@ def encodeTimestamp(secs):
     :return: time string in GMT timezone representation
     """
     if not isinstance(secs, (int, float)):
-        raise Exception("Wrong input, should be seconds since epoch either int or float value")
+        raise Exception(
+            "Wrong input, should be seconds since epoch either int or float value"
+        )
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(int(secs)))
 
 
@@ -37,7 +39,9 @@ def decodeTimestamp(timeString):
     :return: seconds since ecouch in GMT timezone
     """
     if not isinstance(timeString, str):
-        raise Exception("Wrong input, should be time string in GMT timezone representation")
+        raise Exception(
+            "Wrong input, should be time string in GMT timezone representation"
+        )
     return calendar.timegm(time.strptime(timeString, "%Y-%m-%dT%H:%M:%SZ"))
 
 
@@ -72,7 +76,7 @@ class CodeTimer(object):
         do_something()
     """
 
-    def __init__(self, label='The function', logger=None):
+    def __init__(self, label="The function", logger=None):
         self.start = time.time()
         self.label = label
         self.logger = logger or logging.getLogger()
@@ -122,9 +126,17 @@ class LocalTimezone(tzinfo):
         return time.tzname[self._isdst(dt)]
 
     def _isdst(self, dt):
-        tt = (dt.year, dt.month, dt.day,
-              dt.hour, dt.minute, dt.second,
-              dt.weekday(), 0, 0)
+        tt = (
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt.weekday(),
+            0,
+            0,
+        )
         stamp = time.mktime(tt)
         tt = time.localtime(stamp)
         return tt.tm_isdst > 0

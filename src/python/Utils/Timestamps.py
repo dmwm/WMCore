@@ -19,7 +19,7 @@ import sys
 
 
 # script options
-options = {"reportFile=": "", "wmJobStart=": '', "wmJobEnd=": ''}
+options = {"reportFile=": "", "wmJobStart=": "", "wmJobEnd=": ""}
 
 
 def addTimestampMetrics(config, wmJobStart, wmJobEnd):
@@ -30,7 +30,7 @@ def addTimestampMetrics(config, wmJobStart, wmJobEnd):
     :param wmJobStart: start time of WM job in seconds
     :param wmJobEnd: end time of WM job in seconds
     """
-    wmTiming = config.section_('WMTiming')
+    wmTiming = config.section_("WMTiming")
     wmTiming.WMJobStart = wmJobStart
     wmTiming.WMJobEnd = wmJobEnd
     wmTiming.WMTotalWallClockTime = wmJobEnd - wmJobStart
@@ -63,7 +63,7 @@ def main():
 
     # read content of given FJR report file
     data = {}
-    with open(reportFile, 'rb') as istream:
+    with open(reportFile, "rb") as istream:
         data = pickle.load(istream)
 
     # adjust FJR data with provided metrics
@@ -72,7 +72,7 @@ def main():
     # write content of FJR back to report file
     reportOutFile = reportFile + ".new"
     msg = f"Adding wmJobTime metric to {reportFile}"
-    with open(reportOutFile, 'wb') as ostream:
+    with open(reportOutFile, "wb") as ostream:
         logging.info(msg)
         pickle.dump(data, ostream)
 
@@ -82,5 +82,5 @@ def main():
         os.rename(reportOutFile, reportFile)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

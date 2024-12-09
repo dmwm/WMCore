@@ -26,8 +26,7 @@ from WMCore.Cache.GenericDataCache import GenericDataCache, MemoryCacheStruct
 
 
 def workqueue_stat_validation(request_args):
-    stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
-    return set(request_args.keys()) == set(stat_keys)
+    return set(request_args.keys()) == set(ALLOWED_STAT_KEYS)
 
 
 def _validate_request_allowed_args(reqArgs, newReqArgs):
@@ -106,7 +105,9 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     else:
         request = reqmgr_db_service.getRequestByNames(request_name)
         request = request[request_name]
+        workload.setStatus(request['RequestStatus'])
         reqArgsDiff = _validate_request_allowed_args(request, request_args)
+        workload.validateArgumentsPartialUpdate(reqArgsDiff)
         validate_request_priority(reqArgsDiff)
         return workload, reqArgsDiff
 

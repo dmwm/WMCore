@@ -69,7 +69,8 @@ class MSTransferorGenericError(MSTransferorError):
     """
     def __init__(self, data, msg=""):
         super().__init__(data, msg)
-        msg = self.msg if self.msg else "generic error"
+        if not msg:
+            msg = "generic error"
         self.assign(msg=msg, code=MSPILEUP_GENERIC_ERROR)
 
 
@@ -79,5 +80,6 @@ class MSTransferorStorageError(MSTransferorError):
     """
     def __init__(self, data, msg=""):
         super().__init__(data, msg)
-        msg = self.msg if self.msg else "storage error"
+        if not msg:
+            msg = "storage error"
         self.assign(msg=msg, code=MSPILEUP_STORAGE_ERROR)

@@ -9,6 +9,9 @@ from __future__ import print_function
 
 from builtins import next, range
 from future.utils import viewitems, viewvalues
+from collections  import namedtuple
+import inspect
+
 
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
@@ -58,6 +61,16 @@ class WMWorkloadException(WMException):
     """
     pass
 
+class WMWorkloadUnhandledException(WMException):
+    """
+    _WMWorkloadUnhandledException_
+
+    Exceptions raised by the Workload during filling
+    """
+    pass
+
+
+setterTuple = namedtuple('SetterTuple', ['reqArg', 'setterFunc', 'setterSignature'])
 
 class WMWorkloadHelper(PersistencyHelper):
     """
@@ -68,6 +81,57 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def __init__(self, wmWorkload=None):
         self.data = wmWorkload
+        self.settersMap = {}
+
+    def updateWorkloadArgs(self, reqArgs):
+        """
+        Method to take a dictionary of arguments of the type:
+        {reqArg1: value,
+         reqArg2: value,
+         ...}
+        and update the workload by a predefined map of reqArg to setter methods.
+        :param reqArgs: A Dictionary of request arguments to be updated
+        :return:        Nothing, Raises an error of type WMWorkloadException if
+                        fails to apply the proper setter method
+        """
+        # NOTE: So far we support only a single argument setter methods, like
+        #       setSiteWhitelist or setPriority. This may change in the future,
+        #       but it will require a change in the logic of how we validate and
+        #       call the proper setter methods bellow.
+
+        # populate the current instance settersMap
+        self.settersMap['RequestPriority'] = setterTuple('RequestPriority', self.setPriority, inspect.signature(self.setPriority))
+        self.settersMap['SiteBlacklist'] = setterTuple('SiteBlacklist', self.setSiteBlacklist, inspect.signature(self.setSiteBlacklist))
+        self.settersMap['SiteWhitelist'] = setterTuple('SiteWhitelist', self.setSiteWhitelist, inspect.signature(self.setSiteWhitelist))
+
+        reqArgsNothandled = []
+        # First validate if we can properly call the setter function given the reqArgs passed.
+        for reqArg, argValue in reqArgs.items():
+            if reqArg not in self.settersMap:
+                reqArgsNothandled.append(reqArg)
+                continue
+            try:
+                self.settersMap[reqArg].setterSignature.bind(argValue)
+            except TypeError as ex:
+                msg = f"Setter's method signature does not match the method calls we currently support: Error: req{str(ex)}"
+                raise WMWorkloadException(msg) from None
+
+        if reqArgsNothandled:
+            msg = f"Unsupported or missing setter method for updating request arguments: {reqArgsNothandled}."
+            raise WMWorkloadUnhandledException(msg) from None
+
+        # Now go through the reqArg again and call every setter method according to the map
+        for reqArg, argValue in reqArgs.items():
+            try:
+                self.settersMap[reqArg].setterFunc(argValue)
+            except Exception as ex:
+                currFrame = inspect.currentframe()
+                argsInfo = inspect.getargvalues(currFrame)
+                argVals = {arg: argsInfo.locals.get(arg) for arg in argsInfo.args}
+                msg = f"Failure while calling setter method {self.settersMap[reqArg].setterFunc.__name__} "
+                msg += f"With arguments: {argVals}"
+                msg += f"Full exception string: {str(ex)}"
+                raise WMWorkloadException(msg) from None
 
     def setSpecUrl(self, url):
         self.data.persistency.specUrl = sanitizeURL(url)["url"]
@@ -1176,6 +1240,25 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return getattr(self.data.request.schema, "DbsUrl")
 
+    def setStatus(self, status):
+        """
+        _setStatus_
+
+        Set the status of the workflow
+        Optional
+        :param: Request status
+        """
+        self.data.request.status = status
+        return
+
+    def getStatus(self):
+        """
+        _getStatus_
+
+        Get the Status for the workflow
+        """
+        return getattr(self.data.request, 'status', None)
+
     def setCampaign(self, campaign):
         """
         _setCampaign_
@@ -1971,6 +2054,26 @@ class WMWorkloadHelper(PersistencyHelper):
         validateArgumentsUpdate(schema, argumentDefinition)
         return
 
+    def validateArgumentsPartialUpdate(self, schema):
+        """
+        Validates the provided parameters schema for workflow arguments update, using
+        the arguments definitions for assignment as provided at StdBase.getWorkloadAssignArgs
+        :param schema: Workflow arguments schema to be validated - Must be a properly
+                       defined dictionary of {arg: value} pairs.
+        :return:       Nothing. Raises proper exceptions when argument validation fails
+
+        NOTE: In order to avoid full schema validation and enforcing mandatory arguments,
+              we set the optionKey argument for this call to NONE. This way it is ignored
+              during the next step of the validation process (namely at
+              WMWorkloadTools._validateArgumentOptions), and all of the so provided
+              arguments in the schema are considered optional, but nonetheless they
+              still go through the full value validation process.
+        """
+        specClass = loadSpecClassByType(self.getRequestType())
+        argumentDefinition = specClass.getWorkloadAssignArgs()
+        validateArgumentsUpdate(schema, argumentDefinition, optionKey=None)
+        return
+
     def updateArguments(self, kwargs):
         """
         set up all the argument related to assigning request.
@@ -2096,6 +2199,7 @@ class WMWorkload(ConfigSection):
         # //
         self.section_("request")
         self.request.priority = None  # what should be the default value
+        self.request.status = None
         #  //
         # // owner related information
         # //

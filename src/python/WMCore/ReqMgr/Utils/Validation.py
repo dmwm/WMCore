@@ -26,8 +26,7 @@ from WMCore.Cache.GenericDataCache import GenericDataCache, MemoryCacheStruct
 
 
 def workqueue_stat_validation(request_args):
-    stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
-    return set(request_args.keys()) == set(stat_keys)
+    return set(request_args.keys()) == set(ALLOWED_STAT_KEYS)
 
 
 def _validate_request_allowed_args(reqArgs, newReqArgs):
@@ -106,6 +105,13 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     else:
         request = reqmgr_db_service.getRequestByNames(request_name)
         request = request[request_name]
+        workload.setStatus(request['RequestStatus'])
+        # NOTE: Even though later we return only the arguments which have changed during the call,
+        #       we first need to validate the full set of arguments as provided  by the user, because
+        #       the combination matters. e.g. Adding a site to SiteBlacklist, while keeping it in the
+        #       SiteWhitelist as well. In such a case only the SiteBlacklist parameter will enter the
+        #       list of changed  arguments - reqargsDiff, hence the validation would miss the collision
+        workload.validateArgumentsPartialUpdate(request_args)
         reqArgsDiff = _validate_request_allowed_args(request, request_args)
         validate_request_priority(reqArgsDiff)
         return workload, reqArgsDiff

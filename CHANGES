@@ -1,3 +1,8 @@
+2.3.7.1 to 2.3.7.2:
+  - Adopt MSPileup data into PileupFetcher (Alan Malta Rodrigues) #12202
+  - Fix str to bytes comparisons in checkProxy.py (Todor Ivanov) #12175
+
+
 2.3.7 to 2.3.7.1:
   - Update workqueue selector filter to no longer use ParentQueueUrl (Alan Malta Rodrigues) #12154
   - Move filter replication json document under etc/ (Alan Malta Rodrigues) #12154

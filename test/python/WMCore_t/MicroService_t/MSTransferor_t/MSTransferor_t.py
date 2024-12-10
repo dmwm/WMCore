@@ -173,7 +173,7 @@ class TransferorTest(EmulatedUnitTestCase):
         # now let's test transferor error
         self.msTransferor.storage = '/bla'
         res = self.msTransferor.updateSites(rec)
-        err = MSTransferorStorageError(rec, 'test error')
+        err = MSTransferorStorageError(rec)
         self.assertEqual(res, [err.error()])
 
 

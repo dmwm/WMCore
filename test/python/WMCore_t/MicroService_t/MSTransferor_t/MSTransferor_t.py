@@ -14,6 +14,7 @@ import unittest
 from Utils.PythonVersion import PY3
 from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMCore.MicroService.MSTransferor.MSTransferorError import MSTransferorStorageError
 from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
 
 

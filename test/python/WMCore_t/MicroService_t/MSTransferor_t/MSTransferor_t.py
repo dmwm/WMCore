@@ -150,8 +150,7 @@ class TransferorTest(EmulatedUnitTestCase):
         """
         # use default storage and check save/read operations
         wflow = 'testWorkflow'
-        rec = {'workflow': wflow}
-        status = self.msTransferor.updateStorage(wflow, rec)
+        status = self.msTransferor.updateStorage(wflow)
         self.assertEqual(status, 'ok')
         wflowObject = Workflow(wflow, {})
         self.msTransferor.checkDataReplacement(wflowObject)

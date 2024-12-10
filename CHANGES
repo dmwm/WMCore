@@ -1,3 +1,7 @@
+2.3.7.2 to 2.3.7.3:
+  - Convert reusable to non-reusable GitHub Action - wmagent branch (Alan Malta Rodrigues) #12203
+
+
 2.3.7.1 to 2.3.7.2:
   - Adopt MSPileup data into PileupFetcher (Alan Malta Rodrigues) #12202
   - Fix str to bytes comparisons in checkProxy.py (Todor Ivanov) #12175

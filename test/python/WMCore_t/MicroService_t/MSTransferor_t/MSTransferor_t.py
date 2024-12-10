@@ -14,6 +14,7 @@ import unittest
 from Utils.PythonVersion import PY3
 from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMCore.MicroService.MSTransferor.DataStructs.Workflow import Workflow
 
 
 def getTestFile(partialPath):
@@ -141,18 +142,19 @@ class TransferorTest(EmulatedUnitTestCase):
         for idx in range(len(resp)):
             self.assertItemsEqual(resp[idx], expectedRes[idx])
 
-    def testReadSaveData(self):
+    def testUpdateStorage(self):
         """
-        Test the saveData and readData methods. We should be able to save and read
+        Test updateStorage method. We should be able to save and read
         JSON objects to persistent storage of MSTransferor.
         """
         # use default storage and check save/read operations
-        wflow = 'wflowTest'
-        rec = {'data': [1, 2, 3]}
-        status = self.msTransferor.saveData(wflow, rec)
+        wflow = 'testWorkflow'
+        rec = {'workflow': wflow}
+        status = self.msTransferor.updateStorage(wflow, rec)
         self.assertEqual(status, 'ok')
-        res = self.msTransferor.readData(wflow)
-        self.assertEqual(rec, res)
+        wflowObject = Workflow(wflow, {})
+        self.msTransferor.checkDataReplacement(wflowObject)
+        self.assertEqual(wflow.dataReplacement, True)
 
         # used fake storage and check that proper exception is thrown
         self.msTransferor.storage = '/bla'
@@ -163,8 +165,7 @@ class TransferorTest(EmulatedUnitTestCase):
         """
         Test the updateSites method.
         """
-        wflow = 'wflowTest'
-        rec = {'data': [1, 2, 3]}
+        rec = {'workflow': 'testWorkflow'}
         res = self.msTransferor.updateSites(rec)
         self.assertEqual(res, [])
 

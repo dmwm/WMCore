@@ -152,7 +152,7 @@ class TransferorTest(EmulatedUnitTestCase):
         wflow = 'testWorkflow'
         status = self.msTransferor.updateStorage(wflow)
         self.assertEqual(status, 'ok')
-        wflowObject = Workflow(wflow, {})
+        wflowObject = Workflow(wflow, {'DbsUrl': 'https://cmsweb-testbed.cern.ch', 'RequestType': 'StoreResults'})
         self.msTransferor.checkDataReplacement(wflowObject)
         self.assertEqual(wflow.dataReplacement, True)
 

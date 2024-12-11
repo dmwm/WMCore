@@ -1,3 +1,13 @@
+2.3.8rc6 to 2.3.8rc7:
+  - Fix MSPileup and Rucio emulators (Alan Malta Rodrigues) #12197
+  - Adopt MSPileup data into PileupFetcher (Alan Malta Rodrigues) #12197
+  - New module to manage site list updates (Valentin Kuznetsov) #12123
+  - Add back non running components to restartComponent (Todor Ivanov) #12193
+  - Change the way to estimate running components (Todor Ivanov) #12189
+  - Fix T1 site cores ResourceControl logic (Alan Malta Rodrigues) #12176
+  - Remove unused JSON encoding choice keywords in RequestDBWriter module (Fredrik) #12141
+
+
 2.3.8rc5 to 2.3.8rc6:
   - Few minor environment fixes at deploy time. (Todor Ivanov) #12183
   - Properly run restartComponent.sh avoiding hardwired paths (Todor Ivanov) #12185

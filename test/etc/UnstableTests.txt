@@ -27,5 +27,7 @@ WMCore_t.MicroService_t.MSRuleCleaner_t.MSRuleCleanerWflow_t.MSRuleCleanerWflowT
 WMCore_t.Services_t.LogDB_t.LogDB_t.LogDBTest:test_heartbeat
 WMCore_t.Services_t.Requests_t.testRepeatCalls:testRecoveryFromConnRefused_with_pycur
 WMCore_t.Services_t.Requests_t.testRepeatCalls:test10Calls
+WMCore_t.Services_t.Rucio_t.RucioUtils_t.RucioUtilsTest:testWeightedChoice
 WMCore_t.WMBS_t.JobSplitting_t.RunBased_t.EventBasedTest:testMultipleRunsCombine
 WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testPileupData
+WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testThrottling

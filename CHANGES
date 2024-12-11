@@ -1,3 +1,7 @@
+2.3.7.3 to 2.3.7.4:
+  - Few minor environment fixes at deploy time. (Todor Ivanov) #12205
+
+
 2.3.7.2 to 2.3.7.3:
   - Convert reusable to non-reusable GitHub Action - wmagent branch (Alan Malta Rodrigues) #12203
 

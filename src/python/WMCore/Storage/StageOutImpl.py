@@ -212,7 +212,7 @@ class StageOutImpl:
         # //
         # // Create the command to be used.
         # //
-        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
+        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
         # //
         # // Run the command
         # //
@@ -220,8 +220,9 @@ class StageOutImpl:
         stageOutEx = None  # variable to store the possible StageOutError
         for retryCount in range(self.numRetries + 1):
             try:
-                logging.info("Running the stage out (attempt %d)...", retryCount + 1)
+                logging.info("Running the stage out with tokens (attempt %d)...", retryCount + 1)
                 self.executeCommand(command)
+                logging.info(f"{command}")
                 logging.info("Stage-out succeeded with the current environment.")
                 break
 

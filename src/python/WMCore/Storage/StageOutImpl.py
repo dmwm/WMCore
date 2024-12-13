@@ -222,7 +222,7 @@ class StageOutImpl:
             try:
                 logging.info("Running the stage out with tokens (attempt %d)...", retryCount + 1)
                 self.executeCommand(command)
-                logging.info(f"{command}")
+                logging.info("Command to run: %s", command)
                 logging.info("Stage-out succeeded with the current environment.")
                 break
 

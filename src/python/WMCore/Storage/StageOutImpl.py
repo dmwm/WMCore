@@ -212,7 +212,10 @@ class StageOutImpl:
         # //
         # // Create the command to be used.
         # //
-        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
+        try:
+            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
+        except:
+            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
         # //
         # // Run the command
         # //

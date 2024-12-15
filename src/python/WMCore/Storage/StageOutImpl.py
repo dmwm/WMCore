@@ -214,7 +214,8 @@ class StageOutImpl:
         # //
         try:
             command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
-        except:
+        except TypeError as ex:
+            logging.warning("Falling back to default createStageOutCommand due to: %s", str(ex))
             command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
         # //
         # // Run the command

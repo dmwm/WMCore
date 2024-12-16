@@ -1,3 +1,6 @@
+2.3.8rc8 to 2.3.8rc9:
+  - Last build failed to contact PyPi, so trigger a new build
+
 2.3.8rc7 to 2.3.8rc8:
   - Add new POST API for transferor data-service (Valentin Kuznetsov) #12155
   - Fixes 11777: Adds two tests to UnstableTests (Dennis Lee) #12206

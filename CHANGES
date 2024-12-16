@@ -1,3 +1,9 @@
+2.3.8rc7 to 2.3.8rc8:
+  - Add new POST API for transferor data-service (Valentin Kuznetsov) #12155
+  - Fixes 11777: Adds two tests to UnstableTests (Dennis Lee) #12206
+  - Fix WorkQueue broken reference to rejectedWork and badWork (Alan Malta Rodrigues) #12204
+
+
 2.3.8rc6 to 2.3.8rc7:
   - Fix MSPileup and Rucio emulators (Alan Malta Rodrigues) #12197
   - Adopt MSPileup data into PileupFetcher (Alan Malta Rodrigues) #12197

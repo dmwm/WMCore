@@ -16,7 +16,7 @@ from copy import deepcopy
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
-                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound)
+                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound, RuleReplaceFailed)
 from Utils.MemoryCache import MemoryCache
 from Utils.IteratorTools import grouper
 from WMCore.Services.Rucio.RucioUtils import (validateMetaData, weightedChoice,
@@ -453,6 +453,30 @@ class Rucio(object):
         except Exception as ex:
             self.logger.error("Exception closing container/block: %s. Error: %s", name, str(ex))
         return response
+
+    def moveReplicationRule(self, ruleId, rseExpression, account):
+        """
+        Perform move operation for provided rule id and rse expression
+        :param ruleId: rule id
+        :param rseExpression: rse expression
+        :param account: rucio quota account
+        :return: it returns either an empty list or a list with a string id for the rule created
+        Please note, we made return type from this wrapper compatible with createReplicateRule
+        """
+        ruleIds = []
+        try:
+            rid = self.cli.move_replication_rule(ruleId, rseExpression, account)
+            ruleIds.append(rid)
+        except RuleNotFound as ex:
+            msg = "RuleNotFound move DID replication rule. Error: %s" % str(ex)
+            raise WMRucioException(msg) from ex
+        except RuleReplaceFailed as ex:
+            msg = "RuleReplaceFailed move DID replication rule. Error: %s" % str(ex)
+            raise WMRucioException(msg) from ex
+        except Exception as ex:
+            msg = "Unsupported exception from Rucio API. Error: %s" % str(ex)
+            raise WMRucioException(msg) from ex
+        return ruleIds
 
     def createReplicationRule(self, names, rseExpression, scope='cms', copies=1, **kwargs):
         """

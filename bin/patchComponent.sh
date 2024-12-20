@@ -250,7 +250,7 @@ $zeroCodeBase && {
 }
 
 # exit if the user has requested to only zero the code base
-$zeroOnly && exit
+$zeroOnly && {  _warnFilelist; exit ;}
 
 err=0
 echo
@@ -292,8 +292,13 @@ else
     # exit at this stage if the user has requested to do the patch only in one go
     # without a second attempt from master. Restore files to their version at TAG
     $oneGo && {
+        echo WARNING: Restoring all files to their original version at TAG: $currTag
+        echo
+        echo
         _createTestFilesDst $currTag $testFileList
         _zeroCodeBase $currTag $srcFileList
+        echo
+        echo
         echo WARNING: All files have been rolled back to their original version at TAG: $currTag
         _warnFilelist
         exit 1

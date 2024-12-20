@@ -1378,8 +1378,8 @@ class WMWorkloadTest(unittest.TestCase):
         # NOTE: Should not raise any exception
         reqArgs = {'SiteWhitelist': ["T2_CH_CERN", "T0_CH_CERN"], 'SiteBlacklist': ["T1_US_FNAL"]}
         testWorkload.updateWorkloadArgs(reqArgs)
-        self.assertListEqual(testWorkload.getSiteWhitelist(), reqArgs['SiteWhitelist'])
-        self.assertListEqual(testWorkload.getSiteBlacklist(), reqArgs['SiteBlacklist'])
+        self.assertCountEqual(testWorkload.getSiteWhitelist(), reqArgs['SiteWhitelist'])
+        self.assertCountEqual(testWorkload.getSiteBlacklist(), reqArgs['SiteBlacklist'])
 
         # Validate unknown arguments exception (using stat update arguments for the test)
         from WMCore.WMSpec.WMWorkload import WMWorkloadUnhandledException

@@ -12,6 +12,7 @@ usage()
     echo -e "       -z - Only zero the code base to the currently deployed tag for the files changed in the patch - no actual patches will be applied"
     echo -e "       -f - Apply the specified patch file. No multiple files supported. If opt is repeated only the last one will be considered."
     echo -e "       -n - Do not zero the code base neither from TAG nor from Master branch, just apply the patch"
+    echo -e "       -o - One go - Apply the patch only through a single attempt starting from the tag deployed at the destination and avoid the second attempt upon syncing to master."
     echo -e ""
     echo -e "NOTE: We do not support patching from file and patching from command line simultaneously"
     echo -e "       If both provided at the command line patching from command line takes precedence"
@@ -28,8 +29,9 @@ usage()
 # Add default value for zeroOnly option
 zeroOnly=false
 zeroCodeBase=true
+oneGo=false
 extPatchFile=""
-while getopts ":f:znh" opt; do
+while getopts ":f:znoh" opt; do
     case ${opt} in
         f)
             extPatchFile=$OPTARG
@@ -39,6 +41,9 @@ while getopts ":f:znh" opt; do
             ;;
         n)
             zeroCodeBase=false
+            ;;
+        o)
+            oneGo=true
             ;;
         h)
             usage
@@ -195,6 +200,14 @@ _createPatchFiles(){
     done
 }
 
+_warnFilelist(){
+    echo WARNING: Please consider checking the follwoing list of files for eventual code conflicts:
+    for file in $srcFileList $testFileList
+    do
+        echo WARNING: $pythonLibPath/$file
+    done
+}
+
 _createPatchFiles
 
 echo "DEBUG: patchFileList: $patchFileList"
@@ -272,8 +285,19 @@ else
     echo WARNING: between the current PR and the tag deployed at the host/container.
     echo
     echo
-    # exit at this stage if the user has requested  to patch without zeroing the code base
-    $zeroCodeBase || exit
+
+    # exit at this stage if the user has requested to patch without zeroing the code base
+    $zeroCodeBase || { _warnFilelist ; exit 1 ;}
+
+    # exit at this stage if the user has requested to do the patch only in one go
+    # without a second attempt from master. Restore files to their version at TAG
+    $oneGo && {
+        _createTestFilesDst $currTag $testFileList
+        _zeroCodeBase $currTag $srcFileList
+        echo WARNING: All files have been rolled back to their original version at TAG: $currTag
+        _warnFilelist
+        exit 1
+    }
     echo WARNING: TRYING TO START FROM ORIGIN/MASTER BRANCH INSTEAD:
     echo
     echo
@@ -332,12 +356,6 @@ echo
 }
 echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
-echo WARNING: Please consider checking the follwoing list of files for eventual code conflicts:
-for file in $srcFileList $testFileList
-do
-    echo WARNING: $pythonLibPath/$file
-done
-
+_warnFilelist
 
 exit $err

@@ -16,6 +16,7 @@ usage()
     echo -e "       -z - Only zero the code base to the currently deployed tag for the files changed in the patch - no actual patches will be applied"
     echo -e "       -f - Apply the specified patch file. No multiple files supported. If opt is repeated only the last one will be considered."
     echo -e "       -n - Do not zero the code base neither from TAG nor from Master branch, just apply the patch"
+    echo -e "       -o - One go - Apply the patch only through a single attempt starting from the tag deployed at the destination and avoid the second attempt upon syncing to master."
     echo -e ""
     echo -e "NOTE: We do not support patching from file and patching from command line simultaneously"
     echo -e "       If both provided at the command line patching from command line takes precedence"
@@ -34,6 +35,7 @@ currService=""
 currDeployment=""
 zeroOnly=false
 zeroCodeBase=true
+oneGo=false
 extPatchFile=""
 while getopts ":f:p:s:d:znh" opt; do
     case ${opt} in
@@ -54,6 +56,9 @@ while getopts ":f:p:s:d:znh" opt; do
             ;;
         n)
             zeroCodeBase=false
+            ;;
+        o)
+            oneGo=true
             ;;
         h)
             usage
@@ -114,6 +119,7 @@ podCmdActions="which curl && curl https://raw.githubusercontent.com/dmwm/WMCore/
 podCmdOpts=""
 patchFile=""
 $zeroOnly && podCmdOpts="$podCmdOpts -z"
+$oneGo && podCmdOpts="$podCmdOpts -o"
 $zeroCodeBase || podCmdOpts="$podCmdOpts -n"
 
 [[ -n $extPatchFile ]] && { patchFile="/tmp/`basename $extPatchFile`"

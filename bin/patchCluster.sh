@@ -84,6 +84,8 @@ if [ -t 0 ] ; then pipe=false; else pipe=true ; fi
 
 patchList=$*
 
+which kubectl || { echo "ERROR: Missing 'kubectl'. Cannot continue! EXIT!"; exit 1 ;}
+
 currCluster=`kubectl config get-clusters |grep -v NAME`
 nameSpace=dmwm
 
@@ -115,7 +117,7 @@ fi
 # NOTE: We do not support patching from file and patching from command line simultaneously
 #       If both provided at the command line patching from command line takes precedence
 
-podCmdActions="which curl && curl https://raw.githubusercontent.com/dmwm/WMCore/master/bin/patchComponent.sh -o /data/patchComponent.sh && chmod 755 /data/patchComponent.sh "
+podCmdActions="sudo -v && /data/manage help && which curl && curl https://raw.githubusercontent.com/dmwm/WMCore/master/bin/patchComponent.sh -o /data/patchComponent.sh && chmod 755 /data/patchComponent.sh "
 podCmdOpts=""
 patchFile=""
 $zeroOnly && podCmdOpts="$podCmdOpts -z"

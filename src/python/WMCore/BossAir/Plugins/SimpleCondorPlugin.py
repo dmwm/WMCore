@@ -520,8 +520,11 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['Requirements'] = self.reqStr
 
             #ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
+<<<<<<< HEAD
             # Allow oauth based token authentication
             ad['use_oauth_services'] = "cms"
+=======
+>>>>>>> 5f13933e5 (Disabling x509 -- TO REVERT)
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))

@@ -132,8 +132,8 @@ class SimpleCondorPlugin(BasePlugin):
             self.reqStr = None
 
         # x509 proxy handling
-        proxy = Proxy({'logger': myThread.logger})
-        self.x509userproxy = proxy.getProxyFilename()
+        ##proxy = Proxy({'logger': myThread.logger})
+        ##self.x509userproxy = proxy.getProxyFilename()
 
         # These are added now by the condor client
         #self.x509userproxysubject = proxy.getSubject()
@@ -519,7 +519,7 @@ class SimpleCondorPlugin(BasePlugin):
             if self.reqStr is not None:
                 ad['Requirements'] = self.reqStr
 
-            ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
+            #ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))

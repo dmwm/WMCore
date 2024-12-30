@@ -325,9 +325,9 @@ class ResourceControlUpdater(BaseWorkerThread):
         updateIO, updateCPU = False, False
         # if either CPU or IO bound thresholds are different, update local db
         for item in siteTaskSlots:
-            if item['task_type'] in self.tasksCPU and siteTaskSlots[0]['task_pending_slots'] != taskCPUPending:
+            if item['task_type'] in self.tasksCPU and item['task_pending_slots'] != taskCPUPending:
                 updateCPU = True
-            elif item['task_type'] in self.tasksIO and siteTaskSlots[0]['task_pending_slots'] != taskIOPending:
+            elif item['task_type'] in self.tasksIO and item['task_pending_slots'] != taskIOPending:
                 updateIO = True
 
         if updateCPU:

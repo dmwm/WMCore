@@ -1,3 +1,6 @@
+2.3.7.5 to 2.3.7.6:
+  - Build again to recover from a PyPi timeout
+
 2.3.7.4 to 2.3.7.5:
   - Fix comparison of task thresholds in ResourceControlUpdater (Alan Malta Rodrigues) #12215
 

@@ -154,10 +154,13 @@ class GFAL2Impl(StageOutImpl):
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
             echo "BEARER_TOKEN" $BEARER_TOKEN
+            htdecodetoken -H $BEARER_TOKEN
             echo "BEARER_TOKEN_FILE" $BEARER_TOKEN_FILE
+            htdecodetoken -H $BEARER_TOKEN_FILE
             echo "X509_USER_PROXY" $X509_USER_PROXY
             echo "_CONDOR_CREDS" ${_CONDOR_CREDS}
             echo ${_CONDOR_CREDS}/cms.use
+            htdecodetoken -H 
             if [[ $EXIT_STATUS != 0 ]]; then
                 echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                 echo "Cleaning up failed file:"

@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for gfal-copy
 import argparse
 import os
 import logging
+import subprocess
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -159,26 +160,29 @@ class GFAL2Impl(StageOutImpl):
             # Special case: for _CONDOR_CREDS, log its subpath if defined
             if var == "_CONDOR_CREDS" and value != "Not defined":
                 subpath = os.path.join(value, "cms.use")
-                logging.info(f"{var}/cms.use: {subpath}")
-                # Assuming htdecodetoken should be run if the variable is defined
-                try:
-                    decoded_output = os.popen(f"htdecodetoken -H {subpath}").read()
-                    logging.info(f"Decoded token for {var}/cms.use:\n{decoded_output}")
-                except Exception as e:
-                    logging.error(f"Failed to decode token for {var}/cms.use: {e}")
+                logger.info(f"{var}/cms.use: {subpath}")
+
+                if os.path.exists(subpath):
+                    try:
+                        decoded_output = subprocess.check_output(
+                            ["htdecodetoken", "-H", subpath], stderr=subprocess.STDOUT, text=True
+                        )
+                        if decoded_output.strip():
+                            logger.info(f"Decoded token for {var}/cms.use:\n{decoded_output.strip()}")
+                        else:
+                            logger.warning(f"No output from htdecodetoken for {var}/cms.use.")
+                    except subprocess.CalledProcessError as e:
+                        logger.error(f"Error decoding token for {var}/cms.use: {e.output.strip()}")
+                    except FileNotFoundError:
+                        logger.error(f"htdecodetoken command not found. Ensure it is installed and in the PATH.")
+                else:
+                    logger.warning(f"Subpath does not exist: {subpath}")
+
 
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
-            echo "BEARER_TOKEN: $BEARER_TOKEN"
-            htdecodetoken -H "$BEARER_TOKEN"
-            echo "BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE"
-            htdecodetoken -H "$BEARER_TOKEN_FILE"
-            echo "X509_USER_PROXY: $X509_USER_PROXY"
-            echo "_CONDOR_CREDS: $_CONDOR_CREDS"
-            echo "${_CONDOR_CREDS}/cms.use"
-            htdecodetoken -H "$_CONDOR_CREDS/cms.use"
             if [[ $EXIT_STATUS != 0 ]]; then
                 echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                 echo "Cleaning up failed file:"

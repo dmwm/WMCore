@@ -153,21 +153,21 @@ class GFAL2Impl(StageOutImpl):
             result += """
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
-            echo "BEARER_TOKEN" $BEARER_TOKEN
-            htdecodetoken -H $BEARER_TOKEN
-            echo "BEARER_TOKEN_FILE" $BEARER_TOKEN_FILE
-            htdecodetoken -H $BEARER_TOKEN_FILE
-            echo "X509_USER_PROXY" $X509_USER_PROXY
-            echo "_CONDOR_CREDS" ${_CONDOR_CREDS}
-            echo ${_CONDOR_CREDS}/cms.use
-            htdecodetoken -H 
+            echo "BEARER_TOKEN: $BEARER_TOKEN"
+            htdecodetoken -H "$BEARER_TOKEN"
+            echo "BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE"
+            htdecodetoken -H "$BEARER_TOKEN_FILE"
+            echo "X509_USER_PROXY: $X509_USER_PROXY"
+            echo "_CONDOR_CREDS: $_CONDOR_CREDS"
+            echo "${_CONDOR_CREDS}/cms.use"
+            htdecodetoken -H "$_CONDOR_CREDS/cms.use"
             if [[ $EXIT_STATUS != 0 ]]; then
                 echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                 echo "Cleaning up failed file:"
                 {remove_command}
             fi
             exit $EXIT_STATUS
-            """.format(remove_command=self.createRemoveFileCommand(targetPFN))  
+            """.format(remove_command=self.createRemoveFileCommand(targetPFN))
 
         return result
 

@@ -296,6 +296,11 @@ class CMSSW(Executor):
         sysTime = getrusage(RUSAGE_CHILDREN).ru_stime - sysTime0
         endTime = time.time()
         returnMessage = None
+        try:
+            # Update the job report with the relevant WMCMSSWSubprocess metrics
+            self.report.updateSubprocessInfo(sysTime, userTime, startTime, endTime)
+        except Exception as ex:
+            logging.error("Error updating job report with WMCMSSWSubprocess metrics: %s", str(ex))
 
         # Return PYTHONPATH to its original value, as this
         # is needed for stepChain workflows, so other prescripts
@@ -322,9 +327,6 @@ class CMSSW(Executor):
             self._setStatus(returnCode, returnMessage)
 
         try:
-            # update FJR report info with subprocess info
-            self.report.updateSubprocessInfo(sysTime, userTime, startTime, endTime)
-
             # parse job report XML
             self.report.parse(jobReportXML, stepName=self.stepName)
         except Exception as ex:

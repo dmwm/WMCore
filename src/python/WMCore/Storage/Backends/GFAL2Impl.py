@@ -149,6 +149,24 @@ class GFAL2Impl(StageOutImpl):
         copyCommand = self.copyCommand.format_map(copyCommandDict)
         result = "#!/bin/bash\n" + copyCommand
 
+        # List of environment variables to check
+        env_vars = ["BEARER_TOKEN", "BEARER_TOKEN_FILE", "X509_USER_PROXY", "_CONDOR_CREDS"]
+
+        for var in env_vars:
+            value = os.environ.get(var, "Not defined")
+            logging.info(f"{var}: {value}")
+            
+            # Special case: for _CONDOR_CREDS, log its subpath if defined
+            if var == "_CONDOR_CREDS" and value != "Not defined":
+                subpath = os.path.join(value, "cms.use")
+                logging.info(f"{var}/cms.use: {subpath}")
+                # Assuming htdecodetoken should be run if the variable is defined
+                try:
+                    decoded_output = os.popen(f"htdecodetoken -H {subpath}").read()
+                    logging.info(f"Decoded token for {var}/cms.use:\n{decoded_output}")
+                except Exception as e:
+                    logging.error(f"Failed to decode token for {var}/cms.use: {e}")
+
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=$?

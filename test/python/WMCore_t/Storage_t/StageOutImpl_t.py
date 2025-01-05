@@ -91,7 +91,7 @@ class StageOutImplTest(unittest.TestCase):
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
-        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None)
+        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
         mock_executeCommand.assert_called_with("command")
 
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createSourceName')
@@ -111,7 +111,7 @@ class StageOutImplTest(unittest.TestCase):
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
-        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None)
+        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
         mock_executeCommand.assert_called_with("command")
         calls = [call(600), call(600), call(600), call(600)]
         mock_time.sleep.assert_has_calls(calls)

@@ -5,6 +5,8 @@ Implementation of StageOutImpl interface for gfal-copy
 """
 import argparse
 import os
+import logging
+import subprocess
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -24,7 +26,24 @@ class GFAL2Impl(StageOutImpl):
         # Next commands after separation are executed without env -i and this leads us with
         # mixed environment with COMP and system python.
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
-        self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+        self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"  # Default initialization, it is tweaked in createStageOutCommand depending on the authentication method
+        self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
+        self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
+
+    def adjustSetup(self, auth_method=None):
+        """
+        Adjust the `self.setups` based on the selected authentication method and regenerate commands.
+        """
+        if auth_method == "X509":
+            self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+        elif auth_method == "TOKEN":
+            self.setups = "env -i BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+        else:
+            logging.info("Warning! Running gfal without either a X509 certificate or a token!")
+            self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+
+        # Regenerate dependent commands
         self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
         self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
@@ -113,7 +132,7 @@ class GFAL2Impl(StageOutImpl):
 
         return copyCommandDict
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
         """
         Create gfal-cp command for stageOut
 
@@ -121,11 +140,44 @@ class GFAL2Impl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
+        :auth_method: str, the authentication method to be used ("X509", "TOKEN", or None)
         """
+        # Adjust the setup
+        self.adjustSetup(auth_method)
 
+        # Construct the gfal-cp command
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
         copyCommand = self.copyCommand.format_map(copyCommandDict)
         result = "#!/bin/bash\n" + copyCommand
+
+        # List of environment variables to check
+        env_vars = ["BEARER_TOKEN", "BEARER_TOKEN_FILE", "X509_USER_PROXY", "_CONDOR_CREDS"]
+
+        for var in env_vars:
+            value = os.environ.get(var, "Not defined")
+            logging.info(f"{var}: {value}")
+            
+            # Special case: for _CONDOR_CREDS, log its subpath if defined
+            if var == "_CONDOR_CREDS" and value != "Not defined":
+                subpath = os.path.join(value, "cms.use")
+                logging.info(f"{var}/cms.use: {subpath}")
+
+                if os.path.exists(subpath):
+                    try:
+                        decoded_output = subprocess.check_output(
+                            ["htdecodetoken", "-H", subpath], stderr=subprocess.STDOUT, text=True
+                        )
+                        if decoded_output.strip():
+                            logging.info(f"Decoded token for {var}/cms.use:\n{decoded_output.strip()}")
+                        else:
+                            logging.warning(f"No output from htdecodetoken for {var}/cms.use.")
+                    except subprocess.CalledProcessError as e:
+                        logging.error(f"Error decoding token for {var}/cms.use: {e.output.strip()}")
+                    except FileNotFoundError:
+                        logging.error(f"htdecodetoken command not found. Ensure it is installed and in the PATH.")
+                else:
+                    logging.warning(f"Subpath does not exist: {subpath}")
+
 
         if _CheckExitCodeOption:
             result += """
@@ -141,7 +193,7 @@ class GFAL2Impl(StageOutImpl):
 
         return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
         """
         Debug a failed gfal-cp command for stageOut, without re-running it,
         providing information on the environment and the certifications
@@ -150,8 +202,13 @@ class GFAL2Impl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
+        :auth_method: str, the authentication method to be used ("X509", "TOKEN", or None)
         """
 
+        # Adjust the setup
+        self.adjustSetup(auth_method)
+
+        # Build the gfal-cp command for debugging purposes
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
         copyCommand = self.copyCommand.format_map(copyCommandDict)
 

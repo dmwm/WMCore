@@ -9,6 +9,7 @@ from __future__ import print_function
 from __future__ import division
 
 import os
+import logging
 from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.Registry import registerStageOutImpl
 
@@ -28,11 +29,13 @@ class AWSS3Impl(StageOutImpl):
         """
         return "%s" % pfn
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         _createStageOutCommand_
         Build an aws s3 copy command
         """
+        logging.info("Warning! AWSS3Impl does not support authmethod handling")
+
         result = "#!/bin/sh\n"
 
         copyCommand = "aws s3 cp"

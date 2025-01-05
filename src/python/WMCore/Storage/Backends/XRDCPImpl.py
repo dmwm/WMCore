@@ -59,7 +59,28 @@ class XRDCPImpl(StageOutImpl):
 
         return foundXrdcp & foundXrdfs
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def getAuthEnv(self, authmethod=None, forcemethod=False):
+        """
+        Get environment variables for stageout command based on the selected authentication method.
+        :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :forcemethod: bool, cleans non-chosen auth methods from environment.
+        :return: str
+        """
+        authEnv = ""
+        if authmethod == "X509":
+            authEnv = "env X509_USER_PROXY=$X509_USER_PROXY "
+            if forcemethod:
+                authEnv += "BEARER_TOKEN_FILE= BEARER_TOKEN= "
+        elif authmethod == "TOKEN":
+            authEnv = "env BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) "
+            if forcemethod:
+                authEnv += "X509_USER_PROXY= "
+        else:
+            logging.info("Warning! Running without either a X509 certificate or a token specified!")
+
+        return authEnv
+
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         _createStageOutCommand_
 
@@ -116,8 +137,12 @@ class XRDCPImpl(StageOutImpl):
             xrdcpCmd = "xrdcp"
             self.xrdfsCmd = "xrdfs"
 
+        # Check for auth-related environment to prepend
+        authEnv = self.getAuthEnv(authmethod, forcemethod)
+        if authEnv:
+            copyCommand += authEnv
+            self.xrdfsCmd = "%s %s" % (authEnv, self.xrdfsCmd)
         copyCommand += "%s --force --nopbar " % xrdcpCmd
-        
         
         if copyCommandOptions:
             copyCommand += "%s " % copyCommandOptions
@@ -175,6 +200,61 @@ class XRDCPImpl(StageOutImpl):
         copyCommand = self.copyCommand.format_map(copyCommandDict)
 
         result = self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
+        return result
+
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+        """
+        Debug a failed xrdcp/xrdfs command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for gfal-cp
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :forcemethod: bool, cleans non-chosen auth methods from environment.
+        """
+        copyCommand = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
+
+        result = "#!/bin/bash\n"
+        result += """
+        echo
+        echo
+        echo "-----------------------------------------------------------"
+        echo "==========================================================="
+        echo
+        echo "Debugging information on failing xrdcp/xrdfs command"
+        echo
+        echo "Current date and time: $(date +"%Y-%m-%d %H:%M:%S")"
+        echo "XRootD command which failed: {copy_command}"
+        echo "Hostname:   $(hostname -f)"
+        echo "OS:  $(uname -r -s)"
+        echo
+        echo "XRD environment variables (if any):"
+        env | grep ^XRD_
+        echo
+        echo "PYTHON environment variables:"
+        env | grep ^PYTHON
+        echo
+        echo "LD_* environment variables:"
+        env | grep ^LD_
+        echo
+        echo "xrdcp location: $(which xrdcp)"
+        echo "xrdfs location: $(which xrdfs)"
+        echo "Source PFN: {source}"
+        echo "Target PFN: {destination}"
+        echo
+        echo
+        echo "Information for credentials in the environment"
+        echo "Bearer token content: $BEARER_TOKEN"
+        echo "Bearer token file: $BEARER_TOKEN_FILE"
+        echo
+        echo "VOMS proxy info:"
+        voms-proxy-info -all
+        echo "==========================================================="
+        echo "-----------------------------------------------------------"
+        echo
+        """.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
         return result
 
     def removeFile(self, pfnToRemove):

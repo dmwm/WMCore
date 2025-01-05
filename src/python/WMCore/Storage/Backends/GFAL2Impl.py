@@ -160,7 +160,7 @@ class GFAL2Impl(StageOutImpl):
             # Special case: for _CONDOR_CREDS, log its subpath if defined
             if var == "_CONDOR_CREDS" and value != "Not defined":
                 subpath = os.path.join(value, "cms.use")
-                logger.info(f"{var}/cms.use: {subpath}")
+                logging.info(f"{var}/cms.use: {subpath}")
 
                 if os.path.exists(subpath):
                     try:
@@ -168,15 +168,15 @@ class GFAL2Impl(StageOutImpl):
                             ["htdecodetoken", "-H", subpath], stderr=subprocess.STDOUT, text=True
                         )
                         if decoded_output.strip():
-                            logger.info(f"Decoded token for {var}/cms.use:\n{decoded_output.strip()}")
+                            logging.info(f"Decoded token for {var}/cms.use:\n{decoded_output.strip()}")
                         else:
-                            logger.warning(f"No output from htdecodetoken for {var}/cms.use.")
+                            logging.warning(f"No output from htdecodetoken for {var}/cms.use.")
                     except subprocess.CalledProcessError as e:
-                        logger.error(f"Error decoding token for {var}/cms.use: {e.output.strip()}")
+                        logging.error(f"Error decoding token for {var}/cms.use: {e.output.strip()}")
                     except FileNotFoundError:
-                        logger.error(f"htdecodetoken command not found. Ensure it is installed and in the PATH.")
+                        logging.error(f"htdecodetoken command not found. Ensure it is installed and in the PATH.")
                 else:
-                    logger.warning(f"Subpath does not exist: {subpath}")
+                    logging.warning(f"Subpath does not exist: {subpath}")
 
 
         if _CheckExitCodeOption:

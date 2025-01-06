@@ -9,7 +9,7 @@ from nose.plugins.attrib import attr
 
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMCore.MicroService.MSPileup.DataStructs.MSPileupObj import schema
-from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
+from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 
 
 class MSPileupUtilsTest(EmulatedUnitTestCase):

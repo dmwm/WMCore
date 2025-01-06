@@ -31,7 +31,7 @@ from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
 from WMCore.MicroService.MSTransferor.MSTransferorError import MSTransferorStorageError
 from WMCore.MicroService.MSTransferor.DataStructs.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
+from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 from WMCore.Services.Rucio.RucioUtils import GROUPING_ALL
 from WMCore.Lexicon import requestName
 

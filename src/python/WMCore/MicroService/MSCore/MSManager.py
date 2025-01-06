@@ -29,6 +29,9 @@ from builtins import object
 from time import sleep
 from datetime import datetime
 
+# 3rd party modules
+from cherrypy import HTTPError
+
 # WMCore modules
 from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.MicroService.MSCore.TaskManager import start_new_thread
@@ -410,6 +413,8 @@ class MSManager(object):
         elif 'transferor' in self.services:
             if 'workflow' in doc:
                 res = self.msTransferor.updateSites(doc)
+            else:
+                raise HTTPError(400, 'invalid payload %s to MSTransferor REST API, expecting {"workflow": <workflow>}' % doc)
         return res
 
     def update(self, doc):

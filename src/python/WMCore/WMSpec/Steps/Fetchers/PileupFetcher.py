@@ -14,7 +14,7 @@ import WMCore.WMSpec.WMStep as WMStep
 from Utils.Patterns import getDomainName
 from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
+from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 

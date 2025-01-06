@@ -23,7 +23,7 @@ from Utils.CertTools import cert, ckey
 from Utils.IteratorTools import flattenList
 from Utils.FileTools import tarMode, findFiles
 from Utils.Timers import timeFunction, CodeTimer
-from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
+from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper

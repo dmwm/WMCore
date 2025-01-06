@@ -33,6 +33,7 @@ from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, valida
                                             isUserAllowed)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.Services.MSUtils.MSUtils import makeHttpRequest
 from WMCore.WMSpec.WMWorkload import WMWorkloadUnhandledException
 
 
@@ -45,6 +46,9 @@ class Request(RESTEntity):
         self.reqmgr_db_service = RequestDBWriter(self.reqmgr_db, couchapp="ReqMgr")
         # this need for the post validtiaon
         self.gq_service = WorkQueue(config.couch_host, config.couch_workqueue_db)
+
+        # setup ms-transferor URL using config (which is ConfigSection object)
+        self.msTransferorUrl = config.ms_transferor_url
 
     def _validateGET(self, param, safe):
         # TODO: need proper validation but for now pass everything
@@ -437,6 +441,21 @@ class Request(RESTEntity):
             else:
                 msg = "There were unhandled arguments left for no-status update."
                 raise InvalidSpecParameterValue(msg) from ex
+
+        try:
+            # make HTTP POST request to /ms-transferor/data/transferor with {'workflow': <workflow>} payload
+            # but only if it is necessary, i.e. the workqueu_stat_validation checks
+            # that only supported parameter change. It would be either RequestPriority or SiteXXXList
+            # and we also check reqStatus has a right value when site lists change is required
+            if reqStatus != 'assignment-approved':
+                # the makeHttpRequest function will call MSTransferor because site list change occured
+                rurl = f"{self.msTransferorUrl}/data/transferor"
+                makeHttpRequest(rurl, {'workflow': workload.name()}, method='POST')
+                cherrypy.log('Updated workflow name "{}" in MSTransferor'.format(workload.name()))
+        except Exception as ex:
+            msg = f"ERROR: failed to request MSTransferor for data replacement for workflow {workload.name()}"
+            cherrypy.log(msg + " Reason: %s" % ex)
+            raise cherrypy.HTTPError(500, msg)
 
         # Finally update ReqMgr Database
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), reqArgs, dn)

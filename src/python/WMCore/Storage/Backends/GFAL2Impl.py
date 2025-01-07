@@ -185,6 +185,8 @@ class GFAL2Impl(StageOutImpl):
             result += """
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
+            echo "BEARER_TOKEN: $BEARER_TOKEN"
+            echo "BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE"
             if [[ $EXIT_STATUS != 0 ]]; then
                 echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                 echo "Cleaning up failed file:"

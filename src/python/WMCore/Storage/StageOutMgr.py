@@ -210,6 +210,34 @@ class StageOutMgr(object):
 
         self.overrideConf = overrideConf
 
+        # List of environment variables to check
+        env_vars = ["BEARER_TOKEN", "BEARER_TOKEN_FILE", "X509_USER_PROXY", "_CONDOR_CREDS"]
+        logging.info("Checking auth variables")
+        for var in env_vars:
+            value = os.environ.get(var, "Not defined")
+            logging.info(f"{var}: {value}")
+            
+            # Special case: for _CONDOR_CREDS, log its subpath if defined
+            if var == "_CONDOR_CREDS" and value != "Not defined":
+                subpath = os.path.join(value, "cms.use")
+                logging.info("%s/cms.use: %s", var, subpath)
+
+                if os.path.exists(subpath):
+                    try:
+                        decoded_output = subprocess.check_output(
+                            ["htdecodetoken", "-H", subpath], stderr=subprocess.STDOUT, text=True
+                        )
+                        if decoded_output.strip():
+                            logging.info("Decoded token for %s/cms.use:\n%s", var, decoded_output.strip())
+                        else:
+                            logging.warning("No output from htdecodetoken for %s/cms.use.", var)
+                    except subprocess.CalledProcessError as e:
+                        logging.error("Error decoding token for %s/cms.use: %s", var, e.output.strip())
+                    except FileNotFoundError:
+                        logging.error("htdecodetoken command not found. Ensure it is installed and in the PATH.")
+                else:
+                    logging.warning("Subpath does not exist: %s", subpath)
+
         msg = "=======StageOut Override Initialised:================\n"
         for key, val in viewitems(self.overrideConf):
             msg += " %s : %s\n" % (key, val)

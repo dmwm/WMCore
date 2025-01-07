@@ -148,11 +148,14 @@ class GFAL2Impl(StageOutImpl):
         # Construct the gfal-cp command
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
         copyCommand = self.copyCommand.format_map(copyCommandDict)
+        logging.info("============ createStageOutCommand within GFAL2Impl =============")
+        logging.info("copyCommand: %s", copyCommand)
+
         result = "#!/bin/bash\n" + copyCommand
 
         # List of environment variables to check
         env_vars = ["BEARER_TOKEN", "BEARER_TOKEN_FILE", "X509_USER_PROXY", "_CONDOR_CREDS"]
-
+        logging.info("Checking auth variables")
         for var in env_vars:
             value = os.environ.get(var, "Not defined")
             logging.info(f"{var}: {value}")
@@ -160,7 +163,7 @@ class GFAL2Impl(StageOutImpl):
             # Special case: for _CONDOR_CREDS, log its subpath if defined
             if var == "_CONDOR_CREDS" and value != "Not defined":
                 subpath = os.path.join(value, "cms.use")
-                logging.info(f"{var}/cms.use: {subpath}")
+                logging.info("%s/cms.use: %s", var, subpath)
 
                 if os.path.exists(subpath):
                     try:
@@ -168,16 +171,15 @@ class GFAL2Impl(StageOutImpl):
                             ["htdecodetoken", "-H", subpath], stderr=subprocess.STDOUT, text=True
                         )
                         if decoded_output.strip():
-                            logging.info(f"Decoded token for {var}/cms.use:\n{decoded_output.strip()}")
+                            logging.info("Decoded token for %s/cms.use:\n%s", var, decoded_output.strip())
                         else:
-                            logging.warning(f"No output from htdecodetoken for {var}/cms.use.")
+                            logging.warning("No output from htdecodetoken for %s/cms.use.", var)
                     except subprocess.CalledProcessError as e:
-                        logging.error(f"Error decoding token for {var}/cms.use: {e.output.strip()}")
+                        logging.error("Error decoding token for %s/cms.use: %s", var, e.output.strip())
                     except FileNotFoundError:
-                        logging.error(f"htdecodetoken command not found. Ensure it is installed and in the PATH.")
+                        logging.error("htdecodetoken command not found. Ensure it is installed and in the PATH.")
                 else:
-                    logging.warning(f"Subpath does not exist: {subpath}")
-
+                    logging.warning("Subpath does not exist: %s", subpath)
 
         if _CheckExitCodeOption:
             result += """
@@ -191,6 +193,8 @@ class GFAL2Impl(StageOutImpl):
             exit $EXIT_STATUS
             """.format(remove_command=self.createRemoveFileCommand(targetPFN))
 
+        logging.info("============ end of createStageOutCommand within GFAL2Impl =============")
+        
         return result
 
     def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):

@@ -127,7 +127,8 @@ class SiteListPoller(BaseWorkerThread):
                 self.logger.info("  siteBlackList %s => %s", wmaBlackList, siteBlackList)
                 try:
                     # update local WorkQueue first
-                    self.localWQ.updateSiteLists(wflow, siteWhiteList, siteBlackList)
+                    params = {'SiteWhitelist': siteWhiteList, 'SiteBlacklist': siteBlackList}
+                    self.localWQ.updateElementsByWorkflow(wHelper, params, status=['Available'])
                     self.logger.info("successfully updated workqueue elements for workflow %s", wflow)
                 except Exception as ex:
                     logging.exception("Unexpected exception while updating elements in local workqueue Details:\n%s", str(ex))

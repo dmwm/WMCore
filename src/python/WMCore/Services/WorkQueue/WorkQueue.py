@@ -237,34 +237,6 @@ class WorkQueue(object):
         elements = [x['id'] for x in data.get('rows', []) if x['key'][1] not in nonCancelableElements]
         return self.updateElements(*elements, Status='CancelRequested')
 
-    def updateSiteLists(self, wf, siteWhiteList=None, siteBlackList=None):
-        """
-        Update site list parameters in elements matching a given workflow and a list of element statuse
-
-        :param wf: workflow name
-        :param siteWhiteList: optional list of strings, new site white list
-        :param siteBlackList: optional list of strings, new site black list
-        :return: None
-        """
-        # Update elements in Available status
-        data = self.db.loadView('WorkQueue', 'jobStatusByRequest',
-                                {'reduce': False})
-        states = ['Available']
-        elementsToUpdate = [x['id'] for x in data.get('rows', []) if x['key'][-1] in states and wf in x['key']]
-        if elementsToUpdate:
-            self.logger.info("Updating %d elements in status %s for workflow %s", len(elementsToUpdate), states, wf)
-            self.updateElements(*elementsToUpdate, SiteWhiteList=siteWhiteList, SiteBlackList=siteBlackList)
-        # Update the spec, if it exists
-        if self.db.documentExists(wf):
-            wmspec = WMWorkloadHelper()
-            # update local workqueue couchDB
-            wmspec.load(self.hostWithAuth + "/%s/%s/spec" % (self.db.name, wf))
-            wmspec.setSiteWhiteList(siteWhiteList)
-            wmspec.setSiteBlackList(siteBlackList)
-            dummy_values = {'name': wmspec.name()}
-            wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
-        return
-
     def updatePriority(self, wf, priority):
         """Update priority of a workflow, this implies
            updating the spec and the priority of the Available elements"""
@@ -317,7 +289,6 @@ class WorkQueue(object):
             # Commit the changes of the current workload object to the database:
             workload.saveCouchUrl(workload.specUrl())
         return
-
 
     def getWorkflowNames(self, inboxFlag=False):
         """Get workflow names from workqueue db"""

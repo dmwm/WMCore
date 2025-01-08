@@ -38,7 +38,7 @@ class GFAL2Impl(StageOutImpl):
         if auth_method == "X509":
             self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
         elif auth_method == "TOKEN":
-            self.setups = "env -i BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+            self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c 'echo; echo HELLO THERE; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; {}'"
         else:
             logging.info("Warning! Running gfal without either a X509 certificate or a token!")
             self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
@@ -185,9 +185,6 @@ class GFAL2Impl(StageOutImpl):
             result += """
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
-            echo "BEARER_TOKEN: $BEARER_TOKEN"
-            echo "BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE"
-            echo "JOBSTARTDIR: $JOBSTARTDIR"
             if [[ $EXIT_STATUS != 0 ]]; then
                 echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                 echo "Cleaning up failed file:"

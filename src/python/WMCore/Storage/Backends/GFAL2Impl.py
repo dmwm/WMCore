@@ -38,7 +38,7 @@ class GFAL2Impl(StageOutImpl):
         if auth_method == "X509":
             self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
         elif auth_method == "TOKEN":
-            self.setups = "env -i BEARER_TOKEN=$BEARER_TOKEN_FILE JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+            self.setups = "env -i BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
         else:
             logging.info("Warning! Running gfal without either a X509 certificate or a token!")
             self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
@@ -168,16 +168,16 @@ class GFAL2Impl(StageOutImpl):
                 if os.path.exists(subpath):
                     try:
                         decoded_output = subprocess.check_output(
-                            ["htdecodetoken", "-H", subpath], stderr=subprocess.STDOUT, text=True
+                            ["httokendecode", "-H", subpath], stderr=subprocess.STDOUT, text=True
                         )
                         if decoded_output.strip():
                             logging.info("Decoded token for %s/cms.use:\n%s", var, decoded_output.strip())
                         else:
-                            logging.warning("No output from htdecodetoken for %s/cms.use.", var)
+                            logging.warning("No output from httokendecode for %s/cms.use.", var)
                     except subprocess.CalledProcessError as e:
                         logging.error("Error decoding token for %s/cms.use: %s", var, e.output.strip())
                     except FileNotFoundError:
-                        logging.error("htdecodetoken command not found. Ensure it is installed and in the PATH.")
+                        logging.error("httokendecode command not found. Ensure it is installed and in the PATH.")
                 else:
                     logging.warning("Subpath does not exist: %s", subpath)
 

@@ -29,7 +29,7 @@ class GFAL2Impl(StageOutImpl):
         self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"  # Default initialization, it is tweaked in createStageOutCommand depending on the authentication method
         self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
+        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
 
     def adjustSetup(self, auth_method=None):
         """
@@ -38,7 +38,7 @@ class GFAL2Impl(StageOutImpl):
         if auth_method == "X509":
             self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
         elif auth_method == "TOKEN":
-            self.setups = "env -i BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c 'echo; echo HELLO THERE; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; {}'"
+            self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c 'echo; echo HELLO THERE; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; {}'"
         else:
             logging.info("Warning! Running gfal without either a X509 certificate or a token!")
             self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
@@ -152,34 +152,6 @@ class GFAL2Impl(StageOutImpl):
         logging.info("copyCommand: %s", copyCommand)
 
         result = "#!/bin/bash\n" + copyCommand
-
-        # List of environment variables to check
-        env_vars = ["BEARER_TOKEN", "BEARER_TOKEN_FILE", "X509_USER_PROXY", "_CONDOR_CREDS"]
-        logging.info("Checking auth variables")
-        for var in env_vars:
-            value = os.environ.get(var, "Not defined")
-            logging.info(f"{var}: {value}")
-            
-            # Special case: for _CONDOR_CREDS, log its subpath if defined
-            if var == "_CONDOR_CREDS" and value != "Not defined":
-                subpath = os.path.join(value, "cms.use")
-                logging.info("%s/cms.use: %s", var, subpath)
-
-                if os.path.exists(subpath):
-                    try:
-                        decoded_output = subprocess.check_output(
-                            ["httokendecode", "-H", subpath], stderr=subprocess.STDOUT, text=True
-                        )
-                        if decoded_output.strip():
-                            logging.info("Decoded token for %s/cms.use:\n%s", var, decoded_output.strip())
-                        else:
-                            logging.warning("No output from httokendecode for %s/cms.use.", var)
-                    except subprocess.CalledProcessError as e:
-                        logging.error("Error decoding token for %s/cms.use: %s", var, e.output.strip())
-                    except FileNotFoundError:
-                        logging.error("httokendecode command not found. Ensure it is installed and in the PATH.")
-                else:
-                    logging.warning("Subpath does not exist: %s", subpath)
 
         if _CheckExitCodeOption:
             result += """

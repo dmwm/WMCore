@@ -46,7 +46,7 @@ class GFAL2Impl(StageOutImpl):
         # Regenerate dependent commands
         self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
+        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
 
     def createFinalPFN(self, pfn):
         """

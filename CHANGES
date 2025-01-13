@@ -1,3 +1,14 @@
+2.3.8rc9 to 2.3.8rc10:
+  - wmagent - htcondor bindings bumped to v24.3 (Dario Mapelli) #12226
+  - Register transfer REST API (Valentin Kuznetsov) #12221
+  - Populate WMCMSSWSubprocess section for failed jobs too (Alan Malta Rodrigues) #12217
+  - Switch updateSiteList to updateElementsByWorkflow API (Valentin Kuznetsov) #12219
+  - Fix comparison of task thresholds in ResourceControlUpdater (Alan Malta Rodrigues) #12214
+  - Ignore list order in SiteLists comparison (Todor Ivanov) #12211
+  - Add setter methods map to WMWorkload and call it for all reqArg parameters (Todor Ivanov) #12099
+  - ms-output - do not break out producer and consumer loops in case of generic error (Dario Mapelli) #12194
+
+
 2.3.8rc8 to 2.3.8rc9:
   - Last build failed to contact PyPi, so trigger a new build
 

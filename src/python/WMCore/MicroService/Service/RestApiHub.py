@@ -39,4 +39,8 @@ class RestApiHub(RESTApi):
         # the mount point should match service configuration, e.g. in MSPileup we define
         # mount point as /ms-pileup/data, e.g. http://.../ms-pileup/data
         if 'ms-pileup' in mount:
+            # add new API "pileup" and it will be accessible as /ms-pileup/data/pileup
             self._add({"pileup": Data(app, self, config, mount)})
+        elif 'ms-transferor' in mount:
+            # add new API "transferor" and it will be accessible as /ms-transferor/data/transferor
+            self._add({"transferor": Data(app, self, config, mount)})

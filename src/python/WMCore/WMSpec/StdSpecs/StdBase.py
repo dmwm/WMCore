@@ -264,7 +264,7 @@ class StdBase(object):
         monitoring.interval = 300
         monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxPSS = maxpss * 1024 # in MiB
+        monitoring.PerformanceMonitor.maxPSS = maxpss * 1024  # in MiB
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task

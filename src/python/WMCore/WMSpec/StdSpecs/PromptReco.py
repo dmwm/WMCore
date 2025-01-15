@@ -61,6 +61,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
                         'skims': self.alcaSkims,
                         'PhysicsSkims': self.physicsSkims,
                         'dqmSeq': self.dqmSequences,
+                        'nanoFlavours': self.nanoFlavours,
                         'outputs': recoOutputs}
         if self.globalTagConnect:
             scenarioArgs['globalTagConnect'] = self.globalTagConnect
@@ -179,6 +180,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
                                   "type": makeList, "optional": False, "null": False},
                     "PhysicsSkims": {"default": [], "type": makeList,
                                      "optional": True, "null": False},
+                    "NanoFlavours": {"default": [], "type": makeList, "attr": "nanoFlavours"},
                     "InitCommand": {"default": None, "optional": True, "null": True},
                     "EnvPath": {"default": None, "optional": True, "null": True},
                     "BinPath": {"default": None, "optional": True, "null": True},

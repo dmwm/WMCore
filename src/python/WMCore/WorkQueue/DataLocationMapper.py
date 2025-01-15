@@ -12,7 +12,7 @@ import logging
 from urllib.parse import urlparse
 
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
+from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 
 # TODO: Combine with existing dls so DBSreader can do this kind of thing transparently

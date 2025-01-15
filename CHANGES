@@ -1,3 +1,6 @@
+2.3.8rc11 to 2.3.8rc12:
+  - Just a new tag; because PyPi often insists in timeout and PyPa image is not configurable 
+
 2.3.8rc10 to 2.3.8rc11:
   - Add HTTP request from ReqMgr2 to MSTransferor (Valentin Kuznetsov) #12220
   - Improve patchComponent && Add patchCluster scripts (Todor Ivanov) #12207

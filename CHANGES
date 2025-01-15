@@ -1,3 +1,8 @@
+2.3.8rc10 to 2.3.8rc11:
+  - Add HTTP request from ReqMgr2 to MSTransferor (Valentin Kuznetsov) #12220
+  - Improve patchComponent && Add patchCluster scripts (Todor Ivanov) #12207
+
+
 2.3.8rc9 to 2.3.8rc10:
   - wmagent - htcondor bindings bumped to v24.3 (Dario Mapelli) #12226
   - Register transfer REST API (Valentin Kuznetsov) #12221

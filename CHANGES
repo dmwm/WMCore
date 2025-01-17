@@ -1,3 +1,7 @@
+2.3.8rc12 to 2.3.8rc13:
+  - Adding wmstatsUrl to WorkflowUpdater configuration (Todor Ivanov) #12232
+
+
 2.3.8rc11 to 2.3.8rc12:
   - Just a new tag; because PyPi often insists in timeout and PyPa image is not configurable 
 

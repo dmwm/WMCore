@@ -151,6 +151,18 @@ class GFAL2Impl(StageOutImpl):
         logging.info("============ createStageOutCommand within GFAL2Impl =============")
         logging.info("copyCommand: %s", copyCommand)
 
+        #Debugging for GFAL env variables
+        try:
+            # Execute the shell command
+            gfal_env_output = subprocess.check_output("env | grep ^GFAL", shell=True, text=True, stderr=subprocess.STDOUT)
+            # Log the output
+            logging.info('GFAL environment variables:\n%s', gfal_env_output)
+        except subprocess.CalledProcessError as e:
+            # Log an error if the command fails
+            logging.error('Failed to retrieve GFAL environment variables: %s', e.output.strip())
+        except Exception as e:
+            logging.error('An unexpected error occurred: %s', str(e))
+
         result = "#!/bin/bash\n" + copyCommand
 
         if _CheckExitCodeOption:

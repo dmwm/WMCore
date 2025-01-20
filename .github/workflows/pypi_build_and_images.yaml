@@ -55,8 +55,10 @@ jobs:
       - name: Build sdist
         run: |
           python3 setup.py clean sdist
-          echo "view sdist area"
-          ls sdist
+          pwd
+          ls
+          echo "view dist area"
+          ls dist
       - name: Upload package distribution to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
 

@@ -59,8 +59,12 @@ jobs:
           ls
           echo "view dist area"
           ls dist
+          find dist -name "*.tar.gz" | awk '{print "tar tvfz "$1""}' | /bin/sh
       - name: Upload package distribution to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
 
   # second job, depends on build_and_publish_services, builds and upload
   # docker images to CERN registry

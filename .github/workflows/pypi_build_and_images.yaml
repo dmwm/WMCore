@@ -50,16 +50,8 @@ jobs:
         run: |
           cp requirements.txt requirements.wmcore.txt
           awk "/(${{ matrix.target }}$)|(${{ matrix.target }},)/ {print \$1}" requirements.wmcore.txt > requirements.txt
-          echo "cat requirements.txt"
-          cat requirements.txt
       - name: Build sdist
-        run: |
-          python3 setup.py clean sdist
-          pwd
-          ls
-          echo "view dist area"
-          ls dist
-          find dist -name "*.tar.gz" | awk '{print "tar tvfz "$1""}' | /bin/sh
+        run: python3 setup.py clean sdist
       - name: Upload package distribution to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

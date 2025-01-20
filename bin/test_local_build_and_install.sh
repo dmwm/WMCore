@@ -17,9 +17,9 @@ trap restore SIGINT
 set -e  # Exit on any error
 
 # Define package list
-packages=("wmagent" "wmagent-devtools" "wmcore" "reqmon" "reqmgr2" "global-workqueue" "acdcserver" \
-          "reqmgr2ms-unmerged" "reqmgr2ms-output" "reqmgr2ms-pileup" "reqmgr2ms-rulecleaner" \
-          "reqmgr2ms-transferor" "reqmgr2ms-monitor")
+packages=("wmagent" "wmagentdev" "wmcore" "reqmon" "reqmgr2" "wmglobalqueue" "acdcserver" \
+          "msunmerged" "msoutput" "mspileup" "msrulecleaner" \
+          "mstransferor" "msmonitor")
 
 if [ -d venv ]; then
     echo "WARNING: Found venv area, please either delete or relocate it to proceed..."

@@ -297,3 +297,12 @@ def encodeUnicodeToBytesConditional(value, errors="ignore", condition=True):
     if condition:
         return encodeUnicodeToBytes(value, errors)
     return value
+
+def normalize_spaces(text):
+    """
+    Helper function to remove any number of empty spaces within given text and replace
+    then with single space.
+    :param text: string
+    :return: normalized string
+    """
+    return re.sub(r'\s+', ' ', text).strip()

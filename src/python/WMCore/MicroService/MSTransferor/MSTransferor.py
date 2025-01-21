@@ -603,7 +603,7 @@ class MSTransferor(MSCore):
                                                                          workflowName)
         alertSeverity = "high"
         alertSummary = "[MSTransferor] Transfer document could not be created in CouchDB."
-        alertDescription = "Workflow: {}, failed request  due to error posting to CouchDB".format(workflowName)
+        alertDescription = "Workflow: {}, failed request due to error posting to CouchDB".format(workflowName)
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                        self.alertServiceName)
         self.logger.warning(alertDescription)

@@ -227,7 +227,10 @@ class StageOutImpl:
                 logging.info("Running the stage out with tokens (attempt %d)...", retryCount + 1)
                 logging.info("Command to run: %s", command)
                 self.executeCommand(command)
-                logging.info("Stage-out succeeded with the current environment.")
+                # to remove once understood gfal behavior
+                debcommand = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
+                self.executeCommand(debcommand)
+                logging.info("\nStage-out succeeded with the current environment.")
                 break
 
             except StageOutError as ex:

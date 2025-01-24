@@ -12,9 +12,10 @@ Among the actions performed by this component, we can list:
 * update this json in the workflow sandbox
 """
 
-import os
 import json
 import logging
+import os
+import shutil
 import tarfile
 import tempfile
 import threading
@@ -220,9 +221,9 @@ def writePileupJson(tfile, jdict, logger, dest=None):
             tar.add(tmpDir, arcname='')
         # overwrite existing tarball with new one
         if dest:
-            os.rename(ofile, dest)
+            shutil.move(ofile, dest)
         else:
-            os.rename(ofile, tfile)
+            shutil.move(ofile, tfile)
 
 
 class WorkflowUpdaterException(WMException):

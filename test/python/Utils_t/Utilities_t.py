@@ -8,7 +8,7 @@ import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
     safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
-    encodeUnicodeToBytes, diskUse, numberCouchProcess
+    encodeUnicodeToBytes, diskUse, numberCouchProcess, normalize_spaces
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -219,6 +219,13 @@ cms::Exception caught in CMS.EventProcessor and rethrown
 
         self.assertTrue(filesystem_is_dev > 0)
 
+    def testNormalizeSpaces(self):
+        """
+        Test the `normalize_spaces` function.
+        """
+        data = normalize_spaces("bla bla     bla    ")
+        expect = "bla bla bla"
+        self.assertEqual(data, expect)
 
     def testNumberCouchProcess(self):
         """

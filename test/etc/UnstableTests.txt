@@ -31,3 +31,4 @@ WMCore_t.Services_t.Rucio_t.RucioUtils_t.RucioUtilsTest:testWeightedChoice
 WMCore_t.WMBS_t.JobSplitting_t.RunBased_t.EventBasedTest:testMultipleRunsCombine
 WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testPileupData
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testThrottling
+WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testProductionMultiQueue

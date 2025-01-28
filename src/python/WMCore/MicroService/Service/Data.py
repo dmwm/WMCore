@@ -155,8 +155,6 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
 
         NOTE: the usage of this method requires further thought
         """
-        msg = 'expect "request" attribute in your request'
-        result = {'status': 'Not supported, %s' % msg, 'request': None}
         try:
             data = json.load(cherrypy.request.body)
             if 'ms-pileup' in self.mount:
@@ -164,12 +162,12 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
                 for doc in self.mgr.post(data):
                     mspileupError(doc)
                     yield doc
-            elif 'request' in data:
-                # all other MS services
-                reqName = data['request']
-                result = self.mgr.info(reqName)
-                for doc in results(result):
+            elif 'ms-transferor' in self.mount:
+                for doc in self.mgr.post(data):
                     yield doc
+            else:
+                msg = f"End point {self.mount} does not support POST request JSON payload"
+                raise cherrypy.HTTPError(status=400, message=msg) from None
         except cherrypy.HTTPError:
             raise
         except:

@@ -10,6 +10,7 @@ import unittest
 import cherrypy
 import gzip
 import json
+import http.client
 from WMCore_t.MicroService_t import TestConfig
 from WMCore.MicroService.Service.RestApiHub import RestApiHub
 from WMCore.MicroService.Tools.Common import cert, ckey
@@ -153,9 +154,9 @@ class MicroServiceTest(unittest.TestCase):
         url = self.url + "/%s" % api
         params = {"request": "fake_request_name"}
         headers = {'Content-Type': 'application/json'}
-        data = self.mgr.getdata(url, params=params, headers=headers, verb='POST',
-                                cert=cert(), ckey=ckey(), encode=True, decode=True)
-        self.assertDictEqual(data['result'][0], {'status': 'OK', 'api': 'info'})
+        with self.assertRaises(http.client.HTTPException):
+            self.mgr.getdata(url, params=params, headers=headers, verb='POST',
+                             cert=cert(), ckey=ckey(), encode=True, decode=True)
 
     def testPostCallGZipped(self):
         "Test function for getting state of the MicroService"
@@ -163,9 +164,9 @@ class MicroServiceTest(unittest.TestCase):
         url = self.url + "/%s" % api
         params = {"request": "fake_request_name"}
         headers = {'Content-Type': 'application/json', 'Accept-Encoding': 'gzip'}
-        data = self.mgr.getdata(url, params=params, headers=headers, verb='POST',
-                                cert=cert(), ckey=ckey(), encode=True, decode=True)
-        self.assertDictEqual(data['result'][0], {'status': 'OK', 'api': 'info'})
+        with self.assertRaises(http.client.HTTPException):
+            self.mgr.getdata(url, params=params, headers=headers, verb='POST',
+                             cert=cert(), ckey=ckey(), encode=True, decode=True)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,11 @@
+2.3.8rc13 to 2.3.8:
+  - Add WorkQueueTest:testProductionMultiQueue to the unstable unit tests (Alan Malta Rodrigues) #12242
+  - Move call to MSTransferor service from MSManager.py to Data.py which services MS REST end-points (Valentin Kuznetsov) #12241
+  - Replace os.rename with shutil.move (Dennis Lee) #12239
+  - Replace couchdb/wmstats uri at WorkflowUpdater config section (Todor Ivanov) #12236
+  - Add s-nail package to base image (Kenyi) https://github.com/dmwm/CMSKubernetes/pull/1573
+  - Use s-nail host mail server (FNAL/CERN) (Kenyi) https://github.com/dmwm/CMSKubernetes/pull/1566
+
 2.3.8rc12 to 2.3.8rc13:
   - Adding wmstatsUrl to WorkflowUpdater configuration (Todor Ivanov) #12232
 

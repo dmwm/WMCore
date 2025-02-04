@@ -96,6 +96,20 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(wqApi.getWMBSUrl(), [])
         self.assertEqual(wqApi.getWMBSUrlByRequest(), [])
 
+    def testGetWQElementsByWorkflow(self):
+        specName = "RerecoSpec"
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
+                                                      assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]})
+        globalQ = globalQueue(DbName='workqueue_t',
+                              QueueURL=self.testInit.couchUrl,
+                              UnittestFlag=True, **self.queueParams)
+        globalQ.queueWork(specUrl, "RerecoSpec", "teamA")
+        wqService = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
+
+        gqList=globalQ.backend.getElementsForWorkflow(specName)
+        wqSList=wqService.getWQElementsByWorkflow(specName)
+        self.assertListEqual(gqList, wqSList)
+
     def testUpdatePriorityService(self):
         """
         _testUpdatePriorityService_

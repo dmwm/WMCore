@@ -200,6 +200,8 @@ class WorkQueue(object):
         if not elementIds:
             return
         eleParams = {}
+        if 'RequestPriority' in updatedParams:
+            updatedParams['Priority'] = updatedParams.pop('RequestPriority')
         eleParams[self.eleKey] = updatedParams
         conflictIDs = self.db.updateBulkDocumentsWithConflictHandle(elementIds, eleParams, maxConflictLimit=20)
         if conflictIDs:

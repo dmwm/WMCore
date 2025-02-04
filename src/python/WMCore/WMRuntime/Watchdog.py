@@ -327,3 +327,16 @@ class Watchdog(threading.Thread):
         # self._MonMgr.loadMonitors()
         # self._MonMgr.loadUpdators()
         return
+
+    def isAlive(self):
+        """
+        :return whether this class thread is alive or not.
+        """
+        try:
+            # For python 3.8 and below
+            value = super(Watchdog, self).isAlive()
+        except AttributeError:
+            # For python 3.9 and above
+            value = self.is_alive()
+
+        return value

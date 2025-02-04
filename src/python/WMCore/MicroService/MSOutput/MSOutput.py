@@ -88,7 +88,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("excludeDataTier", [])
         self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
         self.msConfig.setdefault("rucioRSEAttribute", 'dm_weight')
-        self.msConfig.setdefault("rucioDiskRuleWeight", 'ddm_quota')
+        self.msConfig.setdefault("rucioDiskRuleWeight", 'dm_weight')
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
         # This Disk expression wil target all real DISK T1 and T2 RSEs
         self.msConfig.setdefault("rucioDiskExpression", '(tier=2|tier=1)&cms_type=real&rse_type=DISK')
@@ -462,8 +462,7 @@ class MSOutput(MSCore):
         """
         # This API returns a tuple with the RSE name and whether it requires approval
         return self.rucio.pickRSE(rseExpression=self.msConfig["rucioTapeExpression"],
-                                  rseAttribute=self.msConfig["rucioRSEAttribute"],
-                                  minNeeded=dataSize)
+                                  rseAttribute=self.msConfig["rucioRSEAttribute"])
 
     def getRequestRecords(self, reqStatus):
         """

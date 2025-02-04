@@ -1,3 +1,7 @@
+2.3.8 to 2.3.8.1:
+  - Renaming RequestPriority during WorQueue.updateElements call (Dario Mapelli) #12249, backport from #12248 (Todor Ivanov)
+
+
 2.3.8rc13 to 2.3.8:
   - Add WorkQueueTest:testProductionMultiQueue to the unstable unit tests (Alan Malta Rodrigues) #12242
   - Move call to MSTransferor service from MSManager.py to Data.py which services MS REST end-points (Valentin Kuznetsov) #12241

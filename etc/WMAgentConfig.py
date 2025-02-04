@@ -378,7 +378,7 @@ config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
 config.RucioInjector.metaDIDProject = "Production"
-config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
+config.RucioInjector.containerDiskRuleParams = {"weight": "dm_weight", "copies": 2, "grouping": "DATASET"}
 config.RucioInjector.blockRuleParams = {}
 # this RSEExpr below might be updated by wmagent-mod-config script
 config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"

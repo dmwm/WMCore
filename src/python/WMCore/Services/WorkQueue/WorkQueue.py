@@ -6,6 +6,7 @@ from WMCore.Database.CMSCouch import CouchServer, CouchConflictError
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
+from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
 
 
 def convertWQElementsStatusToWFStatus(elementsStatusSet):
@@ -287,7 +288,8 @@ class WorkQueue(object):
             # Update all workload parameters based on the full reqArgs dictionary
             workload.updateWorkloadArgs(updateParams)
             # Commit the changes of the current workload object to the database:
-            workload.saveCouchUrl(workload.specUrl())
+            metadata = {'name': wfName}
+            workload.saveCouch(self.hostWithAuth, self.db.name, metadata=metadata)
         return
 
     def getWorkflowNames(self, inboxFlag=False):
@@ -324,6 +326,32 @@ class WorkQueue(object):
                 couchdb.bulkDeleteByIDs(ids)
                 deleted += len(ids)
         return deleted
+
+    def getWQElementsByWorkflow(self, workflowNames, inboxFlag=False):
+        """
+        Get workqueue elements which belongs to a given workflow name(s)
+        :param workflowNames: The workflow name for which we try to fetch the WQE elemtns for (could be a list of names as well)
+        :param inboxFlag:     A flag to switch quering the inboxDB as well (default: False)
+        :return:              A list of WQEs
+        """
+        if inboxFlag:
+            couchdb = self.inboxDB
+        else:
+            couchdb = self.db
+
+        if not isinstance(workflowNames, list):
+            workflowNames = [workflowNames]
+
+        options = {}
+        options["stale"] = "ok"
+        options["reduce"] = False
+        options['include_docs'] = True
+
+        data = couchdb.loadView("WorkQueue", "elementsByWorkflow", options, workflowNames)
+        wqeList=[]
+        for wqe in data['rows']:
+            wqeList.append(CouchWorkQueueElement.fromDocument(couchdb, wqe['doc']))
+        return wqeList
 
     def getElementsCountAndJobsByWorkflow(self, inboxFlag=False, stale=True):
         """Get the number of elements and jobs by status and workflow"""

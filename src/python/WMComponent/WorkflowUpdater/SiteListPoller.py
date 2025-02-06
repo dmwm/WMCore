@@ -69,7 +69,7 @@ class SiteListPoller(BaseWorkerThread):
         {"wflow": {"SiteWhitelist":[], "SiteBlacklist": []}, ...}
         """
         # get list of workflows from wmstats
-        outputMask = ['SiteWhiteList', 'SiteBlackList']
+        outputMask = ['SiteWhitelist', 'SiteBlacklist']
         wdict = {}
         for state in self.states:
             inputConditions = {"RequestStatus": state}
@@ -113,9 +113,12 @@ class SiteListPoller(BaseWorkerThread):
             # get the name of pkl file from wma spec
             pklFileName = wmaSpecs[wflow]
 
-            # create wrapper helper and load pickle file
+            # get the local Workqueue url for the workflow's spec
+            specUrl = self.localWQ.hostWithAuth + "/%s/%s/spec" % (self.localWQ.db.name, wflow)
+
+            # create wrapper helper and load the spec from local couch
             wHelper = WMWorkloadHelper()
-            wHelper.load(pklFileName)
+            wHelper.load(specUrl)
 
             # extract from pickle spec both white and black site lists and compare them
             # to one we received from upstream service (ReqMgr2)
@@ -123,8 +126,8 @@ class SiteListPoller(BaseWorkerThread):
             wmaBlackList = wHelper.getSiteBlacklist()
             if set(wmaWhiteList) != set(siteWhiteList) or set(wmaBlackList) != set(siteBlackList):
                 self.logger.info("Updating %s:", wflow)
-                self.logger.info("  siteWhiteList %s => %s", wmaWhiteList, siteWhiteList)
-                self.logger.info("  siteBlackList %s => %s", wmaBlackList, siteBlackList)
+                self.logger.info("  siteWhitelist %s => %s", wmaWhiteList, siteWhiteList)
+                self.logger.info("  siteBlacklist %s => %s", wmaBlackList, siteBlackList)
                 try:
                     # update local WorkQueue first
                     params = {'SiteWhitelist': siteWhiteList, 'SiteBlacklist': siteBlackList}
@@ -134,17 +137,8 @@ class SiteListPoller(BaseWorkerThread):
                     logging.exception("Unexpected exception while updating elements in local workqueue Details:\n%s", str(ex))
                     continue
 
-                # update workload only if we updated local WorkQueue
-                # update site white/black lists together
-                if set(wmaWhiteList) != set(siteWhiteList):
-                    self.logger.info("updating site white list for workflow %s", wflow)
-                    wHelper.setWhitelist(siteWhiteList)
-                if set(wmaBlackList) != set(siteBlackList):
-                    self.logger.info("updating site black list for workflow %s", wflow)
-                    wHelper.setBlacklist(siteBlackList)
-
                 try:
-                    # persist the spec in local CouchDB
+                    # persist the change at the pkl file
                     self.logger.info("Updating %s with new site lists within pkl file %s", wflow, pklFileName)
                     # save back pickle file
                     wHelper.save(pklFileName)

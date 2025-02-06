@@ -38,7 +38,7 @@ class GFAL2Impl(StageOutImpl):
         if auth_method == "X509":
             self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
         elif auth_method == "TOKEN":
-            self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c 'echo; echo HELLO THERE; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; {}'"
+            self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) X509_USER_PROXY= JOBSTARTDIR=$JOBSTARTDIR bash -c 'echo; echo HELLO THERE; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; {}'"
         else:
             logging.info("Warning! Running gfal without either a X509 certificate or a token!")
             self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"

@@ -46,7 +46,7 @@ class GFAL2Impl(StageOutImpl):
             # Regenerate dependent commands
             self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-rm -t 600 {}')
             self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
+            self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-copy -vvv ' + self.copyOpts)
         else:
             logging.info("Warning! Running gfal without either a X509 certificate or a token!")
             self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"

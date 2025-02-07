@@ -1,3 +1,7 @@
+2.3.9.1 to 2.3.9.2:
+  - Make SiteListPoller more verbose; expand update to work not yet in WMBS (Alan Malta Rodrigues) #12254
+
+
 2.3.8 to 2.3.9.1:
   - Renaming RequestPriority during WorQueue.updateElements call (Todor Trendafilov Ivanov) #12252
   - Fix Sitelists changes propagation to local workqueue (Todor Ivanov) #12251

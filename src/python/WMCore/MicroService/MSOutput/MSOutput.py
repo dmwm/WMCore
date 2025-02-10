@@ -549,7 +549,7 @@ class MSOutput(MSCore):
                     self.alertGenericError(self.mode, workflowname, msg, str(ex), str(docOut))
                     continue
             self.logger.info("Successfully processed %d workflows from pipeline: %s", wfCountersOk, pipeLineName)
-            self.logger.info("Failed to proccess %d workflows from pipeline: %s", wfCounters - wfCountersOk, pipeLineName)
+            self.logger.info("Failed to process %d workflows from pipeline: %s", wfCounters - wfCountersOk, pipeLineName)
             wfCounterTotal += wfCountersOk
 
         return wfCounterTotal

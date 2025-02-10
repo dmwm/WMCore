@@ -2,8 +2,6 @@ WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testH_PauseAlgo
 WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testI_MultipleJobTypes
 WMCore_t.ACDC_t.CouchService_t.CouchService_t:testTimestampAccounting
 WMCore_t.JobSplitting_t.Harvest_t.HarvestTest:testPeriodicTrigger
-WMCore_t.Storage_t.Execute_t.ExecuteTest:testRunCommandWithOutput_error
-WMCore_t.Storage_t.Execute_t.ExecuteTest:testRunCommand_error
 WMCore_t.WebTools_t.NestedModel_t.NestedModelTest:testInnerPingPass
 WMCore_t.WebTools_t.NestedModel_t.NestedModelTest:testOuterFooPass
 WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testWhiteBlackLists
@@ -11,7 +9,6 @@ WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testQueueChaining
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testResetWork
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testWMBSInjectionStatus
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testEndPolicyNegotiating
-WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testMultipleTeams
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testGlobalBlockSplitting
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testQueueChainingStatusUpdates
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:test0eventBlock
@@ -23,9 +20,8 @@ WMCore_t.ReqMgr_t.Service_t.Auxiliary_t.AuxiliaryTest:testAllTransferDocs
 WMCore_t.Services_t.Rucio_t.RucioUtils_t.RucioUtilsTest:testWeightedChoice
 ### Starting here, we have the Python3 unstable tests
 WMCore_t.JobSplitting_t.RunBased_t.RunBasedTest:testMultipleRunsCombine
-WMCore_t.MicroService_t.MSRuleCleaner_t.MSRuleCleanerWflow_t.MSRuleCleanerWflowTest:testMultiPU
 WMCore_t.Services_t.LogDB_t.LogDB_t.LogDBTest:test_heartbeat
-WMCore_t.Services_t.Requests_t.testRepeatCalls:testRecoveryFromConnRefused_with_pycur
+WMCore_t.Services_t.Requests_t.testRepeatCalls:testRecoveryFromConnRefused_with_pycurl
 WMCore_t.Services_t.Requests_t.testRepeatCalls:test10Calls
 WMCore_t.Services_t.Rucio_t.RucioUtils_t.RucioUtilsTest:testWeightedChoice
 WMCore_t.WMBS_t.JobSplitting_t.RunBased_t.EventBasedTest:testMultipleRunsCombine

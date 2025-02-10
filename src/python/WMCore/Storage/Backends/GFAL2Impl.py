@@ -45,7 +45,7 @@ class GFAL2Impl(StageOutImpl):
             self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
             # Regenerate dependent commands
             self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            if force_method:
+            if True: #force_method: #ONLY FOR TESTING
                 self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-copy -vvv ' + self.copyOpts)
                 self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-rm -t 600{}')
             else:

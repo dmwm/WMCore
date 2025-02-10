@@ -18,7 +18,7 @@ class GFAL2ImplTest(unittest.TestCase):
         removeCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c " \
                         "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}'"
         copyCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
-                    ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p " \
+                    ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv -t 2400 -T 2400 -p " \
                     "-v --abort-on-failure {checksum} {options} {source} {destination}'"
         self.assertEqual(removeCommand, testGFAL2Impl.removeCommand)
         self.assertEqual(copyCommand, testGFAL2Impl.copyCommand)
@@ -127,14 +127,17 @@ class GFAL2ImplTest(unittest.TestCase):
         # Adjust the setup based on auth_method
         if auth_method == "X509":
             setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+            # Build the copy command dynamically
+            copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
         elif auth_method == "TOKEN":
-            setups = "env -i BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+            setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+            copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-copy -vvv ' + copyOpts)
         else:
             setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-
-        # Build the copy command dynamically
-        copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-        copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + copyOpts)
+            copyOpts = '-vvv -t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + copyOpts)
 
         # Construct the full result
         result = "#!/bin/bash\n"

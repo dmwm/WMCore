@@ -242,8 +242,6 @@ class GFAL2Impl(StageOutImpl):
         echo "Information for credentials in the environment"
         echo "Bearer token content: $BEARER_TOKEN"
         echo "Bearer token file: $BEARER_TOKEN_FILE"
-        echo "httokendecode path: $(which httokendecode)"
-        echo "httokendecode: $httokendecode"
         echo
         echo "VOMS proxy info:"
         voms-proxy-info -all

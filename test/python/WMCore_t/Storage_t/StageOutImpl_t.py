@@ -81,37 +81,43 @@ class StageOutImplTest(unittest.TestCase):
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createTargetName')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createOutputDirectory')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createStageOutCommand')
+    @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createDebuggingCommand')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')
-    def testCallable(self, mock_executeCommand, mock_createStageOutCommand, mock_createOutputDirectory,
+    def testCallable(self, mock_executeCommand, mock_createStageOutCommand, mock_createDebuggingCommand, mock_createOutputDirectory,
                      mock_createTargetName, mock_createSourceName):
         mock_createSourceName.return_value = "sourcePFN"
         mock_createTargetName.return_value = "targetPFN"
         mock_createStageOutCommand.return_value = "command"
+        mock_createDebuggingCommand.return_value = "command"
         self.StageOutImpl("protocol", "inputPFN", "targetPFN")
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
         mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
+        mock_createDebuggingCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
         mock_executeCommand.assert_called_with("command")
 
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createSourceName')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createTargetName')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createOutputDirectory')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createStageOutCommand')
+    @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createDebuggingCommand')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')
     @mock.patch('WMCore.Storage.StageOutImpl.time')
-    def testCallable_StageOutError(self, mock_time, mock_executeCommand, mock_createStageOutCommand,
+    def testCallable_StageOutError(self, mock_time, mock_executeCommand, mock_createStageOutCommand, mock_createDebuggingCommand,
                                    mock_createOutputDirectory, mock_createTargetName, mock_createSourceName):
         mock_createSourceName.return_value = "sourcePFN"
         mock_createTargetName.return_value = "targetPFN"
         mock_createStageOutCommand.return_value = "command"
+        mock_createDebuggingCommand.return_value = "command"
         mock_createOutputDirectory.side_effect = [StageOutError("error"), StageOutError("error"), None]
-        mock_executeCommand.side_effect = [StageOutError("error"), StageOutError("error"), None]
+        mock_executeCommand.side_effect = [StageOutError("error"), StageOutError("error"), None, None]
         self.StageOutImpl("protocol", "inputPFN", "targetPFN")
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
         mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
+        mock_createDebuggingCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
         mock_executeCommand.assert_called_with("command")
         calls = [call(600), call(600), call(600), call(600)]
         mock_time.sleep.assert_has_calls(calls)

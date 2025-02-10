@@ -132,7 +132,7 @@ class StageOutImpl:
         If no directory is required, do not implement this method
         """
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
         """
         _createStageOutCommand_
 
@@ -142,7 +142,7 @@ class StageOutImpl:
         """
         raise NotImplementedError("StageOutImpl.createStageOutCommand")
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
         """
         Build a shell command that will report in the logs the details about
         failing stageOut commands
@@ -243,8 +243,7 @@ class StageOutImpl:
                 # Authentication-safe fallback logic
                 if os.getenv("X509_USER_PROXY"):
                     logging.info("Retrying with X509_USER_PROXY after unsetting BEARER_TOKEN...")
-                    os.system("unset BEARER_TOKEN; unset BEARER_TOKEN_FILE")
-                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="X509")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="X509", force_method=True)
                     try:
                         self.executeCommand(command)
                         logging.info("Stage-out succeeded with X509 after unsetting BEARER_TOKEN.")
@@ -255,7 +254,7 @@ class StageOutImpl:
                 if os.getenv("BEARER_TOKEN") or os.getenv("BEARER_TOKEN_FILE"):
                     logging.info("Retrying with BEARER_TOKEN after unsetting X509_USER_PROXY...")
                     os.system("unset X509_USER_PROXY")
-                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN", force_method=True)
                     try:
                         self.executeCommand(command)
                         logging.info("Stage-out succeeded with TOKEN after unsetting X509_USER_PROXY.")

@@ -31,7 +31,7 @@ class GFAL2Impl(StageOutImpl):
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
         self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
 
-    def adjustSetup(self, auth_method=None):
+    def adjustSetup(self, auth_method=None, force_method=False):
         """
         Adjust the `self.setups` based on the selected authentication method and regenerate commands.
         """
@@ -44,9 +44,13 @@ class GFAL2Impl(StageOutImpl):
         elif auth_method == "TOKEN":
             self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
             # Regenerate dependent commands
-            self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-rm -t 600 {}')
             self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-copy -vvv ' + self.copyOpts)
+            if force_method:
+                self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-copy -vvv ' + self.copyOpts)
+                self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-rm -t 600 {}')
+            else:
+                self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-copy -vvv ' + self.copyOpts)
+                self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-rm -t 600 {}')
         else:
             logging.info("Warning! Running gfal without either a X509 certificate or a token!")
             self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
@@ -139,7 +143,7 @@ class GFAL2Impl(StageOutImpl):
 
         return copyCommandDict
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
         """
         Create gfal-cp command for stageOut
 
@@ -150,7 +154,7 @@ class GFAL2Impl(StageOutImpl):
         :auth_method: str, the authentication method to be used ("X509", "TOKEN", or None)
         """
         # Adjust the setup
-        self.adjustSetup(auth_method)
+        self.adjustSetup(auth_method, force_method)
 
         # Construct the gfal-cp command
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
@@ -188,7 +192,7 @@ class GFAL2Impl(StageOutImpl):
         
         return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
         """
         Debug a failed gfal-cp command for stageOut, without re-running it,
         providing information on the environment and the certifications
@@ -201,7 +205,7 @@ class GFAL2Impl(StageOutImpl):
         """
 
         # Adjust the setup
-        self.adjustSetup(auth_method)
+        self.adjustSetup(auth_method, force_method)
 
         # Build the gfal-cp command for debugging purposes
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)

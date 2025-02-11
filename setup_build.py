@@ -1,11 +1,15 @@
 from __future__ import print_function
-from distutils.core import Command
-from distutils.command.build import build
-from distutils.command.install import install
-from distutils.spawn import spawn
-import re, os, sys, os.path, shutil
+
+import os
+import sys
+import shutil
+import re
+import subprocess
 from glob import glob
+from setuptools.command.build_py import build_py
+from setuptools.command.install import install
 from setup_dependencies import dependencies
+
 
 def get_path_to_wmcore_root():
     """
@@ -47,11 +51,13 @@ def walk_dep_tree(system):
             modules = modules | dependants.get('modules', set())
     return {'bin': bindir, 'packages': packages, 'statics': statics, 'modules': modules}
 
-def list_packages(package_dirs = [], recurse=True):
+def list_packages(package_dirs=None, recurse=True):
     """
     Take a list of directories and return a list of all packages under those directories, skipping VCS files.
     """
     packages = []
+    if not package_dirs or not isinstance(package_dirs, list):
+        return packages
     # Skip the following files
     ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     for a_dir in package_dirs:
@@ -109,7 +115,6 @@ def list_static_files(system = None):
     Get a list of all the files that are classed as static (e.g. javascript, css, templates)
     """
     # Skip the following files
-    ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     static_files = []
     if system:
         expanded = walk_dep_tree(system)
@@ -195,7 +200,7 @@ def force_rebuild():
     shutil.rmtree('%s/build' % get_path_to_wmcore_root(), True)
     shutil.rmtree('%s/doc/build' % get_path_to_wmcore_root(), True)
 
-class BuildCommand(Command):
+class BuildCommand(build_py):
     """
     Build a specific system, including it's dependencies. Run with --force to trigger a rebuild
     """
@@ -206,7 +211,7 @@ class BuildCommand(Command):
     description += ", ".join(dependencies)
     description += "]\n"
 
-    user_options = build.user_options
+    user_options = build_py.user_options
     user_options.append(('system=', 's', 'build the specified system'))
     user_options.append(('skip-docs', None, 'skip documentation'))
     user_options.append(('compress', None, 'compress assets'))
@@ -229,7 +234,7 @@ class BuildCommand(Command):
     def generate_docs (self):
         if not self.skip_docs:
             os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ.get("PYTHONPATH", ''))
-            spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
+            subprocess.run(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()], check=True)
 
     def compress_assets(self):
         if not self.compress:
@@ -245,25 +250,23 @@ class BuildCommand(Command):
                 if not files:
                     continue
                 elif dir == 'data/javascript':
-                    spawn(['java', '-jar', os.environ["YUICOMPRESSOR"], '--type', 'js',
-                           '-o', (len(files) > 1 and '.js$:-min.js')
-                                  or files[0].replace(".js", "-min.js")]
-                          + files)
+                    subprocess.run(['java', '-jar', os.environ["YUICOMPRESSOR"], '--type', 'js',
+                                   '-o', (len(files) > 1 and '.js$:-min.js')
+                                   or files[0].replace(".js", "-min.js")] + files, check=True)
                 elif dir == 'data/css':
-                    spawn(['java', '-jar', os.environ["YUICOMPRESSOR"], '--type', 'css',
-                           '-o', (len(files) > 1 and '.css$:-min.css')
-                                  or files[0].replace(".css", "-min.css")]
-                          + files)
+                    subprocess.run(['java', '-jar', os.environ["YUICOMPRESSOR"], '--type', 'css',
+                                   '-o', (len(files) > 1 and '.css$:-min.css')
+                                   or files[0].replace(".css", "-min.css")] + files, check=True)
                 elif dir == 'data/templates':
                     for f in files:
                         if f.endswith(".html"):
                             print("minifying", f)
-                            minified = open(f).read()
+                            minified = open(f, encoding="utf-8").read()
                             minified = re.sub(re.compile(r"\n\s*([<>])", re.S), r"\1", minified)
                             minified = re.sub(re.compile(r"\n\s*", re.S), " ", minified)
                             minified = re.sub(r"<!-- (.*?) -->", "", minified)
                             minified = re.sub(rxfileref, r"\1-min\2", minified)
-                            open(f.replace(".html", "-min.html"), "w").write(minified)
+                            open(f.replace(".html", "-min.html"), "w", encoding="utf-8").write(minified)
 
     def run (self):
         # Have to get the build command here and set force, as the build plugins only refer to the
@@ -301,7 +304,7 @@ class InstallCommand(install):
     def initialize_options(self):
         # Call the base class
         install.initialize_options(self)
-        # and add our additionl options
+        # and add our additional options
         self.system = None
         self.patch = None
         self.skip_docs = False
@@ -318,7 +321,7 @@ class InstallCommand(install):
         self.distribution.packages, self.distribution.py_modules = things_to_build(self)
         self.distribution.data_files = list_static_files(dependencies[self.system])
         docroot = "%s/doc/build/html" % get_path_to_wmcore_root()
-        for dirpath, dirs, files in os.walk(docroot):
+        for dirpath, _, files in os.walk(docroot):
             self.distribution.data_files.append(("doc%s" % dirpath[len(docroot):],
                                                  ["%s/%s" % (dirpath, fname) for fname in files if
                                                   fname != '.buildinfo']))

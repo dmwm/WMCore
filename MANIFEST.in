@@ -4,3 +4,8 @@ recursive-include bin *
 include requirements.txt
 include LICENSE
 include NOTICE
+graft src/couchapps
+graft src/css
+graft src/html
+graft src/javascript
+graft src/templates

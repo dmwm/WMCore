@@ -13,14 +13,16 @@ from collections  import namedtuple
 import inspect
 
 
-from Utils.Utilities import strToBool
+from Utils.Utilities import strToBool, makeList
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
-from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
+from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, validateUnknownArgs, validateSiteLists,
+                                           _validateArgumentOptions, loadSpecClassByType,
                                            setAssignArgumentsWithDefault)
 
 parseTaskPath = lambda p: [x for x in p.split('/') if x.strip() != '']
@@ -2054,13 +2056,43 @@ class WMWorkloadHelper(PersistencyHelper):
         validateArgumentsUpdate(schema, argumentDefinition)
         return
 
-    def validateArgumentsPartialUpdate(self, schema):
+    def validateSiteListsUpdate(self, arguments):
+        """
+        Validate a dictionary of workflow arguments for possible  Site lists update
+        It must catch any eventual conflict between the currently existing site lists
+        and the ones provided by the user, presuming that the change would happen by
+        fully substituting an already existing site list at the workflow if provided
+        with the arguments here.
+        """
+        # NOTE: We have 3 different use cases to validate for siteLists conflicts:
+        #       * A change to both SiteWhitelist and SiteBlacklist
+        #       * A change only to SiteWhitelist
+        #       * A change only to SiteBlacklist
+        if "SiteWhitelist" in arguments and "SiteBlacklist" in arguments:
+            validateSiteLists(arguments)
+            return
+        fullSiteWhitelist = set()
+        fullSiteBlacklist = set()
+        if "SiteWhitelist" in arguments and "SiteBlacklist" not in arguments:
+            fullSiteWhitelist = set(makeList(arguments["SiteWhitelist"]))
+            fullSiteBlacklist = set(self.getSiteBlacklist())
+        if "SiteBlacklist" in arguments and "SiteWhitelist" not in arguments:
+            fullSiteWhitelist = set(self.getSiteWhitelist())
+            fullSiteBlacklist = set(makeList(arguments["SiteBlacklist"]))
+        siteConflicts = fullSiteWhitelist & fullSiteBlacklist
+        if siteConflicts:
+            msg = "Validation of Site Lists for update failed due to conflicts with existing Site Lists. "
+            msg += f"A site can only be black listed or whitelisted. Conflicting sites: {list(siteConflicts)}"
+            raise WMSpecFactoryException(msg)
+        return
+
+    def validateArgumentsPartialUpdate(self, arguments):
         """
         Validates the provided parameters schema for workflow arguments update, using
         the arguments definitions for assignment as provided at StdBase.getWorkloadAssignArgs
-        :param schema: Workflow arguments schema to be validated - Must be a properly
-                       defined dictionary of {arg: value} pairs.
-        :return:       Nothing. Raises proper exceptions when argument validation fails
+        :param arguments: Workflow arguments schema to be validated - Must be a properly
+                          defined dictionary of {arg: value} pairs.
+        :return:          Nothing. Raises proper exceptions when argument validation fails
 
         NOTE: In order to avoid full schema validation and enforcing mandatory arguments,
               we set the optionKey argument for this call to NONE. This way it is ignored
@@ -2071,7 +2103,9 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         specClass = loadSpecClassByType(self.getRequestType())
         argumentDefinition = specClass.getWorkloadAssignArgs()
-        validateArgumentsUpdate(schema, argumentDefinition, optionKey=None)
+        validateUnknownArgs(arguments, argumentDefinition)
+        _validateArgumentOptions(arguments, argumentDefinition, optionKey=None)
+        self.validateSiteListsUpdate(arguments)
         return
 
     def updateArguments(self, kwargs):

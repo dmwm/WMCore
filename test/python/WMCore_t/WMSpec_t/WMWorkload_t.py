@@ -30,6 +30,11 @@ class WMWorkloadTest(unittest.TestCase):
         self.persistFile = "%s/WMWorkloadPersistencyTest.pkl" % os.getcwd()
         if PY3:
             self.assertItemsEqual = self.assertCountEqual
+
+        # Setting the maximum length of a diff in failure messages for this instance
+        # to infinite so that we can compare strings longer than 640 chars
+        self.maxDiff=None
+
         return
 
     def tearDown(self):
@@ -1287,6 +1292,56 @@ class WMWorkloadTest(unittest.TestCase):
         except WMSpecFactoryException:
             raises = True
         self.assertTrue(raises, "'T2_CH_CERN' cannot be in both site white and black lists")
+
+    def testValidateSiteListsUpdate(self):
+        """
+        _testValidateSiteListsUpdate_
+
+        Verify we cannot set a site to the white and blacklist for an update of a workflow
+        with already existing site lists
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setRequestType("StepChain")
+        testWorkload.setStatus('running-open')
+        testWorkload.newTask("ProcessingTask")
+
+        SiteWhitelist = ["T1_US_FNAL", "T0_CH_CERN"]
+        SiteBlacklist = ["T1_DE_KIT"]
+        testWorkload.setSiteWhitelist(SiteWhitelist)
+        testWorkload.setSiteBlacklist(SiteBlacklist)
+
+        # Validate no Sitelists collisions use case:
+        reqArgs = {'RequestPriority': 400,
+                   'SiteWhitelist': ["T2_CH_CERN", "T0_CH_CERN"],
+                   'SiteBlacklist': ["T1_US_FNAL"]}
+        self.assertEqual(testWorkload.validateSiteListsUpdate(reqArgs), None)
+
+        # Validate Sitelists collisions when setting both SiteWhitelist and SiteBlacklist
+        reqArgs = {'RequestPriority': 400,
+                   'SiteWhitelist': ["T1_US_FNAL", "T0_CH_CERN"],
+                   'SiteBlacklist': ["T1_US_FNAL"]}
+        expectedMsg = "Validation failed: The same site cannot be white and blacklisted: ['T1_US_FNAL']"
+        with self.assertRaises(WMSpecFactoryException) as cm:
+            testWorkload.validateSiteListsUpdate(reqArgs)
+        self.assertEqual(cm.exception.message(), expectedMsg)
+
+        # Validate Sitelists collisions when setting only SiteWhitelist
+        reqArgs = {'RequestPriority': 400,
+                   'SiteWhitelist': ["T1_DE_KIT"]}
+        expectedMsg = "Validation of Site Lists for update failed due to conflicts with existing Site Lists. "
+        expectedMsg += "A site can only be black listed or whitelisted. Conflicting sites: ['T1_DE_KIT']"
+        with self.assertRaises(WMSpecFactoryException) as cm:
+            testWorkload.validateSiteListsUpdate(reqArgs)
+        self.assertEqual(cm.exception.message(), expectedMsg)
+
+        # Validate Sitelists collisions when setting only SiteBlacklist
+        reqArgs = {'RequestPriority': 400,
+                   'SiteBlacklist': ["T1_US_FNAL"]}
+        expectedMsg = "Validation of Site Lists for update failed due to conflicts with existing Site Lists. "
+        expectedMsg += "A site can only be black listed or whitelisted. Conflicting sites: ['T1_US_FNAL']"
+        with self.assertRaises(WMSpecFactoryException) as cm:
+            testWorkload.validateSiteListsUpdate(reqArgs)
+        self.assertEqual(cm.exception.message(), expectedMsg)
 
 
     def testValidateArgumentsPartialUpdate(self):

@@ -1,3 +1,7 @@
+2.3.8.1 to 2.3.8.2:
+  - WorkloadTools.ValidateSiteLisits does not set empty lists by default. (Todor Ivanov) #12264
+
+
 2.3.8 to 2.3.8.1:
   - Renaming RequestPriority during WorQueue.updateElements call (Dario Mapelli) #12249, backport from #12248 (Todor Ivanov)
 

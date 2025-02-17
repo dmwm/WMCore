@@ -129,14 +129,14 @@ class GFAL2ImplTest(unittest.TestCase):
             setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
             # Build the copy command dynamically
             copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
+            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
         elif auth_method == "TOKEN":
             setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
             copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; echo; echo \"BEARER_TOKEN: $BEARER_TOKEN\"; echo \"BEARER_TOKEN_FILE: $BEARER_TOKEN_FILE\"; echo \"X509_USER_PROXY: $X509_USER_PROXY\"; gfal-copy -vvv ' + copyOpts)
+            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + copyOpts)
         else:
             setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-            copyOpts = '-vvv -t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+            copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
             copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + copyOpts)
 
         # Construct the full result

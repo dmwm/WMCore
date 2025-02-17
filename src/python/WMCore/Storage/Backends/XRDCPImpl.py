@@ -237,7 +237,7 @@ class XRDCPImpl(StageOutImpl):
         echo "==========================================================="
         echo "-----------------------------------------------------------"
         echo
-        """.format(copy_command=copyCommand, sourcePFN, targetPFN)
+        """.format(copyCommand, sourcePFN, targetPFN)
         return result
 
     def removeFile(self, pfnToRemove):

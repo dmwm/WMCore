@@ -101,7 +101,7 @@ class StageOutImplTest(unittest.TestCase):
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
-        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
+        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, authmethod='TOKEN')
         # Verify that createDebuggingCommand was not called during a successful stage-out.
         mock_createDebuggingCommand.assert_not_called()
         mock_executeCommand.assert_called_with("command")
@@ -139,10 +139,10 @@ class StageOutImplTest(unittest.TestCase):
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
-        # The stage-out command is generated with auth_method='TOKEN'
-        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
+        # The stage-out command is generated with authmethod='TOKEN'
+        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, authmethod='TOKEN')
         # After retries are exhausted, the debugging command should be generated.
-        mock_createDebuggingCommand.assert_called_with("sourcePFN", "targetPFN", None, None, auth_method='TOKEN')
+        mock_createDebuggingCommand.assert_called_with("sourcePFN", "targetPFN", None, None, authmethod='TOKEN')
         # Assert that time.sleep was called 4 times (once for each failed stage-out attempt).
         calls = [call(600), call(600), call(600), call(600)]
         mock_time.sleep.assert_has_calls(calls)

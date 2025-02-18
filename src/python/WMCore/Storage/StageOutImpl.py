@@ -132,7 +132,7 @@ class StageOutImpl:
         If no directory is required, do not implement this method
         """
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         _createStageOutCommand_
 
@@ -142,7 +142,7 @@ class StageOutImpl:
         """
         raise NotImplementedError("StageOutImpl.createStageOutCommand")
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         Build a shell command that will report in the logs the details about
         failing stageOut commands
@@ -214,7 +214,7 @@ class StageOutImpl:
         # //
         # // This will actually only enforce the definition of the bearer token variables, still x509 auth activated as a backup
         try:
-            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
+            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod="TOKEN")
         except TypeError as ex:
             logging.warning("Falling back to default createStageOutCommand due to: %s", str(ex))
             command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
@@ -240,7 +240,7 @@ class StageOutImpl:
                 # Authentication-safe fallback logic
                 if os.getenv("X509_USER_PROXY"):
                     logging.info("Retrying with X509_USER_PROXY with BEARER_TOKEN unset...")
-                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="X509", force_method=True)
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod="X509", forcemethod=True)
                     try:
                         self.executeCommand(command)
                         logging.info("Stage-out succeeded with X509 with BEARER_TOKEN unset.")
@@ -250,7 +250,7 @@ class StageOutImpl:
 
                 if os.getenv("BEARER_TOKEN") or os.getenv("BEARER_TOKEN_FILE"):
                     logging.info("Retrying with BEARER_TOKEN with X509_USER_PROXY unset...")
-                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN", force_method=True)
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod="TOKEN", forcemethod=True)
                     try:
                         self.executeCommand(command)
                         logging.info("Stage-out succeeded with TOKEN with X509_USER_PROXY unset.")
@@ -268,7 +268,7 @@ class StageOutImpl:
         if stageOutEx is not None:
             logging.error("Maximum number of retries exhausted. Further details on the failed command reported below.")
             try:
-                command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums, auth_method="TOKEN")
+                command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums, authmethod="TOKEN")
             except TypeError as ex:
                 command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums)
             self.executeCommand(command)

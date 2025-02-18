@@ -26,28 +26,30 @@ class GFAL2Impl(StageOutImpl):
         # Next commands after separation are executed without env -i and this leads us with
         # mixed environment with COMP and system python.
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
-        self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"  # Default initialization, it is tweaked in createStageOutCommand depending on the authentication method
+        self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"  # Default initialization, tweaked afterwards
         self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
         self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
 
-    def adjustSetup(self, auth_method=None, force_method=False):
+    def adjustSetup(self, authmethod=None, forcemethod=False):
         """
         Adjust the `self.setups` based on the selected authentication method and regenerate commands.
         """
-        if auth_method == "X509":
+        if authmethod == "X509":
             self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
             self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            if force_method:
-                self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset BEARER_TOKEN; unset BEARER_TOKEN_FILE; date; gfal-copy ' + self.copyOpts)
-                self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset BEARER_TOKEN; unset BEARER_TOKEN_FILE; date; gfal-rm -t 600 {}')
+            if forcemethod:
+                self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset BEARER_TOKEN; \
+                                                       unset BEARER_TOKEN_FILE; date; gfal-copy ' + self.copyOpts)
+                self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset BEARER_TOKEN; \
+                                                        unset BEARER_TOKEN_FILE; date; gfal-rm -t 600 {}')
             else:
                 self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
                 self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
-        elif auth_method == "TOKEN":
+        elif authmethod == "TOKEN":
             self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
             self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            if force_method:
+            if forcemethod:
                 self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; gfal-copy ' + self.copyOpts)
                 self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; gfal-rm -t 600{}')
             else:
@@ -144,7 +146,7 @@ class GFAL2Impl(StageOutImpl):
 
         return copyCommandDict
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         Create gfal-cp command for stageOut
 
@@ -152,10 +154,10 @@ class GFAL2Impl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
-        :auth_method: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
         """
         # Adjust the setup
-        self.adjustSetup(auth_method, force_method)
+        self.adjustSetup(authmethod, forcemethod)
 
         # Construct the gfal-cp command
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
@@ -188,12 +190,12 @@ class GFAL2Impl(StageOutImpl):
             fi
             exit $EXIT_STATUS
             """.format(remove_command=self.createRemoveFileCommand(targetPFN))
-
+            
         logging.info("============ end of createStageOutCommand within GFAL2Impl =============")
         
         return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, auth_method=None, force_method=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         Debug a failed gfal-cp command for stageOut, without re-running it,
         providing information on the environment and the certifications
@@ -202,11 +204,11 @@ class GFAL2Impl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
-        :auth_method: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
         """
 
         # Adjust the setup
-        self.adjustSetup(auth_method, force_method)
+        self.adjustSetup(authmethod, forcemethod)
 
         # Build the gfal-cp command for debugging purposes
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)

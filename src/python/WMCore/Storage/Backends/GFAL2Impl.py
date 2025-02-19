@@ -34,6 +34,8 @@ class GFAL2Impl(StageOutImpl):
     def adjustSetup(self, authmethod=None, forcemethod=False):
         """
         Adjust the `self.setups` based on the selected authentication method and regenerate commands.
+        :authmethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
+        :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
         """
         if authmethod == "X509":
             self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
@@ -154,7 +156,8 @@ class GFAL2Impl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
-        :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :authmethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
+        :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
         """
         # Adjust the setup
         self.adjustSetup(authmethod, forcemethod)

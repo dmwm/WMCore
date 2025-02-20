@@ -1,0 +1,127 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "Digi_2021noPU": "AcquisitionEra-OVERRIDE-ME", 
+            "GenSimFull": "AcquisitionEra-OVERRIDE-ME", 
+            "Reco_2021noPU": "AcquisitionEra-OVERRIDE-ME"
+        }, 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        }, 
+        "ProcessingString": {
+            "Digi_2021noPU": "ProcessingString-OVERRIDE-ME", 
+            "GenSimFull": "ProcessingString-OVERRIDE-ME", 
+            "Reco_2021noPU": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra", 
+        "CMSSWVersion": "CMSSW_12_0_0", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {
+            "CheckList": "TaskChain MC from scratch; TaskChain requiring GPU; KeepOutput false for Task1/Task2",
+            "WorkFlowDesc": "TC MC from scratch without PU; TaskChain requiring some made-up GPU for Task1 and Task3;"
+        }, 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
+        "EventStreams": 0, 
+        "RequiresGPU": "forbidden",
+        "GPUParams": "null",
+        "GlobalTag": "120X_mcRun3_2021_realistic_v4", 
+        "IncludeParents": false, 
+        "Memory": 3000, 
+        "Multicore": 1, 
+        "PrepID": "TEST-CMSSW_12_0_0__PDMVRELVALS-128_2021noPU-Psi2SToJPsiPiPi-00001", 
+        "ProcessingString": "DEFAULT_ProcStr", 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": [
+            "slc7_amd64_gcc900"
+        ], 
+        "SizePerEvent": 1, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_12_0_0", 
+            "CMSSWVersion": "CMSSW_12_0_0", 
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "527f598f9168f0145d17417be583c7ef", 
+            "EventStreams": 2, 
+            "EventsPerLumi": 100, 
+            "GlobalTag": "120X_mcRun3_2021_realistic_v4", 
+            "KeepOutput": false, 
+            "Memory": 2000, 
+            "Multicore": 8, 
+            "PrimaryDataset": "RelValPsi2SToJPsiPiPi", 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "RequestNumEvents": 10000,
+            "RequiresGPU": "required",
+            "GPUParams": "{\"GPUMemoryMB\": 123, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ], 
+            "Seeding": "AutomaticSeeding", 
+            "SplittingAlgo": "EventBased",
+            "TimePerEvent": 110,
+            "TaskName": "GenSimFull"
+        }, 
+        "Task2": {
+            "AcquisitionEra": "CMSSW_12_0_0", 
+            "CMSSWVersion": "CMSSW_12_0_0", 
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "527f598f9168f0145d17417be583db58", 
+            "EventStreams": 2, 
+            "GlobalTag": "120X_mcRun3_2021_realistic_v4", 
+            "InputFromOutputModule": "FEVTDEBUGoutput", 
+            "InputTask": "GenSimFull",
+            "KeepOutput": false, 
+            "Memory": 4000, 
+            "Multicore": 8, 
+            "ProcessingString": "Task2_WMCore_TEST",
+            "RequiresGPU": "forbidden",
+            "GPUParams": "null",
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ], 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "TimePerEvent": 90,
+            "TaskName": "Digi_2021noPU"
+        }, 
+        "Task3": {
+            "AcquisitionEra": "CMSSW_12_0_0", 
+            "CMSSWVersion": "CMSSW_12_0_0", 
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "527f598f9168f0145d17417be584029f", 
+            "EventStreams": 2, 
+            "GlobalTag": "120X_mcRun3_2021_realistic_v4", 
+            "InputFromOutputModule": "FEVTDEBUGHLToutput", 
+            "InputTask": "Digi_2021noPU", 
+            "Memory": 8000, 
+            "Multicore": 8, 
+            "ProcessingString": "Task3_WMCore_TEST",
+            "RequiresGPU": "optional",
+            "GPUParams": "{\"GPUMemoryMB\": 123, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ], 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "TimePerEvent": 60,
+            "TaskName": "Reco_2021noPU"
+        }, 
+        "TaskChain": 3, 
+        "TimePerEvent": 1
+    }
+}

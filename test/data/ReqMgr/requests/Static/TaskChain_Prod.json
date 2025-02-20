@@ -1,0 +1,229 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "myTask1": "AcquisitionEra-OVERRIDE-ME", 
+            "myTask2": "AcquisitionEra-OVERRIDE-ME", 
+            "myTask3": "AcquisitionEra-OVERRIDE-ME", 
+            "myTask4": "AcquisitionEra-OVERRIDE-ME",
+            "myTask5": "AcquisitionEra-OVERRIDE-ME", 
+            "myTask6": "AcquisitionEra-OVERRIDE-ME" 
+        }, 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "myTask1": "ProcessingString-OVERRIDE-ME", 
+            "myTask2": "ProcessingString-OVERRIDE-ME", 
+            "myTask3": "ProcessingString-OVERRIDE-ME", 
+            "myTask4": "ProcessingString-OVERRIDE-ME",
+            "myTask5": "ProcessingString-OVERRIDE-ME", 
+            "myTask6": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": {
+            "myTask1": "ProcessingVersion-OVERRIDE-ME", 
+            "myTask2": "ProcessingVersion-OVERRIDE-ME", 
+            "myTask3": "ProcessingVersion-OVERRIDE-ME", 
+            "myTask4": "ProcessingVersion-OVERRIDE-ME",
+            "myTask5": "ProcessingVersion-OVERRIDE-ME", 
+            "myTask6": "ProcessingVersion-OVERRIDE-ME" 
+        }, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra", 
+        "CMSSWVersion": "CMSSW_10_6_17_patch1", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {
+            "WorkFlowDesc": ["TC from scratch with 6 tasks; PU in Task3; Task1 2cores/1GB/1stream; Task2/3/4/5 8cores/16GB/4streams; Task6 6cores/12GB/6streams",
+                             "Each task with a different PrepId/AcqEra/ProcStr/ProcVer per task; Task1 on 10_6_18; Task2/3/5/6 on 10_6_17patch1; Task4 on 8_0_33_UL",
+                             "Drop Task2/3/5 - GEN-SIM/GEN-SIM-DIGI/AODSIM; Keep Task1/4/6 - GEN/LHE/GEN-SIM-RAW/MINIAODSIM"],
+	    "CheckList": ["TC: different AcqEra/ProcStr/ProcVer/; TC: different PrepID/CMSSW/ScramArch for each task; TC: different Memory/Cores/Streams"]
+        }, 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
+        "EnableHarvesting": false,
+        "EventStreams": 4,
+        "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8", 
+        "IncludeParents": false, 
+        "Memory": 4000,
+        "Multicore": 4,
+        "PrepID": "DEFAULT_PrepID", 
+        "ProcessingString": "DEFAULT_ProcStr", 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 190000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": [
+            "slc7_amd64_gcc700"
+        ], 
+        "SizePerEvent": 74.332, 
+        "SubRequestType": "ReDigi", 
+        "Task1": {
+            "AcquisitionEra": "RunIISummer20UL16wmLHEGENAPV", 
+            "CMSSWVersion": "CMSSW_10_6_18", 
+            "Campaign": "RunIISummer20UL16wmLHEGENAPV", 
+            "ConfigCacheID": "25f234cce5b9bc5e508c93f77811fafb", 
+            "EventsPerJob": 1000,
+            "EventsPerLumi": 500, 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8", 
+            "KeepOutput": true, 
+            "LheInputFiles": false, 
+            "Memory": 1000, 
+            "Multicore": 2,
+            "EventStreams": 1,
+            "PrepID": "Task1-TOP-RunIISummer20UL16wmLHEGENAPV-00118", 
+            "PrimaryDataset": "b_bbar_4l_TuneCP5_13TeV-powheg-pythia8", 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "ProcessingVersion": 11, 
+            "RequestNumEvents": 6000, 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "Seeding": "AutomaticSeeding", 
+            "SizePerEvent": 111.15137366548042, 
+            "SplittingAlgo": "EventBased", 
+            "TaskName": "myTask1", 
+            "TimePerEvent": 8.152151760457173
+        }, 
+        "Task2": {
+            "AcquisitionEra": "RunIISummer20UL16SIMAPV", 
+            "CMSSWVersion": "CMSSW_10_6_17_patch1", 
+            "Campaign": "RunIISummer20UL16SIMAPV", 
+            "ConfigCacheID": "2b438580ef8dab7939a77dce0e202963", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputTask": "myTask1", 
+            "KeepOutput": false, 
+            "Memory": 16000, 
+            "Multicore": 8, 
+            "EventStreams": 4,
+            "PrepID": "Task2-TOP-RunIISummer20UL16SIMAPV-00005", 
+            "PrimaryDataset": "b_bbar_4l_TuneCP5_13TeV-powheg-pythia8", 
+            "ProcessingString": "Task2_WMCore_TEST", 
+            "ProcessingVersion": 12, 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SizePerEvent": 175.97, 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "TaskName": "myTask2", 
+            "TimePerEvent": 50.786
+        }, 
+        "Task3": {
+            "AcquisitionEra": "RunIISummer20UL16DIGIPremixAPV", 
+            "CMSSWVersion": "CMSSW_10_6_17_patch1", 
+            "Campaign": "RunIISummer20UL16DIGIPremixAPV", 
+            "ConfigCacheID": "2b438580ef8dab7939a77dce0e20797c", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputTask": "myTask2", 
+            "KeepOutput": false, 
+            "MCPileup": "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX", 
+            "Memory": 16000, 
+            "Multicore": 8, 
+            "EventStreams": 4,
+            "PrepID": "Task3-TOP-RunIISummer20UL16DIGIPremixAPV-00005", 
+            "PrimaryDataset": "b_bbar_4l_TuneCP5_13TeV-powheg-pythia8", 
+            "ProcessingString": "Task3_WMCore_TEST", 
+            "ProcessingVersion": 13, 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SizePerEvent": 930.853, 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "TaskName": "myTask3", 
+            "TimePerEvent": 20.0842
+        }, 
+        "Task4": {
+            "AcquisitionEra": "RunIISummer20UL16HLTAPV", 
+            "CMSSWVersion": "CMSSW_8_0_33_UL", 
+            "Campaign": "RunIISummer20UL16HLTAPV", 
+            "ConfigCacheID": "2b438580ef8dab7939a77dce0e20a6f3", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6", 
+            "InputFromOutputModule": "PREMIXRAWoutput", 
+            "InputTask": "myTask3", 
+            "KeepOutput": true, 
+            "Memory": 16000, 
+            "Multicore": 8, 
+            "EventStreams": 4,
+            "PrepID": "Task4-TOP-RunIISummer20UL16HLTAPV-00005", 
+            "PrimaryDataset": "b_bbar_4l_TuneCP5_13TeV-powheg-pythia8", 
+            "ProcessingString": "Task4_WMCore_TEST", 
+            "ProcessingVersion": 14, 
+            "ScramArch": [
+                "slc7_amd64_gcc530"
+            ], 
+            "SizePerEvent": 300.059, 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "TaskName": "myTask4", 
+            "TimePerEvent": 50.3639
+        }, 
+        "Task5": {
+            "AcquisitionEra": "RunIISummer20UL16RECOAPV", 
+            "CMSSWVersion": "CMSSW_10_6_17_patch1", 
+            "Campaign": "RunIISummer20UL16RECOAPV", 
+            "ConfigCacheID": "2b438580ef8dab7939a77dce0e21002d", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputTask": "myTask4", 
+            "KeepOutput": false, 
+            "Memory": 16000, 
+            "Multicore": 8, 
+            "EventStreams": 4,
+            "PrepID": "Task5-TOP-RunIISummer20UL16RECOAPV-00005", 
+            "PrimaryDataset": "b_bbar_4l_TuneCP5_13TeV-powheg-pythia8", 
+            "ProcessingString": "Task5_WMCore_TEST", 
+            "ProcessingVersion": 15, 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SizePerEvent": 347.377, 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "TaskName": "myTask5", 
+            "TimePerEvent": 52.2574
+        }, 
+        "Task6": {
+            "AcquisitionEra": "RunIISummer20UL16MiniAODAPV", 
+            "CMSSWVersion": "CMSSW_10_6_17_patch1", 
+            "Campaign": "RunIISummer20UL16MiniAODAPV", 
+            "ConfigCacheID": "2b438580ef8dab7939a77dce0e21d89b", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_preVFP_v8", 
+            "InputFromOutputModule": "AODSIMoutput", 
+            "InputTask": "myTask5", 
+            "KeepOutput": true, 
+            "Memory": 12000, 
+            "Multicore": 6, 
+            "EventStreams": 6,
+            "PrepID": "Task6-TOP-RunIISummer20UL16MiniAODAPV-00005", 
+            "PrimaryDataset": "b_bbar_4l_TuneCP5_13TeV-powheg-pythia8", 
+            "ProcessingString": "Task6_WMCore_TEST", 
+            "ProcessingVersion": 16, 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SizePerEvent": 74.332, 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "TaskName": "myTask6", 
+            "TimePerEvent": 50.81345
+        }, 
+        "TaskChain": 6, 
+        "TimePerEvent": 0.81345
+    }
+}

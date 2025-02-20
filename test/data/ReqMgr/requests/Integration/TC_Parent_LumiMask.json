@@ -20,7 +20,7 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "Run2023C-TopLevel",
+        "AcquisitionEra": "Run2023C_TopLevel",
         "Campaign": "Campaign-OVERRIDE-ME",
         "CMSSWVersion": "CMSSW_13_2_6_patch2",
         "Comments": {

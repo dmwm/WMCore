@@ -10,4 +10,4 @@ General information, as well as development and testing documentation, can be fo
 For guidance on setting up a development/testing environment and how to contribute to WMCore, please refer to the [CONTRIBUTING](https://github.com/dmwm/WMCore/blob/master/CONTRIBUTING.rst) guidelines.
 
 ## Getting Support
-For project support and discussions, please join us on the CMS O&C organization in [CERN Mattermost]([https://cms-dmwm.slack.com/messages/#support](https://mattermost.web.cern.ch/cms-o-and-c). The relevant Mattermost channels are either `WM Dev` or `WM Ops`.
+For project support and discussions, please join us on the CMS O&C organization in [CERN Mattermost](https://mattermost.web.cern.ch/cms-o-and-c). The relevant Mattermost channels are either `WM Dev` or `WM Ops`.

@@ -20,7 +20,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
-
+from WMCore.Services.TagCollector.TagCollector import TagCollector
 
 def activityToType(jobActivity):
     """
@@ -138,6 +138,8 @@ class SimpleCondorPlugin(BasePlugin):
         # These are added now by the condor client
         #self.x509userproxysubject = proxy.getSubject()
         #self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
+        
+        self.tc = TagCollector()
 
         return
 
@@ -155,6 +157,7 @@ class SimpleCondorPlugin(BasePlugin):
             return successfulJobs, failedJobs
 
         schedd = htcondor.Schedd()
+        rel_microarchs = self.tc.defaultMicroArchVersionNumberByRelease()
 
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
@@ -640,7 +643,14 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.REQUIRED_ARCH'] = classad.quote(str(requiredArchs))
                 ad['Requirements'] = 'stringListMember(TARGET.Arch, REQUIRED_ARCH)'
 
-            jobParameters.append(ad)    
+            # Inject a microarchitecture classad. If x86_64 not on arch list, return 0
+            if 'X86_64' not in requiredArchs.split(","):
+                ad['My.REQUIRED_MINIMUM_MICROARCH'] = "0"
+            else:
+                minMicroArch = self.tc.getGreaterMicroarchVersionNumber(cmsswVersions, rel_microarchs=rel_microarchs)
+                ad['My.REQUIRED_MINIMUM_MICROARCH'] = str(minMicroArch) 
+
+            jobParameters.append(ad)
              
         return jobParameters
 

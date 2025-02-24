@@ -41,6 +41,7 @@ class SiblingProcessingBased(JobFactory):
         if self.subscription["fileset"].open == True:
             filesetClosed = False
         else:
+            a = Adding_Bug_For_Testing_Purposes
             fileFailed = daoFactory(classname = "Subscriptions.SiblingSubscriptionsFailed")
             fileFailed.execute(self.subscription["id"],
                                self.subscription["fileset"].id,

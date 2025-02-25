@@ -20,13 +20,10 @@ import importlib
 import runpy
 import pkgutil
 import inspect
-import subprocess
-from pprint import pprint,pformat
-from distutils.sysconfig import get_python_lib
+import sysconfig
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WMInit import connectToDB
 from Utils.FileTools import loadEnvFile
 
@@ -150,7 +147,7 @@ if __name__ == '__main__':
     # First find all possible locations for the component source
     # NOTE: We always consider PYTHONPATH first
     pythonLibPaths = os.getenv('PYTHONPATH', '').split(':')
-    pythonLibPaths.append(get_python_lib())
+    pythonLibPaths.append(sysconfig.get_path("purelib"))
     # Normalize paths and remove empty ones
     pythonLibPaths = [x for x in pythonLibPaths if x]
     for index, libPath in enumerate(pythonLibPaths):

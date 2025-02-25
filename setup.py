@@ -4,13 +4,11 @@ Build, clean and test the WMCore package.
 """
 from __future__ import print_function
 
-import imp
 import os
 import os.path
-from distutils.core import Command, setup
-from os.path import join as pjoin
-
-from setup_build import BuildCommand, InstallCommand, get_path_to_wmcore_root, list_packages, list_static_files
+import importlib.util
+from setuptools import setup, find_packages, Command
+from setup_build import BuildCommand, InstallCommand, get_path_to_wmcore_root, list_static_files
 from setup_test import CoverageCommand, TestCommand
 
 
@@ -19,30 +17,24 @@ class CleanCommand(Command):
     user_options = []
 
     def initialize_options(self):
-        self.cleanMes = []
-        for root, dummyDirs, files in os.walk('.'):
-            for f in files:
-                if f.endswith('.pyc'):
-                    self.cleanMes.append(pjoin(root, f))
+        self.clean_files = [
+            os.path.join(root, f) for root, _, files in os.walk('.')
+            for f in files if f.endswith('.pyc')
+        ]
 
     def finalize_options(self):
         pass
 
     def run(self):
-        for cleanMe in self.cleanMes:
+        for clean_file in self.clean_files:
             try:
-                os.unlink(cleanMe)
+                os.unlink(clean_file)
             except Exception:
                 pass
 
 
 class EnvCommand(Command):
-    description = "Configure the PYTHONPATH, DATABASE and PATH variables to" + \
-                  "some sensible defaults, if not already set. Call with -q when eval-ing," + \
-                  """ e.g.:
-                      eval `python setup.py -q env`
-                  """
-
+    description = "Configure the PYTHONPATH, DATABASE and PATH variables"
     user_options = []
 
     def initialize_options(self):
@@ -52,80 +44,81 @@ class EnvCommand(Command):
         pass
 
     def run(self):
-        if not os.getenv('COUCHURL', False):
-            # Use the default localhost URL if none is configured.
+        if not os.getenv('COUCHURL'):
             print('export COUCHURL=http://localhost:5984')
-        here = get_path_to_wmcore_root()
 
-        tests = here + '/test/python'
-        source = here + '/src/python'
-        # Stuff we want on the path
-        exepth = [source + '/WMCore/WebTools',
-                  here + '/bin']
+        here = get_path_to_wmcore_root()
+        tests, source = here + '/test/python', here + '/src/python'
+        exepaths = [source + '/WMCore/WebTools', here + '/bin']
 
         pypath = os.getenv('PYTHONPATH', '').strip(':').split(':')
-
         for pth in [tests, source]:
             if pth not in pypath:
                 pypath.append(pth)
 
-        # We might want to add other executables to PATH
         expath = os.getenv('PATH', '').split(':')
-        for pth in exepth:
+        for pth in exepaths:
             if pth not in expath:
                 expath.append(pth)
 
-        print('export PYTHONPATH=%s' % ':'.join(pypath))
-        print('export PATH=%s' % ':'.join(expath))
-
-        # We want the WMCORE root set, too
-        print('export WMCORE_ROOT=%s' % get_path_to_wmcore_root())
+        print(f'export PYTHONPATH={":".join(pypath)}')
+        print(f'export PATH={":".join(expath)}')
+        print(f'export WMCORE_ROOT={here}')
         print('export WMCOREBASE=$WMCORE_ROOT')
         print('export WTBASE=$WMCORE_ROOT/src')
 
-# The actual setup command, and the classes associated to the various options
+def get_version():
+    """Retrieve version from WMCore package"""
+    wmcore_root = os.path.dirname(__file__)
+    wmcore_init_path = os.path.join(wmcore_root, 'src', 'python', 'WMCore', '__init__.py')
 
-# Need all the packages we want to build by default, this will be overridden in sub-system builds.
-# Since it's a lot of code determine it by magic.
-DEFAULT_PACKAGES = list_packages(['src/python/Utils',
-                                  'src/python/WMCore',
-                                  'src/python/WMComponent',
-                                  'src/python/WMQuality',
-                                  'src/python/PSetTweaks'])
+    spec = importlib.util.spec_from_file_location("wmcore", wmcore_init_path)
+    wmcore = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(wmcore)
+    return wmcore.__version__
 
-# Divine out the version of WMCore from WMCore.__init__, which is bumped by
-# "bin/buildrelease.sh"
+# Find packages dynamically
+DEFAULT_PACKAGES = find_packages(where="src/python")
 
-# Obnoxiously, there's a dependency cycle when building packages. We'd like
-# to simply get the current WMCore version by using
-# from WMCore import __version__
-# But PYTHONPATH isn't set until after the package is built, so we can't
-# depend on the python module resolution behavior to load the version.
-# Instead, we use the imp module to load the source file directly by
-# filename.
-wmcore_root = get_path_to_wmcore_root()
-wmcore_package = imp.load_source('temp_module', os.path.join(wmcore_root,
-                                                            'src',
-                                                            'python',
-                                                            'WMCore',
-                                                            '__init__.py'))
-wmcore_version = wmcore_package.__version__
+# Read long description from README
+long_description = ""
+if os.path.exists("README.md"):
+    with open("README.md", encoding="utf-8") as f:
+        long_description = f.read()
 
-setup(name='wmcore',
-      version=wmcore_version,
-      maintainer='CMS DMWM Group',
-      maintainer_email='hn-cms-wmDevelopment@cern.ch',
-      cmdclass={'deep_clean': CleanCommand,
-                'coverage': CoverageCommand,
-                'test': TestCommand,
-                'env': EnvCommand,
-                'build_system': BuildCommand,
-                'install_system': InstallCommand},
-      # base directory for all our packages
-      package_dir={'': 'src/python/'},  # % get_path_to_wmcore_root()},
-      packages=DEFAULT_PACKAGES,
-      data_files=list_static_files(),
-      url="https://github.com/dmwm/WMCore",
-      license="Apache License, Version 2.0",
-      download_url="https://github.com/dmwm/WMCore/tarball/%s" % wmcore_version
-      )
+package_data = []
+for _, values in list_static_files():
+    for val in values:
+        package_data.append(val)
+
+package_version = get_version()
+
+setup(
+    name="wmcore",
+    version=package_version,
+    maintainer="CMS DMWM Group",
+    maintainer_email="hn-cms-wmDevelopment@cern.ch",
+    cmdclass={
+        "deep_clean": CleanCommand,
+        "coverage": CoverageCommand,
+        "test": TestCommand,
+        "env": EnvCommand,
+        "build_system": BuildCommand,
+        "install_system": InstallCommand,
+    },
+    package_dir={"": "src/python"},
+    packages=DEFAULT_PACKAGES,
+    package_data={"": package_data},  # Use package_data instead of data_files
+    include_package_data=True,  # Ensure non-Python files are included
+    url="https://github.com/dmwm/WMCore",
+    license="Apache License 2.0",
+    download_url=f"https://github.com/dmwm/WMCore/tarball/{package_version}",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    classifiers=[
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+    ],
+    python_requires=">=3.6",
+)

@@ -80,7 +80,7 @@ echo "INFO: Current WMCoreTag: $currTag"
 # Find all possible locations for the component source
 # NOTE: We always consider PYTHONPATH first
 pythonLibPaths=$(echo $PYTHONPATH |sed -e "s/\:/ /g")
-pythonLibPaths="$pythonLibPaths $(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")"
+pythonLibPaths="$pythonLibPaths $(python -c "import sysconfig; print(sysconfig.get_path('purelib'))")"
 
 for path in $pythonLibPaths
 do

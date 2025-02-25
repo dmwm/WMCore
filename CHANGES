@@ -1,3 +1,7 @@
+2.3.10rc3 to 2.3.10rc4:
+  - Add wheel package to install WMCore wheels (Valentin Kuznetsov) #12275
+
+
 2.3.10rc2 to 2.3.10rc3:
   - Fix redirect command to create new requirements.<pkg>.txt (Valentin Kuznetsov) #12274
 

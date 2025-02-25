@@ -1,3 +1,7 @@
+2.3.10rc1 to 2.3.10rc2:
+  - fix usage of requirements.<pkg>.txt as part of the matrix.target (Valentin Kuznetsov) #12273
+
+
 2.3.8 to 2.3.10rc1:
   - switch from distutils to setuptools (Valentin Kuznetsov) #12259
   - Remove slack from link text (Fredrik) #12268

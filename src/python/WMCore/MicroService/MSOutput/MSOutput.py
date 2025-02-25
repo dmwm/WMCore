@@ -1011,7 +1011,9 @@ class MSOutput(MSCore):
         alertDescription += " In order to get output data placement working, add it ASAP please."
         self.logger.critical(alertDescription)
         if self.msConfig["sendNotification"]:
-            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            tag = self.alertDestinationMap.get("alertCampaignNotFound", "")
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                           self.alertServiceName, tag=tag)
 
     def alertDatatierNotFound(self, datatierName, containerName, isRelVal):
         """
@@ -1029,7 +1031,9 @@ class MSOutput(MSCore):
         alertDescription += "Please add it ASAP. Letting it pass for now..."
         self.logger.critical(alertDescription)
         if self.msConfig["sendNotification"] and not isRelVal:
-            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            tag = self.alertDestinationMap.get("alertDatatierNotFound", "")
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                           self.alertServiceName, tag=tag)
 
     def alertGenericError(self, caller, workflowname, msg, exMsg, document):
         """
@@ -1048,6 +1052,8 @@ class MSOutput(MSCore):
         alertDescription = "wf: {}\n\nmsg: {}\n\nex: {}\n\n{}".format(workflowname, msg, exMsg, document)
         self.logger.error("%s\n%s\n%s", alertName, alertSummary, alertDescription)
         if self.msConfig["sendNotification"]:
-            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            tag = self.alertDestinationMap.get("alertGenericError", "")
+            self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                           self.alertServiceName, tag=tag)
 
 

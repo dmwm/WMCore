@@ -1,3 +1,7 @@
+2.3.10rc4 to 2.3.10rc5:
+  - Disable wheels builds as found through CI/CD pipeline that pycurl is broken with wheels (Valentin Kuznetsov) #12276
+
+
 2.3.10rc3 to 2.3.10rc4:
   - Add wheel package to install WMCore wheels (Valentin Kuznetsov) #12275
 

@@ -44,7 +44,7 @@ jobs:
       - name: Create requirements file
         run: |
           echo "create new requirements.txt without gfal dependencies for CI/CD"
-          cat requirements.txt | egrep -v "gfal" requirements.${{ matrix.target }}.txt
+          cat requirements.txt | egrep -v "gfal" > requirements.${{ matrix.target }}.txt
           awk "/(${{ matrix.target }}$)|(${{ matrix.target }},)/ {print \$1}" requirements.${{ matrix.target }}.txt > requirements.txt
 
       - name: Build sdist and wheels

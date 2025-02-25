@@ -579,8 +579,10 @@ class MSTransferor(MSCore):
         alertSummary = "[MSTransferor] Workflow cannot proceed due to some PU misconfiguration."
         alertDescription = "Workflow: {} could not proceed due to some PU misconfiguration,".format(workflowName)
         alertDescription += "so it will be skipped."
+        # this alert is high priority PnR
+        tag = "email-pnr,alerts-pnr"
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                       self.alertServiceName)
+                       self.alertServiceName, tag=tag)
         self.logger.critical(alertDescription)
 
     def alertUnknownTransferError(self, workflowName):
@@ -592,8 +594,10 @@ class MSTransferor(MSCore):
         alertSeverity = "high"
         alertSummary = "[MSTransferor] Unknown exception while making transfer request."
         alertDescription = "Unknown exception while making Transfer request for workflow: {}".format(workflowName)
+        # this alert should be routed to dmwm and pnr
+        tag = "email-dmdm,email-pnr,alerts-pnr"
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                       self.alertServiceName)
+                       self.alertServiceName, tag=tag)
 
     def alertTransferCouchDBError(self, workflowName):
         """
@@ -604,8 +608,10 @@ class MSTransferor(MSCore):
         alertSeverity = "high"
         alertSummary = "[MSTransferor] Transfer document could not be created in CouchDB."
         alertDescription = "Workflow: {}, failed request  due to error posting to CouchDB".format(workflowName)
+        # this alert should be routed to dmwm and pnr
+        tag = "email-dmdm,email-pnr,alerts-pnr"
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                       self.alertServiceName)
+                       self.alertServiceName, tag=tag)
         self.logger.warning(alertDescription)
 
 
@@ -628,9 +634,10 @@ class MSTransferor(MSCore):
             alertDescription = "Workflow: {} has a large amount of ".format(wflowName)
             alertDescription += "data subscribed: {} TB, ".format(teraBytes(dataSize))
             alertDescription += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
-
+            # this alert should go to pnr
+            tag = "alerts-pnr"
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                           self.alertServiceName)
+                           self.alertServiceName, tag=tag)
             self.logger.warning(alertDescription)
 
     def _getValidSites(self, wflow, dataIn):

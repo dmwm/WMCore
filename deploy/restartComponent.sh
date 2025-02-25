@@ -8,7 +8,9 @@
 
 HOST=$(hostname)
 DATENOW=$(date +%s)
-DEST_NAME=cms-wmcore-team
+DEST_WM=cms-wmcore-team
+DEST_T0=cms-tier0-operations
+DEST_PNR=cms-comp-ops-pnr-alarms
 
 [[ -z $WMA_INSTALL_DIR ]] && { echo "ERROR: Trying to run without having the full WMAgent environment set!";  exit 1 ;}
 
@@ -34,7 +36,7 @@ for comp in $comps; do
     echo -e "Restarting component: $comp"
     manage execute-agent wmcoreD --restart --components=$comp
     echo -e "ComponentLog quiet for $INTERVAL secs\n\nTail of the log is:\n$TAIL_LOG" |
-      mail -s "$HOST : $comp restarted" $DEST_NAME@cern.ch
+      mail -s "$HOST : $comp restarted" $DEST_WM@cern.ch $DEST_T0@cern.ch $DEST_PNR@cern.ch
   fi
 done
 

@@ -92,7 +92,7 @@ class MSCore(object):
             reportDict[keyName] = value
         return reportDict
 
-    def sendAlert(self, alertName, severity, summary, description, service, endSecs=1 * 60 * 60):
+    def sendAlert(self, alertName, severity, summary, description, service, tag=None, endSecs=1 * 60 * 60):
         """
         Sends an alert to Prometheus.
         :param alertName: string with unique alert name
@@ -105,6 +105,6 @@ class MSCore(object):
         """
         try:
             self.alertManagerApi.sendAlert(alertName, severity, summary, description,
-                                           service, endSecs=endSecs)
+                                           service, tag=tag, endSecs=endSecs)
         except Exception as ex:
             self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))

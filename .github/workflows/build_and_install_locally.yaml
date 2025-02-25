@@ -47,12 +47,10 @@ jobs:
           cat requirements.txt | egrep -v "gfal" > requirements.${{ matrix.target }}.txt
           awk "/(${{ matrix.target }}$)|(${{ matrix.target }},)/ {print \$1}" requirements.${{ matrix.target }}.txt > requirements.txt
 
-      - name: Build sdist and wheels
+      - name: Build sdist
         run: |
-          echo "install wheel package from pip to build wheels"
-          pip install wheel
           echo "build WMCore sdist and wheels"
-          python3 setup.py clean sdist bdist_wheel
+          python3 setup.py clean sdist
 
       - name: Verify built package
         run: ls -lh dist/

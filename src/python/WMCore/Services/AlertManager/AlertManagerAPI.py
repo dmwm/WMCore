@@ -9,9 +9,11 @@ from datetime import timedelta, datetime
 import socket
 import json
 import logging
+import re
 
 from WMCore.Services.pycurl_manager import RequestHandler
 from Utils.Timers import LocalTimezone
+from WMCore.Services.UUIDLib import makeUUID
 
 
 class AlertManagerAPI(object):
@@ -72,13 +74,14 @@ class AlertManagerAPI(object):
         labels["severity"] = severity
         labels["tag"] = tag
         labels["service"] = service
+        labels["uuid"] = makeUUID()
         alert["labels"] = labels
 
         # add annotations
         annotations["hostname"] = self.hostname
-        annotations["summary"] = summary
-        annotations["description"] = description
-        alert["annotations"] = annotations
+        annotations["summary"] = normalize_spaces(summary)
+        annotations["description"] = normalize_spaces(description)
+        alert["annotations"] = normalize_spaces(annotations)
 
         # In python3 we won't need the LocalTimezone class
         # Will change to d = datetime.now().astimezone() + timedelta(seconds=endSecs)
@@ -90,7 +93,9 @@ class AlertManagerAPI(object):
         # need to do this because pycurl_manager only accepts dict and encoded strings type
         params = json.dumps(request)
 
+        # provide dump of alert send to AM which will allow to match it in WM logs
         res = self.mgr.getdata(self.alertManagerUrl, params=params, headers=self.headers, verb='POST')
+        self.logger.info("ALERT: %s, status=%s", params, res)
 
         return res
 
@@ -104,3 +109,12 @@ class AlertManagerAPI(object):
             logging.critical("Alert submitted to AlertManagerAPI with invalid severity: %s", severity)
             return False
         return True
+
+def normalize_spaces(text):
+    """
+    Helper function to remove any number of empty spaces within given text and replace
+    then with single space.
+    :param text: string
+    :return: normalized string
+    """
+    return re.sub(r'\s+', ' ', text).strip()

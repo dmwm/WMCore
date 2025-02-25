@@ -33,6 +33,12 @@ jobs:
         with:
           python-version: "3.8"
 
+      - name: Update system packages to include pycurl
+        run: |
+          echo "update system packages to include pycurl dev librarty (required for pycurl)"
+          sudo apt update
+          sudo apt install -y curl libcurl4-openssl-dev
+
       - name: Upgrade pip3
         run: |
           python3 -m pip install --upgrade pip
@@ -47,10 +53,12 @@ jobs:
           cat requirements.txt | egrep -v "gfal" > requirements.${{ matrix.target }}.txt
           awk "/(${{ matrix.target }}$)|(${{ matrix.target }},)/ {print \$1}" requirements.${{ matrix.target }}.txt > requirements.txt
 
-      - name: Build sdist
+      - name: Build sdist and bdist_wheel
         run: |
+          echo "install wheel package from pip to build wheels"
+          pip install wheel
           echo "build WMCore sdist and wheels"
-          python3 setup.py clean sdist
+          python3 setup.py clean sdist bdist_wheel
 
       - name: Verify built package
         run: ls -lh dist/

@@ -1,3 +1,17 @@
+2.3.8 to 2.3.10rc1:
+  - switch from distutils to setuptools (Valentin Kuznetsov) #12259
+  - Remove slack from link text (Fredrik) #12268
+  - update readme with reference to mattermost instead of slack (Alan Malta Rodrigues) #
+  - Unit tests (Todor Ivanov) #12260
+  - WorkloadTools.ValidateSiteLisits does not set empty lists by default. (Todor Ivanov) #12260
+  - Unit tests removed, and one test name typo (Fredrik) #12258
+  - Fix logging typo (Fredrik) #12258
+  - Make SiteListPoller more verbose (Alan Malta Rodrigues) #12253
+  - Unit tests (Todor Ivanov) #12245
+  - Fix Sitelists changes propagation to local workqueue (Todor Ivanov) #12245
+  - Renaming RequestPriority during WorQueue.updateElements call (Todor Trendafilov Ivanov) #12248
+
+
 2.3.8rc13 to 2.3.8:
   - Add WorkQueueTest:testProductionMultiQueue to the unstable unit tests (Alan Malta Rodrigues) #12242
   - Move call to MSTransferor service from MSManager.py to Data.py which services MS REST end-points (Valentin Kuznetsov) #12241

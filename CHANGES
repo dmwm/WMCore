@@ -1,3 +1,7 @@
+2.3.10rc5 to 2.3.10rc6:
+  - Added curl dev library to Ubuntu system as it required within CI/CD pipeline to install pycurl  locally (Valentin Kuznetsov) #12277
+
+
 2.3.10rc4 to 2.3.10rc5:
   - Disable wheels builds as found through CI/CD pipeline that pycurl is broken with wheels (Valentin Kuznetsov) #12276
 

@@ -83,7 +83,11 @@ class DQMHarvestWorkloadFactory(DataProcessing):
 
         harvestTask = self.workload.newTask("%sDQMHarvest" % harvestType)
 
-        self.addRuntimeMonitors(harvestTask)
+        if periodic_harvest_sibling:
+            self.addRuntimeMonitors(harvestTask, mem=0.1)
+        else:
+            self.addRuntimeMonitors(harvestTask)
+        
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 

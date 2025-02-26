@@ -400,7 +400,7 @@ class RucioTest(EmulatedUnitTestCase):
         Test the `pickRSE` method
         """
         print(self.myRucio.cli.list_rse_attributes("T1_US_FNAL_Disk"))
-        resp = self.myRucio.pickRSE(rseExpression="ddm_quota>0", rseAttribute="ddm_quota")
+        resp = self.myRucio.pickRSE(rseExpression="dm_weight>0", rseAttribute="dm_weight")
         self.assertTrue(len(resp) == 2)
         self.assertTrue(resp[1] is True or resp[1] is False)
 

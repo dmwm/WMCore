@@ -91,7 +91,7 @@ class MSTransferor(MSCore):
         # Set to negative to ignore.
         self.msConfig.setdefault("warningTransferThreshold", 100. * (1000 ** 4))  # 100TB
         # weight expression for the input replication rules
-        self.msConfig.setdefault("rucioRuleWeight", 'ddm_quota')
+        self.msConfig.setdefault("rucioRuleWeight", 'dm_weight')
         # Workflows with open running timeout are used for growing input dataset, thus
         # make a container level rule for the whole container whenever the open running
         # timeout is larger than what is configured (or the default of 7 days below)

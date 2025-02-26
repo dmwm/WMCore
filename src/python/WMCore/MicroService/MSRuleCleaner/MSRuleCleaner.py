@@ -101,6 +101,8 @@ class MSRuleCleaner(MSCore):
         self.wmstatsSvc = WMStatsServer(self.msConfig['wmstatsUrl'], logger=self.logger)
         # service name used to route alerts via AlertManager
         self.alertServiceName = "ms-rulecleaner"
+        # alertDestinationMap is used to define alert routes
+        self.alertDestinationMap = self.msConfig.get("alertDestinationMap", {})
         # 2 days of expiration time
         self.alertExpiration = self.msConfig.get("alertExpireSecs", 2 * 24 * 60 * 60)
 
@@ -806,8 +808,7 @@ class MSRuleCleaner(MSCore):
         # Check if alarms are enabled for this service
         # Alert expiration time defaults to 2 days
         if self.msConfig["sendNotification"]:
-            # this alert should go to pnr MM channel
-            tag = "alerts-pnr"
+            tag = self.alertDestinationMap.get("alertStatusAdvanceExpired", "")
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                            service=self.alertServiceName, endSecs=self.alertExpiration, tag=tag)
         self.logger.critical(alertDescription)

@@ -116,6 +116,8 @@ class MSTransferor(MSCore):
         self.blockCounter = 0
         # service name used to route alerts via AlertManager
         self.alertServiceName = "ms-transferor"
+        # alertDestinationMap is used to define alert routes
+        self.alertDestinationMap = self.msConfig.get("alertDestinationMap", {})
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -579,8 +581,7 @@ class MSTransferor(MSCore):
         alertSummary = "[MSTransferor] Workflow cannot proceed due to some PU misconfiguration."
         alertDescription = "Workflow: {} could not proceed due to some PU misconfiguration,".format(workflowName)
         alertDescription += "so it will be skipped."
-        # this alert is high priority PnR
-        tag = "email-pnr,alerts-pnr"
+        tag = self.alertDestinationMap.get("alertPUMisconfig", "")
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                        self.alertServiceName, tag=tag)
         self.logger.critical(alertDescription)
@@ -594,8 +595,7 @@ class MSTransferor(MSCore):
         alertSeverity = "high"
         alertSummary = "[MSTransferor] Unknown exception while making transfer request."
         alertDescription = "Unknown exception while making Transfer request for workflow: {}".format(workflowName)
-        # this alert should be routed to dmwm and pnr
-        tag = "email-dmdm,email-pnr,alerts-pnr"
+        tag = self.alertDestinationMap.get("alertUnknownTransferError", "")
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                        self.alertServiceName, tag=tag)
 
@@ -608,8 +608,7 @@ class MSTransferor(MSCore):
         alertSeverity = "high"
         alertSummary = "[MSTransferor] Transfer document could not be created in CouchDB."
         alertDescription = "Workflow: {}, failed request  due to error posting to CouchDB".format(workflowName)
-        # this alert should be routed to dmwm and pnr
-        tag = "email-dmdm,email-pnr,alerts-pnr"
+        tag = self.alertDestinationMap.get("alertTransferCouchDBError", "")
         self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                        self.alertServiceName, tag=tag)
         self.logger.warning(alertDescription)
@@ -634,8 +633,7 @@ class MSTransferor(MSCore):
             alertDescription = "Workflow: {} has a large amount of ".format(wflowName)
             alertDescription += "data subscribed: {} TB, ".format(teraBytes(dataSize))
             alertDescription += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
-            # this alert should go to pnr
-            tag = "alerts-pnr"
+            tag = self.alertDestinationMap.get("alertLargeInputData", "")
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                            self.alertServiceName, tag=tag)
             self.logger.warning(alertDescription)

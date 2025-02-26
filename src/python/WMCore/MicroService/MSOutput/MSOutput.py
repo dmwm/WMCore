@@ -101,6 +101,8 @@ class MSOutput(MSCore):
         self.uConfig = {}
         # service name used to route alerts via AlertManager
         self.alertServiceName = "ms-output"
+        # alertDestinationMap is used to define alert routes
+        self.alertDestinationMap = self.msConfig.get("alertDestinationMap", {})
 
         # RelVal output data placement policy from the service configuration
         self.msConfig.setdefault("dbsUrl", "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
@@ -1011,8 +1013,7 @@ class MSOutput(MSCore):
         alertDescription += " In order to get output data placement working, add it ASAP please."
         self.logger.critical(alertDescription)
         if self.msConfig["sendNotification"]:
-            # this alert should go to pnr MM channel
-            tag = "alerts-pnr"
+            tag = self.alertDestinationMap.get("alertCampaignNotFound", "")
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                            self.alertServiceName, tag=tag)
 
@@ -1032,8 +1033,7 @@ class MSOutput(MSCore):
         alertDescription += "Please add it ASAP. Letting it pass for now..."
         self.logger.critical(alertDescription)
         if self.msConfig["sendNotification"] and not isRelVal:
-            # this alert should go to pnr MM channel
-            tag = "alerts-pnr"
+            tag = self.alertDestinationMap.get("alertDatatierNotFound", "")
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                            self.alertServiceName, tag=tag)
 
@@ -1054,8 +1054,7 @@ class MSOutput(MSCore):
         alertDescription = "wf: {}\n\nmsg: {}\n\nex: {}\n\n{}".format(workflowname, msg, exMsg, document)
         self.logger.error("%s\n%s\n%s", alertName, alertSummary, alertDescription)
         if self.msConfig["sendNotification"]:
-            # this alert should go to dmwm and pnr
-            tag = "alerts-dmwm,alerts-pnr,email-dmwm,email-pnr"
+            tag = self.alertDestinationMap.get("alertGenericError", "")
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
                            self.alertServiceName, tag=tag)
 

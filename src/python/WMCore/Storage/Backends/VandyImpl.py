@@ -7,6 +7,7 @@ Implementation of StageOutImpl interface for Vanderbilt
 """
 
 import os.path
+import logging
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -56,7 +57,7 @@ class VandyImpl(StageOutImpl):
         # throw a stage out error
         self.executeCommand(command)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
 
         """
         _createStageOutCommand_
@@ -65,6 +66,8 @@ class VandyImpl(StageOutImpl):
         targetPFN.
 
         """
+        logging.info("Warning! VandyImpl does not support authmethod handling")
+
         if self.stageIn:
             return "%s %s %s" % (self._downloadScript, sourcePFN, targetPFN)
         else:

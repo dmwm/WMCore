@@ -89,13 +89,15 @@ class LCGImpl(StageOutImpl):
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         _createStageOutCommand_
 
         Build an srmcp command
 
         """
+        logging.info("Warning! LCGImpl does not support authmethod handling")
+
         result = "#!/bin/sh\n"
 
         # check if we should use the grid UI from CVMFS

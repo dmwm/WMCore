@@ -132,7 +132,7 @@ class StageOutImpl:
         If no directory is required, do not implement this method
         """
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         _createStageOutCommand_
 
@@ -142,7 +142,7 @@ class StageOutImpl:
         """
         raise NotImplementedError("StageOutImpl.createStageOutCommand")
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         Build a shell command that will report in the logs the details about
         failing stageOut commands
@@ -178,10 +178,9 @@ class StageOutImpl:
 
         This operator does the actual stage out by invoking the overridden
         plugin methods of the derived object.
-
-
         """
-        #  //
+
+        # //
         # // Generate the source PFN from the plain PFN if needed
         # //
         sourcePFN = self.createSourceName(protocol, inputPFN)
@@ -189,7 +188,7 @@ class StageOutImpl:
         # destination may also need PFN changed
         # i.e. if we are staging in a file from an SE
         targetPFN = self.createTargetName(protocol, targetPFN)
-        #  //
+        # //
         # // Create the output directory if implemented
         # //
         for retryCount in range(self.numRetries + 1):
@@ -203,30 +202,62 @@ class StageOutImpl:
                 msg += "Error details:\n{}\n".format(str(ex))
                 logging.error(msg)
                 if retryCount == self.numRetries:
-                    #  //
+                    # //
                     # // last retry, propagate exception
                     # //
+                    logging.error("Maximum retries exhausted when trying to create the output directory")
                     raise ex
                 time.sleep(self.retryPause)
 
         # //
         # // Create the command to be used.
         # //
-        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
-        #  //
+        # // This will actually only enforce the definition of the bearer token variables, still x509 auth activated as a backup
+        try:
+            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod="TOKEN")
+        except TypeError as ex:
+            logging.warning("Falling back to default createStageOutCommand due to: %s", str(ex))
+            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
+        # //
         # // Run the command
         # //
 
         stageOutEx = None  # variable to store the possible StageOutError
         for retryCount in range(self.numRetries + 1):
             try:
-                logging.info("Running the stage out...")
+                logging.info("Running the stage out with the available auth method (attempt %d)...", retryCount + 1)
+                logging.info("Command to run: %s", command)
                 self.executeCommand(command)
+                logging.info("\nStage-out succeeded with the current environment.")
                 break
+
             except StageOutError as ex:
-                msg = "Attempt {} to stage out failed.\n".format(retryCount)
+                msg = "Attempt {} to stage out failed with default setup.\n".format(retryCount)
                 msg += "Error details:\n{}\n".format(str(ex))
                 logging.error(msg)
+                logging.info("Retrying with authentication-safe logic...")
+
+                # Authentication-safe fallback logic
+                if os.getenv("X509_USER_PROXY"):
+                    logging.info("Retrying with X509_USER_PROXY with BEARER_TOKEN unset...")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod="X509", forcemethod=True)
+                    try:
+                        self.executeCommand(command)
+                        logging.info("Stage-out succeeded with X509 with BEARER_TOKEN unset.")
+                        return
+                    except StageOutError as fallbackEx:
+                        logging.warning("Fallback with X509_USER_PROXY failed:\n%s", str(fallbackEx))
+
+                if os.getenv("BEARER_TOKEN") or os.getenv("BEARER_TOKEN_FILE"):
+                    logging.info("Retrying with BEARER_TOKEN with X509_USER_PROXY unset...")
+                    command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod="TOKEN", forcemethod=True)
+                    try:
+                        self.executeCommand(command)
+                        logging.info("Stage-out succeeded with TOKEN with X509_USER_PROXY unset.")
+                        return
+                    except StageOutError as fallbackEx:
+                        logging.warning("Fallback with BEARER_TOKEN failed:\n%s", str(fallbackEx))
+
                 if retryCount == self.numRetries:
                     # Last retry, propagate the information outside of the for loop
                     stageOutEx = ex
@@ -236,6 +267,9 @@ class StageOutImpl:
         # This block will now always be executed after retries are exhausted
         if stageOutEx is not None:
             logging.error("Maximum number of retries exhausted. Further details on the failed command reported below.")
-            command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums)
+            try:
+                command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums, authmethod="TOKEN")
+            except TypeError as ex:
+                command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums)
             self.executeCommand(command)
             raise stageOutEx from None

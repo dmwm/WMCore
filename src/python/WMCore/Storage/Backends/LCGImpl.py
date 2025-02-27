@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for lcg-cp
 
 """
 import os
+import logging
 
 from future.utils import viewitems
 

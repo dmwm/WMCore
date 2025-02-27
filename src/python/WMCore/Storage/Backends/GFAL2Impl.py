@@ -29,7 +29,7 @@ class GFAL2Impl(StageOutImpl):
         self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"  # Default initialization, tweaked afterwards
         self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv ' + self.copyOpts)
+        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
 
     def adjustSetup(self, authmethod=None, forcemethod=False):
         """
@@ -39,7 +39,7 @@ class GFAL2Impl(StageOutImpl):
         """
         if authmethod == "X509":
             self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-            self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+            #self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
             if forcemethod:
                 self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset BEARER_TOKEN; \
                                                        unset BEARER_TOKEN_FILE; date; gfal-copy ' + self.copyOpts)
@@ -50,7 +50,7 @@ class GFAL2Impl(StageOutImpl):
                 self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
         elif authmethod == "TOKEN":
             self.setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-            self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+            #self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
             if forcemethod:
                 self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; gfal-copy ' + self.copyOpts)
                 self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; unset X509_USER_PROXY; date; gfal-rm -t 600{}')
@@ -60,7 +60,7 @@ class GFAL2Impl(StageOutImpl):
         else:
             logging.info("Warning! Running gfal without either a X509 certificate or a token!")
             self.setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-            self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+            #self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
             self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
             self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
 
@@ -208,6 +208,7 @@ class GFAL2Impl(StageOutImpl):
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
         :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
         """
 
         # Adjust the setup

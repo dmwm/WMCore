@@ -96,6 +96,26 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         print(result)
         return result
 
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed copy command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the command for debugging purposes
+        copyCommand = " /bin/cp "
+        if options != None:
+            copyCommand += " %s " % options
+        copyCommand += " %s " % sourcePFN
+        copyCommand += " %s " % targetPFN
+
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
+        return result
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

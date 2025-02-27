@@ -21,13 +21,58 @@ class WinImpl(StageOutImpl):
     Test plugin that always returns success
 
     """
-    def createSourceName(self, protocol, lfn):
+    def createSourceName(self, protocol, pfn):
         return "WIN!!!"
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         print("WinImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums))
         return "WIN!!!"
+
+
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed unittest cp command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the command for debugging purposes
+        copyCommand = "WinImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums)
+
+        result = "#!/bin/bash\n"
+        result += """
+        echo
+        echo
+        echo "-----------------------------------------------------------"
+        echo "==========================================================="
+        echo
+        echo "Debugging information on failing copy command"
+        echo
+        echo "Current date and time: $(date +"%Y-%m-%d %H:%M:%S")"
+        echo "copy command which failed: {copy_command}"
+        echo "Hostname:   $(hostname -f)"
+        echo "OS:  $(uname -r -s)"
+        echo
+        echo "PYTHON environment variables:"
+        env | grep ^PYTHON
+        echo
+        echo "LD_* environment variables:"
+        env | grep ^LD_
+        echo
+        echo "Source PFN: {source}"
+        echo "Target PFN: {destination}"
+        echo
+        echo "VOMS proxy info:"
+        voms-proxy-info -all
+        echo "==========================================================="
+        echo "-----------------------------------------------------------"
+        echo
+        """.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
+        return result
 
 
     def removeFile(self, pfnToRemove):
@@ -48,7 +93,7 @@ class FailImpl(StageOutImpl):
 
     """
 
-    def createSourceName(self, protocol, lfn):
+    def createSourceName(self, protocol, pfn):
         return "FAIL!!!"
 
 
@@ -56,6 +101,22 @@ class FailImpl(StageOutImpl):
         print("FailImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums))
         return "FAIL!!!"
 
+
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed unittest cp command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the command for debugging purposes
+        copyCommand = "FailImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums)
+
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
+        return result
 
     def removeFile(self, pfnToRemove):
         print("FailImpl.removeFile(%s)" % pfnToRemove)
@@ -100,6 +161,21 @@ class LocalCopyImpl(StageOutImpl):
         command = "cp %s %s" %(sourcePFN, sourcePFN+'2')
         return command
 
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed unittest cp command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the command for debugging purposes
+        copyCommand = "cp %s %s" %(sourcePFN, sourcePFN+'2')
+
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=sourcePFN+'2')
+        return result
 
     def removeFile(self, pfnToRemove):
         command = "rm  %s" %pfnToRemove

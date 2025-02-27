@@ -18,7 +18,7 @@ class GFAL2ImplTest(unittest.TestCase):
         removeCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c " \
                         "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}'"
         copyCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
-                    ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -vvv -t 2400 -T 2400 -p " \
+                    ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p " \
                     "-v --abort-on-failure {checksum} {options} {source} {destination}'"
         self.assertEqual(removeCommand, testGFAL2Impl.removeCommand)
         self.assertEqual(copyCommand, testGFAL2Impl.copyCommand)

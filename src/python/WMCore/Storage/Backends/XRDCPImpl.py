@@ -159,6 +159,23 @@ class XRDCPImpl(StageOutImpl):
             copyCommand += "else echo \"ERROR: XRootD file transfer return code is $RC. Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
 
         return copyCommand
+    
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed xrdcp command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the command for debugging purposes
+        copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
+        copyCommand = self.copyCommand.format_map(copyCommandDict)
+
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
+        return result
 
     def removeFile(self, pfnToRemove):
         """

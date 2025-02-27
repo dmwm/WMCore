@@ -37,6 +37,35 @@ class StageOutImpl:
         self.numRetries = 3
         self.retryPause = 600
         self.stageIn = stagein
+        self.debuggingTemplate =  "#!/bin/bash\n"
+        self.debuggingTemplate += """
+        echo
+        echo
+        echo "-----------------------------------------------------------"
+        echo "==========================================================="
+        echo
+        echo "Debugging information on failing copy command"
+        echo
+        echo "Current date and time: $(date +"%Y-%m-%d %H:%M:%S")"
+        echo "copy command which failed: {copy_command}"
+        echo "Hostname:   $(hostname -f)"
+        echo "OS:  $(uname -r -s)"
+        echo
+        echo "PYTHON environment variables:"
+        env | grep ^PYTHON
+        echo
+        echo "LD_* environment variables:"
+        env | grep ^LD_
+        echo
+        echo "Source PFN: {source}"
+        echo "Target PFN: {destination}"
+        echo
+        echo "VOMS proxy info:"
+        voms-proxy-info -all
+        echo "==========================================================="
+        echo "-----------------------------------------------------------"
+        echo
+        """
 
     @staticmethod
     def splitPFN(pfn):
@@ -147,8 +176,16 @@ class StageOutImpl:
         Build a shell command that will report in the logs the details about
         failing stageOut commands
         """
-        raise NotImplementedError("StageOutImpl.createDebuggingCommand")
+        # Build an example of debugging command
+        copyCommand = "dummy cp"
+        if options is not None:
+            copyCommand += " %s " % options
+        if checksums is not None:
+            copyCommand += " %s " % checksums
 
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
+        return result
+    
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

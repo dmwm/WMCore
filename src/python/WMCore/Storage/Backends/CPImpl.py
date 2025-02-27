@@ -82,6 +82,35 @@ class CPImpl(StageOutImpl):
 
         return copyCommand
 
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed cp command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the command for debugging purposes
+        copyCommand = ""
+
+        if self.stageIn:
+            remotePFN, localPFN = sourcePFN, targetPFN
+        else:
+            remotePFN, localPFN = targetPFN, sourcePFN
+            copyCommand += "LOCAL_SIZE=`stat -c%%s %s`\n" % localPFN
+            copyCommand += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
+
+        copyCommand += "cp %s %s\n" % (sourcePFN, targetPFN)
+
+        if self.stageIn:
+            copyCommand += "LOCAL_SIZE=`stat -c%%s %s`\n" % localPFN
+            copyCommand += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
+
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=remotePFN)
+        return result
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

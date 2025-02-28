@@ -46,7 +46,7 @@ jobs:
       # libcurl library), etc.
       - name: Update system packages to include pycurl
         run: |
-          echo "update system packages to include pycurl dev librarty (required for pycurl)"
+          echo "update system packages to include pycurl dev library (required for pycurl)"
           sudo apt update
           sudo apt install -y curl libcurl4-openssl-dev
 
@@ -67,7 +67,7 @@ jobs:
       - name: Create requirements file
         run: |
           echo "create new requirements.txt without gfal dependencies for CI/CD"
-          cat requirements.txt | egrep -v "gfal" > requirements.${{ matrix.target }}.txt
+          cat requirements.txt | egrep -v "gfal2-python|python-gfal2" > requirements.${{ matrix.target }}.txt
           awk "/(${{ matrix.target }}$)|(${{ matrix.target }},)/ {print \$1}" requirements.${{ matrix.target }}.txt > requirements.txt
 
       # this step will build tarball and whl files for our matrix.target WM package

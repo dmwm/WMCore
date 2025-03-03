@@ -231,7 +231,7 @@ def validate_ustrlist(argname, param, safe, rx, custom_err = None):
 
     Note that an array of zero length is accepted, meaning there were no
     `argname` parameters at all in `param.kwargs`."""
-    _validate_all(argname, param, safe, _check_ustr, rx, custom_err)
+    _validate_all(argname, param, safe, _check_str, rx, custom_err)
 
 def validate_numlist(argname, param, safe, bare=False, minval=None, maxval=None, custom_err = None):
     """Validates that an argument is an array of integers, as checked by

@@ -680,7 +680,7 @@ class MiniRESTApi(object):
         :arg callable callable: The handler; see class documentation for signature.
         :arg list args: List of valid positional and keyword argument names.
           These will be copied to the API object which will be passed to the
-          validation methods. Normally you'd get these with inspect.getargspec().
+          validation methods. Normally you'd get these with inspect.getfullargspec().
         :arg callable validation: The validator; see class documentation for the
           signature and behavioural requirements. If `args` is non-empty,
           `validation` is mandatory; if `args` is empty, `callable` does not
@@ -2358,7 +2358,7 @@ def restcall(func=None, args=None, generate="result", **kwargs):
 
     The `args` should be the parameter names accepted by the decorated
     function. If `args` is the default None, the possible arguments are
-    extracted with :func:`inspect.getargspec`.
+    extracted with :func:`inspect.getfullargspec`.
 
     The `generate` argument sets the label used by output formatters to
     surround the output. The default is "result", yielding for example
@@ -2395,7 +2395,7 @@ def restcall(func=None, args=None, generate="result", **kwargs):
         if not func:
             raise ValueError("'restcall' must be applied to a function")
         if args == None:
-            args = [a for a in inspect.getargspec(func).args if a != 'self']
+            args = [a for a in inspect.getfullargspec(func).args if a != 'self']
         if args == None or not isinstance(args, list):
             raise ValueError("'args' must be defined")
         kwargs.update(generate=generate)

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from builtins import str, map
-import collections
+import collections.abc
 from itertools import islice, chain, groupby
 
 def grouper(iterable, n):
@@ -43,7 +43,7 @@ def nestedDictUpdate(d, u):
     http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
     """
     for k, v in u.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             r = nestedDictUpdate(d.get(k, {}), v)
             d[k] = r
         else:
@@ -57,9 +57,9 @@ def convertFromUnicodeToBytes(data):
     """
     if isinstance(data, str):
         return data.encode('utf-8')
-    elif isinstance(data, collections.Mapping):
+    elif isinstance(data, collections.abc.Mapping):
         return dict(list(map(convertFromUnicodeToBytes, list(data.items()))))
-    elif isinstance(data, collections.Iterable):
+    elif isinstance(data, collections.abc.Iterable):
         return type(data)(list(map(convertFromUnicodeToBytes, data)))
     else:
         return data

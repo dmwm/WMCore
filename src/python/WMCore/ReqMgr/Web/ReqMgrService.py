@@ -11,7 +11,7 @@ from builtins import str as newstr, bytes, map
 from future.utils import viewitems, viewvalues
 
 # system modules
-import collections
+import collections.abc
 import json
 import os
 import pprint
@@ -276,9 +276,9 @@ def priority_transition(docs):
 def toString(data):
     if isinstance(data, (newstr, bytes)):
         return str(data)
-    elif isinstance(data, collections.Mapping):
+    elif isinstance(data, collections.abc.Mapping):
         return dict(list(map(toString, viewitems(data))))
-    elif isinstance(data, collections.Iterable):
+    elif isinstance(data, collections.abc.Iterable):
         return type(data)(list(map(toString, data)))
     else:
         return data

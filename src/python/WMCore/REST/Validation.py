@@ -120,23 +120,6 @@ def validate_str(argname, param, safe, rx, optional = False, custom_err = None):
     a missing value raises an exception."""
     _validate_one(argname, param, safe, _check_str, optional, rx, custom_err)
 
-def validate_ustr(argname, param, safe, rx, optional = False, custom_err = None):
-    """Validates that an argument is a string and matches a regexp,
-    During the py2->py3 modernization, _check_str and _check_ustr have been 
-    merged into a single function called _check_str.
-    This function is now the same as validate_str, but is kept nonetheless 
-    not to break our client's code.
-
-    Checks that an argument named `argname` exists in `param.kwargs`
-    and it is a string which matches regular expression `rx`. If
-    successful the string is copied into `safe.kwargs` and the value
-    is removed from `param.kwargs`.
-
-    If `optional` is True, the argument is not required to exist in
-    `param.kwargs`; None is then inserted into `safe.kwargs`. Otherwise
-    a missing value raises an exception."""
-    _validate_one(argname, param, safe, _check_str, optional, rx, custom_err)
-
 def validate_num(argname, param, safe, optional = False,
                  bare = False, minval = None, maxval = None, custom_err = None):
     """Validates that an argument is a valid integer number.
@@ -206,32 +189,11 @@ def validate_strlist(argname, param, safe, rx, custom_err = None):
     value is removed from `param.kwargs`. The value always becomes an
     array in `safe.kwargs`, even if no or only one argument was provided.
 
-    Use `validate_ustrlist` instead if the argument string might need
-    to be converted from utf-8 into unicode first. Use this method only
-    for inputs which are meant to be bare strings.
+    Use this method only for inputs which are meant to be bare strings.
 
     Note that an array of zero length is accepted, meaning there were no
     `argname` parameters at all in `param.kwargs`."""
     _validate_all(argname, param, safe, _check_str, rx, custom_err)
-
-def validate_ustrlist(argname, param, safe, rx, custom_err = None):
-    """Validates that an argument is an array of strings, each of which
-    matches a regexp once converted from utf-8 into unicode.
-
-    Checks that an argument named `argname` is either a single string or
-    an array of strings, each of which matches the regular expression
-    `rx`. If successful the array is copied into `safe.kwargs` and the
-    value is removed from `param.kwargs`. The value always becomes an
-    array in `safe.kwargs`, even if no or only one argument was provided.
-
-    Use `validate_strlist` instead if the argument strings should always
-    be bare strings. This one automatically converts everything into
-    unicode and expects input exclusively in utf-8, which may not be
-    appropriate constraints for some uses.
-
-    Note that an array of zero length is accepted, meaning there were no
-    `argname` parameters at all in `param.kwargs`."""
-    _validate_all(argname, param, safe, _check_ustr, rx, custom_err)
 
 def validate_numlist(argname, param, safe, bare=False, minval=None, maxval=None, custom_err = None):
     """Validates that an argument is an array of integers, as checked by

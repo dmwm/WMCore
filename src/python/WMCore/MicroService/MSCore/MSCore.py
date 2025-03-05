@@ -50,6 +50,8 @@ class MSCore(object):
                                configDict={"logger": self.logger, "user_agent": "wmcore-microservices"})
         self.alertManagerUrl = self.msConfig.get("alertManagerUrl", None)
         self.alertManagerApi = AlertManagerAPI(self.alertManagerUrl, logger=self.logger)
+        # alertDestinationMap is used to define alert routes
+        self.alertDestinationMap = self.msConfig.get("alertDestinationMap", {})
 
     def unifiedConfig(self):
         """
@@ -92,7 +94,7 @@ class MSCore(object):
             reportDict[keyName] = value
         return reportDict
 
-    def sendAlert(self, alertName, severity, summary, description, service, endSecs=1 * 60 * 60):
+    def sendAlert(self, alertName, severity, summary, description, service, tag=None, endSecs=1 * 60 * 60):
         """
         Sends an alert to Prometheus.
         :param alertName: string with unique alert name
@@ -100,11 +102,12 @@ class MSCore(object):
         :param summary: string with a short summary of the alert
         :param description: string with a longer description of the alert
         :param service: string with the service name generating this alert
+        :param tag: string representing desired alert's tag, it can use commas to assign multiple tags, e.g. tag1,tag2
         :param endSecs: integer with an expiration time
         :return: none
         """
         try:
             self.alertManagerApi.sendAlert(alertName, severity, summary, description,
-                                           service, endSecs=endSecs)
+                                           service, tag=tag, endSecs=endSecs)
         except Exception as ex:
             self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))

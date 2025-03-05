@@ -806,6 +806,7 @@ class MSRuleCleaner(MSCore):
         # Check if alarms are enabled for this service
         # Alert expiration time defaults to 2 days
         if self.msConfig["sendNotification"]:
+            tag = self.alertDestinationMap.get("alertStatusAdvanceExpired", "")
             self.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
-                           service=self.alertServiceName, endSecs=self.alertExpiration)
+                           service=self.alertServiceName, endSecs=self.alertExpiration, tag=tag)
         self.logger.critical(alertDescription)

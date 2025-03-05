@@ -8,7 +8,11 @@
 
 HOST=$(hostname)
 DATENOW=$(date +%s)
-DEST_NAME=cms-wmcore-team
+# look-up alert emails from WMA secret file where ALERT_EMAILS may contains multiple emails and spaces, e.g.
+# ALERT_EMAILS="user1@domain.com user2@domain.com" or ALERT_EMAILS = "user1@domain.com user2@domain.com"
+ALERT_EMAILS=`sed -E 's/^[[:space:]]*ALERT_EMAILS[[:space:]]*=[[:space:]]*"([^"]*)".*/\1/' $WMA_SECRETS_FILE`
+
+[[ -z $ALERT_EMAILS ]] && {echo "ERROR: unable to find ALERT_EMAILS in $WMA_SECRETS_FILE"; exit 1;}
 
 [[ -z $WMA_INSTALL_DIR ]] && { echo "ERROR: Trying to run without having the full WMAgent environment set!";  exit 1 ;}
 
@@ -34,7 +38,7 @@ for comp in $comps; do
     echo -e "Restarting component: $comp"
     manage execute-agent wmcoreD --restart --components=$comp
     echo -e "ComponentLog quiet for $INTERVAL secs\n\nTail of the log is:\n$TAIL_LOG" |
-      mail -s "$HOST : $comp restarted" $DEST_NAME@cern.ch
+      mail -s "$HOST : $comp restarted" $ALERT_EMAILS
   fi
 done
 

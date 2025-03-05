@@ -10,6 +10,7 @@ COUCH_PORT=5984
 COUCH_HOST=127.0.0.1
 COUCH_CERT_FILE=/data/certs/servicecert.pem
 COUCH_KEY_FILE=/data/certs/servicekey.pem
+ALERT_EMAILS=
 GLOBAL_WORKQUEUE_URL=https://cmsweb.cern.ch/couchdb/workqueue
 WMSTATS_URL=https://cmsweb.cern.ch/couchdb/wmstats
 ACDC_URL=https://cmsweb.cern.ch/couchdb/acdcserver

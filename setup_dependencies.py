@@ -104,6 +104,7 @@ dependencies = {
                      'Utils'],
         'modules': ['WMCore.WorkQueue.__init__',
                     'WMCore.WorkQueue.DataStructs.__init__',
+                    'WMCore.WorkQueue.DataStructs.CouchWorkQueueElement',
                     'WMCore.WorkQueue.DataStructs.WorkQueueElement'],
         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': ['src/couchapps/ReqMgr+',

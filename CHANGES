@@ -1,3 +1,10 @@
+2.3.10rc6 to 2.3.10rc7:
+  - Remove unused double stack functions, see #12285 (Fredrik) #12292
+  - python 3.10 - collections.(Mapping|Iterable) moved to collections.abc.(Mapping|Iterable) (Dario Mapelli) #12288
+  - Replaced ddm_quota with dm_weight, added deprecation warning (Dennis Lee) #12243
+  - Add token authentication support, but disable cms token authentication by default. (Kenyi Hurtado) #12196
+
+
 2.3.10rc5 to 2.3.10rc6:
   - Added curl dev library to Ubuntu system as it required within CI/CD pipeline to install pycurl  locally (Valentin Kuznetsov) #12277
 

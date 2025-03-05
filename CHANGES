@@ -1,3 +1,10 @@
+2.3.10rc7 to 2.3.10rc8:
+  - Add appropriate tags and destination for alert routing (Valentin Kuznetsov) #12279
+  - Merge local WM build with pypi CI/CD workflow (Valentin Kuznetsov) #12281
+  - Introducing createDebuggingCommand in all the stageout submodules (Andrea Piccinelli) #12284
+  - Update pycurl and PyOpenSSL versions (Kenyi Hurtado) #12286
+
+
 2.3.10rc6 to 2.3.10rc7:
   - Remove unused double stack functions, see #12285 (Fredrik) #12292
   - python 3.10 - collections.(Mapping|Iterable) moved to collections.abc.(Mapping|Iterable) (Dario Mapelli) #12288

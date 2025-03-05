@@ -137,6 +137,51 @@ class FNALImpl(StageOutImpl):
             """
             return result
 
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed fnal-flavor copy command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the gfal-cp command for debugging purposes
+        copyCommand = ""
+        if getattr(self, 'stageIn', False):
+            copyCommand += self.buildStageInCommand(sourcePFN, targetPFN, options)
+        else:
+            method = self.storageMethod(targetPFN)
+            sourceMethod = self.storageMethod(sourcePFN)
+
+            if ((method == 'srm' and sourceMethod == 'xrdcp') or (method == 'xrdcp' and sourceMethod == 'srm')):
+                copyCommand += "Incompatible methods for source and target"
+                copyCommand += "\tSource: method %s for PFN %s" % (sourceMethod, sourcePFN)
+                copyCommand += "\tTarget: method %s for PFN %s" % (method, targetPFN)
+
+            if method == 'srm' or sourceMethod == 'srm':
+                copyCommand = self.srmImpl.createStageOutCommand(sourcePFN, targetPFN, options)
+
+            if method == 'xrdcp' or sourceMethod == 'xrdcp':
+                original_size = os.stat(sourcePFN)[6]
+                copyCommand = "Local File Size is: %s" % original_size
+
+                useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
+                if useChecksum:
+                    checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
+                    targetPFN += "\?eos.targetsize=%s\&eos.checksum=%s" % (original_size, checksums['adler32'])
+                    copyCommand += "Local File Checksum is: %s\"\n" % checksums['adler32']
+
+                copyCommand += "xrdcp-old -d 0 -f "
+                if options != None:
+                    copyCommand += " %s " % options
+                copyCommand += " %s " % sourcePFN
+                copyCommand += " %s " % targetPFN
+       
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
+        return result
+
     def buildStageInCommand(self, sourcePFN, targetPFN, options=None):
         """
         _buildStageInCommand_

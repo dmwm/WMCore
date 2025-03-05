@@ -190,6 +190,46 @@ class SRMV2Impl(StageOutImpl):
         result += metadataCheck
 
         return result
+    
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+        """
+        Debug a failed smrv2 copy command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the copy command for debugging purposes
+        copyCommand = ""
+        copyCommand += "srmcp -2 -report=$REPORT_FILE -retry_num=0 -request_lifetime=2400"
+
+        if options != None:
+            copyCommand += " %s " % options
+        copyCommand += " %s " % sourcePFN
+        copyCommand += " %s" % targetPFN
+        copyCommand += " 2>&1 | tee srm.output.$$ \n"
+
+        if self.stageIn:
+            remotePFN, localPFN = sourcePFN, targetPFN.replace("file://", "", 1)
+        else:
+            remotePFN, localPFN = targetPFN, sourcePFN.replace("file://", "", 1)
+        remotePath = None
+        SFN = '?SFN='
+        sfn_idx = remotePFN.find(SFN)
+        if sfn_idx >= 0:
+            remotePath = remotePFN[sfn_idx + 5:]
+        r = re.compile('srm://([A-Za-z\-\.0-9]*)(:[0-9]*)?(/.*)')
+        m = r.match(remotePFN)
+        if not m:
+            raise StageOutError("Unable to determine path from PFN for " \
+                                "target %s." % remotePFN)
+        if remotePath == None:
+            remotePath = m.groups()[2]
+
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=localPFN, destination=remotePFN)
+        return result
 
     def removeFile(self, pfnToRemove):
         """

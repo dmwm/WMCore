@@ -4,13 +4,8 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 import WMCore
 
 import logging
-import unittest
 import threading
 import cherrypy
-import os
-import uuid
-import tempfile
-from cgi import FieldStorage
 
 def noBodyProcess():
     """Sets cherrypy.request.process_request_body = False, giving

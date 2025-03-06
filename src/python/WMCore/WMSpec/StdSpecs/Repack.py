@@ -50,8 +50,15 @@ class RepackWorkloadFactory(StdBase):
 
         # complete output configuration
         for output in self.outputs:
-            output['moduleLabel'] = "write_%s_%s" % (output['primaryDataset'],
-                                                     output['dataTier'])
+            # if its a rawSkim dataset, moduleLabel is different
+            if 'rawSkim' in output and 'parentDataset' in output:
+                output['moduleLabel'] = "write_%s_RawSkim_%s_%s" % (output['parentDataset'],
+                                                                    output['rawSkim'],
+                                                                    output['dataTier'])
+                del output['parentDataset']
+            else:
+                output['moduleLabel'] = "write_%s_%s" % (output['primaryDataset'],
+                                                         output['dataTier'])
 
         # finalize splitting parameters
         mySplitArgs = self.repackSplitArgs.copy()

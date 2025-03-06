@@ -51,12 +51,7 @@ class RepackWorkloadFactory(StdBase):
         # complete output configuration
         for output in self.outputs:
             # if its a rawSkim dataset, moduleLabel is different
-            if 'rawSkim' in output and 'parentDataset' in output:
-                output['moduleLabel'] = "write_%s_RawSkim_%s_%s" % (output['parentDataset'],
-                                                                    output['rawSkim'],
-                                                                    output['dataTier'])
-                del output['parentDataset']
-            else:
+            if not 'moduleLabel' in output:
                 output['moduleLabel'] = "write_%s_%s" % (output['primaryDataset'],
                                                          output['dataTier'])
 
@@ -68,7 +63,8 @@ class RepackWorkloadFactory(StdBase):
         repackOutMods = self.setupProcessingTask(repackTask, taskType,
                                                  scenarioName=self.procScenario,
                                                  scenarioFunc="repack",
-                                                 scenarioArgs={'outputs': self.outputs},
+                                                 scenarioArgs={'outputs': self.outputs,
+                                                               'globalTag': self.globalTag},
                                                  splitAlgo="Repack",
                                                  splitArgs=mySplitArgs,
                                                  stepType=cmsswStepType)
@@ -193,7 +189,7 @@ class RepackWorkloadFactory(StdBase):
         specArgs = {"RequestType": {"default": "Repack"},
                     "ConfigCacheID": {"optional": True, "null": True},
                     "Scenario": {"default": "fake", "attr": "procScenario"},
-                    "GlobalTag": {"default": "fake"},
+                    "GlobalTag": {"default": "fake", "attr": "globalTag"},
                     "ProcessingString": {"default": "", "validate": procstringT0},
                     "Outputs": {"type": makeList, "optional": False},
                     "MaxSizeSingleLumi": {"type": int, "optional": False},

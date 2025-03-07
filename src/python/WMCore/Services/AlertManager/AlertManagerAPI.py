@@ -12,6 +12,8 @@ import logging
 
 from WMCore.Services.pycurl_manager import RequestHandler
 from Utils.Timers import LocalTimezone
+from Utils.Utilities import normalize_spaces
+from WMCore.Services.UUIDLib import makeUUID
 
 
 class AlertManagerAPI(object):
@@ -72,13 +74,14 @@ class AlertManagerAPI(object):
         labels["severity"] = severity
         labels["tag"] = tag
         labels["service"] = service
+        labels["uuid"] = makeUUID()
         alert["labels"] = labels
 
         # add annotations
         annotations["hostname"] = self.hostname
-        annotations["summary"] = summary
-        annotations["description"] = description
-        alert["annotations"] = annotations
+        annotations["summary"] = normalize_spaces(summary)
+        annotations["description"] = normalize_spaces(description)
+        alert["annotations"] = normalize_spaces(annotations)
 
         # In python3 we won't need the LocalTimezone class
         # Will change to d = datetime.now().astimezone() + timedelta(seconds=endSecs)
@@ -90,7 +93,9 @@ class AlertManagerAPI(object):
         # need to do this because pycurl_manager only accepts dict and encoded strings type
         params = json.dumps(request)
 
-        res = self.mgr.getdata(self.alertManagerUrl, params=params, headers=self.headers, verb='POST')
+        # provide dump of alert send to AM which will allow to match it in WM logs
+        header, res = self.mgr.request(self.alertManagerUrl, params=params, headers=self.headers, verb='POST')
+        self.logger.info("ALERT: name=%s UUID=%s, HTTP status code=%s", alertName, labels["uuid"], header.status)
 
         return res
 

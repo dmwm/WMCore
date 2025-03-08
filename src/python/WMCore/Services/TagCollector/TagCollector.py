@@ -112,3 +112,44 @@ class TagCollector(Service):
                 releases.add(item['label'])
             arch_dict[row['name']].extend(list(releases))
         return dict(arch_dict)
+
+
+    def defaultMicroArchVersionNumberByRelease(self, default_microarch=0):
+        """
+        Yield default microarchitecture by CMS release known in tag collector.
+
+        :param default_microarch: int, default microar when not found in TagCollector XML file.
+        :return: dictionary ("release": default_microarch (or default_microarch if not found)).
+        """
+        rel_microarchs = {}
+        for row in self.data():
+            for item in row['project']:
+                microarch = item.get('default_micro_arch', default_microarch)
+                if isinstance(microarch, str):
+                    # format of this value is "arch-vN"
+                    microarch = int((microarch.split("-")[-1]).lstrip("v"))
+                rel_microarchs[item['label']] = microarch
+        return rel_microarchs
+
+    def getGreaterMicroarchVersionNumber(self, releases=None, default_microarch=0, rel_microarchs=None):
+        """
+        Return the greated default microarchitecture, given a list of releases.
+
+        :param releases: str, comma-separated list of releases.
+        :param default_microarch: int, default microar when not found in TagCollector XML file.
+        :return: int, greater default microarchitecture version number.
+        """
+        if releases is None:
+            return default_microarch
+
+        if rel_microarchs is None:
+            rel_microarchs = self.defaultMicroArchVersionNumberByRelease()
+
+        releases = releases.split(",")
+        microarch = default_microarch
+        for r in releases:
+            m = rel_microarchs.get(r, default_microarch)
+            if m > microarch:
+                microarch = m
+
+        return microarch

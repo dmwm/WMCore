@@ -165,9 +165,8 @@ class SimpleCondorPlugin(BasePlugin):
 
             logging.debug("Start: Submitting %d jobs using Condor Python Submit", len(jobParams))
             try:
-                with schedd.transaction() as txn:
-                    submitRes = sub.queue_with_itemdata(txn, 1, iter(jobParams))
-                    clusterId = submitRes.cluster()
+                submitRes = schedd.submit(sub, itemdata=iter(jobParams))
+                clusterId = submitRes.cluster()
             except Exception as ex:
                 logging.error("SimpleCondorPlugin job submission failed.")
                 logging.exception(str(ex))

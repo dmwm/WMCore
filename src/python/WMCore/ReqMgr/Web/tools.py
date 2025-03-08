@@ -11,7 +11,7 @@ import json
 import logging
 import os
 import sys
-import cgi
+import html
 import types
 from datetime import datetime, timedelta
 from json import JSONEncoder
@@ -35,18 +35,18 @@ except:
 
 def quote(data):
     """
-    Sanitize the data using cgi.escape.
+    Sanitize the data using html.escape.
     """
     if isinstance(data, (int, float, dict, list)):
         res = data
     else:
         try:
             if data:
-                res = cgi.escape(data, quote=True)
+                res = html.escape(data, quote=True)
             else:
                 res = ""
         except Exception as exc:
-            print("Unable to cgi.escape(%s, quote=True)" % data)
+            print("Unable to html.escape(%s, quote=True)" % data)
             print(exc)
             res = ""
     return res

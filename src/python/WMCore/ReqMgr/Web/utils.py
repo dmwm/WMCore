@@ -17,7 +17,6 @@ from Utils.PythonVersion import PY3
 standard_library.install_aliases()
 
 # system modules
-import cgi
 import json
 import time
 import hashlib
@@ -38,23 +37,6 @@ def gen_color(val):
     keyhash.update(encodeUnicodeToBytesConditional(val, condition=PY3))
     col = '#%s' % keyhash.hexdigest()[:6]
     return col
-
-def quote(data):
-    """
-    Sanitize the data using cgi.escape.
-    """
-    if  isinstance(data, (int, float, dict, list)):
-        res = data
-    else:
-        try:
-            if  data:
-                res = cgi.escape(data, quote=True)
-            else:
-                res = ""
-        except Exception as exc:
-            print("Unable to cgi.escape(%s, quote=True)" % data)
-            res = ""
-    return res
 
 def json2form(jsondata, indent=2, keep_first_value=True):
     "Convert input json dict into one used by HTML form"

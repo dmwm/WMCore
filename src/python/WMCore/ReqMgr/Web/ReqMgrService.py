@@ -334,7 +334,6 @@ class ReqMgrService(TemplatedPage):
         self.cssmap = {}
         self.jsmap = {}
         self.imgmap = {}
-        self.yuimap = {}
 
         std_specs_dir = os.path.join(self.rootdir, 'WMSpec/StdSpecs')
         self.std_specs = spec_list(std_specs_dir)

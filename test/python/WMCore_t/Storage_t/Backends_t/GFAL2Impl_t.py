@@ -101,6 +101,7 @@ class GFAL2ImplTest(unittest.TestCase):
 
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.GFAL2Impl.createRemoveFileCommand')
     def testCreateStageOutCommand_options(self, mock_createRemoveFileCommand):
+        self.maxDiff = None
         mock_createRemoveFileCommand.return_value = "targetPFN2"
         result = self.GFAL2Impl.createStageOutCommand("file:sourcePFN", "file:targetPFN", "--nochecksum unknow")
         expectedResult = self.getStageOutCommandResult(

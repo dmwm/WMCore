@@ -30,7 +30,7 @@ class GFAL2Impl(StageOutImpl):
         self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}')
         self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
         self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
-
+        
         #Overriding the default debugging template
         self.debuggingTemplate = "#!/bin/bash\n"
         self.debuggingTemplate += """
@@ -144,14 +144,14 @@ class GFAL2Impl(StageOutImpl):
             return "/bin/rm -f {}".format(os.path.abspath(pfn))
         else:
             return self.removeCommand.format(self.createFinalPFN(pfn))
-
+        
     def buildCopyCommandDict(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
-        Build the gfal-cp command for stageOut
+        Build the gfal-copy command for stageOut
 
         :sourcePFN: str, PFN of the source file
         :targetPFN: str, destination PFN
-        :options: str, additional options for gfal-cp
+        :options: str, additional options for gfal-copy
         :checksums: dict, collect checksums according to the algorithms saved as keys
         """
 
@@ -178,74 +178,76 @@ class GFAL2Impl(StageOutImpl):
         copyCommandDict['destination'] = self.createFinalPFN(targetPFN)
 
         return copyCommandDict
-    
-    def defineStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False, debug=False):
-        """
-        Create gfal-cp command for stageOut, adding the actual gfal-cp call to execute it if debug is False,
 
-        :sourcePFN: str, PFN of the source file
-        :targetPFN: str, destination PFN
-        :options: str, additional options for gfal-cp
-        :checksums: dict, collect checksums according to the algorithms saved as keys
-        :authmethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
-        :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
-        :debug: bool, whether to add the actual gfal-cp command to the output
+    def getFormattedCopyCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
-        # Adjust the setup
+        Adjust the setup and return the formatted gfal-copy command.
+
+        :sourcePFN: str, the source PFN.
+        :targetPFN: str, the target PFN.
+        :options: str, additional options for gfal-copy.
+        :checksums: dict, checksum values.
+        :authmethod: str, preferred authentication method.
+        :forcemethod: bool, whether to force the preferred authentication method.
+        """
+        # Adjust the setup based on authmethod and forcemethod
         self.adjustSetup(authmethod, forcemethod)
 
-        # Construct the gfal-cp command
+        # Construct the gfal-copy command and return it
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
-        copyCommand = self.copyCommand.format_map(copyCommandDict)
-        logging.info("============ defineStageOutCommand within GFAL2Impl =============")
-        logging.info("copyCommand: %s", copyCommand)
+        return self.copyCommand.format_map(copyCommandDict)
 
-        if not debug:
-            result = "#!/bin/bash\n" + copyCommand
-            if _CheckExitCodeOption:
-                result += """
-                EXIT_STATUS=$?
-                echo "gfal-copy exit status: $EXIT_STATUS"
-                if [[ $EXIT_STATUS != 0 ]]; then
-                    echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-                    echo "Cleaning up failed file:"
-                    {remove_command}
-                fi
-                exit $EXIT_STATUS
-                """.format(remove_command=self.createRemoveFileCommand(targetPFN))
-        else:
-            result = self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
-            
-        logging.info("============ end of createStageOutCommand within GFAL2Impl =============")
-        
-        return result
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
-        Create gfal-cp command for stageOut via defineStageOutCommand in debug=False mode
+        Create gfal-copy command for stageOut
 
         :sourcePFN: str, PFN of the source file
         :targetPFN: str, destination PFN
-        :options: str, additional options for gfal-cp
+        :options: str, additional options for gfal-copy
         :checksums: dict, collect checksums according to the algorithms saved as keys
         :authmethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
         :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
         """
-        return self.defineStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod, debug=False)
+  
+        # Construct the gfal-copy command
+        copyCommand = self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
+    
+        # Run the gfal-copy commnad Add the exit code check if requested
+        result = "#!/bin/bash\n" + copyCommand
+        if _CheckExitCodeOption:
+            result += """
+            EXIT_STATUS=$?
+            echo "gfal-copy exit status: $EXIT_STATUS"
+            if [[ $EXIT_STATUS != 0 ]]; then
+                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+                echo "Cleaning up failed file:"
+                {remove_command}
+            fi
+            exit $EXIT_STATUS
+            """.format(remove_command=self.createRemoveFileCommand(targetPFN))
+
+        return result
 
     def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
-        Debug a failed gfal-cp command for stageOut, without re-running it,
+        Debug a failed gfal-copy command for stageOut, without re-running it,
         providing information on the environment and the certifications
 
         :sourcePFN: str, PFN of the source file
         :targetPFN: str, destination PFN
-        :options: str, additional options for gfal-cp
+        :options: str, additional options for gfal-copy
         :checksums: dict, collect checksums according to the algorithms saved as keys
         :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
         :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
         """
-        return self.defineStageOutCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod, debug=True)
+
+        # Construct the gfal-copy command
+        copyCommand = self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
+
+        # Instead of running the command, return the debugging information
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
+        return result
 
     def removeFile(self, pfnToRemove):
         """

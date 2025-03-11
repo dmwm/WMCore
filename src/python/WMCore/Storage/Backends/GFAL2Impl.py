@@ -65,6 +65,18 @@ class GFAL2Impl(StageOutImpl):
         echo "-----------------------------------------------------------"
         echo
         """
+        self.copyTemplate = "#!/bin/bash\n{copy_command}"
+        if _CheckExitCodeOption:
+            self.copyTemplate += """
+            EXIT_STATUS=$?
+            echo "gfal-copy exit status: $EXIT_STATUS"
+            if [[ $EXIT_STATUS != 0 ]]; then
+                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+                echo "Cleaning up failed file:"
+                {remove_command}
+            fi
+            exit $EXIT_STATUS
+            """
 
     def adjustSetup(self, authmethod=None, forcemethod=False):
         """
@@ -179,7 +191,7 @@ class GFAL2Impl(StageOutImpl):
 
         return copyCommandDict
 
-    def getFormattedCopyCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def getFormattedCopyCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False, debug=False):
         """
         Adjust the setup and return the formatted gfal-copy command.
 
@@ -193,10 +205,13 @@ class GFAL2Impl(StageOutImpl):
         # Adjust the setup based on authmethod and forcemethod
         self.adjustSetup(authmethod, forcemethod)
 
-        # Construct the gfal-copy command and return it
+        # Construct the gfal-copy command and return it according to the proper template
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
-        return self.copyCommand.format_map(copyCommandDict)
-
+        copyCommand = self.copyCommand.format_map(copyCommandDict)
+        if not debug:
+            return self.copyTemplate.format(copy_command=copyCommand, remove_command=self.createRemoveFileCommand(targetPFN))
+        else:
+            return self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
@@ -209,25 +224,10 @@ class GFAL2Impl(StageOutImpl):
         :authmethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
         :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
         """
-  
-        # Construct the gfal-copy command
-        copyCommand = self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
-    
-        # Run the gfal-copy commnad Add the exit code check if requested
-        result = "#!/bin/bash\n" + copyCommand
-        if _CheckExitCodeOption:
-            result += """
-            EXIT_STATUS=$?
-            echo "gfal-copy exit status: $EXIT_STATUS"
-            if [[ $EXIT_STATUS != 0 ]]; then
-                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-                echo "Cleaning up failed file:"
-                {remove_command}
-            fi
-            exit $EXIT_STATUS
-            """.format(remove_command=self.createRemoveFileCommand(targetPFN))
 
-        return result
+        # Construct the gfal-copy command and running it
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
+
 
     def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
@@ -242,12 +242,8 @@ class GFAL2Impl(StageOutImpl):
         :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other
         """
 
-        # Construct the gfal-copy command
-        copyCommand = self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
-
-        # Instead of running the command, return the debugging information
-        result = self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
-        return result
+        # Construct the gfal-copy command, but returning the debugging information instead of running it
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod, debug=True)
 
     def removeFile(self, pfnToRemove):
         """

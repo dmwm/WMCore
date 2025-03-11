@@ -89,6 +89,90 @@ def threadStack():
         threads.append(tdict)
     return dict(threads=threads)
 
+def processThreadsInfo(pid):
+    """
+    Provides information about process and its threads using psutils
+    :param pid: process PID, string
+    :return: dictionary statistics about process and threads
+    """
+    try:
+        process = psutil.Process(pid)
+
+        # Get overall process details
+        process_info = {
+            "process_name": process.name(),
+            "pid": process.pid,
+            "status": process.status(),
+            "ppid": process.ppid(),  # Parent Process ID
+            "cmdline": process.cmdline(),  # Full command-line arguments
+            "cpu_usage_percent": process.cpu_percent(interval=1.0),  # CPU usage in percentage
+            "memory_usage_percent": process.memory_percent(),  # RAM usage in percentage
+            "memory_rss": process.memory_info().rss,  # Resident Set Size (bytes)
+            "num_open_files": len(process.open_files()),  # Number of open file descriptors
+            "num_connections": len(process.connections()),  # Number of active connections
+            "threads": []
+        }
+
+        # Iterate over threads to get per-thread details
+        for thread in process.threads():
+            if str(pid) == str(thread.id):
+                continue
+            thread_id = thread.id
+
+            thread_info = {
+                "thread_id": thread_id,
+                "user_time": thread.user_time,  # CPU time spent in user mode
+                "system_time": thread.system_time,  # CPU time spent in system mode
+                "cpu_usage_percent": None,
+                "memory_usage_bytes": None,
+                "num_open_files": None,
+                "num_connections": None,
+                "state": "unknown",
+                "name": "thread"
+            }
+            if str(pid) == str(thread_id):
+                thread_info['name'] = "process"
+
+            # Try getting thread status
+            try:
+                thread_status = psutil.Process(thread_id).status()
+                thread_info["state"] = thread_status
+            except psutil.NoSuchProcess:
+                thread_info["state"] = "zombie"
+
+            # Try getting per-thread CPU usage
+            try:
+                thread_info["cpu_usage_percent"] = psutil.Process(thread_id).cpu_percent(interval=1.0)
+            except Exception:
+                thread_info["cpu_usage_percent"] = "N/A"
+
+            # Try getting per-thread memory usage
+            try:
+                thread_info["memory_usage_bytes"] = psutil.Process(thread_id).memory_info().rss
+            except Exception:
+                thread_info["memory_usage_bytes"] = "N/A"
+
+            # Try getting per-thread open file descriptors
+            try:
+                thread_info["num_open_files"] = len(psutil.Process(thread_id).open_files())
+            except Exception:
+                thread_info["num_open_files"] = "N/A"
+
+            # Try getting per-thread open connections
+            try:
+                thread_info["num_connections"] = len(psutil.Process(thread_id).connections())
+            except Exception:
+                thread_info["num_connections"] = "N/A"
+
+            # Append to process_info
+            process_info["threads"].append(thread_info)
+
+        return process_info
+    except psutil.NoSuchProcess:
+        return {"error": f"No process found with PID {pid}"}
+    except Exception as e:
+        return {"error": str(e)}
+
 def main():
     "Main function to use this module as a stand-along script."
     parser = argparse.ArgumentParser(prog='PROG')
@@ -97,7 +181,12 @@ def main():
 
     pdict = processStatus(int(opts.pid))
     pdict.update(threadStack())
-    print(json.dumps(pdict))
+    print(f"Process status for {opts.pid}")
+    print(json.dumps(pdict, indent=4))
+
+    processInfo = processThreadsInfo(int(opts.pid))
+    print(f"Process/threads status for {opts.pid}")
+    print(json.dumps(processInfo, indent=4))
 
 if __name__ == '__main__':
     main()

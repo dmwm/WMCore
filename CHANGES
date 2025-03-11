@@ -1,3 +1,12 @@
+2.3.10rc8 to 2.3.10rc9:
+  - Remove unused functions (since 2015 and #5515) (Fredrik) #12300
+  - Add support for microarchitecture. When default microarch is not defined in XML file, use "0" as default. Include unit tests for 2 new methods in TagCollector. (Kenyi Hurtado) #12270
+  - Adjust AlertManagerAPI to avoid using multiple spaces in various attributes of alert and add UUID label for better traceability of WM alerts (Valentin Kuznetsov) #12237
+  - Add WorkQueue.DataStructs.CouchWorkQueueElement as a dependency to reqmgr2 (Alan Malta Rodrigues) #12295
+  - python 3.11 - inspect.getargspec moved to inspect.getfullargspec (Dario Mapelli) #12289
+  - Replace schedd.Transaction and queue_with_itemdata() with Schedd.submit(), since the former has been deprecated since 10.7.0 (Kenyi Hurtado) #12287
+
+
 2.3.10rc7 to 2.3.10rc8:
   - Add appropriate tags and destination for alert routing (Valentin Kuznetsov) #12279
   - Merge local WM build with pypi CI/CD workflow (Valentin Kuznetsov) #12281

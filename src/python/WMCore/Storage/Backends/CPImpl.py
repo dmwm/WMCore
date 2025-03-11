@@ -85,7 +85,7 @@ class CPImpl(StageOutImpl):
 
         return copyCommand
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         Debug a failed cp command for stageOut, without re-running it,
         providing information on the environment and the certifications

@@ -102,7 +102,7 @@ class FailImpl(StageOutImpl):
         return "FAIL!!!"
 
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         Debug a failed unittest cp command for stageOut, without re-running it,
         providing information on the environment and the certifications

@@ -73,7 +73,7 @@ class VandyImpl(StageOutImpl):
         else:
             return "%s %s %s" % (self._cpScript, sourcePFN, targetPFN)
         
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         Debug a failed vandy copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

@@ -57,6 +57,10 @@ class StageOutImpl:
         echo "LD_* environment variables:"
         env | grep ^LD_
         echo
+        echo "Information for credentials in the environment"
+        echo "Bearer token content: $BEARER_TOKEN"
+        echo "Bearer token file: $BEARER_TOKEN_FILE"
+        echo
         echo "Source PFN: {source}"
         echo "Target PFN: {destination}"
         echo

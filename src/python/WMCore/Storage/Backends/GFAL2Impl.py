@@ -6,7 +6,6 @@ Implementation of StageOutImpl interface for gfal-copy
 import argparse
 import os
 import logging
-import subprocess
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl

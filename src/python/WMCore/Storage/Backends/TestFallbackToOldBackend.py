@@ -70,7 +70,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         else:
             print("=> dir already exists... do nothing.")
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
         _createStageOutCommand_
 

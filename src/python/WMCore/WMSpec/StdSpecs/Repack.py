@@ -50,10 +50,9 @@ class RepackWorkloadFactory(StdBase):
 
         # complete output configuration
         for output in self.outputs:
-            # if its a rawSkim dataset, moduleLabel is different
-            if not 'moduleLabel' in output:
-                output['moduleLabel'] = "write_%s_%s" % (output['primaryDataset'],
-                                                         output['dataTier'])
+            moduleLabel = "write_%s_%s" % (output['primaryDataset'],
+                                           output['dataTier'])
+            output['moduleLabel'] = moduleLabel.replace("-", "_")  # For T0 Raw Skims, PDs will contain a "-", so here we replace for "_" for the moduleLabel
 
         # finalize splitting parameters
         mySplitArgs = self.repackSplitArgs.copy()
@@ -142,12 +141,14 @@ class RepackWorkloadFactory(StdBase):
                              primaryDataset=getattr(parentOutputModule, "primaryDataset"),
                              dataTier=getattr(parentOutputModule, "dataTier"),
                              filterName=getattr(parentOutputModule, "filterName"),
+                             rawSkim=getattr(parentOutputModule, "rawSkim", None),
                              forceMerged=True)
 
         self.addOutputModule(mergeTask, "MergedError",
                              primaryDataset=getattr(parentOutputModule, "primaryDataset") + "-Error",
                              dataTier=getattr(parentOutputModule, "dataTier"),
                              filterName=getattr(parentOutputModule, "filterName"),
+                             rawSkim=getattr(parentOutputModule, "rawSkim", None),
                              forceMerged=True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName, dataTier=getattr(parentOutputModule, "dataTier"))

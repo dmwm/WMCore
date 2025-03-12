@@ -118,17 +118,21 @@ class XRDCPImpl(StageOutImpl):
 
         return authEnv
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def getFormattedCopyCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False, debug=False):
         """
-        _createStageOutCommand_
-
-        Build the actual xrdcp stageout command
-
+        Construct xrdcp/xrdfs stageout command.
         If adler32 checksum is provided, use it for the transfer
         xrdcp options used:
           --force : re-creates a file if it's already present
           --nopbar : does not display the progress bar
 
+        :sourcePFN: str, the source PFN.
+        :targetPFN: str, the target PFN.
+        :options: str, additional options for gfal-copy.
+        :checksums: dict, checksum values.
+        :authmethod: str, preferred authentication method.
+        :forcemethod: bool, whether to force the preferred authentication method.
+        :debug: bool, enable/disable debugging mode after command.
         """
         if not options:
             options = ''
@@ -221,7 +225,28 @@ class XRDCPImpl(StageOutImpl):
             copyCommand += "if [ $RC == 0 ] && [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
             copyCommand += "else echo \"ERROR: XRootD file transfer return code is $RC. Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
 
+        if debug:
+            return self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
+
         return copyCommand
+
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+        """
+        _createStageOutCommand_
+
+        Build the actual xrdcp stageout command
+
+        :sourcePFN: str, the source PFN.
+        :targetPFN: str, the target PFN.
+        :options: str, additional options for gfal-copy.
+        :checksums: dict, checksum values.
+        :authmethod: str, preferred authentication method.
+        :forcemethod: bool, whether to force the preferred authentication method.
+        :debug: bool, enable/disable debugging mode after command.
+
+        """
+        # Construct xrdcp stageout command and return it
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
     
     def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
         """
@@ -232,13 +257,11 @@ class XRDCPImpl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for copy command
         :checksums: dict, collect checksums according to the algorithms saved as keys
+        :authmethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
+        :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other 
         """
-        # Build the command for debugging purposes
-        copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
-        copyCommand = self.copyCommand.format_map(copyCommandDict)
-
-        result = self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
-        return result
+        # Construct xrdcp/xrdfs commands, but returning the debugging information instead of running it
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod, debug=True)
 
     def removeFile(self, pfnToRemove):
         """

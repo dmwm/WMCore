@@ -28,6 +28,10 @@ class XRDCPImpl(StageOutImpl):
         self.numRetries = 5
         self.retryPause = 300
         self.xrdfsCmd = "xrdfs"
+        self.setAuthX509 = "env X509_USER_PROXY=$X509_USER_PROXY "
+        self.setAuthToken = "env BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) "
+        self.unsetX509 = "X509_USER_PROXY= "
+        self.unsetToken = "BEARER_TOKEN_FILE= BEARER_TOKEN= "
         self.debuggingTemplate = "#!/bin/bash\n"
         self.debuggingTemplate += """
         echo
@@ -105,14 +109,16 @@ class XRDCPImpl(StageOutImpl):
         :return: str
         """
         authEnv = ""
-        if authmethod == "X509":
-            authEnv = "env X509_USER_PROXY=$X509_USER_PROXY "
+        if authmethod is None:
+            return authEnv
+        elif authmethod.upper() == 'X509':
+            authEnv = self.setAuthX509
             if forcemethod:
-                authEnv += "BEARER_TOKEN_FILE= BEARER_TOKEN= "
-        elif authmethod == "TOKEN":
-            authEnv = "env BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) "
+                authEnv += self.unsetToken
+        elif authmethod.upper() == 'TOKEN':
+            authEnv = self.setAuthToken
             if forcemethod:
-                authEnv += "X509_USER_PROXY= "
+                authEnv += self.unsetX509
         else:
             logging.info("Warning! Running without either a X509 certificate or a token specified!")
 
@@ -263,11 +269,15 @@ class XRDCPImpl(StageOutImpl):
         # Construct xrdcp/xrdfs commands, but returning the debugging information instead of running it
         return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod, debug=True)
 
-    def removeFile(self, pfnToRemove):
+    def removeFile(self, pfnToRemove, authmethod=None, forcemethod=False):
         """
         _removeFile_
 
         """
+        authEnv = self.getAuthEnv(authmethod, forcemethod)
+        if authEnv:
+            self.xrdfsCmd = "%s %s" % (authEnv, self.xrdfsCmd)
+
         (_, host, path, _) = self.splitPFN(pfnToRemove)
         command = "%s %s rm %s" % (self.xrdfsCmd, host, path)
         self.executeCommand(command)

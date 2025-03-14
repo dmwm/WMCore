@@ -159,7 +159,6 @@ class SimpleCondorPlugin(BasePlugin):
             return successfulJobs, failedJobs
 
         schedd = htcondor.Schedd()
-        rel_microarchs = self.tc.defaultMicroArchVersionNumberByRelease()
 
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
@@ -504,6 +503,8 @@ class SimpleCondorPlugin(BasePlugin):
 
         undefined = 'UNDEFINED'
         jobParameters = []
+        # fetch an up-to-date list of CMSSW micro-architectures
+        rel_microarchs = self.tc.defaultMicroArchVersionNumberByRelease()
 
         for job in jobList:
             ad = {}

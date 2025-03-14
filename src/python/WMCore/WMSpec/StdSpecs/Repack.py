@@ -141,14 +141,12 @@ class RepackWorkloadFactory(StdBase):
                              primaryDataset=getattr(parentOutputModule, "primaryDataset"),
                              dataTier=getattr(parentOutputModule, "dataTier"),
                              filterName=getattr(parentOutputModule, "filterName"),
-                             rawSkim=getattr(parentOutputModule, "rawSkim", None),
                              forceMerged=True)
 
         self.addOutputModule(mergeTask, "MergedError",
                              primaryDataset=getattr(parentOutputModule, "primaryDataset") + "-Error",
                              dataTier=getattr(parentOutputModule, "dataTier"),
                              filterName=getattr(parentOutputModule, "filterName"),
-                             rawSkim=getattr(parentOutputModule, "rawSkim", None),
                              forceMerged=True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName, dataTier=getattr(parentOutputModule, "dataTier"))

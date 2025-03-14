@@ -57,7 +57,7 @@ class VandyImpl(StageOutImpl):
         # throw a stage out error
         self.executeCommand(command)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
 
         """
         _createStageOutCommand_
@@ -66,14 +66,14 @@ class VandyImpl(StageOutImpl):
         targetPFN.
 
         """
-        logging.info("Warning! VandyImpl does not support authmethod handling")
+        logging.info("Warning! VandyImpl does not support authMethod handling")
 
         if self.stageIn:
             return "%s %s %s" % (self._downloadScript, sourcePFN, targetPFN)
         else:
             return "%s %s %s" % (self._cpScript, sourcePFN, targetPFN)
         
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed vandy copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

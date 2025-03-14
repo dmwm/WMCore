@@ -32,10 +32,10 @@ class GFAL2Impl(StageOutImpl):
         # 1. authentication method (set_auth)
         # 2. forced authentication method (unset_auth)
         # 3. finally, debug mode or not (dry_run)
-
-        self.copyCommand = "env -i {set_auth} JOBSTARTDIR=$JOBSTARTDIR bash -c '. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-copy -t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'"
-        self.removeCommand = "env -i {set_auth} JOBSTARTDIR=$JOBSTARTDIR bash -c '. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-rm -t 600 {}'"
-
+        self.setups = "env -i {{set_auth}} JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+        self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-copy ' + self.copyOpts)
+        self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-rm -t 600 {}')
 
     def createFinalPFN(self, pfn):
         """
@@ -72,7 +72,7 @@ class GFAL2Impl(StageOutImpl):
         """
         return
 
-    def createRemoveFileCommand(self, pfn, authMethod='X509', forceMethod=False, dryRun=False):
+    def createRemoveFileCommand(self, pfn, authMethod=None, forceMethod=False, dryRun=False):
         """
         handle file remove using gfal-rm
 
@@ -97,10 +97,11 @@ class GFAL2Impl(StageOutImpl):
         if os.path.isfile(pfn):
             return "{} /bin/rm -f {}".format(dryRun, os.path.abspath(pfn))
         else:
-           return self.removeCommand.format(self.createFinalPFN(pfn), set_auth=set_auth, unset_auth=unset_auth, dry_run=dryRun)
-          return
+            #return self.removeCommand.format(self.createFinalPFN(pfn), unset_auth=forceMethod, dry_run=dryRun)
+            return self.removeCommand.format(self.createFinalPFN(pfn), set_auth=set_auth, unset_auth=unset_auth, dry_run=dryRun)
+
     def buildCopyCommandDict(self, sourcePFN, targetPFN, options=None, checksums=None,
-                             authMethod=None, forceMethod=False, dryRun=False):
+                             authMethod='X509', forceMethod=False, dryRun=False):
         """
         Build the gfal-copy command for stageOut
 
@@ -137,15 +138,15 @@ class GFAL2Impl(StageOutImpl):
         copyCommandDict['source'] = self.createFinalPFN(sourcePFN)
         copyCommandDict['destination'] = self.createFinalPFN(targetPFN)
 
-        if authMethod == 'X509':
-            copyCommandDict['set_auth'] = self.setAuthX509
-            copyCommandDict['unset_auth'] = self.unsetToken if forceMethod else ""
-        elif authMethod == 'TOKEN':
-            copyCommandDict['set_auth'] = self.setAuthToken
-            copyCommandDict['unset_auth'] = self.unsetToken if forceMethod else ""
-        else:
+        if authMethod is None:
             copyCommandDict['set_auth'] = ""
             copyCommandDict['unset_auth'] = ""
+        elif authMethod.upper() == 'X509':
+            copyCommandDict['set_auth'] = self.setAuthX509
+            copyCommandDict['unset_auth'] = self.unsetToken if forceMethod else ""
+        elif authMethod.upper() == 'TOKEN':
+            copyCommandDict['set_auth'] = self.setAuthToken
+            copyCommandDict['unset_auth'] = self.unsetToken if forceMethod else ""
 
         copyCommandDict['dry_run'] = 'echo ' if dryRun else ''
 
@@ -164,7 +165,7 @@ class GFAL2Impl(StageOutImpl):
         :forceMethod: bool to isolate and force a given authentication method
         returns: a string with the full stage out script
         """
-
+        #raise ValueError(self.copyCommand)
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums,
                                                     authMethod, forceMethod)
         copyCommand = self.copyCommand.format_map(copyCommandDict)
@@ -180,7 +181,7 @@ class GFAL2Impl(StageOutImpl):
             {remove_command}
         fi
         exit $EXIT_STATUS
-        """.format(remove_command=self.createRemoveFileCommand(targetPFN, forceMethod=forceMethod))
+        """.format(remove_command=self.createRemoveFileCommand(targetPFN, authMethod=authMethod, forceMethod=forceMethod))
 
         return result
 
@@ -246,3 +247,4 @@ class GFAL2Impl(StageOutImpl):
 
 
 registerStageOutImpl("gfal2", GFAL2Impl)
+

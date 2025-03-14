@@ -90,14 +90,14 @@ class LCGImpl(StageOutImpl):
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
         Build an srmcp command
 
         """
-        logging.info("Warning! LCGImpl does not support authmethod handling")
+        logging.info("Warning! LCGImpl does not support authMethod handling")
 
         result = "#!/bin/sh\n"
 
@@ -202,7 +202,7 @@ class LCGImpl(StageOutImpl):
 
         return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed lcg-via smrv copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

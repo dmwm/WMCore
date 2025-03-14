@@ -85,13 +85,13 @@ class FNALImpl(StageOutImpl):
             return self.srmImpl.createSourceName(protocol, pfn)
         return pfn
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
         Build a mkdir to generate the directory
         """
-        logging.info("Warning! FNALImpl does not support authmethod handling")
+        logging.info("Warning! FNALImpl does not support authMethod handling")
 
         if getattr(self, 'stageIn', False):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
@@ -139,7 +139,7 @@ class FNALImpl(StageOutImpl):
             """
             return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed fnal-flavor copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

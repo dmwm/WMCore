@@ -29,12 +29,12 @@ class AWSS3Impl(StageOutImpl):
         """
         return "%s" % pfn
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
         Build an aws s3 copy command
         """
-        logging.info("Warning! AWSS3Impl does not support authmethod handling")
+        logging.info("Warning! AWSS3Impl does not support authMethod handling")
 
         result = "#!/bin/sh\n"
 
@@ -60,7 +60,7 @@ class AWSS3Impl(StageOutImpl):
 
         return result
     
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed aws s3 copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

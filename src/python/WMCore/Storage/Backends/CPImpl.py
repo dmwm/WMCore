@@ -50,14 +50,14 @@ class CPImpl(StageOutImpl):
                     raise
         return
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
         Build the actual cp stageout command
 
         """
-        logging.info("Warning! CPImpl does not support authmethod handling")
+        logging.info("Warning! CPImpl does not support authMethod handling")
 
         copyCommand = ""
 
@@ -85,7 +85,7 @@ class CPImpl(StageOutImpl):
 
         return copyCommand
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed cp command for stageOut, without re-running it,
         providing information on the environment and the certifications

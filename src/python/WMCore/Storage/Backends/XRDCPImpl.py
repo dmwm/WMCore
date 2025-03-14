@@ -101,30 +101,30 @@ class XRDCPImpl(StageOutImpl):
 
         return foundXrdcp & foundXrdfs
 
-    def getAuthEnv(self, authmethod=None, forcemethod=False):
+    def getAuthEnv(self, authMethod=None, forceMethod=False):
         """
         Get environment variables for stageout command based on the selected authentication method.
-        :authmethod: str, the authentication method to be used ("X509", "TOKEN", or None)
-        :forcemethod: bool, cleans non-chosen auth methods from environment.
+        :authMethod: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :forceMethod: bool, cleans non-chosen auth methods from environment.
         :return: str
         """
         authEnv = ""
-        if authmethod is None:
+        if authMethod is None:
             return authEnv
-        elif authmethod.upper() == 'X509':
+        elif authMethod.upper() == 'X509':
             authEnv = self.setAuthX509
-            if forcemethod:
+            if forceMethod:
                 authEnv += self.unsetToken
-        elif authmethod.upper() == 'TOKEN':
+        elif authMethod.upper() == 'TOKEN':
             authEnv = self.setAuthToken
-            if forcemethod:
+            if forceMethod:
                 authEnv += self.unsetX509
         else:
             logging.info("Warning! Running without either a X509 certificate or a token specified!")
 
         return authEnv
 
-    def getFormattedCopyCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False, debug=False):
+    def getFormattedCopyCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False, debug=False):
         """
         Construct xrdcp/xrdfs stageout command.
         If adler32 checksum is provided, use it for the transfer
@@ -136,8 +136,8 @@ class XRDCPImpl(StageOutImpl):
         :targetPFN: str, the target PFN.
         :options: str, additional options for gfal-copy.
         :checksums: dict, checksum values.
-        :authmethod: str, preferred authentication method.
-        :forcemethod: bool, whether to force the preferred authentication method.
+        :authMethod: str, preferred authentication method.
+        :forceMethod: bool, whether to force the preferred authentication method.
         :debug: bool, enable/disable debugging mode after command.
         """
         if not options:
@@ -186,7 +186,7 @@ class XRDCPImpl(StageOutImpl):
             self.xrdfsCmd = "xrdfs"
 
         # Check for auth-related environment to prepend
-        authEnv = self.getAuthEnv(authmethod, forcemethod)
+        authEnv = self.getAuthEnv(authMethod, forceMethod)
         if authEnv:
             copyCommand += authEnv
             self.xrdfsCmd = "%s %s" % (authEnv, self.xrdfsCmd)
@@ -236,7 +236,7 @@ class XRDCPImpl(StageOutImpl):
 
         return copyCommand
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
@@ -246,15 +246,15 @@ class XRDCPImpl(StageOutImpl):
         :targetPFN: str, the target PFN.
         :options: str, additional options for gfal-copy.
         :checksums: dict, checksum values.
-        :authmethod: str, preferred authentication method.
-        :forcemethod: bool, whether to force the preferred authentication method.
+        :authMethod: str, preferred authentication method.
+        :forceMethod: bool, whether to force the preferred authentication method.
         :debug: bool, enable/disable debugging mode after command.
 
         """
         # Construct xrdcp stageout command and return it
-        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod)
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authMethod, forceMethod)
     
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authmethod=None, forcemethod=False):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed xrdcp command for stageOut, without re-running it,
         providing information on the environment and the certifications
@@ -263,18 +263,18 @@ class XRDCPImpl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for copy command
         :checksums: dict, collect checksums according to the algorithms saved as keys
-        :authmethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
-        :forcemethod: bool, whether to force the use of the preferred authentication method, disabling the other 
+        :authMethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
+        :forceMethod: bool, whether to force the use of the preferred authentication method, disabling the other 
         """
         # Construct xrdcp/xrdfs commands, but returning the debugging information instead of running it
-        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authmethod, forcemethod, debug=True)
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authMethod, forceMethod, debug=True)
 
-    def removeFile(self, pfnToRemove, authmethod=None, forcemethod=False):
+    def removeFile(self, pfnToRemove, authMethod=None, forceMethod=False):
         """
         _removeFile_
 
         """
-        authEnv = self.getAuthEnv(authmethod, forcemethod)
+        authEnv = self.getAuthEnv(authMethod, forceMethod)
         if authEnv:
             self.xrdfsCmd = "%s %s" % (authEnv, self.xrdfsCmd)
 

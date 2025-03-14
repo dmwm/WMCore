@@ -129,7 +129,17 @@ class SimpleCondorPlugin(BasePlugin):
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
         else:
-            self.reqStr = None
+            # note that this can be defined in the agent config.py
+            self.reqStr = ('{arch_constraint} && '
+                           '(TARGET.OpSys == "LINUX") && (TARGET.Disk >= RequestDisk) && '
+                           '(TARGET.Memory >= RequestMemory) && (TARGET.Cpus >= RequestCpus) && '
+                           '(TARGET.HasFileTransfer) && SONIC_REQUIREMENT')
+
+        if hasattr(config.BossAir, 'sonicRequirement'):
+            self.sonicReq = config.BossAir.sonicRequirement
+        else:
+            self.sonicReq = "true"  # FIXME: is this correct?
+
 
         # x509 proxy handling
         proxy = Proxy({'logger': myThread.logger})
@@ -159,7 +169,6 @@ class SimpleCondorPlugin(BasePlugin):
             return successfulJobs, failedJobs
 
         schedd = htcondor.Schedd()
-        rel_microarchs = self.tc.defaultMicroArchVersionNumberByRelease()
 
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
@@ -505,6 +514,8 @@ class SimpleCondorPlugin(BasePlugin):
         undefined = 'UNDEFINED'
         jobParameters = []
 
+        rel_microarchs = self.tc.defaultMicroArchVersionNumberByRelease()
+
         for job in jobList:
             ad = {}
 
@@ -519,9 +530,6 @@ class SimpleCondorPlugin(BasePlugin):
             # Initialize 'Requirements' to an empty string for all jobs.
             # See issue: https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=7715 
             ad['Requirements'] = ''
-            # Do not define custom Requirements for Volunteer resources
-            if self.reqStr is not None:
-                ad['Requirements'] = self.reqStr
 
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
 
@@ -644,10 +652,10 @@ class SimpleCondorPlugin(BasePlugin):
             requiredArchs = self.scramArchtoRequiredArch(job.get('scramArch'))
             if not requiredArchs:  # only Cleanup jobs should not have ScramArch defined
                 ad['My.REQUIRED_ARCH'] = undefined
-                ad['Requirements'] = '(TARGET.Arch =!= REQUIRED_ARCH)'
+                ad['Requirements'] = self.reqStr.format(arch_constraint='(TARGET.Arch =!= REQUIRED_ARCH)')
             else:
                 ad['My.REQUIRED_ARCH'] = classad.quote(str(requiredArchs))
-                ad['Requirements'] = 'stringListMember(TARGET.Arch, REQUIRED_ARCH)'
+                ad['Requirements'] = self.reqStr.format(arch_constraint='stringListMember(TARGET.Arch, REQUIRED_ARCH)')
 
             # Inject a microarchitecture classad. If x86_64 not on arch list, return 0
             if 'X86_64' not in requiredArchs.split(","):
@@ -655,7 +663,9 @@ class SimpleCondorPlugin(BasePlugin):
             else:
                 minMicroArch = self.tc.getGreaterMicroarchVersionNumber(cmsswVersions, rel_microarchs=rel_microarchs)
                 ad['My.REQUIRED_MINIMUM_MICROARCH'] = str(minMicroArch) 
-
+            # SONIC related configuration
+            ad['My.WantsSONIC'] = "true"
+            ad['My.SONIC_REQUIREMENT'] = self.sonicReq
             jobParameters.append(ad)
              
         return jobParameters

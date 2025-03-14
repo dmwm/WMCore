@@ -223,6 +223,8 @@ class StdBase(object):
                     outputModules[moduleLabel] = {'dataTier': output['dataTier']}
                     if 'primaryDataset' in output:
                         outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
+                    if 'rawSkim' in output:
+                        outputModules[moduleLabel]['rawSkim'] = output['rawSkim']
                     if 'filterName' in output:
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
@@ -480,7 +482,7 @@ class StdBase(object):
                         del output['primaryDataset']
             if 'primaryDataset' in scenarioArgs:
                 del scenarioArgs['primaryDataset']
-
+            logging.info("+++ scenarioArgs = {}".format(scenarioArgs))
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
         # only in the very end, in order to get it in for the children tasks as well

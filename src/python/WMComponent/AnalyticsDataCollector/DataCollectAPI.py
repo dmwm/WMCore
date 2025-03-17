@@ -7,6 +7,7 @@ from future.utils import viewitems
 
 import os
 import time
+import json
 import logging
 
 import WMCore
@@ -245,9 +246,11 @@ class WMAgentDBData(object):
         status and a short error message, if any.
         """
         agentInfo = self.getHeartbeatWarning()
+        agentInfo['down_component_process'] = []
 
         components = config.listComponents_() + config.listWebapps_()
         # check the component status
+        agentComponents = {}
         for component in components:
             compDir = config.section_(component).componentDir
             compDir = os.path.expandvars(compDir)
@@ -259,11 +262,33 @@ class WMAgentDBData(object):
                 daemon = Details(daemonXml)
                 if not daemon.isAlive():
                     downFlag = True
+                # add individual component thread status
+                compName = compDir.split('/')[-1]
+                compProcessStatus = daemon.processStatus()
+                agentComponents.update({compName: compProcessStatus})
+                # check if number of component threads is equal to initial set
+                cpath = os.path.join(compDir, "threads.json")
+                if os.path.exists(cpath):
+                    origThreads = []
+                    with open(cpath, 'r', encoding='utf-8') as istream:
+                        origThreads = json.load(istream)
+                    if len(origThreads) != len(compProcessStatus):
+                        downFlag = True
+                        for proc in origThreads:
+                            if proc not in compProcessStatus:
+                                agentInfo['down_component_process'].append(proc)
+                # check if all component process' threads are alive, otherwise set down flag
+                for proc in compProcessStatus:
+                    # the alive process should be either in sleeping or running states
+                    if proc['status'] not in ["S (sleeping)", "R (running)"]:
+                        downFlag = True
+                        agentInfo['down_component_process'].append(proc)
             if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
                 agentInfo['down_components'].append(component)
                 agentInfo['down_component_detail'].append(component)
 
+        agentInfo['components'] = agentComponents
         agentInfo['workers'] = self.listWorkers.execute()
         return agentInfo
 

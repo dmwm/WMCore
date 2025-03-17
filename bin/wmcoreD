@@ -40,7 +40,10 @@ import os
 import subprocess
 import sys
 import time
+import json
 
+from Utils.Utilities import extractFromXML
+from Utils.ProcFS import processStatus
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMFactory import WMFactory
@@ -235,6 +238,16 @@ def startup(configFile):
         else:
             print('Path for daemon file does not exist!')
             sys.exit(1)
+        # write into component area process status information
+        cpath = os.path.join(compDir, "threads.json")
+        if os.path.exists(cpath):
+            os.remove(cpath)
+        cxml = os.path.join(compDir, "Daemon.xml")
+        cpid = extractFromXML(cxml, "ProcessID")
+        with open(cpath, 'w', encoding="utf-8") as istream:
+            procStatus = processStatus(cpid)
+            istream.write(json.dumps(procStatus))
+            print("Component %s started with %s threads, see %s\n" % (component, len(procStatus), cpath))
 
     return
     
@@ -274,6 +287,10 @@ def shutdown(configFile):
                 daemon.removeAndBackupDaemonFile()
             else:
                 daemon.killWithPrejudice()
+        # remove component threads.json file
+        cpath = os.path.join(compDir, "threads.json")
+        if os.path.exists(cpath):
+            os.remove(cpath)
         if doLogCleanup:
             #  //
             # // Log Cleanup

@@ -8,13 +8,15 @@ import logging
 import codecs
 from datetime import date, timedelta
 from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
+from pathlib import Path
 
 # a new log level which is lower than debug
 # to prevent a tsunami of log messages in debug
 # mode but to have the possibility to see all
 # database queries if necessary.
 logging.SQLDEBUG = 5
-logging.addLevelName(logging.SQLDEBUG,"SQLDEBUG")
+logging.addLevelName(logging.SQLDEBUG, "SQLDEBUG")
+
 
 def sqldebug(msg):
     """
@@ -23,7 +25,8 @@ def sqldebug(msg):
     """
     logging.log(logging.SQLDEBUG, msg)
 
-def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
+
+def setupRotatingHandler(fileName, maxBytes=200000000, backupCount=3):
     """
     _setupRotatingHandler_
 
@@ -31,17 +34,17 @@ def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
     """
     handler = RotatingFileHandler(fileName, "a", maxBytes, backupCount)
     logging.getLogger().addHandler(handler)
-    return
 
 
-def getTimeRotatingLogger(name, logFile, duration = 'midnight'):
-    """ Set the logger for time based lotaing.
+def getTimeRotatingLogger(name, logFile, duration='midnight'):
+    """
+    Set the logger for time based rotating.
     """
     logger = logging.getLogger(name)
     if duration == 'midnight':
-        handler = MyTimedRotatingFileHandler(logFile, duration, backupCount = 10)
+        handler = MyTimedRotatingFileHandler(logFile, duration, backupCount=10)
     else:
-        handler = TimedRotatingFileHandler(logFile, duration, backupCount = 10)
+        handler = TimedRotatingFileHandler(logFile, duration, backupCount=10)
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -62,7 +65,18 @@ class MyTimedRotatingFileHandler(TimedRotatingFileHandler):
     https://stackoverflow.com/questions/338450/timedrotatingfilehandler-changing-file-name
     """
     def __init__(self, logName, interval, backupCount):
-        super(MyTimedRotatingFileHandler, self).__init__(logName, when=interval,
+        """
+        Initializes MyTimedRotatingFileHandler
+
+        If logName doesn't contain a date, the day of runtime will be added
+        """
+        logPath = Path(logName)
+        todayStr = date.today().strftime("%Y%m%d")
+
+        if todayStr not in logName:
+            logPath = logPath.parent.joinpath(f"{logPath.stem}-{todayStr}{logPath.suffix}")
+
+        super(MyTimedRotatingFileHandler, self).__init__(logPath, when=interval,
                                                          backupCount=backupCount)
 
     def doRollover(self):
@@ -71,7 +85,7 @@ class MyTimedRotatingFileHandler(TimedRotatingFileHandler):
 
         Rotate the log file and add the date between the log name
         and its extension, e.g.:
-        reqmgr2.log becomes reqmgr2-20170815.log
+        reqmgr2-20170814.log becomes reqmgr2-20170815.log
         """
         self.stream.close()
         # replace yesterday's date by today

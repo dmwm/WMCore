@@ -121,6 +121,8 @@ config.BossAir.nCondorProcesses = 1
 config.BossAir.submitWMSMode = True
 config.BossAir.acctGroup = glideInAcctGroup
 config.BossAir.acctGroupUser = glideInAcctGroupUser
+config.BossAir.sonicRequirement = ('ifThenElse(WantsSONIC && JobStatus =?= 1 && (time() - EnteredCurrentStatus) < 3600 * 24,'
+                                   ' CMSSF_HasSONIC==true, true)')
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl

@@ -3,7 +3,7 @@
 DBSErrors represents generic class to handle DBS Go server errors
 """
 
-
+import re
 import json
 
 from WMCore.Services.DBS.ProdException import ProdException
@@ -95,6 +95,17 @@ class DBSError():
         if isinstance(self.data, dict):
             return self.data['error']['code']
         return 0
+
+    def getCodes(self):
+        """
+        :return: list of all DBS server error codes from error message
+-        https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
+        """
+        if isinstance(self.data, dict):
+            msgCodes = list(map(int, re.findall(r"Code:\s*(\d+)", self.data.get('message', ''))))
+            resCodes = list(map(int, re.findall(r"Code:\s*(\d+)", self.data.get('reason', ''))))
+            return list(set(msgCodes + resCodes + [self.data['error']['code']]))
+        return []
 
     def getMessage(self):
         """

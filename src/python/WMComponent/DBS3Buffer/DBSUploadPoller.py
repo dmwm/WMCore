@@ -62,7 +62,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
     Get confirmation in the output
 
     :param workInput: work input data
-    :param results: output results dictionary
+    :param results: multiprocessing.Queue object we we can store and retrieve dict objects
     :param dbsUrl: url of DBS server to use
     :param gzipEncoding: specify if we should use gzipEncoding
     """
@@ -99,8 +99,8 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             dbsError = DBSError(ex.body)
             reason = dbsError.getReason()
             message = dbsError.getMessage()
-            msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
             for srvCode in dbsError.getCodes():
+                msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
                 if srvCode == 128:
                     # block already exist
                     logging.warning("Block %s already exists. Marking it as uploaded.", name)

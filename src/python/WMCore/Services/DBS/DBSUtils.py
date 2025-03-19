@@ -7,12 +7,14 @@ set of common utilities for DBS3Reader
 """
 import json
 import urllib
+import logging
 from urllib.parse import urlparse, parse_qs, quote_plus
 from collections import defaultdict
 
 from Utils.CertTools import cert, ckey
 from dbs.apis.dbsClient import aggFileLumis, aggFileParents
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
+from WMCore.Services.pycurl_manager import RequestHandler
 from Utils.PortForward import PortForward
 
 
@@ -137,3 +139,28 @@ def urlParams(url):
         if len(vals) == 1:
             rdict[key] = vals[0]
     return rdict
+
+def DBSErrors(dbsUrl):
+    """
+    Fetch and return all DBS server errors
+    :param dbsUrl: DBS url to use
+    :return: dictionary of DBS server errors and their meaning
+    """
+    dbsErrors = {}
+    method = "GET"
+    payload = {}
+    headers = {'Content-Type': 'application/json'}
+    mgr = RequestHandler()
+    # dbs server url for error codes
+    rurl = f"{dbsUrl}/errors"
+    data = ""   # initialize data variable to be used in logging.error if necessary
+    try:
+        data = mgr.getdata(rurl, payload, headers, verb=method, ckey=ckey(), cert=cert())
+        # check if we received proper data from DBS server
+        if 'code' in str(data) and 'meaning' in str(data):
+            errorCodes = json.loads(data)
+            for row in errorCodes:
+                dbsErrors[row['code']] = row['meaning']
+    except Exception as exp:
+        logging.error("Unable to query DBS url %s, error %s, data=%s", dbsUrl, str(exp), data)
+    return dbsErrors

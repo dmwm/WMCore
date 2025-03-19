@@ -106,7 +106,8 @@ class DBSErrorsTest(unittest.TestCase):
         """
         testDBSCodes tests DBSError getCodes
         """
-        error = {
+        # dbs error are returned from dbs2go as list of dictionaries
+        error = [{
             "error": {
               "reason": "\nDBSError\n   Code: 100\n   Description: Generic DBS error\n   Function: web.TestErrorHandler\n   Message: test\n   Reason: original error\n",
               "message": "test",
@@ -120,7 +121,7 @@ class DBSErrorsTest(unittest.TestCase):
             "exception": 500,
             "type": "HTTPError",
             "message": "\nDBSError\n   Code: 141\n   Description: Not defined\n   Function: web.TestErrorHandler\n   Message: test\n   Reason: \nDBSError\n   Code: 100\n   Description: Generic DBS error\n   Function: web.TestErrorHandler\n   Message: test\n   Reason: original error\n\n"
-        }
+        }]
         dbsError = DBSError(json.dumps(error))
         dbsCodes = dbsError.getCodes()
         self.assertTrue(dbsCodes == [100, 141])

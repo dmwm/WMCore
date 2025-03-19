@@ -102,7 +102,6 @@ class DBSError():
 -        https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
         """
         if isinstance(self.data, dict):
-            msg = self.data['message']
             msgCodes = list(map(int, re.findall(r"Code:\s*(\d+)", self.data.get('message', ''))))
             resCodes = list(map(int, re.findall(r"Code:\s*(\d+)", self.data.get('reason', ''))))
             return list(set(msgCodes + resCodes + self.data['error']['code']))

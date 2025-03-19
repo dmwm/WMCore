@@ -5,6 +5,7 @@ _DBSError_t_
 Unit test for the DBSError class.
 """
 
+import json
 import unittest
 
 # from nose.plugins.attrib import attr

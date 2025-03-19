@@ -1,0 +1,110 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "DIGIHI2024": "AcquisitionEra-OVERRIDE-ME",
+            "RECOHI2024": "AcquisitionEra-OVERRIDE-ME"
+        },
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "DIGIHI2024": "ProcessingString-OVERRIDE-ME",
+            "RECOHI2024": "ProcessingString-OVERRIDE-ME"
+        },
+        "ProcessingVersion": {
+            "DIGIHI2024": "ProcessingVersion-OVERRIDE-ME",
+            "RECOHI2024": "ProcessingVersion-OVERRIDE-ME"
+        },
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_15_0_0_pre3",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "WorkFlowDesc": ["TaskChain MC recyling with 4CPU/6GB and 8CPU/8GB; with harvesting enabled; Different PrepID and CMSSW;",
+                             "Different AcqEra/ProcStr/ProcVer; 5L for Task1 and 10L for Task2"],
+	        "CheckList": ["TaskChain: MC recycling; TaskChain MC harvesting; TaskChain PrimaryDataset override",
+                          "TaskChain with different AcqEra/ProcStr/ProcVer and PrepID/CMSSW; LumiBased splitting"]
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMConfigCacheID": "574bef09fdd0275b3eae2ca9e87d0811",
+        "DQMHarvestUnit": "byRun",
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+        "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/",
+        "EnableHarvesting": true,
+        "EventStreams": 0,
+        "GPUParams": "null",
+        "GlobalTag": "141X_mcRun3_2024_realistic_HI_v13",
+        "IncludeParents": false,
+        "Memory": 3000,
+        "Multicore": 1,
+        "PrepID": "TEST-CMSSW_15_0_0_pre3__Run3_2024HIN_noPU-PhotonJets_Pt_10_5362_HI_2024-00001",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 1,
+        "RequestPriority": 550000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "TaskChain",
+        "ScramArch": [
+            "el8_amd64_gcc12"
+        ],
+        "SizePerEvent": 1,
+        "SubRequestType": "RelVal",
+        "Task1": {
+            "AcquisitionEra": "CMSSW_15_0_0_pre3",
+            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "Campaign": "CMSSW_15_0_0_pre3__Run3_2024HIN_noPU_Reference-1739207270",
+            "ConfigCacheID": "574bef09fdd0275b3eae2ca9e87bc8eb",
+            "EventStreams": 2,
+            "GlobalTag": "141X_mcRun3_2024_realistic_HI_v13",
+            "InputDataset": "/RelValPhotonJets_Pt_10_5362_HI_2024/CMSSW_15_0_0_pre3-141X_mcRun3_2024_realistic_HI_v13_STD_RegeneratedGS_2024HIN_noPU-v1/GEN-SIM",
+            "KeepOutput": true,
+            "LumisPerJob": 5,
+            "Memory": 6000,
+            "Multicore": 4,
+            "PrepID": "TEST-Task1-PhotonJets",
+            "PrimaryDataset": "RelValPhotonJets_WMCore",
+            "ProcessingString": "Task1_WMCore_TEST",
+            "ScramArch": [
+                "el8_amd64_gcc12"
+            ],
+            "SplittingAlgo": "LumiBased",
+            "TaskName": "DIGIHI2024"
+        },
+        "Task2": {
+            "AcquisitionEra": "CMSSW_15_0_0_pre3",
+            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "Campaign": "CMSSW_15_0_0_pre3__Run3_2024HIN_noPU_Reference-1739207270",
+            "ConfigCacheID": "574bef09fdd0275b3eae2ca9e87ca048",
+            "EventStreams": 2,
+            "GlobalTag": "141X_mcRun3_2024_realistic_HI_v13",
+            "InputFromOutputModule": "FEVTDEBUGHLToutput",
+            "InputTask": "DIGIHI2024",
+            "KeepOutput": true,
+            "LumisPerJob": 10,
+            "Memory": 8000,
+            "Multicore": 8,
+            "PrepID": "TEST-Task2-PhotonJets",
+            "PrimaryDataset": "RelValPhotonJets_WMCore",
+            "ProcessingString": "Task2_WMCore_TEST",
+            "ScramArch": [
+                "el8_amd64_gcc12"
+            ],
+            "SplittingAlgo": "LumiBased",
+            "TaskName": "RECOHI2024"
+        },
+        "TaskChain": 2,
+        "TimePerEvent": 1,
+        "ValidStatus": "PRODUCTION"
+    }
+}

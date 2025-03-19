@@ -246,11 +246,7 @@ class StageOutImpl:
         # // Create the command to be used.
         # //
         # // This will actually only enforce the definition of the bearer token variables, still x509 auth activated as a backup
-        try:
-            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authMethod="TOKEN")
-        except TypeError as ex:
-            logging.warning("Falling back to default createStageOutCommand due to: %s", str(ex))
-            command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
+        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authMethod="TOKEN")
         # //
         # // Run the command
         # //
@@ -300,9 +296,6 @@ class StageOutImpl:
         # This block will now always be executed after retries are exhausted
         if stageOutEx is not None:
             logging.error("Maximum number of retries exhausted. Further details on the failed command reported below.")
-            try:
-                command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums, authMethod="TOKEN")
-            except TypeError as ex:
-                command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums)
+            command = self.createDebuggingCommand(sourcePFN, targetPFN, options, checksums, authMethod="TOKEN")
             self.executeCommand(command)
             raise stageOutEx from None

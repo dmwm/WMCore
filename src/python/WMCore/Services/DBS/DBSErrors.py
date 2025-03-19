@@ -96,6 +96,18 @@ class DBSError():
             return self.data['error']['code']
         return 0
 
+    def getCodes(self):
+        """
+        :return: list of all DBS server error codes from error message
+-        https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
+        """
+        if isinstance(self.data, dict):
+            msg = self.data['message']
+            msgCodes = list(map(int, re.findall(r"Code:\s*(\d+)", self.data.get('message', ''))))
+            resCodes = list(map(int, re.findall(r"Code:\s*(\d+)", self.data.get('reason', ''))))
+            return list(set(msgCodes + resCodes + self.data['error']['code']))
+        return []
+
     def getMessage(self):
         """
         :return: DBS server error message (consice output, last error in DBS error chain)

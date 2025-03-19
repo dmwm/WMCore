@@ -126,7 +126,7 @@ class SRMV2Impl(StageOutImpl):
           -retry_num        number of retries before before client gives up
           -request_lifetime request lifetime in seconds
         """
-        logging.info("Warning! SRMV2Impl does not support authMethod handling")
+        logging.warning("Warning! SRMV2Impl does not support authMethod handling")
         
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"

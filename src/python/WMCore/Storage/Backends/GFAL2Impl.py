@@ -80,24 +80,25 @@ class GFAL2Impl(StageOutImpl):
           -t   global timeout for the execution of the command.
                Command is interrupted if time expires before it finishes
         :pfn: str, destination PFN
+        :authMethod: string with the authentication method to use (either 'X509' or 'TOKEN')
         :forceMethod: bool to isolate and force a given authentication method
         :dryRun: bool, dry run mode (to enable debug mode)
         """
-        if authMethod == 'X509':
+        if authMethod is None:
+            set_auth = ''
+            unset_auth = ''
+        elif authMethod == 'X509':
             set_auth = self.setAuthX509
             unset_auth = self.unsetToken if forceMethod else ""
         elif authMethod == 'TOKEN':
             set_auth = self.setAuthToken
             unset_auth = self.unsetToken if forceMethod else ""
-        else:
-            set_auth = ''
-            unset_auth = ''
+        
         dryRun = 'echo ' if dryRun else ''
 
         if os.path.isfile(pfn):
             return "{} /bin/rm -f {}".format(dryRun, os.path.abspath(pfn))
         else:
-            #return self.removeCommand.format(self.createFinalPFN(pfn), unset_auth=forceMethod, dry_run=dryRun)
             return self.removeCommand.format(self.createFinalPFN(pfn), set_auth=set_auth, unset_auth=unset_auth, dry_run=dryRun)
 
     def buildCopyCommandDict(self, sourcePFN, targetPFN, options=None, checksums=None,
@@ -165,10 +166,13 @@ class GFAL2Impl(StageOutImpl):
         :forceMethod: bool to isolate and force a given authentication method
         returns: a string with the full stage out script
         """
-        #raise ValueError(self.copyCommand)
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums,
                                                     authMethod, forceMethod)
         copyCommand = self.copyCommand.format_map(copyCommandDict)
+        if authMethod is None:
+            # add more verbosity for reporting which authentication method GFAL uses when it is not specified
+            copyCommand = copyCommand.replace('-p -v', '-p -vvv')
+        
         result = "#!/bin/bash\n" + copyCommand
 
         # add check for exit code
@@ -201,6 +205,9 @@ class GFAL2Impl(StageOutImpl):
                                                     authMethod, forceMethod, dryRun=True)
 
         copyCommand = self.copyCommand.format_map(copyCommandDict)
+        if authMethod is None:
+            # add more verbosity for reporting which authentication method GFAL uses when it is not specified
+            copyCommand = copyCommand.replace('-p -v', '-p -vvv')
 
         result = "#!/bin/bash\n"
         result += """
@@ -228,6 +235,10 @@ class GFAL2Impl(StageOutImpl):
         echo "gfal-copy location: $(which gfal-copy)"
         echo "Source PFN: {source}"
         echo "Target PFN: {destination}"
+        echo
+        echo "Information for credentials in the environment"
+        echo "Bearer token content: $BEARER_TOKEN"
+        echo "Bearer token file: $BEARER_TOKEN_FILE"
         echo
         echo "VOMS proxy info:"
         voms-proxy-info -all

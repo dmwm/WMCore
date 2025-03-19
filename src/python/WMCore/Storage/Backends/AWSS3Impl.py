@@ -34,7 +34,7 @@ class AWSS3Impl(StageOutImpl):
         _createStageOutCommand_
         Build an aws s3 copy command
         """
-        logging.info("Warning! AWSS3Impl does not support authMethod handling")
+        logging.warning("Warning! AWSS3Impl does not support authMethod handling")
 
         result = "#!/bin/sh\n"
 

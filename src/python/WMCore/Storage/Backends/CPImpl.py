@@ -57,7 +57,7 @@ class CPImpl(StageOutImpl):
         Build the actual cp stageout command
 
         """
-        logging.info("Warning! CPImpl does not support authMethod handling")
+        logging.warning("Warning! CPImpl does not support authMethod handling")
 
         copyCommand = ""
 

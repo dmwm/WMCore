@@ -91,7 +91,7 @@ class FNALImpl(StageOutImpl):
 
         Build a mkdir to generate the directory
         """
-        logging.info("Warning! FNALImpl does not support authMethod handling")
+        logging.warning("Warning! FNALImpl does not support authMethod handling")
 
         if getattr(self, 'stageIn', False):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)

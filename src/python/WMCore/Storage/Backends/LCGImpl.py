@@ -97,7 +97,7 @@ class LCGImpl(StageOutImpl):
         Build an srmcp command
 
         """
-        logging.info("Warning! LCGImpl does not support authMethod handling")
+        logging.warning("Warning! LCGImpl does not support authMethod handling")
 
         result = "#!/bin/sh\n"
 

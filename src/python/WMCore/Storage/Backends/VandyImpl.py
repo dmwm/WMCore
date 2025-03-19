@@ -66,7 +66,7 @@ class VandyImpl(StageOutImpl):
         targetPFN.
 
         """
-        logging.info("Warning! VandyImpl does not support authMethod handling")
+        logging.warning("Warning! VandyImpl does not support authMethod handling")
 
         if self.stageIn:
             return "%s %s %s" % (self._downloadScript, sourcePFN, targetPFN)

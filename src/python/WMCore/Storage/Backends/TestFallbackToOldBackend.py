@@ -70,7 +70,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         else:
             print("=> dir already exists... do nothing.")
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
@@ -96,7 +96,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         print(result)
         return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

@@ -14,10 +14,10 @@ class GFAL2ImplTest(unittest.TestCase):
 
     def testInit(self):
         testGFAL2Impl = GFAL2Impl()
-        removeCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c " \
-                "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}'"
-        copyCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
-              ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p " \
+        removeCommand = "env -i {set_auth} JOBSTARTDIR=$JOBSTARTDIR bash -c " \
+                "'. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-rm -t 600 {}'"
+        copyCommand = "env -i {set_auth} JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
+              ". $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-copy -t 2400 -T 2400 -p " \
               "-v --abort-on-failure {checksum} {options} {source} {destination}'"
         self.assertEqual(removeCommand, testGFAL2Impl.removeCommand)
         self.assertEqual(copyCommand, testGFAL2Impl.copyCommand)
@@ -66,7 +66,7 @@ class GFAL2ImplTest(unittest.TestCase):
     def testCreateRemoveFileCommand_isFile(self, mock_path):
         mock_path.abspath.return_value = "/some/path"
         mock_path.isfile.return_value = True
-        self.assertEqual("/bin/rm -f /some/path", self.GFAL2Impl.createRemoveFileCommand("name"))
+        self.assertEqual(" /bin/rm -f /some/path", self.GFAL2Impl.createRemoveFileCommand("name"))
         mock_path.abspath.assert_called_with("name")
 
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.os.path')
@@ -82,16 +82,17 @@ class GFAL2ImplTest(unittest.TestCase):
         result = self.GFAL2Impl.createStageOutCommand("sourcePFN", "targetPFN")
         expectedResult = self.getStageOutCommandResult(
             self.getCopyCommandDict("-K adler32", "", "sourcePFN", "targetPFN"), "targetPFN2")
-        mock_createRemoveFileCommand.assert_called_with("targetPFN")
+        mock_createRemoveFileCommand.assert_called_with("targetPFN", authMethod=None, forceMethod=False)
         self.assertEqual(expectedResult, result)
 
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.GFAL2Impl.createRemoveFileCommand')
     def testCreateStageOutCommand_options(self, mock_createRemoveFileCommand):
+        self.maxDiff = None
         mock_createRemoveFileCommand.return_value = "targetPFN2"
         result = self.GFAL2Impl.createStageOutCommand("file:sourcePFN", "file:targetPFN", "--nochecksum unknow")
         expectedResult = self.getStageOutCommandResult(
             self.getCopyCommandDict("", "unknow", "file:sourcePFN", "file:targetPFN"), "targetPFN2")
-        mock_createRemoveFileCommand.assert_called_with("file:targetPFN")
+        mock_createRemoveFileCommand.assert_called_with("file:targetPFN", authMethod=None, forceMethod=False)
         self.assertEqual(expectedResult, result)
 
     def getCopyCommandDict(self, checksum, options, source, destination):
@@ -109,15 +110,15 @@ class GFAL2ImplTest(unittest.TestCase):
         result += copyCommand
 
         result += """
-            EXIT_STATUS=$?
-            echo "gfal-copy exit status: $EXIT_STATUS"
-            if [[ $EXIT_STATUS != 0 ]]; then
-                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-                echo "Cleaning up failed file:"
-                {remove_command}
-            fi
-            exit $EXIT_STATUS
-            """.format(remove_command=createRemoveFileCommandResult)
+        EXIT_STATUS=$?
+        echo "gfal-copy exit status: $EXIT_STATUS"
+        if [[ $EXIT_STATUS != 0 ]]; then
+            echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+            echo "Cleaning up failed file:"
+            {remove_command}
+        fi
+        exit $EXIT_STATUS
+        """.format(remove_command=createRemoveFileCommandResult)
         
         return result
     
@@ -129,7 +130,7 @@ class GFAL2ImplTest(unittest.TestCase):
         mock_path.abspath.return_value = "/some/file"
         self.GFAL2Impl.removeFile("file")
         mock_path.abspath.assert_called_with("file")
-        mock_executeCommand.assert_called_with("/bin/rm -f /some/file")
+        mock_executeCommand.assert_called_with(" /bin/rm -f /some/file")
 
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.os.path')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')

@@ -11,6 +11,7 @@ from builtins import zip, range
 
 import os
 import re
+import logging
 
 from WMCore.Storage.Execute import runCommandWithOutput
 from WMCore.Storage.Registry import registerStageOutImpl
@@ -113,7 +114,7 @@ class SRMV2Impl(StageOutImpl):
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
@@ -125,6 +126,8 @@ class SRMV2Impl(StageOutImpl):
           -retry_num        number of retries before before client gives up
           -request_lifetime request lifetime in seconds
         """
+        logging.warning("Warning! SRMV2Impl does not support authMethod handling")
+        
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
         result += "srmcp -2 -report=$REPORT_FILE -retry_num=0 -request_lifetime=2400"
@@ -191,7 +194,7 @@ class SRMV2Impl(StageOutImpl):
 
         return result
     
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed smrv2 copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for lcg-cp
 
 """
 import os
+import logging
 
 from future.utils import viewitems
 
@@ -89,13 +90,15 @@ class LCGImpl(StageOutImpl):
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
         Build an srmcp command
 
         """
+        logging.warning("Warning! LCGImpl does not support authMethod handling")
+
         result = "#!/bin/sh\n"
 
         # check if we should use the grid UI from CVMFS
@@ -199,7 +202,7 @@ class LCGImpl(StageOutImpl):
 
         return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed lcg-via smrv copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

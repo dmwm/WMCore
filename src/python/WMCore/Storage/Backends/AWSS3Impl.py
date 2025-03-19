@@ -9,6 +9,7 @@ from __future__ import print_function
 from __future__ import division
 
 import os
+import logging
 from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.Registry import registerStageOutImpl
 
@@ -28,11 +29,13 @@ class AWSS3Impl(StageOutImpl):
         """
         return "%s" % pfn
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
         Build an aws s3 copy command
         """
+        logging.warning("Warning! AWSS3Impl does not support authMethod handling")
+
         result = "#!/bin/sh\n"
 
         copyCommand = "aws s3 cp"
@@ -57,7 +60,7 @@ class AWSS3Impl(StageOutImpl):
 
         return result
     
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed aws s3 copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

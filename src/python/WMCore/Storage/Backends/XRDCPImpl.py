@@ -28,7 +28,49 @@ class XRDCPImpl(StageOutImpl):
         self.numRetries = 5
         self.retryPause = 300
         self.xrdfsCmd = "xrdfs"
-
+        self.setAuthX509 = "env X509_USER_PROXY=$X509_USER_PROXY "
+        self.setAuthToken = "env BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) "
+        self.unsetX509 = "X509_USER_PROXY= "
+        self.unsetToken = "BEARER_TOKEN_FILE= BEARER_TOKEN= "
+        self.debuggingTemplate = "#!/bin/bash\n"
+        self.debuggingTemplate += """
+        echo
+        echo
+        echo "-----------------------------------------------------------"
+        echo "==========================================================="
+        echo
+        echo "Debugging information on failing xrdcp/xrdfs command"
+        echo
+        echo "Current date and time: $(date +"%Y-%m-%d %H:%M:%S")"
+        echo "XRootD command which failed: {copy_command}"
+        echo "Hostname:   $(hostname -f)"
+        echo "OS:  $(uname -r -s)"
+        echo
+        echo "XRD environment variables (if any):"
+        env | grep ^XRD_
+        echo
+        echo "PYTHON environment variables:"
+        env | grep ^PYTHON
+        echo
+        echo "LD_* environment variables:"
+        env | grep ^LD_
+        echo
+        echo "xrdcp location: $(which xrdcp)"
+        echo "xrdfs location: $(which xrdfs)"
+        echo "Source PFN: {source}"
+        echo "Target PFN: {destination}"
+        echo
+        echo
+        echo "Information for credentials in the environment"
+        echo "Bearer token content: $BEARER_TOKEN"
+        echo "Bearer token file: $BEARER_TOKEN_FILE"
+        echo
+        echo "VOMS proxy info:"
+        voms-proxy-info -all
+        echo "==========================================================="
+        echo "-----------------------------------------------------------"
+        echo
+        """
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -59,17 +101,44 @@ class XRDCPImpl(StageOutImpl):
 
         return foundXrdcp & foundXrdfs
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def getAuthEnv(self, authMethod=None, forceMethod=False):
         """
-        _createStageOutCommand_
+        Get environment variables for stageout command based on the selected authentication method.
+        :authMethod: str, the authentication method to be used ("X509", "TOKEN", or None)
+        :forceMethod: bool, cleans non-chosen auth methods from environment.
+        :return: str
+        """
+        authEnv = ""
+        if authMethod is None:
+            return authEnv
+        elif authMethod.upper() == 'X509':
+            authEnv = self.setAuthX509
+            if forceMethod:
+                authEnv += self.unsetToken
+        elif authMethod.upper() == 'TOKEN':
+            authEnv = self.setAuthToken
+            if forceMethod:
+                authEnv += self.unsetX509
+        else:
+            logging.info("Warning! Running without either a X509 certificate or a token specified!")
 
-        Build the actual xrdcp stageout command
+        return authEnv
 
+    def getFormattedCopyCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False, debug=False):
+        """
+        Construct xrdcp/xrdfs stageout command.
         If adler32 checksum is provided, use it for the transfer
         xrdcp options used:
           --force : re-creates a file if it's already present
           --nopbar : does not display the progress bar
 
+        :sourcePFN: str, the source PFN.
+        :targetPFN: str, the target PFN.
+        :options: str, additional options for gfal-copy.
+        :checksums: dict, checksum values.
+        :authMethod: str, preferred authentication method.
+        :forceMethod: bool, whether to force the preferred authentication method.
+        :debug: bool, enable/disable debugging mode after command.
         """
         if not options:
             options = ''
@@ -116,8 +185,12 @@ class XRDCPImpl(StageOutImpl):
             xrdcpCmd = "xrdcp"
             self.xrdfsCmd = "xrdfs"
 
+        # Check for auth-related environment to prepend
+        authEnv = self.getAuthEnv(authMethod, forceMethod)
+        if authEnv:
+            copyCommand += authEnv
+            self.xrdfsCmd = "%s %s" % (authEnv, self.xrdfsCmd)
         copyCommand += "%s --force --nopbar " % xrdcpCmd
-        
         
         if copyCommandOptions:
             copyCommand += "%s " % copyCommandOptions
@@ -158,9 +231,30 @@ class XRDCPImpl(StageOutImpl):
             copyCommand += "if [ $RC == 0 ] && [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
             copyCommand += "else echo \"ERROR: XRootD file transfer return code is $RC. Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
 
+        if debug:
+            return self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
+
         return copyCommand
+
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
+        """
+        _createStageOutCommand_
+
+        Build the actual xrdcp stageout command
+
+        :sourcePFN: str, the source PFN.
+        :targetPFN: str, the target PFN.
+        :options: str, additional options for gfal-copy.
+        :checksums: dict, checksum values.
+        :authMethod: str, preferred authentication method.
+        :forceMethod: bool, whether to force the preferred authentication method.
+        :debug: bool, enable/disable debugging mode after command.
+
+        """
+        # Construct xrdcp stageout command and return it
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authMethod, forceMethod)
     
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed xrdcp command for stageOut, without re-running it,
         providing information on the environment and the certifications
@@ -169,19 +263,21 @@ class XRDCPImpl(StageOutImpl):
         :targetPFN: str, destination PFN
         :options: str, additional options for copy command
         :checksums: dict, collect checksums according to the algorithms saved as keys
+        :authMethod: str, the authentication method to be preferentially used ("X509", "TOKEN", or None)
+        :forceMethod: bool, whether to force the use of the preferred authentication method, disabling the other 
         """
-        # Build the command for debugging purposes
-        copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums)
-        copyCommand = self.copyCommand.format_map(copyCommandDict)
+        # Construct xrdcp/xrdfs commands, but returning the debugging information instead of running it
+        return self.getFormattedCopyCommand(sourcePFN, targetPFN, options, checksums, authMethod, forceMethod, debug=True)
 
-        result = self.debuggingTemplate.format(copy_command=copyCommand, source=copyCommandDict['source'], destination=copyCommandDict['destination'])
-        return result
-
-    def removeFile(self, pfnToRemove):
+    def removeFile(self, pfnToRemove, authMethod=None, forceMethod=False):
         """
         _removeFile_
 
         """
+        authEnv = self.getAuthEnv(authMethod, forceMethod)
+        if authEnv:
+            self.xrdfsCmd = "%s %s" % (authEnv, self.xrdfsCmd)
+
         (_, host, path, _) = self.splitPFN(pfnToRemove)
         command = "%s %s rm %s" % (self.xrdfsCmd, host, path)
         self.executeCommand(command)

@@ -8,6 +8,7 @@ Implementation of StageOutImpl interface for FNAL
 from __future__ import print_function
 
 import os
+import logging
 
 from WMCore.Storage.Backends.LCGImpl import LCGImpl
 from WMCore.Storage.Registry import registerStageOutImpl
@@ -84,12 +85,13 @@ class FNALImpl(StageOutImpl):
             return self.srmImpl.createSourceName(protocol, pfn)
         return pfn
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
         Build a mkdir to generate the directory
         """
+        logging.warning("Warning! FNALImpl does not support authMethod handling")
 
         if getattr(self, 'stageIn', False):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
@@ -137,7 +139,7 @@ class FNALImpl(StageOutImpl):
             """
             return result
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed fnal-flavor copy command for stageOut, without re-running it,
         providing information on the environment and the certifications

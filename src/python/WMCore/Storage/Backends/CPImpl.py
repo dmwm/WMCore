@@ -10,6 +10,7 @@ from __future__ import division
 
 import os
 import errno
+import logging
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -49,13 +50,15 @@ class CPImpl(StageOutImpl):
                     raise
         return
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
         Build the actual cp stageout command
 
         """
+        logging.warning("Warning! CPImpl does not support authMethod handling")
+
         copyCommand = ""
 
         if self.stageIn:
@@ -82,7 +85,7 @@ class CPImpl(StageOutImpl):
 
         return copyCommand
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed cp command for stageOut, without re-running it,
         providing information on the environment and the certifications

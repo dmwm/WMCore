@@ -25,12 +25,12 @@ class WinImpl(StageOutImpl):
         return "WIN!!!"
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=False, forceMethod=False):
         print("WinImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums))
         return "WIN!!!"
 
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed unittest cp command for stageOut, without re-running it,
         providing information on the environment and the certifications
@@ -97,12 +97,12 @@ class FailImpl(StageOutImpl):
         return "FAIL!!!"
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         print("FailImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums))
         return "FAIL!!!"
 
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed unittest cp command for stageOut, without re-running it,
         providing information on the environment and the certifications
@@ -157,11 +157,11 @@ class LocalCopyImpl(StageOutImpl):
         return pfn
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         command = "cp %s %s" %(sourcePFN, sourcePFN+'2')
         return command
 
-    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         Debug a failed unittest cp command for stageOut, without re-running it,
         providing information on the environment and the certifications

@@ -99,20 +99,20 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             dbsError = DBSError(ex.body)
             reason = dbsError.getReason()
             message = dbsError.getMessage()
-            srvCode = dbsError.getServerCode()
             msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
-            if srvCode == 128:
-                # block already exist
-                logging.warning("Block %s already exists. Marking it as uploaded.", name)
-                results.put({'name': name, 'success': "check"})
-            elif srvCode in [132, 133, 134, 135, 136, 137, 138, 139, 140]:
-                # racing conditions
-                logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
-                results.put({'name': name, 'success': "error", 'error': msg})
-            else:
-                msg = f"Error trying to process block {name} through DBS. Details: {msg}"
-                logging.error(msg)
-                results.put({'name': name, 'success': "error", 'error': msg})
+            for srvCode in dbsError.getCodes():
+                if srvCode == 128:
+                    # block already exist
+                    logging.warning("Block %s already exists. Marking it as uploaded.", name)
+                    results.put({'name': name, 'success': "check"})
+                elif srvCode in [132, 133, 134, 135, 136, 137, 138, 139, 140]:
+                    # racing conditions
+                    logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
+                    results.put({'name': name, 'success': "error", 'error': msg})
+                else:
+                    msg = f"Error trying to process block {name} through DBS. Details: {msg}"
+                    logging.error(msg)
+                    results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:
             msg = f"Hit a general exception while inserting block {name}. Error: {str(ex)}"
             logging.exception(msg)

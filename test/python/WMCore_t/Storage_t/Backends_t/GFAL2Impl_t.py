@@ -15,10 +15,10 @@ class GFAL2ImplTest(unittest.TestCase):
     def testInit(self):
         testGFAL2Impl = GFAL2Impl()
         # The default setup without a token
-        removeCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c " \
-                        "'. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 {}'"
-        copyCommand = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
-                    ". $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p " \
+        removeCommand = "env -i {set_auth} JOBSTARTDIR=$JOBSTARTDIR bash -c " \
+                        "'. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-rm -t 600 {}'"
+        copyCommand = "env -i {set_auth} JOBSTARTDIR=$JOBSTARTDIR bash -c '" \
+                    ". $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-copy -t 2400 -T 2400 -p " \
                     "-v --abort-on-failure {checksum} {options} {source} {destination}'"
         self.assertEqual(removeCommand, testGFAL2Impl.removeCommand)
         self.assertEqual(copyCommand, testGFAL2Impl.copyCommand)
@@ -67,7 +67,7 @@ class GFAL2ImplTest(unittest.TestCase):
     def testCreateRemoveFileCommand_isFile(self, mock_path):
         mock_path.abspath.return_value = "/some/path"
         mock_path.isfile.return_value = True
-        self.assertEqual("/bin/rm -f /some/path", self.GFAL2Impl.createRemoveFileCommand("name"))
+        self.assertEqual(" /bin/rm -f /some/path", self.GFAL2Impl.createRemoveFileCommand("name"))
         mock_path.abspath.assert_called_with("name")
 
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.os.path')
@@ -81,20 +81,20 @@ class GFAL2ImplTest(unittest.TestCase):
         self.GFAL2Impl.stageIn = True
         mock_createRemoveFileCommand.return_value = "targetPFN2"
 
-        # Call createStageOutCommand with authmethod='TOKEN'
+        # Call createStageOutCommand with authMethod='TOKEN'
         result = self.GFAL2Impl.createStageOutCommand(
-            "sourcePFN", "targetPFN", authmethod='TOKEN'
+            "sourcePFN", "targetPFN", authMethod='TOKEN'
         )
 
-        # Generate the expected result with authmethod='TOKEN'
+        # Generate the expected result with authMethod='TOKEN'
         expectedResult = self.getStageOutCommandResult(
             self.getCopyCommandDict("-K adler32", "", "sourcePFN", "targetPFN"),
             "targetPFN2",
-            authmethod="TOKEN"
+            authMethod="TOKEN"
         )
 
         # Assert that the removeFileCommand was called correctly
-        mock_createRemoveFileCommand.assert_called_with("targetPFN")
+        mock_createRemoveFileCommand.assert_called_with("targetPFN", authMethod='TOKEN', forceMethod=False)
 
         # Compare the expected and actual result
         self.assertEqual(expectedResult, result)
@@ -103,15 +103,16 @@ class GFAL2ImplTest(unittest.TestCase):
     def testCreateStageOutCommand_options(self, mock_createRemoveFileCommand):
         self.maxDiff = None
         mock_createRemoveFileCommand.return_value = "targetPFN2"
-        result = self.GFAL2Impl.createStageOutCommand("file:sourcePFN", "file:targetPFN", "--nochecksum unknow")
+        result = self.GFAL2Impl.createStageOutCommand("file:sourcePFN", "file:targetPFN", "--nochecksum unknow", authMethod='TOKEN')
         expectedResult = self.getStageOutCommandResult(
             self.getCopyCommandDict("", "unknow", "file:sourcePFN", "file:targetPFN"), "targetPFN2")
-        mock_createRemoveFileCommand.assert_called_with("file:targetPFN")
+        
+        mock_createRemoveFileCommand.assert_called_with("file:targetPFN", authMethod='TOKEN', forceMethod=False)
         self.assertEqual(expectedResult, result)
 
-    def getCopyCommandDict(self, checksum, options, source, destination, authmethod=None):
+    def getCopyCommandDict(self, checksum, options, source, destination, authMethod=None):
         """
-        Generate a dictionary for the gfal-copy command, dynamically adjusting for authmethod.
+        Generate a dictionary for the gfal-copy command, dynamically adjusting for authMethod.
         """
         copyCommandDict = {
             'checksum': checksum,
@@ -121,38 +122,23 @@ class GFAL2ImplTest(unittest.TestCase):
         }
         return copyCommandDict
 
-    def getStageOutCommandResult(self, copyCommandDict, createRemoveFileCommandResult, authmethod=None):
+    def getStageOutCommandResult(self, copyCommandDict, createRemoveFileCommandResult, authMethod=None):
         """
-        Generate the expected result for the gfal-copy command, including dynamic adjustments for authmethod.
+        Generate the expected result for the gfal-copy command, including dynamic adjustments for authMethod.
         """
-        # Adjust the setup based on authmethod
-        if authmethod == "X509":
-            setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-            # Build the copy command dynamically
-            copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + self.copyOpts)
-        elif authmethod == "TOKEN":
-            setups = "env -i BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-            copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + copyOpts)
-        else:
-            setups = "env -i JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-            copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-            copyCommand = setups.format('. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy ' + copyOpts)
-
         # Construct the full result
         result = "#!/bin/bash\n"
-        result += copyCommand.format_map(copyCommandDict)
+        result += self.copyCommand.format_map(copyCommandDict)
         result += """
-            EXIT_STATUS=$?
-            echo "gfal-copy exit status: $EXIT_STATUS"
-            if [[ $EXIT_STATUS != 0 ]]; then
-                echo "ERROR: gfal-copy exited with $EXIT_STATUS"
-                echo "Cleaning up failed file:"
-                {remove_command}
-            fi
-            exit $EXIT_STATUS
-            """.format(remove_command=createRemoveFileCommandResult)
+        EXIT_STATUS=$?
+        echo "gfal-copy exit status: $EXIT_STATUS"
+        if [[ $EXIT_STATUS != 0 ]]; then
+            echo "ERROR: gfal-copy exited with $EXIT_STATUS"
+            echo "Cleaning up failed file:"
+            {remove_command}
+        fi
+        exit $EXIT_STATUS
+        """.format(remove_command=createRemoveFileCommandResult)
 
         return result
     
@@ -164,7 +150,7 @@ class GFAL2ImplTest(unittest.TestCase):
         mock_path.abspath.return_value = "/some/file"
         self.GFAL2Impl.removeFile("file")
         mock_path.abspath.assert_called_with("file")
-        mock_executeCommand.assert_called_with("/bin/rm -f /some/file")
+        mock_executeCommand.assert_called_with(" /bin/rm -f /some/file")
 
     @mock.patch('WMCore.Storage.Backends.GFAL2Impl.os.path')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')

@@ -20,6 +20,34 @@ from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emulatorHook
 
 
+def threadsDetails(component, pid, downProcessThreads):
+    """
+    Helper function to provide information about down component in dictionary
+    data-format used by agentInfo
+    :param component: name of the component
+    :param pid: pid of the component process
+    :param downProcessThreads: is a list of process thread dictionaries
+    :return: dictionary used by down_component_detail part of agentInfo
+
+    NOTE: we preserve data-structure used in down_component_detail which comes from
+    WMCore/Agent/Database/MySQL/GetAllHeartbeatInfo.py SQL query and only fill
+    out necessary information about component threads and nothing else.
+    """
+    data = {
+            "name": component,
+            "pid": pid,
+            "worker_name": None,
+            "state": "Lost threads",
+            "last_updated": int(time.time()),
+            "update_threshold": None,
+            "poll_interval": None,
+            "cycle_time": None,
+            "outcome": None,
+            "last_error": None,
+            "error_message": f"Lost threads: {downProcessThreads}"
+          }
+    return data
+
 @emulatorHook
 class LocalCouchDBData(object):
     def __init__(self, couchURL, statSummaryDB, summaryLevel):
@@ -246,7 +274,6 @@ class WMAgentDBData(object):
         status and a short error message, if any.
         """
         agentInfo = self.getHeartbeatWarning()
-        agentInfo['down_component_process'] = []
 
         components = config.listComponents_() + config.listWebapps_()
         # check the component status
@@ -268,6 +295,7 @@ class WMAgentDBData(object):
                 agentComponents.update({compName: compProcessStatus})
                 # check if number of component threads is equal to initial set
                 cpath = os.path.join(compDir, "threads.json")
+                downProcessThreads = []
                 if os.path.exists(cpath):
                     origThreads = []
                     with open(cpath, 'r', encoding='utf-8') as istream:
@@ -276,17 +304,21 @@ class WMAgentDBData(object):
                         downFlag = True
                         for proc in origThreads:
                             if proc not in compProcessStatus:
-                                agentInfo['down_component_process'].append(proc)
+                                downProcessThreads.append(proc)
                 # check if all component process' threads are alive, otherwise set down flag
                 for proc in compProcessStatus:
                     # the alive process should be either in sleeping or running states
                     if proc['status'] not in ["S (sleeping)", "R (running)"]:
                         downFlag = True
-                        agentInfo['down_component_process'].append(proc)
+                        downProcessThreads.append(proc)
             if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
                 agentInfo['down_components'].append(component)
-                agentInfo['down_component_detail'].append(component)
+                if len(downProcessThreads) > 0:
+                    agentInfo['down_component_detail'].append(
+                            threadsDetails(component, daemon['ProcessID'], downProcessThreads))
+                else:
+                    agentInfo['down_component_detail'].append(component)
 
         agentInfo['components'] = agentComponents
         agentInfo['workers'] = self.listWorkers.execute()

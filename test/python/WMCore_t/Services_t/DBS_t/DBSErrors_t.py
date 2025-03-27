@@ -5,6 +5,7 @@ _DBSError_t_
 Unit test for the DBSError class.
 """
 
+import json
 import unittest
 
 # from nose.plugins.attrib import attr
@@ -72,6 +73,9 @@ class DBSErrorsTest(unittest.TestCase):
         self.assertTrue(msg == "parameter 'bla' is not accepted by 'datatiers' API")
         self.assertTrue(reason == "invalid parameter(s)")
 
+        dbsCodes = dbsError.getCodes()
+        self.assertTrue(dbsCodes == [118])
+
     def testDBSErrorViaDBSClient(self):
         """
         testDBSErrorViaDBSClient tests DBSError class
@@ -94,6 +98,33 @@ class DBSErrorsTest(unittest.TestCase):
             self.assertTrue(httpCode == 400)
             self.assertTrue(msg == expectedMessage)
             self.assertTrue(reason == expectedReason)
+
+            dbsCodes = dbsError.getCodes()
+            self.assertTrue(dbsCodes == [110, 113, 115])
+
+    def testDBSCodes(self):
+        """
+        testDBSCodes tests DBSError getCodes
+        """
+        # dbs error are returned from dbs2go as list of dictionaries
+        error = [{
+            "error": {
+              "reason": "\nDBSError\n   Code: 100\n   Description: Generic DBS error\n   Function: web.TestErrorHandler\n   Message: test\n   Reason: original error\n",
+              "message": "test",
+              "function": "web.TestErrorHandler",
+              "code": 141,
+            },
+            "http": {
+              "method": "GET",
+              "code": 500,
+            },
+            "exception": 500,
+            "type": "HTTPError",
+            "message": "\nDBSError\n   Code: 141\n   Description: Not defined\n   Function: web.TestErrorHandler\n   Message: test\n   Reason: \nDBSError\n   Code: 100\n   Description: Generic DBS error\n   Function: web.TestErrorHandler\n   Message: test\n   Reason: original error\n\n"
+        }]
+        dbsError = DBSError(json.dumps(error))
+        dbsCodes = dbsError.getCodes()
+        self.assertTrue(dbsCodes == [100, 141])
 
     def testDBSErrorException(self):
         """

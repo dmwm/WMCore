@@ -39,7 +39,7 @@
             "CheckList": ["TaskChain: Pileup workflow from scratch; TaskChain with duplicate output module; TaskChain request with KeepOutput false",
                           "TaskChain multicore/eventStreams; TaskChain with different CMSSW/ScramArch and PrepID"],
             "WorkFlowDesc": ["TC from scratch with PU at Task3; KeepOutput of Task5/6 only - AOD and MINI; Diff CMSSW/ScramArch and PrepID",
-                             "2000EpJ and 4LpJ for Task1; Diff Multicore/Memory/EventStreams, T1: 2/1GB/2, T2: 4/2GB/0, T3: 4/4GB/0, T4: 2/4GB/2, T5:4/3GB/0, T6: 1/3GB/2"]
+                             "2000EpJ and 4LpJ for Task1; Diff Multicore/Memory/EventStreams, T1: 2/1GB/2, T2: 4/2GB/0, T3: 4/4GB/0, T4: 2/4GB/2, T5:4/4GB/0, T6: 1/3GB/2"]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache",
@@ -76,7 +76,7 @@
             "PrepID": "HIG-Task1",
             "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
             "ProcessingString": "Task1_WMCore_TEST",
-            "RequestNumEvents": 100000,
+            "RequestNumEvents": 20000,
             "ScramArch": [
                 "slc7_amd64_gcc700"
             ],
@@ -104,7 +104,7 @@
             ],
             "SplittingAlgo": "EventAwareLumiBased",
             "TaskName": "HIG_RunIISummer20UL16SIMAPV_02812_0",
-            "TimePerEvent": 15
+            "TimePerEvent": 20
         },
         "Task3": {
             "AcquisitionEra": "RunIISummer20UL16DIGIPremixAPV",
@@ -161,7 +161,7 @@
             "InputFromOutputModule": "RAWSIMoutput",
             "InputTask": "HIG_RunIISummer20UL16HLTAPV_02812_0",
             "KeepOutput": true,
-            "Memory": 3000,
+            "Memory": 4000,
             "PrepID": "HIG-Task5",
             "PrimaryDataset": "VBF_HHTo2G2Tau_CV_1_C2V_1_C3_0_TuneCP5_13TeV-powheg-pythia8",
             "ProcessingString": "Task5_WMCore_TEST",
@@ -189,7 +189,7 @@
             "ScramArch": ["slc7_amd64_gcc820"],
             "SplittingAlgo": "EventAwareLumiBased",
             "TaskName": "HIG_RunIISummer20UL16MiniAODAPVv2_02457_0",
-            "TimePerEvent": 15
+            "TimePerEvent": 10
         },
         "TaskChain": 6,
         "SubRequestType": "ReDigi",

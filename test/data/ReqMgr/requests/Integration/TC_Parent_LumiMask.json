@@ -1,0 +1,68 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "DQMHLTonRAWAOD_2017": "AcquisitionEra-OVERRIDE-ME"
+        }, 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
+        "ProcessingString": {
+            "DQMHLTonRAWAOD_2017": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME",
+        "TrustSitelists": true,
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "Run2023C_TopLevel",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "CMSSWVersion": "CMSSW_13_2_6_patch2",
+        "Comments": {
+            "CheckList": ["TaskChain with IncludeParents; TaskChain: Data workflow; TaskChain with block lists;",
+                          "TaskChain with lumi list; TaskChain with primary AAA enabled"],
+            "WorkFlowDesc": ["TaskChain reading MINIAOD and its parent AOD blocks; With 3 blocks whitelisted and 45 lumis from 3 runs whitelisted;"]
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
+        "GlobalTag": "130X_dataRun3_Prompt_v4",
+        "PrepID": "TEST-CMSSW_7_3_2__test2inwf-1510737328-RunHLTPhy2017B_RAWAOD",
+        "ProcessingString": "DMWM_ProcStr_TEST",
+        "ProcessingVersion": 18, 
+        "RequestPriority": 460000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": [
+            "el8_amd64_gcc11"
+        ], 
+        "SizePerEvent": 100,
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "Run2023C",
+            "BlockWhitelist": ["/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD#146eb70b-12ad-47dd-a109-b7feef4927cf",
+                               "/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD#5b047ae4-f01e-44b4-b960-ae443ed46c2e",
+                               "/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD#7597e092-5056-4316-b7b6-0b5aa48d6829"],
+            "Campaign": "DMWM_Test",
+            "ConfigCacheID": "544d8059f5f200f8959e2e4fab11a94e",
+            "GlobalTag": "130X_dataRun3_Prompt_v4",
+            "IncludeParents": true, 
+            "InputDataset": "/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD",
+            "KeepOutput": true, 
+            "LumiList": {"367786": [[1, 5], [11, 20]], "367832": [[6, 10], [30, 30], [41, 44]], "367913": [[51, 70]]},
+            "Memory": 3000,
+            "Multicore": 2,
+            "PrepID": "TEST-ReReco-Run2023C-MinimumBias-JMENano12p5_v4-00001",
+            "ProcessingString": "Task1_WMCore_TEST",
+            "SplittingAlgo": "EventAwareLumiBased",
+            "TaskName": "DQMHLTonRAWAOD_2017"
+        }, 
+        "TaskChain": 1, 
+        "TimePerEvent": 110.5
+    }
+}

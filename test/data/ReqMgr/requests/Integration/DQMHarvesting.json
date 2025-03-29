@@ -4,7 +4,9 @@
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
         "MergedLFNBase": "/store/backfill/1",
-        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
         "ProcessingString": "ProcessingString-OVERRIDE-ME", 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 
@@ -16,31 +18,32 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "Run2022D",
-        "CMSSWVersion": "CMSSW_12_4_11_patch3",
+        "AcquisitionEra": "Run2024D",
+        "CMSSWVersion": "CMSSW_14_0_19_patch2",
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": {"WorkFlowDesc": ["Harvest all 69 runs in byRun mode (separate jobs)"],
+        "Comments": {"WorkFlowDesc": ["Harvest all 47 runs in byRun mode (separate jobs)"],
                      "CheckList": ["DQMHarvest workflow"]},
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DQMConfigCacheID": "d657f5aa83cffd6153ada2747a77b3d4",
+        "DQMConfigCacheID": "7ab63e3a9a3e83c05ebdd4d4772004f3",
         "DQMHarvestUnit": "byRun",
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
-        "EnableHarvesting": false, 
-        "GlobalTag": "124X_dataRun3_v11",
-        "IncludeParents": false, 
-        "InputDataset": "/BTagMu/Run2022D-10Dec2022-v1/DQMIO",
-        "Memory": 2000,
+        "GlobalTag": "140X_dataRun3_v20",
+        "InputDataset": "/JetMET0/Run2024D-2024CDEReprocessing-v1/DQMIO",
+        "Memory": 3000,
         "Multicore": 1, 
-        "PrepID": "TEST-ReReco-Run2022D-BTagMu-10Dec2022-00001",
-        "ProcessingString": "10Dec2022",
+        "PrepID": "TEST-ReReco-Run2024D-JetMET0-2024CDEReprocessing-00001",
+        "ProcessingString": "2024CDEReprocessing",
         "ProcessingVersion": 1, 
         "RequestPriority": 999999, 
         "RequestString": "RequestString-OVERRIDE-ME", 
-        "RequestType": "DQMHarvest", 
-        "ScramArch": "el8_amd64_gcc10",
-        "SizePerEvent": 1600, 
+        "RequestType": "DQMHarvest",
+        "RunWhitelist": [],
+        "ScramArch": [
+            "el8_amd64_gcc12"
+        ],
+        "SizePerEvent": 2,
         "TimePerEvent": 1
     }
 }

@@ -1,0 +1,82 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "Task1_NanoAODv9": "AcquisitionEra-OVERRIDE-ME"
+        },
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "Task1_NanoAODv9": "ProcessingString-OVERRIDE-ME"
+        },
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_10_6_26",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": "TaskChain with Dataset start policy",
+            "WorkFlowDesc": ["TC processing a MINIAODSIM, thus locking all of the input blocks at the same location (with copies=2);",
+                             "Request 4GB and 2 cores; Job splitting hardcoded to 40k EpJ and 40k EpL"]
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "EnableHarvesting": false,
+        "EventStreams": 0,
+        "GPUParams": "null",
+        "GlobalTag": "106X_mc2017_realistic_v9",
+        "IncludeParents": false,
+        "Memory": 3000,
+        "Multicore": 1,
+        "PrepID": "TEST-task_SMP-RunIISummer20UL17NanoAODv9-00184",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 1,
+        "RequestPriority": 610085,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "TaskChain",
+        "ScramArch": [
+            "slc7_amd64_gcc700"
+        ],
+        "SizePerEvent": 33.1848,
+        "SubRequestType": "ReDigi",
+        "Task1": {
+            "AcquisitionEra": "RunIISummer20UL17NanoAODv9",
+            "CMSSWVersion": "CMSSW_10_6_26",
+            "Campaign": "RunIIAutumn18NanoAODv5",
+            "ConfigCacheID": "0fd238f99b39e8fef9f658d1dd1d6f61",
+            "EventsPerJob": 40000,
+            "EventsPerLumi": 40000,
+            "FilterEfficiency": 1,
+            "GlobalTag": "106X_mc2017_realistic_v9",
+            "InputDataset": "/WplusToJJZToLNuJJ_mjj100_pTj10_QCD_LO_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v2/MINIAODSIM",
+            "KeepOutput": true,
+            "Memory": 4000,
+            "Multicore": 2,
+            "PrepID": "SMP-RunIISummer20UL17NanoAODv9-00184",
+            "PrimaryDataset": "WplusToJJZToLNuJJ_mjj100_pTj10_QCD_LO_TuneCP5_13TeV-madgraph-pythia8",
+            "ProcessingString": "Task1_WMCore_TEST",
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ],
+            "SizePerEvent": 33.1848,
+            "SplittingAlgo": "EventAwareLumiBased",
+            "TaskName": "Task1_NanoAODv9",
+            "TimePerEvent": 0.3796
+        },
+        "TaskChain": 1,
+        "TimePerEvent": 0.1796
+    }
+}

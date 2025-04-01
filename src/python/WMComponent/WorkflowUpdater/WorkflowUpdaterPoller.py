@@ -31,6 +31,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.DBS.DBSConcurrency import getBlockInfo4PU
+from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 
 
 def findJsonSandboxFiles(tfile):
@@ -495,11 +496,13 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
             if pileupItem["pileupName"] not in uniquePUList:
                 # no active workflow requires this pileup
                 continue
-
-            if pileupItem["customName"]:
-                logging.info("Fetching blocks for custom pileup container: %s", pileupItem["customName"])
-                pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["customName"],
-                                                                       scope=self.rucioCustomScope)
-            else:
-                logging.info("Fetching blocks for pileup container: %s", pileupItem["pileupName"])
-                pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["pileupName"], scope='cms')
+            try:
+                if pileupItem["customName"]:
+                    logging.info("Fetching blocks for custom pileup container: %s", pileupItem["customName"])
+                    pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["customName"],
+                                                                           scope=self.rucioCustomScope)
+                else:
+                    logging.info("Fetching blocks for pileup container: %s", pileupItem["pileupName"])
+                    pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["pileupName"], scope='cms')
+            except WMRucioDIDNotFoundException as ex:
+                logging.error(f"Could not find Rucio DID for an active PU! Original exception: {str(ex)}" )

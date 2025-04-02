@@ -99,13 +99,16 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             dbsError = DBSError(ex.body)
             reason = dbsError.getReason()
             message = dbsError.getMessage()
+            # use DBS error codes for racing conditions
+            # note: we include last range with +1, e.g. range(132,142) will give us [132,..,141]
+            racingConditionCodes = [i for in range (132, 142)] + [i for i in range(143,164))
             for srvCode in dbsError.getCodes():
                 msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
                 if srvCode == 128:
                     # block already exist
                     logging.warning("Block %s already exists. Marking it as uploaded.", name)
                     results.put({'name': name, 'success': "check"})
-                elif srvCode in [132, 133, 134, 135, 136, 137, 138, 139, 140]:
+                elif srvCode in racingConditionsCodes:
                     # racing conditions
                     logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
                     results.put({'name': name, 'success': "error", 'error': msg})

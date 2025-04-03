@@ -7,6 +7,7 @@ from future.utils import viewitems
 
 import os
 import time
+import json
 import logging
 
 import WMCore
@@ -18,6 +19,34 @@ from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emulatorHook
 
+
+def threadsDetails(component, pid, downProcessThreads):
+    """
+    Helper function to provide information about down component in dictionary
+    data-format used by agentInfo
+    :param component: name of the component
+    :param pid: pid of the component process
+    :param downProcessThreads: is a list of process thread dictionaries
+    :return: dictionary used by down_component_detail part of agentInfo
+
+    NOTE: we preserve data-structure used in down_component_detail which comes from
+    WMCore/Agent/Database/MySQL/GetAllHeartbeatInfo.py SQL query and only fill
+    out necessary information about component threads and nothing else.
+    """
+    data = {
+            "name": component,
+            "pid": pid,
+            "worker_name": None,
+            "state": "Lost threads",
+            "last_updated": int(time.time()),
+            "update_threshold": None,
+            "poll_interval": None,
+            "cycle_time": None,
+            "outcome": None,
+            "last_error": None,
+            "error_message": f"Lost threads: {downProcessThreads}"
+          }
+    return data
 
 @emulatorHook
 class LocalCouchDBData(object):
@@ -248,6 +277,7 @@ class WMAgentDBData(object):
 
         components = config.listComponents_() + config.listWebapps_()
         # check the component status
+        agentComponents = {}
         for component in components:
             compDir = config.section_(component).componentDir
             compDir = os.path.expandvars(compDir)
@@ -259,11 +289,38 @@ class WMAgentDBData(object):
                 daemon = Details(daemonXml)
                 if not daemon.isAlive():
                     downFlag = True
+                # add individual component thread status
+                compName = compDir.split('/')[-1]
+                compProcessStatus = daemon.processStatus()
+                agentComponents.update({compName: compProcessStatus})
+                # check if number of component threads is equal to initial set
+                cpath = os.path.join(compDir, "threads.json")
+                downProcessThreads = []
+                if os.path.exists(cpath):
+                    origThreads = []
+                    with open(cpath, 'r', encoding='utf-8') as istream:
+                        origThreads = json.load(istream)
+                    if len(origThreads) != len(compProcessStatus):
+                        downFlag = True
+                        for proc in origThreads:
+                            if proc not in compProcessStatus:
+                                downProcessThreads.append(proc)
+                # check if all component process' threads are alive, otherwise set down flag
+                for proc in compProcessStatus:
+                    # the alive process should be either in sleeping or running states
+                    if proc['status'] not in ["S (sleeping)", "R (running)"]:
+                        downFlag = True
+                        downProcessThreads.append(proc)
             if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
                 agentInfo['down_components'].append(component)
-                agentInfo['down_component_detail'].append(component)
+                if len(downProcessThreads) > 0:
+                    agentInfo['down_component_detail'].append(
+                            threadsDetails(component, daemon['ProcessID'], downProcessThreads))
+                else:
+                    agentInfo['down_component_detail'].append(component)
 
+        agentInfo['components'] = agentComponents
         agentInfo['workers'] = self.listWorkers.execute()
         return agentInfo
 

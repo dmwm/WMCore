@@ -21,6 +21,7 @@ from xml.dom.minidom import parse
 
 from Utils.PythonVersion import PY3
 from Utils.Utilities import encodeUnicodeToBytesConditional
+from Utils.ProcFS import processStatus
 
 
 def run(command):
@@ -85,6 +86,13 @@ class Details(dict):
         if rc != 0:
             return False
         return True
+
+    def processStatus(self):
+        """
+        Return process status along with status of all running threads
+        :return: process status, list of dictionaries of `{process, pid, status}` data-structure
+        """
+        return processStatus(self['ProcessID'])
 
     def kill(self, signal=15):
         """

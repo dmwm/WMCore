@@ -1,3 +1,6 @@
+2.3.10rc12 to 2.3.10rc13:
+  - Retriggering CD pipeline again
+
 2.3.10rc11 to 2.3.10rc12:
   - Retriggering CD pipeline
 

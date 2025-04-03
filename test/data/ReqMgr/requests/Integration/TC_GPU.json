@@ -1,0 +1,132 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "Digi_Patatrack_PixelOnlyAlpaka_Validation_2025": "AcquisitionEra-OVERRIDE-ME",
+            "GenSimFull": "AcquisitionEra-OVERRIDE-ME",
+            "RecoNano_Patatrack_PixelOnlyAlpaka_Validation_2025": "AcquisitionEra-OVERRIDE-ME"
+        },
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "Digi_Patatrack_PixelOnlyAlpaka_Validation_2025": "ProcessingString-OVERRIDE-ME",
+            "GenSimFull": "ProcessingString-OVERRIDE-ME",
+            "RecoNano_Patatrack_PixelOnlyAlpaka_Validation_2025": "ProcessingString-OVERRIDE-ME"
+        },
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_15_0_0_pre3",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": "",
+            "WorkFlowDesc": ""
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMConfigCacheID": "c317221f698cedad81275c2eca5cbe88",
+        "DQMHarvestUnit": "byRun",
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "EnableHarvesting": true,
+        "EventStreams": 0,
+        "GPUParams": "null",
+        "GlobalTag": "142X_mcRun3_2025_realistic_v5",
+        "IncludeParents": false,
+        "Memory": 3000,
+        "Multicore": 1,
+        "PrepID": "TEST-CMSSW_15_0_0_pre3__Run3_AMD_GPUValidation_SpecialRV_CNAF-TTbar_14TeV-00001",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 1,
+        "RequestPriority": 400000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "TaskChain",
+        "ScramArch": [
+            "el8_amd64_gcc12"
+        ],
+        "SizePerEvent": 1,
+        "SubRequestType": "RelVal",
+        "Task1": {
+            "AcquisitionEra": "CMSSW_15_0_0_pre3",
+            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "Campaign": "CMSSW_15_0_0_pre3__Run3_AMD_GPUValidation_SpecialRV_CNAF-1739965322",
+            "ConfigCacheID": "c317221f698cedad81275c2eca5c0b40",
+            "EventStreams": 1,
+            "EventsPerJob": 100,
+            "EventsPerLumi": 100,
+            "GPUParams": "{\"CUDACapabilities\": [\"6.0\", \"6.1\", \"6.2\", \"7.0\", \"7.2\", \"7.5\", \"8.0\", \"8.6\", \"8.7\", \"8.9\", \"9.0\", \"10.0\"], \"CUDARuntime\": \"12.0\", \"GPUMemoryMB\": 8000}",
+            "GlobalTag": "142X_mcRun3_2025_realistic_v5",
+            "KeepOutput": true,
+            "Memory": 16000,
+            "Multicore": 8,
+            "PrimaryDataset": "RelValTTbar_14TeV",
+            "ProcessingString": "Task1_WMCore_TEST",
+            "RequestNumEvents": 9000,
+            "RequiresGPU": "required",
+            "ScramArch": [
+                "el8_amd64_gcc12"
+            ],
+            "Seeding": "AutomaticSeeding",
+            "SplittingAlgo": "EventBased",
+            "TaskName": "GenSimFull"
+        },
+        "Task2": {
+            "AcquisitionEra": "CMSSW_15_0_0_pre3",
+            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "Campaign": "CMSSW_15_0_0_pre3__Run3_AMD_GPUValidation_SpecialRV_CNAF-1739965322",
+            "ConfigCacheID": "c317221f698cedad81275c2eca5c35ca",
+            "EventStreams": 1,
+            "GPUParams": "{\"CUDACapabilities\": [\"6.0\", \"6.1\", \"6.2\", \"7.0\", \"7.2\", \"7.5\", \"8.0\", \"8.6\", \"8.7\", \"8.9\", \"9.0\", \"10.0\"], \"CUDARuntime\": \"12.0\", \"GPUMemoryMB\": 8000}",
+            "GlobalTag": "142X_mcRun3_2025_realistic_v5",
+            "InputFromOutputModule": "FEVTDEBUGoutput",
+            "InputTask": "GenSimFull",
+            "KeepOutput": true,
+            "LumisPerJob": 10,
+            "Memory": 16000,
+            "Multicore": 8,
+            "ProcessingString": "Task2_WMCore_TEST",
+            "RequiresGPU": "required",
+            "ScramArch": [
+                "el8_amd64_gcc12"
+            ],
+            "SplittingAlgo": "LumiBased",
+            "TaskName": "Digi_Patatrack_PixelOnlyAlpaka_Validation_2025"
+        },
+        "Task3": {
+            "AcquisitionEra": "CMSSW_15_0_0_pre3",
+            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "Campaign": "CMSSW_15_0_0_pre3__Run3_AMD_GPUValidation_SpecialRV_CNAF-1739965322",
+            "ConfigCacheID": "c317221f698cedad81275c2eca5c61b3",
+            "EventStreams": 1,
+            "GPUParams": "{\"CUDACapabilities\": [\"6.0\", \"6.1\", \"6.2\", \"7.0\", \"7.2\", \"7.5\", \"8.0\", \"8.6\", \"8.7\", \"8.9\", \"9.0\", \"10.0\"], \"CUDARuntime\": \"12.0\", \"GPUMemoryMB\": 8000}",
+            "GlobalTag": "142X_mcRun3_2025_realistic_v5",
+            "InputFromOutputModule": "FEVTDEBUGHLToutput",
+            "InputTask": "Digi_Patatrack_PixelOnlyAlpaka_Validation_2025",
+            "KeepOutput": true,
+            "LumisPerJob": 10,
+            "Memory": 16000,
+            "Multicore": 8,
+            "ProcessingString": "Task3_WMCore_TEST",
+            "RequiresGPU": "required",
+            "ScramArch": [
+                "el8_amd64_gcc12"
+            ],
+            "SplittingAlgo": "LumiBased",
+            "TaskName": "RecoNano_Patatrack_PixelOnlyAlpaka_Validation_2025"
+        },
+        "TaskChain": 3,
+        "TimePerEvent": 1,
+        "ValidStatus": "PRODUCTION"
+    }
+}

@@ -447,7 +447,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.configDatabase = couchServer.connectDatabase("taskchain_t")
         self.testInit.generateWorkDir()
 
-        self.differentNCores = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Prod.json')
+        self.differentNCores = getTestFile('data/ReqMgr/requests/Static/TaskChain_Prod.json')
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package="WMCore.WMBS",

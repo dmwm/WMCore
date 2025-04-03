@@ -1,0 +1,130 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "Digi_2021noPU": "AcquisitionEra-OVERRIDE-ME",
+            "GenSimFull": "AcquisitionEra-OVERRIDE-ME",
+            "Reco_2021noPU": "AcquisitionEra-OVERRIDE-ME"
+        },
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        },
+        "ProcessingString": {
+            "Digi_2021noPU": "ProcessingString-OVERRIDE-ME",
+            "GenSimFull": "ProcessingString-OVERRIDE-ME",
+            "Reco_2021noPU": "ProcessingString-OVERRIDE-ME"
+        },
+        "ProcessingVersion": 19,
+        "CustodialSites": [
+            "T1_US_FNAL_MSS"
+        ],
+        "NonCustodialSites": [
+            "T1_US_FNAL_Disk"
+        ],
+        "SiteBlacklist": [],
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ],
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_12_0_0",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "CheckList": [
+                "StepChain MC from scratch; StepChain extension; StepChain with transient Step2 GEN-SIM-DIGI-RAW output;  ",
+                "MC harvesting; Automatic EventBased and EventAwareLumiBased splitting; StepChain Disk and Tape rules "
+            ],
+            "WorkFlowDesc": [
+                "TC MC from scratch without PU; Step1 with 300EpJ instead of 261EpJ; Step2 with 480EpJ; Step3 with 480;",
+                "Step2/3 with EventAwareLumiBased; FirstEvent=10001, FirstLumi=101; Rucio container rule for Disk"
+            ]
+        },
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DQMConfigCacheID": "527f598f9168f0145d17417be5841ef4",
+        "DQMHarvestUnit": "byRun",
+        "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+        "EnableHarvesting": true,
+        "EventStreams": 0,
+        "FirstEvent": 10001,
+        "FirstLumi": 101,
+        "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+        "IncludeParents": false,
+        "Memory": 8000,
+        "Multicore": 1,
+        "PrepID": "TEST-CMSSW_12_0_0__PDMVRELVALS-128_2021noPU-Psi2SToJPsiPiPi-00001",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 1,
+        "RequestPriority": 600000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "StepChain",
+        "ScramArch": [
+            "slc7_amd64_gcc900"
+        ],
+        "SizePerEvent": 1,
+        "SubRequestType": "RelVal",
+        "Step1": {
+            "AcquisitionEra": "CMSSW_12_0_0",
+            "CMSSWVersion": "CMSSW_12_0_0",
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "527f598f9168f0145d17417be583c7ef",
+            "EventStreams": 2,
+            "EventsPerLumi": 100,
+            "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+            "KeepOutput": true,
+            "Multicore": 8,
+            "PrimaryDataset": "RelValPsi2SToJPsiPiPi",
+            "ProcessingString": "Step1_WMCore_TEST",
+            "RequestNumEvents": 10000,
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ],
+            "Seeding": "AutomaticSeeding",
+            "SplittingAlgo": "EventBased",
+            "StepName": "GenSimFull"
+        },
+        "Step2": {
+            "AcquisitionEra": "CMSSW_12_0_0",
+            "CMSSWVersion": "CMSSW_12_0_0",
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "527f598f9168f0145d17417be583db58",
+            "EventStreams": 2,
+            "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+            "InputFromOutputModule": "FEVTDEBUGoutput",
+            "InputStep": "GenSimFull",
+            "Multicore": 8,
+            "ProcessingString": "Step2_WMCore_TEST",
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "Digi_2021noPU"
+        },
+        "Step3": {
+            "AcquisitionEra": "CMSSW_12_0_0",
+            "CMSSWVersion": "CMSSW_12_0_0",
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "527f598f9168f0145d17417be584029f",
+            "EventStreams": 2,
+            "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+            "InputFromOutputModule": "FEVTDEBUGHLToutput",
+            "InputStep": "Digi_2021noPU",
+            "Multicore": 8,
+            "ProcessingString": "Step3_WMCore_TEST",
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
+            "StepName": "Reco_2021noPU"
+        },
+        "StepChain": 3,
+        "TimePerEvent": 40
+    }
+}

@@ -31,8 +31,8 @@ jobs:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     strategy:
       matrix:
-        target: [wmagent, wmagent-devtools, wmcore, reqmon, reqmgr2, global-workqueue, acdcserver, reqmgr2ms-unmerged,
-                 reqmgr2ms-output, reqmgr2ms-pileup, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
+        target: [wmagent, wmagentdev, wmcore, reqmon, reqmgr2, wmglobalqueue, acdcserver, msunmerged,
+                 msoutput, mspileup, msrulecleaner, mstransferor, msmonitor]
 
     steps:
       - uses: actions/checkout@v4
@@ -106,8 +106,8 @@ jobs:
     needs: [build_and_publish_services]
     strategy:
       matrix:
-        target: [wmagent, reqmon, t0_reqmon, reqmgr2, reqmgr2ms-unmerged, global-workqueue,
-                 reqmgr2ms-output, reqmgr2ms-pileup, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
+        target: [wmagent, reqmon, t0reqmon, reqmgr2, msunmerged, wmglobalqueue,
+                 msoutput, mspileup, msrulecleaner, mstransferor, msmonitor]
     uses: ./.github/workflows/docker_images_template.yaml
     with:
       wmcore_component: ${{ matrix.target }}

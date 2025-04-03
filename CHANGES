@@ -1,3 +1,15 @@
+2.3.10rc10 to 2.3.10rc11:
+  - Add PEP-625 complaint changes (Valentin Kuznetsov) #12233
+  - Reuse ReReco AcqEra during assignment of test templates (Alan Malta Rodrigues) #11949
+  - Update list of dev pileups in MSPileup (Alan Malta Rodrigues) #11949
+  - Refactor all JSON workflow templates (Alan Malta Rodrigues) #11949
+  - Addition of token support for gfal and xrootd, with refactoring of createCopyCommand and createRemoveCommand (Andrea Piccinelli) #12218
+  - Add deploy-unittest-venv.sh (Todor Ivanov) #12310
+  - Fix location of rel_microarchs variable in SimpleCondorPlugin (Alan Malta Rodrigues) #12305
+  - Remove unused mod-config CRABInterface section (followup to #8926) (Fredrik) #12301
+  - Support nano flavours (Antonio Linares) #12235
+
+
 2.3.10rc9 to 2.3.10rc10:
   - python 3.13 - deprecate cgi module (Dario Mapelli) #12296
 

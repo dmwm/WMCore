@@ -1,3 +1,6 @@
+2.3.10rc11 to 2.3.10rc12:
+  - Retriggering CD pipeline
+
 2.3.10rc10 to 2.3.10rc11:
   - Add PEP-625 complaint changes (Valentin Kuznetsov) #12233
   - Reuse ReReco AcqEra during assignment of test templates (Alan Malta Rodrigues) #11949

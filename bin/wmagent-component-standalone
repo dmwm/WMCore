@@ -23,8 +23,6 @@ import importlib
 import runpy
 import pkgutil
 import inspect
-import subprocess
-from pprint import pprint,pformat
 from distutils.sysconfig import get_python_lib
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from WMCore.Configuration import loadConfigurationFile
@@ -60,24 +58,24 @@ def createOptionParser():
                     while at the same time giving the ability to overwrite some of the component's configuration parameters
                     e.g. loglevel or provide an alternative WMA_CONFIG_FILE and/or WMA_ENV_FILE.
     """
-    optParser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter,
+    optparser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter,
                                description=helpStr,
                                epilog=exampleStr)
-    optParser.add_argument("-c", "--config", dest="wmaConfigPath", help="WMAgent configuration file.",
+    optparser.add_argument("-c", "--config", dest="wmaConfigPath", help="WMAgent configuration file.",
                            default=os.environ.get("WMA_CONFIG_FILE", None))
-    optParser.add_argument("-e", "--envfile", dest="wmaEnvFilePath", help="WMAgent environment file.",
+    optparser.add_argument("-e", "--envfile", dest="wmaEnvFilePath", help="WMAgent environment file.",
                            default=os.environ.get("WMA_ENV_FILE", None))
-    optParser.add_argument("-d", "--daemon", dest="daemon",
+    optparser.add_argument("-d", "--daemon", dest="daemon",
                            default=False, action="store_true",
                            help="The component would be run as a daemon, similar to how it is run through the standard agent manage scripts.")
-    optParser.add_argument("-p", "--component", dest="wmaComponentName",
+    optparser.add_argument("-p", "--component", dest="wmaComponentName",
                            default=None,
                            help="The component/package to be loaded.")
-    optParser.add_argument("-l", "--loglevel", dest="logLevel",
+    optparser.add_argument("-l", "--loglevel", dest="logLevel",
                            default='INFO',
                            help="The loglevel at which the component should be run,")
 
-    return optParser
+    return optparser
 
 
 def main():
@@ -137,11 +135,11 @@ if __name__ == '__main__':
         os.environ['WMA_CONFIG_FILE'] = options.wmaConfigPath
 
     wmaConfig = loadConfigurationFile(options.wmaConfigPath)
-    logger.info(f"wmaEnvFilePath: {options.wmaEnvFilePath}")
-    logger.info(f"wmaConfigPath: {options.wmaConfigPath}")
-    logger.info(f"wmaComponent: {options.wmaComponentName}")
-    logger.info(f"logLevel: {options.logLevel}")
-    logger.info(f"daemon: {options.daemon}")
+    logger.info("wmaEnvFilePath: %s", options.wmaEnvFilePath)
+    logger.info("wmaConfigPath: %s", options.wmaConfigPath)
+    logger.info("wmaComponent: %s", options.wmaComponentName)
+    logger.info("logLevel: %s", options.logLevel)
+    logger.info("daemon: %s", options.daemon)
 
     connectToDB()
 
@@ -155,7 +153,7 @@ if __name__ == '__main__':
                  auth_host=wmaConfig.RucioInjector.rucioAuthUrl,
                  account=wmaConfig.RucioInjector.rucioAccount)
 
-    logger.info(f"Creating default component objects.")
+    logger.info("Creating default component objects.")
     resourceControl = ResourceControl(config=wmaConfig)
     cric = CRIC()
     wmaComponentName = options.wmaComponentName
@@ -195,7 +193,7 @@ if __name__ == '__main__':
         modules[pkgName] = module
 
         # Emulating `from module import *`"
-        logger.info(f"Populating the namespace with all definitions from {pkgName}")
+        logger.info("Populating the namespace with all definitions from %s", pkgName)
         if "__all__" in module.__dict__:
             names = module.__dict__["__all__"]
         else:
@@ -232,7 +230,7 @@ if __name__ == '__main__':
                 classDefs[pkgName][objName]=obj
 
         for className in classDefs[pkgName]:
-            logger.info(f"{fullPkgName}:{className}")
+            logger.info("%s:%s", fullPkgName, className)
             try:
                 exec(f"{className.lower()} = {className}()")
             except TypeError:
@@ -245,14 +243,14 @@ if __name__ == '__main__':
                         logger.warning(f"We did our best to create an instance of: {pkgName}. Giving up now!")
 
     def modReload():
-        for module in modules:
-            modName = modules[module].__name__
+        for mod in modules:
+            modName = modules[mod].__name__
             modInst = sys.modules.get(modName)
             if modInst:
-                logger.info(f"Reloading module:{modName}")
+                logger.info("Reloading module: %s", modName)
                 importlib.reload(modInst)
             else:
-                logger.warning(f"Cannot find module: {modName} in sys.modules")
+                logger.warning("Cannot find module: %s in sys.modules", modName)
 
     if options.daemon:
         main()

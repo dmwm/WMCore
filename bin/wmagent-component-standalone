@@ -240,7 +240,7 @@ if __name__ == '__main__':
                     try:
                         exec(f"{className.lower()} = {className}(wmaConfig, logger=logger)")
                     except TypeError:
-                        logger.warning(f"We did our best to create an instance of: {pkgName}. Giving up now!")
+                        logger.warning("We did our best to create an instance of: %s. Giving up now!", pkgName)
 
     def modReload():
         for mod in modules:

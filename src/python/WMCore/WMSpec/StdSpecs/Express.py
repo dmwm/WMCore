@@ -12,7 +12,6 @@ express processing -> FEVT/RAW/RECO/whatever -> express merge
 """
 
 from __future__ import division
-
 from future.utils import viewitems
 
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -20,7 +19,7 @@ from Utils.Utilities import makeList, makeNonEmptyList
 from WMCore.Lexicon import procstringT0
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-
+from WMCore.WMSpec.WMWorkloadTools import validateOutputModules
 
 class ExpressWorkloadFactory(StdBase):
     """
@@ -465,6 +464,14 @@ class ExpressWorkloadFactory(StdBase):
         self.alcaHarvestOutLabel = "Sqlite"
 
         return self.buildWorkload()
+
+    def validateWorkload(self, workload):
+        """
+        _validateWorkload_
+
+        Validation of output module names in the workflow
+        """        
+        validateOutputModules(workload)
 
     @staticmethod
     def getWorkloadCreateArgs():

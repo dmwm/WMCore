@@ -98,8 +98,11 @@ class DBSError():
 
     def getCodes(self):
         """
-        :return: list of all DBS server error codes from error message
--        https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
+        Parse the response of DBS Server and return all DBS error codes capturing them
+        from Code, message and reason strings. For definitions of DBS error codes please see
+        https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
+
+        :return: list of all DBS server error codes
         """
         if isinstance(self.data, dict):
             msgCodes = list(map(int, re.findall(r"Code:\s*(\d+)", self.data.get('message', ''))))

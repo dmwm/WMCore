@@ -17,7 +17,7 @@ ALERT_EMAILS=`sed -E 's/^[[:space:]]*ALERT_EMAILS[[:space:]]*=[[:space:]]*"([^"]
 [[ -z $WMA_INSTALL_DIR ]] && { echo "ERROR: Trying to run without having the full WMAgent environment set!";  exit 1 ;}
 
 echo -e "\n###Checking agent logs at: $(date)"
-comps=$(manage execute-agent wmcoreD --status |awk '{print $1}' |awk -F \: '{print $2}')
+comps=$($WMA_DEPLOY_DIR/bin/manage execute-agent wmcoreD --status |awk '{print $1' |awk -F \: '{print $2}')
 for comp in $comps; do
   COMPLOG=$WMA_INSTALL_DIR/$comp/ComponentLog
   if [ ! -f $COMPLOG ]; then
@@ -36,7 +36,7 @@ for comp in $comps; do
 
     TAIL_LOG=$(tail -n100 $COMPLOG)
     echo -e "Restarting component: $comp"
-    manage execute-agent wmcoreD --restart --components=$comp
+    $WMA_DEPLOY_DIR/bin/manage execute-agent wmcoreD --restart --components=$comp
     echo -e "ComponentLog quiet for $INTERVAL secs\n\nTail of the log is:\n$TAIL_LOG" |
       mail -s "$HOST : $comp restarted" $ALERT_EMAILS
   fi

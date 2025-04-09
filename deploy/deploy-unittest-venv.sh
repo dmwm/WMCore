@@ -6,18 +6,18 @@ help(){
     source deploy-unittest-venv.sh [-d] <WMAgent.venv path> [-h]
 
       -d <WMAgent.venv path>         WMAgent virtual environment root path [Default: ./WMAgent.venv3 if not Activated else \$WMA_ROOT_DIR]
-      -h <help>                      Provides help to the current script
+      -h <help>                      Provides help for the current script
 
-    # Example: Deploy untittest environment at /data/WMAgent.venv3/:
-    #          source ./deploy-unttest-venv.sh -d /data/WMAgent.venv3/
+    # Example: Deploy unit test environment at /data/WMAgent.venv3/:
+    #          source ./deploy-unittest-venv.sh -d /data/WMAgent.venv3/
 
-    # Example: Deploy untittest inside previously activated WMAgent virtual environment:
-    #          source ./deploy-unttest-venv.sh
+    # Example: Deploy unit test inside previously activated WMAgent virtual environment:
+    #          source ./deploy-unittest-venv.sh
 
-    # Example: Running a single unittest upon sourcing:
+    # Example: Running a single unit test upon sourcing:
     #          ipython -i \$WMA_DEPLOY_DIR/srv/WMCore/test/python/WMCore_t/Services_t/WorkQueue_t/WorkQueue_t.py
 
-    # DEPENDENCIES: This unttests setup depends on a fully deployed and initialised agent inside a virtual
+    # DEPENDENCIES: This unit-tests setup depends on a fully deployed and initialised agent inside a virtual
     #               environment and the supporting Docker containers running on the Machine:
     #               MariaDB && CouchDB
 
@@ -69,7 +69,7 @@ _addWMCoreVenvVar(){
 }
 
 echo "Activating: . $venvPath/bin/activate"
-. $venvPath/bin/activate || { echo "Failed to activatevirtual environment at $venvPath"; exit 1 ;}
+. $venvPath/bin/activate || { echo "Failed to activate virtual environment at $venvPath"; exit 1 ;}
 
 ## Install nose packageg
 pip install nose

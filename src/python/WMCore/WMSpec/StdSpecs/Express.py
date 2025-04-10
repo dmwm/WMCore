@@ -265,7 +265,9 @@ class ExpressWorkloadFactory(StdBase):
         dataTier = getattr(parentOutputModule, "dataTier")
         mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
-        self.addRuntimeMonitors(mergeTask)
+        expressMergeMaxPSS = mySplitArgs['mergeTaskMemory']
+        self.addRuntimeMonitors(mergeTask, maxpss=expressMergeMaxPSS)
+
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
 
@@ -457,6 +459,7 @@ class ExpressWorkloadFactory(StdBase):
         self.expressSplitArgs['maxInputRate'] = arguments['MaxInputRate']
         self.expressSplitArgs['maxInputEvents'] = arguments['MaxInputEvents']
         self.expressMergeSplitArgs = {}
+        self.expressMergeSplitArgs['mergeTaskMemory'] = arguments['MergeTaskMemory']
         self.expressMergeSplitArgs['maxInputSize'] = arguments['MaxInputSize']
         self.expressMergeSplitArgs['maxInputFiles'] = arguments['MaxInputFiles']
         self.expressMergeSplitArgs['maxLatency'] = arguments['MaxLatency']

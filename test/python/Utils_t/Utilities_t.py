@@ -4,17 +4,37 @@ Unittests for Utilities functions
 """
 
 from builtins import object
+import os
+import tempfile
 import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
     safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
-    encodeUnicodeToBytes, diskUse, numberCouchProcess, normalize_spaces
+    encodeUnicodeToBytes, diskUse, numberCouchProcess, normalize_spaces, \
+    extractFromXML
 
 
 class UtilitiesTests(unittest.TestCase):
     """
     unittest for Utilities functions
     """
+
+    def setUp(self):
+        """Create a temporary XML file for testing."""
+        self.xmlContent = """<?xml version="1.0"?>
+        <Daemon>
+            <ProcessID Value="1953175"/>
+            <ParentProcessID Value="1"/>
+            <ProcessGroupID Value="1953174"/>
+        </Daemon>"""
+
+        self.tempXML = tempfile.NamedTemporaryFile(delete=False, suffix=".xml")
+        self.tempXML.write(self.xmlContent.encode("utf-8"))
+        self.tempXML.close()
+
+    def tearDown(self):
+        """Clean up the temporary file after tests."""
+        os.unlink(self.tempXML.name)
 
     def testMakeList(self):
         """
@@ -234,6 +254,13 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         data = numberCouchProcess()
         # there should be at least one process, but who knows...
         self.assertTrue(data >= 0)
+
+    def testExtractFromXML(self):
+        """Test extracting an existing element from XML."""
+        value = extractFromXML(self.tempXML.name, "ProcessID")
+        self.assertEqual(value, "1953175")
+        value = extractFromXML(self.tempXML.name, "NonExistingElement")
+        self.assertIsNone(value)
 
 
 if __name__ == '__main__':

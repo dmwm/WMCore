@@ -62,7 +62,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
     Get confirmation in the output
 
     :param workInput: work input data
-    :param results: output results dictionary
+    :param results: multiprocessing.Queue object we we can store and retrieve dict objects
     :param dbsUrl: url of DBS server to use
     :param gzipEncoding: specify if we should use gzipEncoding
     """
@@ -99,20 +99,23 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             dbsError = DBSError(ex.body)
             reason = dbsError.getReason()
             message = dbsError.getMessage()
-            srvCode = dbsError.getServerCode()
-            msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
-            if srvCode == 128:
-                # block already exist
-                logging.warning("Block %s already exists. Marking it as uploaded.", name)
-                results.put({'name': name, 'success': "check"})
-            elif srvCode in [132, 133, 134, 135, 136, 137, 138, 139, 140]:
-                # racing conditions
-                logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
-                results.put({'name': name, 'success': "error", 'error': msg})
-            else:
-                msg = f"Error trying to process block {name} through DBS. Details: {msg}"
-                logging.error(msg)
-                results.put({'name': name, 'success': "error", 'error': msg})
+            # use DBS error codes for racing conditions
+            # note: we include last range with +1, e.g. range(132,142) will give us [132,..,141]
+            racingConditionCodes = [i for in range (132, 142)] + [i for i in range(143,164))
+            for srvCode in dbsError.getCodes():
+                msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
+                if srvCode == 128:
+                    # block already exist
+                    logging.warning("Block %s already exists. Marking it as uploaded.", name)
+                    results.put({'name': name, 'success': "check"})
+                elif srvCode in racingConditionsCodes:
+                    # racing conditions
+                    logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
+                    results.put({'name': name, 'success': "error", 'error': msg})
+                else:
+                    msg = f"Error trying to process block {name} through DBS. Details: {msg}"
+                    logging.error(msg)
+                    results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:
             msg = f"Hit a general exception while inserting block {name}. Error: {str(ex)}"
             logging.exception(msg)

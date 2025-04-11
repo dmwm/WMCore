@@ -432,7 +432,7 @@ class Request(RESTEntity):
 
         try:
             # Commit all Global WorkQueue changes per workflow in a single go:
-            self.gq_service.updateElementsByWorkflow(workload, reqArgs, status=['Available', 'Negotiating', 'Acquired'])
+            self.gq_service.updateElementsByWorkflow(workload, reqArgs, status=['Available', 'Negotiating', 'Acquired', 'Running'])
         except WMWorkloadUnhandledException as ex:
             # Handling assignment-approved arguments differently to avoid code duplication
             if reqStatus == 'assignment-approved':

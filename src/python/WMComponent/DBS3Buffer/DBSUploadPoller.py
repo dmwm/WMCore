@@ -90,6 +90,14 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
 
         # Do stuff with DBS
         try:
+            # check if block exists in DBS
+            results = dbsApi.listBlocks(block_name=block)
+            # the results are shown in the following form
+            # [{'block_name': '/block/name#123'}]
+            if len(results) == 1 and results[0]['block_name'] == block:
+                # found that we have this block, i.e. no need to insert block anymore
+                logging.info("block %s already exist in DBS", block)
+                continue
             logging.info("About to call insert block for: %s", name)
             dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
@@ -97,25 +105,12 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             # DBS Go server errors are defined here:
             # https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
             dbsError = DBSError(ex.body)
-            reason = dbsError.getReason()
             message = dbsError.getMessage()
-            # use DBS error codes for racing conditions
-            # note: we include last range with +1, e.g. range(132,142) will give us [132,..,141]
-            racingConditionCodes = [i for in range (132, 142)] + [i for i in range(143,164))
-            for srvCode in dbsError.getCodes():
-                msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
-                if srvCode == 128:
-                    # block already exist
-                    logging.warning("Block %s already exists. Marking it as uploaded.", name)
-                    results.put({'name': name, 'success': "check"})
-                elif srvCode in racingConditionsCodes:
-                    # racing conditions
-                    logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
-                    results.put({'name': name, 'success': "error", 'error': msg})
-                else:
-                    msg = f"Error trying to process block {name} through DBS. Details: {msg}"
-                    logging.error(msg)
-                    results.put({'name': name, 'success': "error", 'error': msg})
+            codes = dbsError.getCodes()
+            msg = f'DBSError codes: {codes}, message: {message}'
+            msg = f"Error trying to process block {name} through DBS. Details: {msg}"
+            logging.error(msg)
+            results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:
             msg = f"Hit a general exception while inserting block {name}. Error: {str(ex)}"
             logging.exception(msg)

@@ -91,10 +91,10 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
         # Do stuff with DBS
         try:
             # check if block exists in DBS
-            results = dbsApi.listBlocks(block_name=block)
+            results = dbsApi.listBlocks(block_name=name)
             # the results are shown in the following form
             # [{'block_name': '/block/name#123'}]
-            if len(results) == 1 and results[0]['block_name'] == block:
+            if len(results) == 1 and results[0]['block_name'] == name:
                 # found that we have this block, i.e. no need to insert block anymore
                 logging.info("block %s already exist in DBS", block)
                 continue

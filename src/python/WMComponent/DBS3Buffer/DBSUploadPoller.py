@@ -106,9 +106,11 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             # https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
             dbsError = DBSError(ex.body)
             message = dbsError.getMessage()
-            codes = dbsError.getCodes()
-            msg = f'DBSError codes: {codes}, message: {message}'
-            msg = f"Error trying to process block {name} through DBS. Details: {msg}"
+            srvCode = dbsError.getServerCode()
+            errors = DBSErrors()
+            msg = f'Error trying to process block {name} through DBS. Details:'
+            msg += f'\nDBSError code: {code} meaning {errors[code]}'
+            msg += f'\n{message}'
             logging.error(msg)
             results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:

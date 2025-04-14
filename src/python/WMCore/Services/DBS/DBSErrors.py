@@ -128,9 +128,10 @@ class DBSError():
             return self.data['error']['reason']
         return ""
 
-def DBSErrors():
+def DBSErrors(dbsUrl):
     """
     Fetch and return all DBS server errors
+    :param dbsUrl: DBS url to use
     :return: dictionary of DBS server errors and their meaning
     """
     dbsErrors = {}

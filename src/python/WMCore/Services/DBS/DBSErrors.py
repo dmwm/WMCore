@@ -139,7 +139,7 @@ def DBSErrors(dbsUrl):
     payload = {}
     headers = {'Content-Type': 'application/json'}
     mgr = RequestHandler()
-    data = mgr.getdata(rurl, payload, headers, verb=method, ckey=ckey(), cert=cert())
+    data = mgr.getdata(dbsUrl, payload, headers, verb=method, ckey=ckey(), cert=cert())
     if data:
         for row in data.get('result', []):
             dbsErrors[row['code']] = row['meaning']

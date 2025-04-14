@@ -317,9 +317,21 @@ class MSRuleCleaner(MSCore):
             #       {REPLICATING, STUCK, SUSPENDED, WAITING_APPROVAL}.)
             #       We still need some proper logging for them.
             msg = "Skipping workflow: %s - tape transfers are not yet completed." % wflow['RequestName']
-            msg += " Will retry again in the next cycle."
+            msg += "Workflow in 'announced' state, hence proceeding only with MSTransferor / input data removal. "  
+            msg += "Will retry the remaining in the next cycle."
             self.logger.info(msg)
             self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
+            for pline in self.mstrlines:
+                try: 
+                    pline.run(wflow)
+                except Exception as ex:
+                    msg = f"{pline.name}: General error from pipeline"
+                    msg += " when cleaning input MSTransferor rules."
+                    msg += f"\nWorkflow: {wflow['RequestName']}. Error:  \n{str(ex)}."
+                    msg += "\nWill retry again in the next cycle."
+                    self.logger.exception(msg)
+                    continue
+            
         elif wflow['RequestStatus'] in ['announced', 'rejected', 'aborted-completed']:
             for pline in self.cleanuplines:
                 try:

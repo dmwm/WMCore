@@ -49,7 +49,7 @@ from WMCore.Algorithms.MiscAlgos import sortListByKey
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.Services.DBS.DBSErrors import DBSError
+from WMCore.Services.DBS.DBSErrors import DBSError, DBSErrors
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -109,7 +109,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             srvCode = dbsError.getServerCode()
             errors = DBSErrors()
             msg = f'Error trying to process block {name} through DBS. Details:'
-            msg += f'\nDBSError code: {code} meaning {errors[code]}'
+            msg += f'\nDBSError code: {srvCode} meaning {errors[srvCode]}'
             msg += f'\n{message}'
             logging.error(msg)
             results.put({'name': name, 'success': "error", 'error': msg})

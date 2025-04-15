@@ -7,8 +7,6 @@ import re
 import json
 
 from WMCore.Services.DBS.ProdException import ProdException
-from WMCore.Services.pycurl_manager import RequestHandler
-from Utils.CertTools import ckey, cert
 
 
 def formatEx(excepInst):
@@ -127,20 +125,3 @@ class DBSError():
         if isinstance(self.data, dict):
             return self.data['error']['reason']
         return ""
-
-def DBSErrors(dbsUrl):
-    """
-    Fetch and return all DBS server errors
-    :param dbsUrl: DBS url to use
-    :return: dictionary of DBS server errors and their meaning
-    """
-    dbsErrors = {}
-    method = "GET"
-    payload = {}
-    headers = {'Content-Type': 'application/json'}
-    mgr = RequestHandler()
-    data = mgr.getdata(dbsUrl, payload, headers, verb=method, ckey=ckey(), cert=cert())
-    if data:
-        for row in data.get('result', []):
-            dbsErrors[row['code']] = row['meaning']
-    return dbsErrors

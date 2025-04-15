@@ -49,10 +49,11 @@ class RepackWorkloadFactory(StdBase):
         taskType = "Processing"
 
         # complete output configuration
+        # For T0 Raw Skims, primaryDataset will contain a "-", so here we replace for "_" in the moduleLabel
         for output in self.outputs:
             moduleLabel = "write_%s_%s" % (output['primaryDataset'],
                                            output['dataTier'])
-            output['moduleLabel'] = moduleLabel.replace("-", "_")  # For T0 Raw Skims, PDs will contain a "-", so here we replace for "_" for the moduleLabel
+            output['moduleLabel'] = moduleLabel.replace("-", "_")
 
         # finalize splitting parameters
         mySplitArgs = self.repackSplitArgs.copy()

@@ -70,6 +70,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
     # Init DBS Stuff
     logging.debug("Creating dbsAPI with address %s", dbsUrl)
     dbsApi = DbsApi(url=dbsUrl, useGzip=gzipEncoding)
+    dbsErrors = DBSErrors(dbsUrl)
 
     while True:
 
@@ -107,9 +108,8 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             dbsError = DBSError(ex.body)
             message = dbsError.getMessage()
             srvCode = dbsError.getServerCode()
-            errors = DBSErrors(dbsUrl)
             msg = f'Error trying to process block {name} through DBS. Details:'
-            msg += f'\nDBSError code: {srvCode} meaning {errors[srvCode]}'
+            msg += f'\nDBSError code: {srvCode}, meaning: {dbsErrors[srvCode]}'
             msg += f'\n{message}'
             logging.error(msg)
             results.put({'name': name, 'success': "error", 'error': msg})

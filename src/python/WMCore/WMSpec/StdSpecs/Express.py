@@ -74,7 +74,6 @@ class ExpressWorkloadFactory(StdBase):
             expressRecoStepName = "cmsRun1"
 
             scenarioArgs = {'globalTag': self.globalTag,
-                            'globalTagTransaction': self.globalTagTransaction,
                             'skims': self.alcaSkims,
                             'dqmSeq': self.dqmSequences,
                             'outputs': self.outputs,
@@ -135,7 +134,6 @@ class ExpressWorkloadFactory(StdBase):
 
             scenarioFunc = "expressProcessing"
             scenarioArgs = {'globalTag': self.globalTag,
-                            'globalTagTransaction': self.globalTagTransaction,
                             'skims': self.alcaSkims,
                             'dqmSeq': self.dqmSequences,
                             'outputs': self.outputs,
@@ -189,7 +187,6 @@ class ExpressWorkloadFactory(StdBase):
                                 'EventStreams': 0}
 
                 scenarioArgs = {'globalTag': self.globalTag,
-                                'globalTagTransaction': self.globalTagTransaction,
                                 'skims': self.alcaSkims,
                                 'primaryDataset': self.specialDataset}
 
@@ -477,7 +474,6 @@ class ExpressWorkloadFactory(StdBase):
                     "RecoScramArch": {"validate": lambda x: all([y in architectures() for y in x]),
                                       "optional": False, "type": makeNonEmptyList},
                     "GlobalTag": {"optional": False},
-                    "GlobalTagTransaction": {"optional": False},
                     "ProcessingString": {"default": "", "validate": procstringT0},
                     "StreamName": {"optional": False},
                     "SpecialDataset": {"optional": False},

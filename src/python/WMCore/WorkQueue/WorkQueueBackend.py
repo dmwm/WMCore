@@ -567,21 +567,30 @@ class WorkQueueBackend(object):
 
     def getActiveData(self):
         """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'activeData', {'reduce': True, 'group': True})
-        return [{'dbs_url': x['key'][0],
-                 'name': x['key'][1]} for x in data.get('rows', [])]
+        data = self.db.loadView('WorkQueue', 'activeData', {'reduce': False, 'group': False})
+        unique_data = set()
+        for row in data.get('rows', []):
+            unique_data.add((row['key'][0], row['key'][1]))
+        return [{'dbs_url': x[0], 'name': x[1]} for x in unique_data]
 
     def getActiveParentData(self):
         """Get data items we have work in the queue for with parent"""
-        data = self.db.loadView('WorkQueue', 'activeParentData', {'reduce': True, 'group': True})
-        return [{'dbs_url': x['key'][0],
-                 'name': x['key'][1]} for x in data.get('rows', [])]
+        data = self.db.loadView('WorkQueue', 'activeParentData', {'reduce': False, 'group': False})
+        unique_data = set()
+        for row in data.get('rows', []):
+            unique_data.add((row['key'][0], row['key'][1]))
+        return [{'dbs_url': x[0], 'name': x[1]} for x in unique_data]
 
     def getActivePileupData(self):
         """Get data items we have work in the queue for with pileup"""
-        data = self.db.loadView('WorkQueue', 'activePileupData', {'reduce': True, 'group': True})
-        return [{'dbs_url': x['key'][0],
-                 'name': x['key'][1]} for x in data.get('rows', [])]
+        # Due to performance issues, we are stopping the use of reduce and group parameters for this view
+        # Further details: https://github.com/dmwm/WMCore/issues/12319
+        data = self.db.loadView('WorkQueue', 'activePileupData', {'reduce': False, 'group': False})
+
+        unique_data = set()
+        for row in data.get('rows', []):
+            unique_data.add((row['key'][0], row['key'][1]))
+        return [{'dbs_url': x[0], 'name': x[1]} for x in unique_data]
 
     def getElementsForData(self, data):
         """Get active elements for this dbs & data combo"""

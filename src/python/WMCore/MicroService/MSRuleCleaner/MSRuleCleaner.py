@@ -311,11 +311,8 @@ class MSRuleCleaner(MSCore):
             self.logger.info(msg)
             self._checkStatusAdvanceExpired(wflow, additionalInfo=msg)
         elif wflow['RequestStatus'] == 'announced' and not wflow['TransferTape']:
-            # NOTE: We skip workflows which have not yet finalised their tape transfers.
-            #       (i.e. even if a single output which is supposed to be covered
-            #       by a tape rule is in any of the following transient states:
-            #       {REPLICATING, STUCK, SUSPENDED, WAITING_APPROVAL}.)
-            #       We still need some proper logging for them.
+            # Given that we are still waiting for the tape transfers to be fulfilled,
+            # we can go ahead and start cleaning up the input data.
             msg = "Skipping workflow: %s - tape transfers are not yet completed." % wflow['RequestName']
             msg += "Workflow in 'announced' state, hence proceeding only with MSTransferor / input data removal. "  
             msg += "Will retry the remaining in the next cycle."
@@ -331,8 +328,10 @@ class MSRuleCleaner(MSCore):
                     msg += "\nWill retry again in the next cycle."
                     self.logger.exception(msg)
                     continue
-            
+            # return now to avoid exeecuting the archival pipeline
+            return
         elif wflow['RequestStatus'] in ['announced', 'rejected', 'aborted-completed']:
+            # Workflows reaching this block are ready for the full pipeline execution
             for pline in self.cleanuplines:
                 try:
                     pline.run(wflow)

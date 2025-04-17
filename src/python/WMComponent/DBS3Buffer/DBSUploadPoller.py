@@ -49,7 +49,7 @@ from WMCore.Algorithms.MiscAlgos import sortListByKey
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.Services.DBS.DBSErrors import DBSError
+from WMCore.Services.DBS.DBSErrors import DBSError, DBSErrors
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -62,7 +62,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
     Get confirmation in the output
 
     :param workInput: work input data
-    :param results: output results dictionary
+    :param results: multiprocessing.Queue object we we can store and retrieve dict objects
     :param dbsUrl: url of DBS server to use
     :param gzipEncoding: specify if we should use gzipEncoding
     """
@@ -70,6 +70,7 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
     # Init DBS Stuff
     logging.debug("Creating dbsAPI with address %s", dbsUrl)
     dbsApi = DbsApi(url=dbsUrl, useGzip=gzipEncoding)
+    dbsErrors = DBSErrors(dbsUrl)
 
     while True:
 
@@ -90,6 +91,14 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
 
         # Do stuff with DBS
         try:
+            # check if block exists in DBS
+            results = dbsApi.listBlocks(block_name=name)
+            # the results are shown in the following form
+            # [{'block_name': '/block/name#123'}]
+            if len(results) == 1 and results[0]['block_name'] == name:
+                # found that we have this block, i.e. no need to insert block anymore
+                logging.info("block %s already exist in DBS", block)
+                continue
             logging.info("About to call insert block for: %s", name)
             dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
@@ -97,22 +106,13 @@ def uploadWorker(workInput, results, dbsUrl, gzipEncoding=False):
             # DBS Go server errors are defined here:
             # https://github.com/dmwm/dbs2go/blob/master/dbs/errors.go
             dbsError = DBSError(ex.body)
-            reason = dbsError.getReason()
             message = dbsError.getMessage()
             srvCode = dbsError.getServerCode()
-            msg = f'DBSError code: {srvCode}, message: {message}, reason: {reason}'
-            if srvCode == 128:
-                # block already exist
-                logging.warning("Block %s already exists. Marking it as uploaded.", name)
-                results.put({'name': name, 'success': "check"})
-            elif srvCode in [132, 133, 134, 135, 136, 137, 138, 139, 140]:
-                # racing conditions
-                logging.warning("Hit a transient data race condition injecting block %s, %s", name, msg)
-                results.put({'name': name, 'success': "error", 'error': msg})
-            else:
-                msg = f"Error trying to process block {name} through DBS. Details: {msg}"
-                logging.error(msg)
-                results.put({'name': name, 'success': "error", 'error': msg})
+            msg = f'Error trying to process block {name} through DBS. Details:'
+            msg += f'\nDBSError code: {srvCode}, meaning: {dbsErrors[srvCode]}'
+            msg += f'\n{message}'
+            logging.error(msg)
+            results.put({'name': name, 'success': "error", 'error': msg})
         except Exception as ex:
             msg = f"Hit a general exception while inserting block {name}. Error: {str(ex)}"
             logging.exception(msg)

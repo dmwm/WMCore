@@ -13,6 +13,7 @@ from collections import defaultdict
 from Utils.CertTools import cert, ckey
 from dbs.apis.dbsClient import aggFileLumis, aggFileParents
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
+from WMCore.Services.pycurl_manager import RequestHandler
 from Utils.PortForward import PortForward
 
 
@@ -137,3 +138,20 @@ def urlParams(url):
         if len(vals) == 1:
             rdict[key] = vals[0]
     return rdict
+
+def DBSErrors(dbsUrl):
+    """
+    Fetch and return all DBS server errors
+    :param dbsUrl: DBS url to use
+    :return: dictionary of DBS server errors and their meaning
+    """
+    dbsErrors = {}
+    method = "GET"
+    payload = {}
+    headers = {'Content-Type': 'application/json'}
+    mgr = RequestHandler()
+    data = mgr.getdata(dbsUrl, payload, headers, verb=method, ckey=ckey(), cert=cert())
+    if data:
+        for row in data.get('result', []):
+            dbsErrors[row['code']] = row['meaning']
+    return dbsErrors

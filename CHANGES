@@ -1,3 +1,9 @@
+2.3.8.4 to 2.3.8.5:
+  - Performance enhancements for primary, parent and pileup data location in global workqueue (Alan Malta Rodrigues) #12332
+  - Code organization for global workqueue data location update (Alan Malta Rodrigues) #12332
+  - use mstrlines to cleanup MSTransferor input rules for announced wfs (Muhammad Hassan Ahmed) #12332
+
+
 2.3.8.3 to 2.3.8.4:
 
 

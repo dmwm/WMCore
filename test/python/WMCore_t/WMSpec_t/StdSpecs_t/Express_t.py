@@ -33,7 +33,6 @@ REQUEST = {
     "DQMUploadProxy": "/somepath/proxy",
     "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/offline",
     "GlobalTag": "SomeGlobalTag",
-    "GlobalTagTransaction": "Express_123456",
     "GlobalTagConnect": "frontier://PromptProd/CMS_CONDITIONS",
     "MaxInputRate": 23 * 1000,
     "MaxInputEvents": 400,

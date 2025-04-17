@@ -182,8 +182,15 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         super(WorkQueueDataLocationMapper, self).__init__(logger, **kwargs)
 
     def __call__(self):
-        dataItems = self.backend.getActiveData()
+        elemUpdated = 0
+        elemUpdated += self.updatePrimaryLocation()
+        elemUpdated += self.updateParentLocation()
+        elemUpdated += self.updatePileupLocation()
 
+        return elemUpdated
+
+    def updatePrimaryLocation(self):
+        dataItems = self.backend.getActiveData()
         dataLocations = super(WorkQueueDataLocationMapper, self).__call__(dataItems)
         self.logger.info("Found %d unique input data to update location", len(dataItems))
 
@@ -202,10 +209,7 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         self.logger.info("Updating %d elements for Input location update", len(modified))
         self.backend.saveElements(*modified)
 
-        numParents = self.updateParentLocation()
-        numPileups = self.updatePileupLocation()
-
-        return len(modified) + numParents + numPileups
+        return len(modified)
 
     def updateParentLocation(self):
         dataItems = self.backend.getActiveParentData()

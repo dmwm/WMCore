@@ -1,3 +1,7 @@
+2.3.8.5 to 2.3.8.6:
+  - Avoid executing archival pipeline for workflows not ready yet (Alan Malta Rodrigues) #12335
+
+
 2.3.8.4 to 2.3.8.5:
   - Performance enhancements for primary, parent and pileup data location in global workqueue (Alan Malta Rodrigues) #12332
   - Code organization for global workqueue data location update (Alan Malta Rodrigues) #12332

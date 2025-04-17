@@ -5,7 +5,6 @@ _WMLogging_
 Logging facilities used in WMCore.
 """
 import logging
-import codecs
 from datetime import date, timedelta
 from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
 
@@ -78,10 +77,7 @@ class MyTimedRotatingFileHandler(TimedRotatingFileHandler):
         yesterdayStr = (date.today() - timedelta(1)).strftime("%Y%m%d")
         todayStr = date.today().strftime("%Y%m%d")
         self.baseFilename = self.baseFilename.replace(yesterdayStr, todayStr)
-        if self.encoding:
-            self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
-        else:
-            self.stream = open(self.baseFilename, 'w')
+        self.stream = open(self.baseFilename, 'w', encoding='utf-8')
         self.rolloverAt = self.rolloverAt + self.interval
 
 

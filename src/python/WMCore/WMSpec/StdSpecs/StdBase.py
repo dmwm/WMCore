@@ -223,6 +223,8 @@ class StdBase(object):
                     outputModules[moduleLabel] = {'dataTier': output['dataTier']}
                     if 'primaryDataset' in output:
                         outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
+                    if 'rawSkim' in output:
+                        outputModules[moduleLabel]['rawSkim'] = output['rawSkim']
                     if 'filterName' in output:
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
@@ -467,6 +469,7 @@ class StdBase(object):
                                                                                    self.inputPrimaryDataset),
                                                 configOutput[outputModuleName]['dataTier'],
                                                 configOutput[outputModuleName].get('filterName', None),
+                                                configOutput[outputModuleName].get('rawSkim', None),
                                                 forceMerged=forceMerged, forceUnmerged=forceUnmerged, taskConf=taskConf)
             outputModules[outputModuleName] = outputModule
 
@@ -507,6 +510,7 @@ class StdBase(object):
 
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
+                        rawSkim=None,
                         stepName="cmsRun1", forceMerged=False,
                         forceUnmerged=False, taskConf=None):
         """
@@ -583,6 +587,7 @@ class StdBase(object):
                                         processedDataset=processedDataset,
                                         dataTier=dataTier,
                                         filterName=filterName,
+                                        rawSkim=rawSkim,
                                         lfnBase=unmergedLFN,
                                         mergedLFNBase=mergedLFN,
                                         transient=isTransient)
@@ -590,7 +595,8 @@ class StdBase(object):
         return {"primaryDataset": primaryDataset,
                 "dataTier": dataTier,
                 "processedDataset": processedDataset,
-                "filterName": filterName}
+                "filterName": filterName,
+                "rawSkim": rawSkim}
 
     def addLogCollectTask(self, parentTask, taskName="LogCollect", filesPerJob=500,
                           cmsswVersion=None, scramArch=None):

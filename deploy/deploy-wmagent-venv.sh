@@ -79,7 +79,7 @@ pythonCmd=python
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
-while getopts ":t:r:d:l:i:snvyh" opt; do
+while getopts ":t:r:d:b:i:snvyh" opt; do
     case ${opt} in
         d)
             venvPath=$OPTARG
@@ -537,10 +537,9 @@ wmaInstall() {
     # Add all deployment needed directories
     cp -rv bin/* $WMA_DEPLOY_DIR/bin/
     cp -rv etc $WMA_DEPLOY_DIR/
-    cp -rv install.sh ${WMA_ROOT_DIR}/install.sh
 
     # Add install script
-    cp -rv  install.sh ${WMA_ROOT_DIR}/install.sh
+    cp -rv install.sh ${WMA_ROOT_DIR}/install.sh
 
     # Add wmagent run script
     cp -rv run.sh ${WMA_ROOT_DIR}/run.sh
@@ -567,9 +566,11 @@ tweakVenv(){
     # # in general hard coded in the Docker image
 
     echo "Copy certificates and WMAgent.secrets file from an old agent"
+    mkdir -p $WMA_CERTS_DIR
     cp -v /data/certs/servicekey.pem  $WMA_CERTS_DIR/
     cp -v /data/certs/servicecert.pem  $WMA_CERTS_DIR/
     # Try to find the WMAgent.secrets file at /data/dockerMount first
+    mkdir -p $WMA_ROOT_DIR/admin/wmagent
     cp -v /data/dockerMount/admin/wmagent/WMAgent.secrets $WMA_ROOT_DIR/admin/wmagent/ ||
         cp -v /data/admin/wmagent/WMAgent.secrets $WMA_ROOT_DIR/admin/wmagent/
     echo "-------------------------------------------------------"

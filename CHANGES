@@ -1,3 +1,6 @@
+2.3.10rc16 to 2.3.10rc17:
+  - Change global-workqueue to wmglobalqueue in its Dockerfile (error reported in CI/CD after https://github.com/dmwm/CMSKubernetes/pull/1586 build)
+
 2.3.10rc15 to 2.3.10rc16:
   - Move t0_reqmon package to t0reqmon under CMSKubernetes/docker/pypi area (missing from https://github.com/dmwm/CMSKubernetes/pull/1586)
 

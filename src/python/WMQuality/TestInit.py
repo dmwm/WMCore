@@ -125,10 +125,10 @@ class TestInit(object):
 
     def getBackendFromDbURL(self, dburl):
         dialectPart = dburl.split(":")[0]
-        if dialectPart == 'mysql':
-            return 'MySQL'
+        if dialectPart in ['mysql', 'mariadb']:
+            return 'mariadb'  # Both MySQL and MariaDB use the mariadb directory
         elif dialectPart == 'oracle':
-            return 'Oracle'
+            return 'oracle'
         elif dialectPart == 'http':
             return 'CouchDB'
         else:
@@ -205,6 +205,23 @@ class TestInit(object):
             if module not in modules:
                 modules.append(module)
         self.currModules = modules
+
+        return
+
+    def setSchemaFromSQL(self, sqlModules=None):
+        """
+        Initialize database schema from SQL files.
+
+        :param sqlModules: List of SQL database modules to be initialized. It defaults to 'wmbs'.
+        """
+        if not self.hasDatabase:
+            return
+
+        # default schema modules to initialize
+        sqlModules = sqlModules or ['wmbs']
+
+        # call the module factory and initialize database schema
+        self.init.setSchemaFromModules(sqlModules)
 
         return
 

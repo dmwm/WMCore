@@ -1,3 +1,14 @@
+2.3.10rc14 to 2.3.10rc15:
+  - Change WM package and images name from reqmgr2ms-xxx to msxxx (Valentin Kuznetsov) https://github.com/dmwm/CMSKubernetes/pull/1586 
+  - Avoid executing archival pipeline for workflows not ready yet (Alan Malta Rodrigues) #12334
+  - Performance enhancements for primary, parent and pileup data location in global workqueue (Alan Malta Rodrigues) #12330
+  - Code organization for global workqueue data location update (Alan Malta Rodrigues) #12330
+  - use mstrlines to cleanup MSTransferor input rules for announced wfs (Muhammad Hassan Ahmed) #12329
+  - Few typos in the help message (Fredrik) #12322
+  - Properly HandleDidNotfound exception (Todor Ivanov) #12317
+  - Add rucio client instances to wmagent-component-standalone (Todor Ivanov) #12318
+
+
 2.3.10rc13 to 2.3.10rc14:
   - Another run of CD pipelines
 

@@ -29,7 +29,7 @@ class DBSBufferFileTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules=["WMComponent.DBS3Buffer"],
+        self.testInit.setSchema(customModules=["WMCore.WMBS", "WMComponent.DBS3Buffer"],
                                 useDefault=False)
 
         myThread = threading.currentThread()

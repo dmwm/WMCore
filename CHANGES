@@ -1,3 +1,6 @@
+2.3.10rc15 to 2.3.10rc16:
+  - Move t0_reqmon package to t0reqmon under CMSKubernetes/docker/pypi area (missing from https://github.com/dmwm/CMSKubernetes/pull/1586)
+
 2.3.10rc14 to 2.3.10rc15:
   - Change WM package and images name from reqmgr2ms-xxx to msxxx (Valentin Kuznetsov) https://github.com/dmwm/CMSKubernetes/pull/1586 
   - Avoid executing archival pipeline for workflows not ready yet (Alan Malta Rodrigues) #12334

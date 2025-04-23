@@ -490,12 +490,6 @@ class TaskArchiverTest(EmulatedUnitTestCase):
 
         self.assertEqual(len(jobs), 2 * self.nJobs)
 
-        from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
-        create = CreateWMBSBase()
-        tables = []
-        for x in create.requiredTables:
-            tables.append(x[2:])
-
         self.populateWorkflowWithCompleteStatus()
         testTaskArchiver = TaskArchiverPoller(config=config)
         testTaskArchiver.algorithm()

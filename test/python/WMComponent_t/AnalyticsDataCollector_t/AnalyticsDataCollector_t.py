@@ -43,9 +43,8 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules=["WMCore.WMBS"],
-                                useDefault=False)
-        self.testInit.setSchema(customModules=["WMComponent.DBS3Buffer"],
+        self.testInit.setSchema(customModules=["WMCore.WMBS",
+                                               "WMComponent.DBS3Buffer"],
                                 useDefault=False)
         self.reqmonDBName = "wmstat_t"
         self.localDBName = "wmstat_t_local"

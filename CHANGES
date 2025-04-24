@@ -1,3 +1,10 @@
+2.3.10rc17 to 2.3.10rc18:
+  - Upgrade htcondor python bindings to v24.4.0 (Todor Ivanov) #12344
+  - support raw skim datasets for T0 repack workflows (Antonio) #12298
+  - deploy wmange-venv - small changes (Dario Mapelli) #12337
+  - Get rid of transactionId from the configuration, given that this feature was removed 9 years ago. (Kenyi Hurtado) #12331
+
+
 2.3.10rc16 to 2.3.10rc17:
   - Change global-workqueue to wmglobalqueue in its Dockerfile (error reported in CI/CD after https://github.com/dmwm/CMSKubernetes/pull/1586 build)
 

@@ -22,7 +22,7 @@ dbs3-client==4.0.19           # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,wmgloba
 future~=0.18.2                # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,acdcserver,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
 gfal2-python~=1.11.0.post3    # wmcore,msunmerged
 httplib2~=0.20.4              # wmcore,wmagent,reqmgr2,reqmon,acdcserver,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
-htcondor~=24.3.0              # wmcore,wmagent
+htcondor~=24.0.7              # wmcore,wmagent
 Jinja2~=3.1.2                 # wmcore,wmagent
 memory-profiler~=0.60.0       # wmcore,wmagentdev
 mock~=4.0.3                   # wmcore,wmagent,wmagentdev

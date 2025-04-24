@@ -1,3 +1,6 @@
+2.3.10rc18 to 2.3.10rc19:
+  - Previous PyPi pipeline failed, so cutting a new tag
+
 2.3.10rc17 to 2.3.10rc18:
   - Upgrade htcondor python bindings to v24.4.0 (Todor Ivanov) #12344
   - support raw skim datasets for T0 repack workflows (Antonio) #12298

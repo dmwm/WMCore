@@ -8,8 +8,8 @@ Oracle implementation of NewWorkflow
 from WMCore.WMBS.MySQL.Users.New import New as NewUserMySQL
 
 class New(NewUserMySQL):
-    sql = """INSERT INTO wmbs_users (id, cert_dn, name_hn, owner, grp, group_name, role_name)
-             SELECT wmbs_users_SEQ.nextval, :dn, :hn, :owner, :grp, :gr, :role FROM dual
+    sql = """INSERT INTO wmbs_users (cert_dn, name_hn, owner, grp, group_name, role_name)
+             SELECT :dn, :hn, :owner, :grp, :gr, :role FROM dual
              WHERE NOT EXISTS (SELECT id FROM wmbs_users WHERE cert_dn = :dn
                                                          AND group_name = :gr
                                                          AND role_name = :role)"""

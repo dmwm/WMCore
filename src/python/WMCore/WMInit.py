@@ -283,20 +283,60 @@ class WMInit(object):
                 # The path already includes the dialect
                 dialect_sql_file = os.path.join(baseDir, sql_file)
 
-                if not os.path.exists(dialect_sql_file):
-                    raise WMInitException(f"SQL file not found for dialect: {dialect}: {dialect_sql_file}")
-
-                with open(dialect_sql_file, 'r', encoding='utf-8') as f:
-                    sql = f.read()
-
-                try:
-                    myThread.dbi.processData(sql)
-                except Exception as ex:
-                    msg = f"Error executing SQL from {dialect_sql_file}:\n"
-                    msg += str(ex)
-                    raise WMInitException(msg)
+                # now execute each SQL statement
+                for stmt in self._getSQLStatements(dialect_sql_file, dialect):
+                    try:
+                        myThread.dbi.processData(stmt)
+                    except Exception as ex:
+                        msg = f"Error executing SQL file {dialect_sql_file}. "
+                        msg += f"Statement: {stmt}"
+                        msg += str(ex)
+                        raise WMInitException(msg)
 
         return
+
+    def _getSQLStatements(self, sqlFile, dialect):
+        """
+        Return the SQL statements from the file.
+        For MariaDB, it accepts the whole SQL file content in a single statement.
+        For Oracle, it splits the SQL file content into statements, removing the semicolon.
+        """
+        if not os.path.exists(sqlFile):
+            raise WMInitException(f"SQL file not found: {sqlFile}")
+
+        with open(sqlFile, 'r', encoding='utf-8') as f:
+            sql = f.read()
+
+        if dialect == 'mariadb':
+            return [sql]
+        elif dialect == 'oracle':
+            # Split by semicolon and remove it from statements
+            statements = []
+            current_statement = []
+
+            for line in sql.split('\n'):
+                line = line.strip()
+                # Skip empty lines and comments
+                if not line or line.startswith('--'):
+                    continue
+                current_statement.append(line)
+                if line.endswith(';'):
+                    # Remove the semicolon from the last line
+                    current_statement[-1] = current_statement[-1][:-1]
+                    stmt = '\n'.join(current_statement)
+                    if stmt.strip():
+                        statements.append(stmt)
+                    current_statement = []
+
+            # Add any remaining statement
+            if current_statement:
+                stmt = '\n'.join(current_statement)
+                if stmt.strip():
+                    statements.append(stmt)
+
+            return statements
+        else:
+            raise WMInitException(f"Unsupported database dialect: {dialect}")
 
     def clearDatabase(self, modules=None):
         """

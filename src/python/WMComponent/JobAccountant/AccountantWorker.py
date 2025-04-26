@@ -839,9 +839,10 @@ class AccountantWorker(WMConnectionBase):
                                             conn=self.getDBConn(),
                                             transaction=self.existingTransaction())
 
-            self.setFileAddChecksum.execute(bulkList=fileCksumBinds,
-                                            conn=self.getDBConn(),
-                                            transaction=self.existingTransaction())
+            if fileCksumBinds:
+                self.setFileAddChecksum.execute(bulkList=fileCksumBinds,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
 
             self.setFileLocation.execute(lfn=fileLocations,
                                          conn=self.getDBConn(),

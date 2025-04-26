@@ -590,6 +590,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
         addFileAction.execute(files=fileCreate,
                               conn=conn,
                               transaction=transaction)
+    if fileCksumBinds:
         setFileAddChecksum.execute(bulkList=fileCksumBinds,
                                    conn=conn,
                                    transaction=transaction)

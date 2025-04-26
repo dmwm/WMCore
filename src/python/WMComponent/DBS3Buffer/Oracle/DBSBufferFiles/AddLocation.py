@@ -9,12 +9,6 @@ from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.AddLocation import AddLocation 
 
 class AddLocation(MySQLAddLocation):
 
-    sql = """INSERT INTO dbsbuffer_location
-             (id, pnn)
-             SELECT dbsbuffer_location_seq.nextval, :location
-             FROM DUAL
-             WHERE NOT EXISTS
-               ( SELECT *
-                 FROM dbsbuffer_location
-                 WHERE pnn = :location )
-             """
+    sql = """INSERT INTO dbsbuffer_location (pnn)
+             SELECT :location FROM dual
+             WHERE NOT EXISTS (SELECT id FROM dbsbuffer_location WHERE pnn = :location)"""

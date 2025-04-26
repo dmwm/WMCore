@@ -10,9 +10,8 @@ from WMComponent.DBS3Buffer.MySQL.AlgoDatasetAssoc import AlgoDatasetAssoc as My
 class AlgoDatasetAssoc(MySQLAlgoDatasetAssoc):
 
     sql = """INSERT INTO dbsbuffer_algo_dataset_assoc
-             (id, algo_id, dataset_id)
-             SELECT dbsbuffer_algdset_assoc_seq.nextval,
-                    (SELECT id FROM dbsbuffer_algo
+             (algo_id, dataset_id)
+             SELECT (SELECT id FROM dbsbuffer_algo
                      WHERE app_name = :app_name AND app_ver = :app_ver
                      AND app_fam = :app_fam AND pset_hash = :pset_hash),
                     (SELECT id FROM dbsbuffer_dataset WHERE path = :path)

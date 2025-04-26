@@ -10,8 +10,8 @@ from WMComponent.DBS3Buffer.MySQL.NewAlgo import NewAlgo as MySQLNewAlgo
 class NewAlgo(MySQLNewAlgo):
 
     sql = """INSERT INTO dbsbuffer_algo
-             (id, app_name, app_ver, app_fam, pset_hash, config_content, in_dbs)
-             SELECT dbsbuffer_algo_seq.nextval, :app_name, :app_ver, :app_fam,
+             (app_name, app_ver, app_fam, pset_hash, config_content, in_dbs)
+             SELECT :app_name, :app_ver, :app_fam,
                     :pset_hash, :config_content, 0
              FROM DUAL
              WHERE NOT EXISTS

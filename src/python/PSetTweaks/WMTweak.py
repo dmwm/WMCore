@@ -394,8 +394,6 @@ def makeTaskTweak(stepSection, result):
                 args = pickle.loads(pklArgs)
                 if 'globalTag' in args:
                     result.addParameter("process.GlobalTag.globaltag",  "customTypeCms.string('%s')" % args['globalTag'])
-                if 'globalTagTransaction' in args:
-                    result.addParameter("process.GlobalTag.DBParameters.transactionId",  "customTypeCms.untracked.string('%s')" % args['globalTagTransaction'])
 
     return
 

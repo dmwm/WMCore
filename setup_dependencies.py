@@ -17,39 +17,39 @@ repository, and their list of dependencies, which can be:
    be used by multiple WMCore systems).
 """
 dependencies = {
-    'wmc-rest': {
+    'wmcrest': {
         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch', 'wmc-httpd'],
         'packages': ['WMCore.REST'],
         'modules': ['WMCore.Configuration'],
-        'systems': ['wmc-base']
+        'systems': ['wmcbase']
     },
-    'wmc-base': {
+    'wmcbase': {
         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
         'packages': ['Utils', 'WMCore.DataStructs', 'WMCore.Cache'],
         'modules': ['WMCore.WMFactory', 'WMCore.WMException', 'WMCore.Configuration',
                     'WMCore.WMExceptions', 'WMCore.WMFactory', 'WMCore.Lexicon',
                     'WMCore.WMBase', 'WMCore.WMLogging', 'WMCore.Algorithms.Permissions'],
     },
-    'wmc-component': {
+    'wmccomponent': {
         'packages': ['WMCore.MsgService', 'WMCore.WorkerThreads', 'WMCore.ThreadPool'],
         'modules': ['WMComponent.__init__'],
-        'systems': ['wmc-base']
+        'systems': ['wmcbase']
     },
-    'wmc-database': {
+    'wmcdatabase': {
         'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs+', 'WMCore.Database+',
                      'WMCore.Algorithms', 'WMCore.Services'],
         'modules': ['WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
-        'systems': ['wmc-base']
+        'systems': ['wmcbase']
     },
-    'wmc-runtime': {
+    'wmcruntime': {
         'packages': ['WMCore.WMRuntime+', 'WMCore.WMSpec+', 'PSetTweaks',
                      'WMCore.FwkJobReport', 'WMCore.Storage+', 'WMCore.Services.HTTPS'],
         'modules': ['WMCore.Algorithms.ParseXMLFile'],
-        'systems': ['wmc-base']
+        'systems': ['wmcbase']
     },
-    'wmc-web': {
+    'wmcweb': {
         'packages': ['WMCore.WebTools', 'WMCore.Agent+', 'WMCore.WorkerThreads'],
-        'systems': ['wmc-database', 'wmc-base'],
+        'systems': ['wmcdatabase', 'wmcbase'],
         'statics': ['src/javascript/WMCore/WebTools',
                     'src/javascript/external/yui',
                     'src/css/WMCore/WebTools',
@@ -75,7 +75,7 @@ dependencies = {
                     'bin+'
                     ],
     },
-    'wmagent-devtools': {
+    'wmagentdev': {
         'packages': ['WMCore+',
                      'WMComponent+',
                      'WMQuality+',
@@ -104,8 +104,9 @@ dependencies = {
                      'Utils'],
         'modules': ['WMCore.WorkQueue.__init__',
                     'WMCore.WorkQueue.DataStructs.__init__',
+                    'WMCore.WorkQueue.DataStructs.CouchWorkQueueElement',
                     'WMCore.WorkQueue.DataStructs.WorkQueueElement'],
-        'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
+        'systems': ['wmcrest', 'wmcruntime', 'wmcdatabase'],
         'statics': ['src/couchapps/ReqMgr+',
                     'src/couchapps/ReqMgrAux+',
                     'src/couchapps/ConfigCache+',
@@ -122,10 +123,10 @@ dependencies = {
                     'WMCore.ReqMgr.DataStructs.RequestStatus',
                     'WMCore.ReqMgr.DataStructs.RequestType'
                     ],
-        'systems': ['wmc-rest', 'wmc-database'],
+        'systems': ['wmcrest', 'wmcdatabase'],
         'statics': [],
     },
-    'reqmgr2ms-core': {
+    'mscore': {
         'packages': ['WMCore.MicroService.MSCore', 'WMCore.MicroService.DataStructs',
                      'WMCore.MicroService.Tools', 'WMCore.MicroService.CherryPyThreads',
                      'WMCore.MicroService.Service', 'WMCore.MicroService.WebGui',
@@ -137,34 +138,34 @@ dependencies = {
                     'WMCore.ReqMgr.DataStructs.RequestStatus',
                     'WMCore.ReqMgr.DataStructs.RequestType'
                     ],
-        'systems': ['wmc-rest', 'wmc-database'],
+        'systems': ['wmcrest', 'wmcdatabase'],
         'statics': [],
     },
-    'reqmgr2ms-unmerged': {
+    'msunmerged': {
         'packages': ['WMCore.MicroService.MSUnmerged+'],
-        'systems': ['reqmgr2ms-core'],
+        'systems': ['mscore'],
     },
-    'reqmgr2ms-output': {
+    'msoutput': {
         'packages': ['WMCore.MicroService.MSOutput+'],
-        'systems': ['reqmgr2ms-core'],
+        'systems': ['mscore'],
     },
-    'reqmgr2ms-pileup': {
+    'mspileup': {
         'packages': ['WMCore.MicroService.MSPileup+'],
-        'systems': ['reqmgr2ms-core'],
+        'systems': ['mscore'],
     },
-    'reqmgr2ms-transferor': {
+    'mstransferor': {
         'packages': ['WMCore.MicroService.MSTransferor+'],
-        'systems': ['reqmgr2ms-core'],
+        'systems': ['mscore'],
     },
-    'reqmgr2ms-monitor': {
+    'msmonitor': {
         'packages': ['WMCore.MicroService.MSMonitor+'],
-        'systems': ['reqmgr2ms-core'],
+        'systems': ['mscore'],
     },
-    'reqmgr2ms-rulecleaner': {
+    'msrulecleaner': {
         'packages': ['WMCore.MicroService.MSRuleCleaner+'],
-        'systems': ['reqmgr2ms-core'],
+        'systems': ['mscore'],
     },
-    'global-workqueue': {
+    'wmglobalqueue': {
         'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',
                      'WMCore.Wrappers+', 'WMCore.Services+',
                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps', 'WMCore.WMSpec.Steps.Templates',
@@ -176,7 +177,7 @@ dependencies = {
                     'WMCore.ReqMgr.__init__', 'WMCore.ReqMgr.DataStructs.__init__',
                     'WMCore.ReqMgr.DataStructs.RequestStatus',
                     'WMCore.ReqMgr.DataStructs.RequestType'],
-        'systems': ['wmc-rest', 'wmc-database'],
+        'systems': ['wmcrest', 'wmcdatabase'],
         'statics': ['src/couchapps/WorkQueue+'],
     },
     'wmagent': {
@@ -188,7 +189,7 @@ dependencies = {
                      'WMCore.Services+', 'WMCore.WMSpec+',
                      'WMCore.ReqMgr.DataStructs+', 'WMCore.ReqMgr.Tools+',
                      'WMCore.WMBS+', 'WMCore.ResourceControl+'],
-        'systems': ['wmc-web', 'wmc-database', 'global-workqueue', 'wmc-runtime'],
+        'systems': ['wmcweb', 'wmcdatabase', 'wmglobalqueue', 'wmcruntime'],
         'statics': ['bin+',
                     'deploy+',
                     'etc+',
@@ -208,31 +209,31 @@ dependencies = {
     },
     'crabcache': {
         'packages': ['WMCore.Wrappers+', 'WMCore.Services.UserFileCache+'],
-        'systems': ['wmc-rest'],
+        'systems': ['wmcrest'],
         'modules': ['WMCore.Services.Requests', 'WMCore.Services.Service',
                     'WMCore.Services.pycurl_manager', ],
     },
     'crabserver': {
         'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.WMSpec+'],
         'modules': ['WMCore.DataStructs.LumiList'],
-        'systems': ['wmc-rest', 'wmc-database'],
+        'systems': ['wmcrest', 'wmcdatabase'],
     },
     'crabclient': {
         'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks',
                      'WMCore.Services.UserFileCache+', 'WMCore.Services.DBS+'],
-        'systems': ['wmc-base'],
+        'systems': ['wmcbase'],
         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', ],
     },
     'crabtaskworker': {
         'packages': ['WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
                      'WMCore.JobSplitting', 'WMCore.Services+', 'Utils+'],
-        'systems': ['wmc-database', 'wmc-runtime'],
+        'systems': ['wmcdatabase', 'wmcruntime'],
         'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__',
                     'WMCore.BossAir.Plugins.BasePlugin', 'WMCore.BossAir.Plugins.__init__'],
     },
     'wmclient': {
-        'systems': ['wmc-runtime', 'wmc-database']
+        'systems': ['wmcruntime', 'wmcdatabase']
     },
     'reqmon': {
         'packages': ['WMCore.WMStats+', 'WMCore.Services+', 'WMCore.Wrappers+',
@@ -240,7 +241,7 @@ dependencies = {
                      ],
         'modules': ['WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
                     'WMCore.Database.CouchUtils', 'WMCore.ReqMgr.__init__'],
-        'systems': ['wmc-base', 'wmc-rest'],
+        'systems': ['wmcbase', 'wmcrest'],
         'statics': ['src/couchapps/WMStats+',
                     'src/couchapps/WMStatsErl+',
                     'src/couchapps/WMStatsErl1+',
@@ -265,7 +266,7 @@ dependencies = {
         'statics': ['src/couchapps/ACDC+',
                     'src/couchapps/GroupUser+']
     },
-    't0-agent': {
+    't0agent': {
         'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
                      'WMCore.JobStateMachine', 'WMComponent+',
                      'WMCore.ThreadPool', 'WMCore.WorkerThreads',
@@ -281,7 +282,7 @@ dependencies = {
                     'WMCore.WMException',
                     'WMCore.Lexicon',
                     'WMCore.WMBS.File'],
-        'systems': ['wmc-web', 'wmc-database', 'wmc-runtime', 'global-workqueue'],
+        'systems': ['wmcweb', 'wmcdatabase', 'wmcruntime', 'wmglobalqueue'],
         'statics': ['src/javascript/external/graphael',
                     'src/couchapps/FWJRDump+',
                     'src/couchapps/T0Request+',

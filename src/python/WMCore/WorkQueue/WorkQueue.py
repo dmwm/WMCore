@@ -1060,7 +1060,7 @@ class WorkQueue(WorkQueueBase):
         if not rucioObj:
             rucioObj = self.rucio
 
-        totalUnits = []
+        totalUnits, rejectedWork, badWork = [], [], []
         # split each top level task into constituent work elements
         # get the acdc server and db name
         for topLevelTask in wmspec.taskIterator():

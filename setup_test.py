@@ -11,7 +11,7 @@ import signal
 import sys
 import threading
 import time
-from distutils.core import Command
+from setuptools import Command
 
 from setup_build import get_path_to_wmcore_root
 

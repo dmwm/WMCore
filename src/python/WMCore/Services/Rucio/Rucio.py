@@ -10,13 +10,14 @@ from __future__ import division, print_function, absolute_import
 from builtins import str, object
 from future.utils import viewitems, viewvalues
 
+from copy import deepcopy
 import json
 import logging
-from copy import deepcopy
+
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
-                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound)
+                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound, RuleReplaceFailed)
 from Utils.MemoryCache import MemoryCache
 from Utils.IteratorTools import grouper
 from WMCore.Services.Rucio.RucioUtils import (validateMetaData, weightedChoice,
@@ -454,6 +455,30 @@ class Rucio(object):
             self.logger.error("Exception closing container/block: %s. Error: %s", name, str(ex))
         return response
 
+    def moveReplicationRule(self, ruleId, rseExpression, account):
+        """
+        Perform move operation for provided rule id and rse expression
+        :param ruleId: rule id
+        :param rseExpression: rse expression
+        :param account: rucio quota account
+        :return: it returns either an empty list or a list with a string id for the rule created
+        Please note, we made return type from this wrapper compatible with createReplicateRule
+        """
+        ruleIds = []
+        try:
+            rid = self.cli.move_replication_rule(ruleId, rseExpression, account)
+            ruleIds.append(rid)
+        except RuleNotFound as ex:
+            msg = "RuleNotFound move DID replication rule. Error: %s" % str(ex)
+            raise WMRucioException(msg) from ex
+        except RuleReplaceFailed as ex:
+            msg = "RuleReplaceFailed move DID replication rule. Error: %s" % str(ex)
+            raise WMRucioException(msg) from ex
+        except Exception as ex:
+            msg = "Unsupported exception from Rucio API. Error: %s" % str(ex)
+            raise WMRucioException(msg) from ex
+        return ruleIds
+
     def createReplicationRule(self, names, rseExpression, scope='cms', copies=1, **kwargs):
         """
         _createReplicationRule_
@@ -740,7 +765,7 @@ class Rucio(object):
             return matchingRSEs
         return dropTapeRSEs(matchingRSEs)
 
-    def pickRSE(self, rseExpression='rse_type=TAPE\cms_type=test', rseAttribute='ddm_quota', minNeeded=0):
+    def pickRSE(self, rseExpression='rse_type=TAPE\cms_type=test', rseAttribute='dm_weight'):
         """
         _pickRSE_
 
@@ -748,7 +773,6 @@ class Rucio(object):
         The attribute should correlate to space available.
         :param rseExpression: Rucio RSE expression to pick RSEs (defaults to production Tape RSEs)
         :param rseAttribute: The RSE attribute to use as a weight. Must be a number
-        :param minNeeded: If the RSE attribute is less than this number, the RSE will not be considered.
 
         Returns: A tuple of the chosen RSE and if the chosen RSE requires approval to write (rule property)
         """
@@ -766,12 +790,8 @@ class Rucio(object):
             else:
                 attrValue = 1
             requiresApproval = rseAttrs.get('requires_approval', False)
-            if rseAttribute == "ddm_quota" and attrValue > minNeeded:
-                rsesWithApproval.append((rse, requiresApproval))
-                rsesWeight.append(attrValue)
-            elif rseAttribute != "ddm_quota":  # e.g. dm_weight
-                rsesWithApproval.append((rse, requiresApproval))
-                rsesWeight.append(attrValue)
+            rsesWithApproval.append((rse, requiresApproval))
+            rsesWeight.append(attrValue)
 
         return weightedChoice(rsesWithApproval, rsesWeight)
 

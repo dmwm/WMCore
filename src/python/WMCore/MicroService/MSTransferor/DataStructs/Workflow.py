@@ -34,6 +34,10 @@ class Workflow(object):
         self.pileupDatasets = set()
         self.pileupRSEList = set()
 
+        # flag to indicate if workflow is updated, e.g. see MSTransferor when we
+        # update site white/black lists and setup this flag
+        self.dataReplacement = False
+
         self.campaigns = set()
         self.dataCampaignMap = []
         # these blocks structure will be key'ed by the block name and value'd by the block size

@@ -1,3 +1,194 @@
+2.3.10rc18 to 2.3.10rc19:
+  - Previous PyPi pipeline failed, so cutting a new tag
+
+2.3.10rc17 to 2.3.10rc18:
+  - Upgrade htcondor python bindings to v24.4.0 (Todor Ivanov) #12344
+  - support raw skim datasets for T0 repack workflows (Antonio) #12298
+  - deploy wmange-venv - small changes (Dario Mapelli) #12337
+  - Get rid of transactionId from the configuration, given that this feature was removed 9 years ago. (Kenyi Hurtado) #12331
+
+
+2.3.10rc16 to 2.3.10rc17:
+  - Change global-workqueue to wmglobalqueue in its Dockerfile (error reported in CI/CD after https://github.com/dmwm/CMSKubernetes/pull/1586 build)
+
+2.3.10rc15 to 2.3.10rc16:
+  - Move t0_reqmon package to t0reqmon under CMSKubernetes/docker/pypi area (missing from https://github.com/dmwm/CMSKubernetes/pull/1586)
+
+2.3.10rc14 to 2.3.10rc15:
+  - Change WM package and images name from reqmgr2ms-xxx to msxxx (Valentin Kuznetsov) https://github.com/dmwm/CMSKubernetes/pull/1586 
+  - Avoid executing archival pipeline for workflows not ready yet (Alan Malta Rodrigues) #12334
+  - Performance enhancements for primary, parent and pileup data location in global workqueue (Alan Malta Rodrigues) #12330
+  - Code organization for global workqueue data location update (Alan Malta Rodrigues) #12330
+  - use mstrlines to cleanup MSTransferor input rules for announced wfs (Muhammad Hassan Ahmed) #12329
+  - Few typos in the help message (Fredrik) #12322
+  - Properly HandleDidNotfound exception (Todor Ivanov) #12317
+  - Add rucio client instances to wmagent-component-standalone (Todor Ivanov) #12318
+
+
+2.3.10rc13 to 2.3.10rc14:
+  - Another run of CD pipelines
+
+2.3.10rc12 to 2.3.10rc13:
+  - Retriggering CD pipeline again
+
+2.3.10rc11 to 2.3.10rc12:
+  - Retriggering CD pipeline
+
+2.3.10rc10 to 2.3.10rc11:
+  - Add PEP-625 complaint changes (Valentin Kuznetsov) #12233
+  - Reuse ReReco AcqEra during assignment of test templates (Alan Malta Rodrigues) #11949
+  - Update list of dev pileups in MSPileup (Alan Malta Rodrigues) #11949
+  - Refactor all JSON workflow templates (Alan Malta Rodrigues) #11949
+  - Addition of token support for gfal and xrootd, with refactoring of createCopyCommand and createRemoveCommand (Andrea Piccinelli) #12218
+  - Add deploy-unittest-venv.sh (Todor Ivanov) #12310
+  - Fix location of rel_microarchs variable in SimpleCondorPlugin (Alan Malta Rodrigues) #12305
+  - Remove unused mod-config CRABInterface section (followup to #8926) (Fredrik) #12301
+  - Support nano flavours (Antonio Linares) #12235
+
+
+2.3.10rc9 to 2.3.10rc10:
+  - python 3.13 - deprecate cgi module (Dario Mapelli) #12296
+
+
+2.3.10rc8 to 2.3.10rc9:
+  - Remove unused functions (since 2015 and #5515) (Fredrik) #12300
+  - Add support for microarchitecture. When default microarch is not defined in XML file, use "0" as default. Include unit tests for 2 new methods in TagCollector. (Kenyi Hurtado) #12270
+  - Adjust AlertManagerAPI to avoid using multiple spaces in various attributes of alert and add UUID label for better traceability of WM alerts (Valentin Kuznetsov) #12237
+  - Add WorkQueue.DataStructs.CouchWorkQueueElement as a dependency to reqmgr2 (Alan Malta Rodrigues) #12295
+  - python 3.11 - inspect.getargspec moved to inspect.getfullargspec (Dario Mapelli) #12289
+  - Replace schedd.Transaction and queue_with_itemdata() with Schedd.submit(), since the former has been deprecated since 10.7.0 (Kenyi Hurtado) #12287
+
+
+2.3.10rc7 to 2.3.10rc8:
+  - Add appropriate tags and destination for alert routing (Valentin Kuznetsov) #12279
+  - Merge local WM build with pypi CI/CD workflow (Valentin Kuznetsov) #12281
+  - Introducing createDebuggingCommand in all the stageout submodules (Andrea Piccinelli) #12284
+  - Update pycurl and PyOpenSSL versions (Kenyi Hurtado) #12286
+
+
+2.3.10rc6 to 2.3.10rc7:
+  - Remove unused double stack functions, see #12285 (Fredrik) #12292
+  - python 3.10 - collections.(Mapping|Iterable) moved to collections.abc.(Mapping|Iterable) (Dario Mapelli) #12288
+  - Replaced ddm_quota with dm_weight, added deprecation warning (Dennis Lee) #12243
+  - Add token authentication support, but disable cms token authentication by default. (Kenyi Hurtado) #12196
+
+
+2.3.10rc5 to 2.3.10rc6:
+  - Added curl dev library to Ubuntu system as it required within CI/CD pipeline to install pycurl  locally (Valentin Kuznetsov) #12277
+
+
+2.3.10rc4 to 2.3.10rc5:
+  - Disable wheels builds as found through CI/CD pipeline that pycurl is broken with wheels (Valentin Kuznetsov) #12276
+
+
+2.3.10rc3 to 2.3.10rc4:
+  - Add wheel package to install WMCore wheels (Valentin Kuznetsov) #12275
+
+
+2.3.10rc2 to 2.3.10rc3:
+  - Fix redirect command to create new requirements.<pkg>.txt (Valentin Kuznetsov) #12274
+
+
+2.3.10rc1 to 2.3.10rc2:
+  - fix usage of requirements.<pkg>.txt as part of the matrix.target (Valentin Kuznetsov) #12273
+
+
+2.3.8 to 2.3.10rc1:
+  - switch from distutils to setuptools (Valentin Kuznetsov) #12259
+  - Remove slack from link text (Fredrik) #12268
+  - update readme with reference to mattermost instead of slack (Alan Malta Rodrigues) #
+  - Unit tests (Todor Ivanov) #12260
+  - WorkloadTools.ValidateSiteLisits does not set empty lists by default. (Todor Ivanov) #12260
+  - Unit tests removed, and one test name typo (Fredrik) #12258
+  - Fix logging typo (Fredrik) #12258
+  - Make SiteListPoller more verbose (Alan Malta Rodrigues) #12253
+  - Unit tests (Todor Ivanov) #12245
+  - Fix Sitelists changes propagation to local workqueue (Todor Ivanov) #12245
+  - Renaming RequestPriority during WorQueue.updateElements call (Todor Trendafilov Ivanov) #12248
+
+
+2.3.8rc13 to 2.3.8:
+  - Add WorkQueueTest:testProductionMultiQueue to the unstable unit tests (Alan Malta Rodrigues) #12242
+  - Move call to MSTransferor service from MSManager.py to Data.py which services MS REST end-points (Valentin Kuznetsov) #12241
+  - Replace os.rename with shutil.move (Dennis Lee) #12239
+  - Replace couchdb/wmstats uri at WorkflowUpdater config section (Todor Ivanov) #12236
+  - Add s-nail package to base image (Kenyi) https://github.com/dmwm/CMSKubernetes/pull/1573
+  - Use s-nail host mail server (FNAL/CERN) (Kenyi) https://github.com/dmwm/CMSKubernetes/pull/1566
+
+2.3.8rc12 to 2.3.8rc13:
+  - Adding wmstatsUrl to WorkflowUpdater configuration (Todor Ivanov) #12232
+
+
+2.3.8rc11 to 2.3.8rc12:
+  - Just a new tag; because PyPi often insists in timeout and PyPa image is not configurable 
+
+2.3.8rc10 to 2.3.8rc11:
+  - Add HTTP request from ReqMgr2 to MSTransferor (Valentin Kuznetsov) #12220
+  - Improve patchComponent && Add patchCluster scripts (Todor Ivanov) #12207
+
+
+2.3.8rc9 to 2.3.8rc10:
+  - wmagent - htcondor bindings bumped to v24.3 (Dario Mapelli) #12226
+  - Register transfer REST API (Valentin Kuznetsov) #12221
+  - Populate WMCMSSWSubprocess section for failed jobs too (Alan Malta Rodrigues) #12217
+  - Switch updateSiteList to updateElementsByWorkflow API (Valentin Kuznetsov) #12219
+  - Fix comparison of task thresholds in ResourceControlUpdater (Alan Malta Rodrigues) #12214
+  - Ignore list order in SiteLists comparison (Todor Ivanov) #12211
+  - Add setter methods map to WMWorkload and call it for all reqArg parameters (Todor Ivanov) #12099
+  - ms-output - do not break out producer and consumer loops in case of generic error (Dario Mapelli) #12194
+
+
+2.3.8rc8 to 2.3.8rc9:
+  - Last build failed to contact PyPi, so trigger a new build
+
+2.3.8rc7 to 2.3.8rc8:
+  - Add new POST API for transferor data-service (Valentin Kuznetsov) #12155
+  - Fixes 11777: Adds two tests to UnstableTests (Dennis Lee) #12206
+  - Fix WorkQueue broken reference to rejectedWork and badWork (Alan Malta Rodrigues) #12204
+
+
+2.3.8rc6 to 2.3.8rc7:
+  - Fix MSPileup and Rucio emulators (Alan Malta Rodrigues) #12197
+  - Adopt MSPileup data into PileupFetcher (Alan Malta Rodrigues) #12197
+  - New module to manage site list updates (Valentin Kuznetsov) #12123
+  - Add back non running components to restartComponent (Todor Ivanov) #12193
+  - Change the way to estimate running components (Todor Ivanov) #12189
+  - Fix T1 site cores ResourceControl logic (Alan Malta Rodrigues) #12176
+  - Remove unused JSON encoding choice keywords in RequestDBWriter module (Fredrik) #12141
+
+
+2.3.8rc5 to 2.3.8rc6:
+  - Few minor environment fixes at deploy time. (Todor Ivanov) #12183
+  - Properly run restartComponent.sh avoiding hardwired paths (Todor Ivanov) #12185
+  - Fix delayed $WMA_DEPLOY_DIR env virable (Todor Ivanov) #12167
+
+
+2.3.8rc4 to 2.3.8rc5:
+  - Convert reusable to non-reusable GitHub Action (Alan Malta Rodrigues) #12180
+  - Revert changes for attestation in CD pipeline (Alan Malta Rodrigues) #12180
+
+
+2.3.8rc3 to 2.3.8rc4:
+  - Grant attestation write access - CI/CD pipeline (Alan Malta Rodrigues) #12178
+
+
+2.3.8rc2 to 2.3.8rc3:
+  - Integrate package attestations in the CI/CD pipeline (Alan Malta Rodrigues) #12177
+  - Unit tests (Todor Ivanov) #12120
+  - Add SiteList actions to transient statuses in ReqMgr2 (Todor Ivanov) #12120
+
+
+2.3.8rc1 to 2.3.8rc2:
+  - Changed truster publisher configuration in pypi (Alan Malta Rodrigues) 
+
+
+2.3.7 to 2.3.8rc1:
+  - Fix str to bytes comparisons in checkProxy.py (Todor Ivanov) #12174
+  - Replace xquery with query, due to deprecation of the former since HTCondor 10.7.0 (Kenyi Hurtado) #12158
+  - add RucioUtils_t.RucioUtilsTest:testWeightedChoice to the unstable test (Alan Malta Rodrigues) #12150
+  - Update workqueue selector filter to no longer use ParentQueueUrl (Alan Malta Rodrigues) #12150
+
+
 2.3.6 to 2.3.7:
   - Augmentation of gfal-cp debuggin for StageOutImpl and GFAL2Impl scripts (Andrea Piccinelli) #12081
   - Provide JSON file with CouchDB replication selector function (Alan Malta Rodrigues) #12143

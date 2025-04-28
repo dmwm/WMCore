@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ### Script to check the tail of each WMAgent component and evaluate
 # whether they are running or not, based on file meta-data (stat).
 # Component is automatically restarted if deemed down.
@@ -8,17 +8,18 @@
 
 HOST=$(hostname)
 DATENOW=$(date +%s)
-DEST_NAME=cms-wmcore-team
+# look-up alert emails from WMA secret file where ALERT_EMAILS may contains multiple emails and spaces, e.g.
+# ALERT_EMAILS="user1@domain.com user2@domain.com" or ALERT_EMAILS = "user1@domain.com user2@domain.com"
+ALERT_EMAILS=`sed -E 's/^[[:space:]]*ALERT_EMAILS[[:space:]]*=[[:space:]]*"([^"]*)".*/\1/' $WMA_SECRETS_FILE`
 
-# Figure whether it's a python2 or python3 agent
-if [ ! -d "$install" ]; then
-  install="/data/srv/wmagent/current/install/"
-fi
+[[ -z $ALERT_EMAILS ]] && {echo "ERROR: unable to find ALERT_EMAILS in $WMA_SECRETS_FILE"; exit 1;}
+
+[[ -z $WMA_INSTALL_DIR ]] && { echo "ERROR: Trying to run without having the full WMAgent environment set!";  exit 1 ;}
 
 echo -e "\n###Checking agent logs at: $(date)"
-comps=$(ls $install)
+comps=$(manage execute-agent wmcoreD --status |awk '{print $1}' |awk -F \: '{print $2}')
 for comp in $comps; do
-  COMPLOG=$install/$comp/ComponentLog
+  COMPLOG=$WMA_INSTALL_DIR/$comp/ComponentLog
   if [ ! -f $COMPLOG ]; then
     echo "Not a component or $COMPLOG does not exist"
     continue
@@ -34,9 +35,10 @@ for comp in $comps; do
     fi
 
     TAIL_LOG=$(tail -n100 $COMPLOG)
-    $manage execute-agent wmcoreD --restart --components=$comp
+    echo -e "Restarting component: $comp"
+    manage execute-agent wmcoreD --restart --components=$comp
     echo -e "ComponentLog quiet for $INTERVAL secs\n\nTail of the log is:\n$TAIL_LOG" |
-      mail -s "$HOST : $comp restarted" $DEST_NAME@cern.ch
+      mail -s "$HOST : $comp restarted" $ALERT_EMAILS
   fi
 done
 

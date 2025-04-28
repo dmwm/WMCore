@@ -1,0 +1,67 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+        "Dashboard": "Dashboard-OVERRIDE-ME",
+        "GracePeriod": 300,
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {
+            "eos-lfn-prefix": ""
+        },
+        "ProcessingString": "ProcessingString-OVERRIDE-ME",
+        "ProcessingVersion": 19,
+        "SiteBlacklist": [],
+        "SiteWhitelist": "T1_US_FNAL",
+        "SoftTimeout": 129600,
+        "Team": "Team-OVERRIDE-ME",
+        "UnmergedLFNBase": "/store/unmerged"
+    },
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra",
+        "CMSSWVersion": "CMSSW_9_3_7",
+        "Campaign": "Campaign-OVERRIDE-ME",
+        "Comments": {
+            "WorkFlowDesc": [
+                "Given the PFN of an lhe article in the PSet, remotely read it using lazy-download; assigned to FNAL only"
+            ],
+            "CheckList": [
+                "StepChain: MC reading LHE files",
+                "Read LHE articles remotely"
+            ]
+        },
+        "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
+        "CouchDBName": "reqmgr_config_cache",
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+        "GlobalTag": "93X_upgrade2023_realistic_v5",
+        "Memory": 2000,
+        "Multicore": 1,
+        "PrepID": "TEST-CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982-DarkSUSY_14TeV",
+        "ProcessingString": "DEFAULT_ProcStr",
+        "ProcessingVersion": 2,
+        "RequestPriority": 600000,
+        "RequestString": "RequestString-OVERRIDE-ME",
+        "RequestType": "StepChain",
+        "ScramArch": [
+            "slc6_amd64_gcc630"
+        ],
+        "SizePerEvent": 8000,
+        "Step1": {
+            "AcquisitionEra": "CMSSW_9_3_7",
+            "Campaign": "CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982",
+            "ConfigCacheID": "bd7412540cb138037be66ba857557f02",
+            "EventsPerJob": 500,
+            "EventsPerLumi": 100,
+            "GlobalTag": "93X_upgrade2023_realistic_v5",
+            "KeepOutput": true,
+            "LheInputFiles": true,
+            "Multicore": 8,
+            "PrimaryDataset": "RelValDarkSUSY_14TeV",
+            "ProcessingString": "Step1_WMCore_TEST",
+            "RequestNumEvents": 10000,
+            "Seeding": "AutomaticSeeding",
+            "SplittingAlgo": "EventBased",
+            "StepName": "DarkSUSY_14TeV_2023D17_GenSimHLBeamSpotFull14"
+        },
+        "StepChain": 1,
+        "TimePerEvent": 40
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        }, 
+        "ProcessingString": "ProcessingString-OVERRIDE-ME", 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "Run2024D",
+        "CMSSWVersion": "CMSSW_14_0_19_patch2",
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {"WorkFlowDesc": ["Harvest 3 runs out of 47 (using LumiList), with a total of 36 lumis;",
+                                      "Execute it in multiRun mode (single job); root file named as 'v1-380306-380346'"],
+		             "CheckList": ["DQMHarvest with lumiMask input", "DQMHarvest multirun"]},
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMConfigCacheID": "7ab63e3a9a3e83c05ebdd4d4772004f3",
+        "DQMHarvestUnit": "multiRun", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader", 
+        "GlobalTag": "140X_dataRun3_v20",
+        "InputDataset": "/JetMET0/Run2024D-2024CDEReprocessing-v1/DQMIO",
+        "LumiList": {"380306": [[28, 35], [41, 50], [60, 60]], "380307": [[5, 10], [20, 21]], "380346": [[61, 70]]},
+        "Memory": 3000,
+        "Multicore": 1, 
+        "PrepID": "TEST-ReReco-Run2024D-JetMET0-2024CDEReprocessing-00001",
+        "ProcessingString": "2024CDEReprocessing",
+        "ProcessingVersion": 1, 
+        "RequestPriority": 999999, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "DQMHarvest",
+        "ScramArch": [
+            "el8_amd64_gcc12"
+        ], 
+        "SizePerEvent": 2,
+        "TimePerEvent": 1
+    }
+}

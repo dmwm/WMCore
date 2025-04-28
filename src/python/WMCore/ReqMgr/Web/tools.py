@@ -11,7 +11,6 @@ import json
 import logging
 import os
 import sys
-import cgi
 import types
 from datetime import datetime, timedelta
 from json import JSONEncoder
@@ -32,24 +31,6 @@ try:
 except:
     pass
 
-
-def quote(data):
-    """
-    Sanitize the data using cgi.escape.
-    """
-    if isinstance(data, (int, float, dict, list)):
-        res = data
-    else:
-        try:
-            if data:
-                res = cgi.escape(data, quote=True)
-            else:
-                res = ""
-        except Exception as exc:
-            print("Unable to cgi.escape(%s, quote=True)" % data)
-            print(exc)
-            res = ""
-    return res
 
 class Page(object):
     """
@@ -139,7 +120,6 @@ class TemplatedPage(Page):
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(self.templatedir))
         for arg in args:
             kwargs.update(**arg)
-        kwargs.update(**{"quote":quote})
         tmpl = os.path.join(self.templatedir, ifile + '.tmpl')
         if  os.path.exists(tmpl):
             template = env.get_template(ifile + '.tmpl')

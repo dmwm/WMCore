@@ -81,38 +81,69 @@ class StageOutImplTest(unittest.TestCase):
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createTargetName')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createOutputDirectory')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createStageOutCommand')
+    @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createDebuggingCommand')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')
-    def testCallable(self, mock_executeCommand, mock_createStageOutCommand, mock_createOutputDirectory,
-                     mock_createTargetName, mock_createSourceName):
+    def testCallable(self, 
+                    mock_executeCommand,          # from the last decorator
+                    mock_createDebuggingCommand,  # from the second-to-last decorator
+                    mock_createStageOutCommand,   # then this one
+                    mock_createOutputDirectory, 
+                    mock_createTargetName, 
+                    mock_createSourceName):
         mock_createSourceName.return_value = "sourcePFN"
         mock_createTargetName.return_value = "targetPFN"
         mock_createStageOutCommand.return_value = "command"
+        # Even if set, createDebuggingCommand should not be called on success.
+        mock_createDebuggingCommand.return_value = "command"
+        
         self.StageOutImpl("protocol", "inputPFN", "targetPFN")
+        
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
-        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None)
+        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, authMethod='TOKEN')
+        # Verify that createDebuggingCommand was not called during a successful stage-out.
+        mock_createDebuggingCommand.assert_not_called()
         mock_executeCommand.assert_called_with("command")
 
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createSourceName')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createTargetName')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createOutputDirectory')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createStageOutCommand')
+    @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.createDebuggingCommand')
     @mock.patch('WMCore.Storage.StageOutImpl.StageOutImpl.executeCommand')
     @mock.patch('WMCore.Storage.StageOutImpl.time')
-    def testCallable_StageOutError(self, mock_time, mock_executeCommand, mock_createStageOutCommand,
-                                   mock_createOutputDirectory, mock_createTargetName, mock_createSourceName):
+    def testCallable_StageOutError(self, mock_time, mock_executeCommand, mock_createStageOutCommand, 
+                                mock_createDebuggingCommand, mock_createOutputDirectory, 
+                                mock_createTargetName, mock_createSourceName):
         mock_createSourceName.return_value = "sourcePFN"
         mock_createTargetName.return_value = "targetPFN"
         mock_createStageOutCommand.return_value = "command"
+        mock_createDebuggingCommand.return_value = "command"
+        
+        # Force createOutputDirectory to fail twice, then succeed.
         mock_createOutputDirectory.side_effect = [StageOutError("error"), StageOutError("error"), None]
-        mock_executeCommand.side_effect = [StageOutError("error"), StageOutError("error"), None]
-        self.StageOutImpl("protocol", "inputPFN", "targetPFN")
+        
+        # Force executeCommand to fail on all 4 attempts, then succeed for the debugging command.
+        mock_executeCommand.side_effect = [
+            StageOutError("error"),
+            StageOutError("error"),
+            StageOutError("error"),
+            StageOutError("error"),
+            None  # This call is for executing the debugging command.
+        ]
+    
+        with self.assertRaises(StageOutError):
+            self.StageOutImpl("protocol", "inputPFN", "targetPFN")
+        
         mock_createSourceName.assert_called_with("protocol", "inputPFN")
         mock_createTargetName.assert_called_with("protocol", "targetPFN")
         mock_createOutputDirectory.assert_called_with("targetPFN")
-        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None)
-        mock_executeCommand.assert_called_with("command")
+        # The stage-out command is generated with authMethod='TOKEN'
+        mock_createStageOutCommand.assert_called_with("sourcePFN", "targetPFN", None, None, authMethod='TOKEN')
+        # After retries are exhausted, the debugging command should be generated.
+        mock_createDebuggingCommand.assert_called_with("sourcePFN", "targetPFN", None, None, authMethod='TOKEN')
+        # Assert that time.sleep was called 4 times (once for each failed stage-out attempt).
         calls = [call(600), call(600), call(600), call(600)]
         mock_time.sleep.assert_has_calls(calls)
 

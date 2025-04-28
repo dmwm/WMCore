@@ -12,7 +12,7 @@ from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
-from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
+from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 from dbs.exceptions.dbsClientException import dbsClientException
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.Rucio.Rucio import Rucio

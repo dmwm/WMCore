@@ -125,11 +125,11 @@ def handleAssignment(args, fname, jsonData):
     if 'ProcessingVersion' in jsonData['assignRequest']:
         assignRequest.setdefault('ProcessingVersion', args.procVer)
 
+    assignDict = jsonData['assignRequest']
     # dict args for TaskChain and StepChain
     if jsonData['createRequest']['RequestType'] in ["TaskChain", "StepChain"]:
         requestType = jsonData['createRequest']['RequestType']
         joker = requestType.split("Chain")[0]
-        assignDict = jsonData['assignRequest']
 
         # reuse values provided in the request schema at creation level
         if 'AcquisitionEra' in assignDict and isinstance(assignDict['AcquisitionEra'], dict):
@@ -156,6 +156,10 @@ def handleAssignment(args, fname, jsonData):
                 innerDict = createDict[innerDictName]
                 # if there is no Task/Step level value, get it from the main dict
                 assignRequest['ProcessingVersion'][innerDict["%sName" % joker]] = innerDict.get('ProcessingVersion', createDict['ProcessingVersion'])
+    elif jsonData['createRequest']['RequestType'] in "ReReco":
+        # if AcquisitionEra needs to be enforced to the template value, ensure it gets reused
+        if assignDict.get('AcquisitionEra', "AcquisitionEra-OVERRIDE-ME") != "AcquisitionEra-OVERRIDE-ME":
+            assignRequest['AcquisitionEra'] = assignDict['AcquisitionEra']
 
     jsonData['assignRequest'].update(assignRequest)
     return

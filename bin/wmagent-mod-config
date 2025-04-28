@@ -191,19 +191,6 @@ def modifyConfiguration(config, **args):
         if "ops_proxy" in args:
             config.RetryManager.opsProxy = args["ops_proxy"]
 
-    if hasattr(config, "CRABInterface"):
-        config.CRABInterface.Webtools.host = args["cs_hostname"]
-        config.CRABInterface.Webtools.port = int(args["cs_port"])
-        config.CRABInterface.serverDN = args["host_dn"]
-        config.CRABInterface.views.active.crab.model.couchUrl = args["couch_url"]
-        config.CRABInterface.views.active.crab.jsmCacheCouchURL = args["couch_url"]
-        config.CRABInterface.ACDCCouchURL = args["couch_url"]
-        config.CRABInterface.configCacheCouchURL = args["couch_url"]
-        config.CRABInterface.sandBoxCacheHost = args["sb_hostname"]
-        config.CRABInterface.sandBoxCachePort = int(args["sb_port"])
-        config.CRABInterface.sandBoxCacheBasepath = 'userfilecache/userfilecache'
-        config.CRABInterface.clientMapping = args["client_mapping"]
-
     if hasattr(config, "UserFileCache"):
         config.UserFileCache.Webtools.host = args["ufc_hostname"]
         config.UserFileCache.Webtools.port = int(args["ufc_port"])
@@ -293,6 +280,8 @@ def modifyConfiguration(config, **args):
         config.WorkflowUpdater.dbsUrl = args.get("dbs3_reader_url", None)
         config.WorkflowUpdater.rucioUrl = args["rucio_host"]
         config.WorkflowUpdater.rucioAuthUrl = args["rucio_auth"]
+        if args.get("wmstats_url", None):
+            config.WorkflowUpdater.wmstatsUrl = args["wmstats_url"].replace("couchdb/wmstats", "wmstatsserver")
         if args.get("mspileup_url", None):
             config.WorkflowUpdater.msPileupUrl = args["mspileup_url"]
 

@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for lcg-cp
 
 """
 import os
+import logging
 
 from future.utils import viewitems
 
@@ -89,13 +90,15 @@ class LCGImpl(StageOutImpl):
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
         """
         _createStageOutCommand_
 
         Build an srmcp command
 
         """
+        logging.warning("Warning! LCGImpl does not support authMethod handling")
+
         result = "#!/bin/sh\n"
 
         # check if we should use the grid UI from CVMFS
@@ -197,6 +200,26 @@ class LCGImpl(StageOutImpl):
         if useCVMFS:
             result += ")\n"
 
+        return result
+
+    def createDebuggingCommand(self, sourcePFN, targetPFN, options=None, checksums=None, authMethod=None, forceMethod=False):
+        """
+        Debug a failed lcg-via smrv copy command for stageOut, without re-running it,
+        providing information on the environment and the certifications
+
+        :sourcePFN: str, PFN of the source file
+        :targetPFN: str, destination PFN
+        :options: str, additional options for copy command
+        :checksums: dict, collect checksums according to the algorithms saved as keys
+        """
+        # Build the command for debugging purposes
+        copyCommand = "lcg-cp -b -D srmv2 --vo cms --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose"
+        if options != None:
+            copyCommand += " %s " % options
+        copyCommand += " %s " % sourcePFN
+        copyCommand += " %s 2> stageout.log" % targetPFN
+
+        result = self.debuggingTemplate.format(copy_command=copyCommand, source=sourcePFN, destination=targetPFN)
         return result
 
     def removeFile(self, pfnToRemove):

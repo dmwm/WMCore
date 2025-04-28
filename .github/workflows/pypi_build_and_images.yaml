@@ -24,13 +24,80 @@ jobs:
   # first job performs build and upload of packages to PyPI
   build_and_publish_services:
     name: Build_and_upload_to_pypi
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     strategy:
       matrix:
-        target: [wmagent, wmagent-devtools, wmcore, reqmon, reqmgr2, global-workqueue, acdcserver, reqmgr2ms-unmerged,
-                 reqmgr2ms-output, reqmgr2ms-pileup, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
-    uses: ./.github/workflows/pypi_build_publish_template.yaml
-    with:
-      wmcore_component: ${{ matrix.target }}
+        target: [wmagent, wmagentdev, wmcore, reqmon, reqmgr2, wmglobalqueue, acdcserver, msunmerged,
+                 msoutput, mspileup, msrulecleaner, mstransferor, msmonitor]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
+      # setup ubuntu Linux with packages required for installing locally WM
+      # python packages, e.g. we need curl-config for pycurl (it comes from dev
+      # libcurl library), etc.
+      - name: Update system packages to include pycurl
+        run: |
+          echo "update system packages to include pycurl dev library (required for pycurl)"
+          sudo apt update
+          sudo apt install -y curl libcurl4-openssl-dev
+
+      # upgrade pip
+      - name: Upgrade pip3
+        run: |
+          python3 -m pip install --upgrade pip
+
+      # create appropriate setup.py for python builds
+      - name: Update the setup script template with package name
+        run: |
+          sed "s/PACKAGE_TO_BUILD/${{ matrix.target }}/" setup_template.py > setup.py
+
+      # perform CI/CD actions to install WM packages locally
+
+      # first we create proper requirements file, but will skip gfal dependency
+      # as it only exist for CERN/WLCG based Linux distribution
+      - name: Create requirements file
+        run: |
+          echo "create new requirements.txt without gfal dependencies for CI/CD"
+          cat requirements.txt | egrep -v "gfal2-python|python-gfal2" > requirements.${{ matrix.target }}.txt
+          awk "/(${{ matrix.target }}$)|(${{ matrix.target }},)/ {print \$1}" requirements.${{ matrix.target }}.txt > requirements.txt
+
+      # this step will build tarball and whl files for our matrix.target WM package
+      - name: Build sdist and bdist_wheel
+        run: |
+          echo "install wheel package from pip to build wheels"
+          pip install wheel
+          echo "build WMCore sdist and wheels"
+          python3 setup.py clean sdist bdist_wheel
+
+      # the local dist area now should have both WM tarballs and wheels files, e.g.
+      # wmagent-2.3.10-py3-none-any.whl wmagent-2.3.10.tar.gz
+      - name: Verify built package
+        run: ls -lh dist/
+
+      # this step will take local tarball or whl file and install it via pip
+      - name: Install package locally from built artifacts
+        run: |
+          pip install -r requirements.txt
+          pip install --no-index --find-links=dist/ ${{ matrix.target }}
+
+      # this step should print on stdout the installed package from
+      # matrix.target, e.g. wmagent==2.3.10rc6
+      - name: Test package installation
+        run: |
+          pip list --format=freeze | grep ${{ matrix.target }}
+
+      # perform CI/CD actions to upload WM packages to PyPi
+      - name: Upload package distribution to PyPi
+        uses: pypa/gh-action-pypi-publish@release/v1
 
   # second job, depends on build_and_publish_services, builds and upload
   # docker images to CERN registry
@@ -39,8 +106,8 @@ jobs:
     needs: [build_and_publish_services]
     strategy:
       matrix:
-        target: [wmagent, reqmon, t0_reqmon, reqmgr2, reqmgr2ms-unmerged, global-workqueue,
-                 reqmgr2ms-output, reqmgr2ms-pileup, reqmgr2ms-rulecleaner, reqmgr2ms-transferor, reqmgr2ms-monitor]
+        target: [wmagent, reqmon, t0reqmon, reqmgr2, msunmerged, wmglobalqueue,
+                 msoutput, mspileup, msrulecleaner, mstransferor, msmonitor]
     uses: ./.github/workflows/docker_images_template.yaml
     with:
       wmcore_component: ${{ matrix.target }}

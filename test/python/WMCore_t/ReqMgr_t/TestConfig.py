@@ -58,6 +58,8 @@ views = config.section_("views")
 # redirector for the REST API implemented handlers
 data = views.section_("data")
 data.object = "WMCore.ReqMgr.Service.RestApiHub.RestApiHub"
+# MSTransferor URL
+data.ms_transferor_url = "%s/ms-transferor" % BASE_URL
 # The couch host is defined during deployment time.
 data.couch_host = COUCH_URL
 # main ReqMgr CouchDB database containing all requests with spec files attached

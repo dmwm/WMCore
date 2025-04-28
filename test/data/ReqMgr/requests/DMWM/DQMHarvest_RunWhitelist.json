@@ -18,32 +18,32 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "Run2022D",
-        "CMSSWVersion": "CMSSW_12_4_11_patch3",
+        "AcquisitionEra": "Run2024D",
+        "CMSSWVersion": "CMSSW_14_0_19_patch2",
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": {"WorkFlowDesc": "Data BTagMu harvesting byRun; 4 runs whitelisted; read input data from DBS Prod",
+        "Comments": {"WorkFlowDesc": "Run2024D data harvesting byRun; 6 runs whitelisted; read input data from DBS Prod",
                      "CheckList": "DQMHarvest with run whitelist; DQMHarvest real data; DQMHarvest on EL8"}, 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DQMConfigCacheID": "d657f5aa83cffd6153ada2747a77b3d4",
+        "DQMConfigCacheID": "7ab63e3a9a3e83c05ebdd4d4772004f3",
         "DQMHarvestUnit": "byRun", 
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader", 
-        "GlobalTag": "124X_dataRun3_v11",
-        "InputDataset": "/BTagMu/Run2022D-10Dec2022-v1/DQMIO",
-        "Memory": 2000,
+        "GlobalTag": "140X_dataRun3_v20",
+        "InputDataset": "/JetMET0/Run2024D-2024CDEReprocessing-v1/DQMIO",
+        "Memory": 3000,
         "Multicore": 1, 
-        "PrepID": "TEST-ReReco-Run2022D-BTagMu-10Dec2022-00001",
-        "ProcessingString": "10Dec2022",
+        "PrepID": "TEST-ReReco-Run2024D-JetMET0-2024CDEReprocessing-00001",
+        "ProcessingString": "2024CDEReprocessing",
         "ProcessingVersion": 1, 
         "RequestPriority": 999999, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "DQMHarvest",
-        "RunWhitelist": [357538, 357539, 357540, 357550],
+        "RunWhitelist": [380306, 380307, 380346, 380348, 380385, 380400],
         "ScramArch": [
-            "el8_amd64_gcc10"
+            "el8_amd64_gcc12"
         ], 
-        "SizePerEvent": 300, 
+        "SizePerEvent": 2,
         "TimePerEvent": 1
     }
 }

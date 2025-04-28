@@ -30,6 +30,11 @@ class WMWorkloadTest(unittest.TestCase):
         self.persistFile = "%s/WMWorkloadPersistencyTest.pkl" % os.getcwd()
         if PY3:
             self.assertItemsEqual = self.assertCountEqual
+
+        # Setting the maximum length of a diff in failure messages for this instance
+        # to infinite so that we can compare strings longer than 640 chars
+        self.maxDiff=None
+
         return
 
     def tearDown(self):
@@ -335,6 +340,37 @@ class WMWorkloadTest(unittest.TestCase):
         url = testWorkload.getDbsUrl()
         self.assertEqual(url, "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
         return
+
+    def testGetSiteWhitelist(self):
+        """
+        Test getSiteWhitelist and getSiteBlackList functionality of the task.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+
+        procTestTask = testWorkload.newTask("ProcessingTask")
+        procTestTaskCMSSW = procTestTask.makeStep("cmsRun1")
+        procTestTaskCMSSW.setStepType("CMSSW")
+
+        procTestTask.addInputDataset(name="/PrimaryDataset/ProcessedDataset/DATATIER",
+                                     primary="PrimaryDataset",
+                                     processed="ProcessedDataset",
+                                     tier="DATATIER",
+                                     block_whitelist=["Block1", "Block2"],
+                                     black_blacklist=["Block3"],
+                                     run_whitelist=[1, 2],
+                                     run_blacklist=[3])
+
+        newSiteWhiteList = ["T1_US_FNAL", "T0_CH_CERN"]
+        newSiteBlackList = ["T1_DE_KIT"]
+        testWorkload.setSiteWhitelist(newSiteWhiteList)
+        testWorkload.setSiteBlacklist(newSiteBlackList)
+
+        siteWhiteList = testWorkload.getSiteWhitelist()
+        siteBlackList = testWorkload.getSiteBlacklist()
+        self.assertTrue(set(newSiteWhiteList) == set(siteWhiteList),
+                        "Error: Site white list mismatch")
+        self.assertTrue(set(newSiteBlackList) == set(siteBlackList),
+                        "Error: Site black list mismatch")
 
     def testWhiteBlacklists(self):
         """
@@ -1256,6 +1292,173 @@ class WMWorkloadTest(unittest.TestCase):
         except WMSpecFactoryException:
             raises = True
         self.assertTrue(raises, "'T2_CH_CERN' cannot be in both site white and black lists")
+
+    def testValidateSiteListsUpdate(self):
+        """
+        _testValidateSiteListsUpdate_
+
+        Verify we cannot set a site to the white and blacklist for an update of a workflow
+        with already existing site lists
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setRequestType("StepChain")
+        testWorkload.setStatus('running-open')
+        testWorkload.newTask("ProcessingTask")
+
+        SiteWhitelist = ["T1_US_FNAL", "T0_CH_CERN"]
+        SiteBlacklist = ["T1_DE_KIT"]
+        testWorkload.setSiteWhitelist(SiteWhitelist)
+        testWorkload.setSiteBlacklist(SiteBlacklist)
+
+        # Validate no Sitelists collisions use case:
+        reqArgs = {'RequestPriority': 400,
+                   'SiteWhitelist': ["T2_CH_CERN", "T0_CH_CERN"],
+                   'SiteBlacklist': ["T1_US_FNAL"]}
+        self.assertEqual(testWorkload.validateSiteListsUpdate(reqArgs), None)
+
+        # Validate Sitelists collisions when setting both SiteWhitelist and SiteBlacklist
+        reqArgs = {'RequestPriority': 400,
+                   'SiteWhitelist': ["T1_US_FNAL", "T0_CH_CERN"],
+                   'SiteBlacklist': ["T1_US_FNAL"]}
+        expectedMsg = "Validation failed: The same site cannot be white and blacklisted: ['T1_US_FNAL']"
+        with self.assertRaises(WMSpecFactoryException) as cm:
+            testWorkload.validateSiteListsUpdate(reqArgs)
+        self.assertEqual(cm.exception.message(), expectedMsg)
+
+        # Validate Sitelists collisions when setting only SiteWhitelist
+        reqArgs = {'RequestPriority': 400,
+                   'SiteWhitelist': ["T1_DE_KIT"]}
+        expectedMsg = "Validation of Site Lists for update failed due to conflicts with existing Site Lists. "
+        expectedMsg += "A site can only be black listed or whitelisted. Conflicting sites: ['T1_DE_KIT']"
+        with self.assertRaises(WMSpecFactoryException) as cm:
+            testWorkload.validateSiteListsUpdate(reqArgs)
+        self.assertEqual(cm.exception.message(), expectedMsg)
+
+        # Validate Sitelists collisions when setting only SiteBlacklist
+        reqArgs = {'RequestPriority': 400,
+                   'SiteBlacklist': ["T1_US_FNAL"]}
+        expectedMsg = "Validation of Site Lists for update failed due to conflicts with existing Site Lists. "
+        expectedMsg += "A site can only be black listed or whitelisted. Conflicting sites: ['T1_US_FNAL']"
+        with self.assertRaises(WMSpecFactoryException) as cm:
+            testWorkload.validateSiteListsUpdate(reqArgs)
+        self.assertEqual(cm.exception.message(), expectedMsg)
+
+
+    def testValidateArgumentsPartialUpdate(self):
+        """
+        _testValidateArgumentsPartialUpdate_
+
+        Verify arguments values and types for partial update of a workflow.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setRequestType("StepChain")
+        testWorkload.setStatus('running-open')
+        testWorkload.newTask("ProcessingTask")
+
+        SiteWhitelist = ["T1_US_FNAL", "T0_CH_CERN"]
+        SiteBlacklist = ["T1_DE_KIT"]
+        testWorkload.setSiteWhitelist(SiteWhitelist)
+        testWorkload.setSiteBlacklist(SiteBlacklist)
+
+        # Validate Sitelists collisions
+        reqArgs = {'SiteWhitelist': ["T1_US_FNAL", "T0_CH_CERN"], 'SiteBlacklist': ["T1_US_FNAL"]}
+        raises = False
+        try:
+            testWorkload.validateArgumentsPartialUpdate(reqArgs)
+        except WMSpecFactoryException:
+            raises = True
+        self.assertTrue(raises, "'T1_US_FNAL' cannot be in both site white and black lists")
+
+        # Validate Sitelists properly set:
+        # NOTE: Should raise any exception
+        reqArgs = {'SiteWhitelist': ["T2_CH_CERN", "T0_CH_CERN"], 'SiteBlacklist': ["T1_US_FNAL"]}
+        testWorkload.validateArgumentsPartialUpdate(reqArgs)
+
+        # Validate unknown arguments exception (using stat update arguments for the test)
+        reqArgs = {'total_jobs': 0,  'input_lumis': 0, 'input_events': 0, 'input_num_files': 0}
+        raises = False
+        try:
+            testWorkload.validateArgumentsPartialUpdate(reqArgs)
+        except WMSpecFactoryException:
+            raises = True
+        self.assertTrue(raises, "There are unknown/unsupported arguments in your request spec: ['input_events', 'input_lumis', 'total_jobs', 'input_num_files']")
+
+        # Validate full set of possible assignment-approved arguments
+        # NOTE: Should not raise an exception
+        reqArgs = {'RequestStatus': 'assigned',
+                   'RequestPriority': 313000,
+                   'Team': 'testbed-vocms***',
+                   'SiteWhitelist': ['T1_US_FNAL', 'T2_CH_CERN'],
+                   'SiteBlacklist': '',
+                   'AcquisitionEra':'Integ_Test',
+                   'ProcessingString': 'ReReco_MINIAOD_HG2409_Val_Alanv11',
+                   'ProcessingVersion': 11,
+                   'Dashboard': 'integration',
+                   'MergedLFNBase': '/store/backfill/1',
+                   'TrustSitelists': 'False',
+                   'UnmergedLFNBase': '/store/unmerged',
+                   'MinMergeSize': 2147483648,
+                   'MaxMergeSize': 4294967296,
+                   'MaxMergeEvents': 100000000,
+                   'BlockCloseMaxWaitTime': 66400,
+                   'BlockCloseMaxFiles': 500,
+                   'BlockCloseMaxEvents': 25000000,
+                   'BlockCloseMaxSize': 5000000000000,
+                   'SoftTimeout': 129600,
+                   'GracePeriod': 300,
+                   'TrustPUSitelists': 'False',
+                   'CustodialSites': '',
+                   'NonCustodialSites': '',
+                   'Override': {'eos-lfn-prefix': 'root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED'},
+                   'SubscriptionPriority': 'Low'}
+        testWorkload.validateArgumentsPartialUpdate(reqArgs)
+
+    def testUpdateWorkloadArgs(self):
+        """
+        _testUpdateWorkloadArgs_
+
+        Verify partial update of workflow arguments.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setRequestType("StepChain")
+        testWorkload.newTask("ProcessingTask")
+        testWorkload.setStatus('running-open')
+
+        SiteWhitelist = ["T1_US_FNAL", "T0_CH_CERN"]
+        SiteBlacklist = ["T1_DE_KIT"]
+        testWorkload.setSiteWhitelist(SiteWhitelist)
+        testWorkload.setSiteBlacklist(SiteBlacklist)
+
+        # Validate Sitelists properly set:
+        # NOTE: Should not raise any exception
+        reqArgs = {'SiteWhitelist': ["T2_CH_CERN", "T0_CH_CERN"], 'SiteBlacklist': ["T1_US_FNAL"]}
+        testWorkload.updateWorkloadArgs(reqArgs)
+        self.assertCountEqual(testWorkload.getSiteWhitelist(), reqArgs['SiteWhitelist'])
+        self.assertCountEqual(testWorkload.getSiteBlacklist(), reqArgs['SiteBlacklist'])
+
+        # Validate unknown arguments exception (using stat update arguments for the test)
+        from WMCore.WMSpec.WMWorkload import WMWorkloadUnhandledException
+        reqArgs = {'total_jobs': 0,  'input_lumis': 0, 'input_events': 0, 'input_num_files': 0}
+        raises = False
+        try:
+            testWorkload.updateWorkloadArgs(reqArgs)
+        except WMWorkloadUnhandledException:
+            raises = True
+        self.assertTrue(raises, "Unsupported or missing setter method for updating request arguments: ['total_jobs', 'input_lumis', 'input_events', 'input_num_files'].")
+
+    def testSetStatus(self):
+        """
+        _testSetStatus_
+
+        Verify Set/Get workflow status methods.
+        """
+        wfStatus='running-open'
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setRequestType("StepChain")
+        testWorkload.newTask("ProcessingTask")
+        testWorkload.setStatus(wfStatus)
+        self.assertEqual(testWorkload.getStatus(), wfStatus)
+
 
     def testUpdatingSplitParameters(self):
         """

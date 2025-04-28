@@ -20,7 +20,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
-
+from WMCore.Services.TagCollector.TagCollector import TagCollector
 
 def activityToType(jobActivity):
     """
@@ -138,6 +138,10 @@ class SimpleCondorPlugin(BasePlugin):
         # These are added now by the condor client
         #self.x509userproxysubject = proxy.getSubject()
         #self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
+        
+        self.tc = TagCollector()
+
+        self.useCMSToken = getattr(config.JobSubmitter, 'useOauthToken', False)
 
         return
 
@@ -163,9 +167,8 @@ class SimpleCondorPlugin(BasePlugin):
 
             logging.debug("Start: Submitting %d jobs using Condor Python Submit", len(jobParams))
             try:
-                with schedd.transaction() as txn:
-                    submitRes = sub.queue_with_itemdata(txn, 1, iter(jobParams))
-                    clusterId = submitRes.cluster()
+                submitRes = schedd.submit(sub, itemdata=iter(jobParams))
+                clusterId = submitRes.cluster()
             except Exception as ex:
                 logging.error("SimpleCondorPlugin job submission failed.")
                 logging.exception(str(ex))
@@ -207,11 +210,11 @@ class SimpleCondorPlugin(BasePlugin):
 
         schedd = htcondor.Schedd()
 
-        logging.debug("Start: Retrieving classAds using Condor Python XQuery")
+        logging.debug("Start: Retrieving classAds using Condor Python query")
         try:
-            itobj = schedd.xquery("WMAgent_AgentName == %s" % classad.quote(self.agent),
+            jobAds = schedd.query("WMAgent_AgentName == %s" % classad.quote(self.agent),
                                   ['ClusterId', 'ProcId', 'JobStatus', 'MachineAttrGLIDEIN_CMSSite0'])
-            for jobAd in itobj:
+            for jobAd in jobAds:
                 gridId = "%s.%s" % (jobAd['ClusterId'], jobAd['ProcId'])
                 jobStatus = SimpleCondorPlugin.exitCodeMap().get(jobAd.get('JobStatus'), 'Unknown')
                 location = jobAd.get('MachineAttrGLIDEIN_CMSSite0', None)
@@ -372,10 +375,10 @@ class SimpleCondorPlugin(BasePlugin):
         origSiteLists = set()
 
         try:
-            itobj = sd.xquery('WMAgent_AgentName =?= %s && JobStatus =?= 1' % classad.quote(self.agent),
+            jobAds = sd.query('WMAgent_AgentName =?= %s && JobStatus =?= 1' % classad.quote(self.agent),
                               ['WMAgent_JobID', 'DESIRED_Sites', 'ExtDESIRED_Sites'])
 
-            for jobAd in itobj:
+            for jobAd in jobAds:
                 jobAdId = jobAd.get('WMAgent_JobID')
                 desiredSites = jobAd.get('DESIRED_Sites')
                 extDesiredSites = jobAd.get('ExtDESIRED_Sites')
@@ -500,6 +503,8 @@ class SimpleCondorPlugin(BasePlugin):
 
         undefined = 'UNDEFINED'
         jobParameters = []
+        # fetch an up-to-date list of CMSSW micro-architectures
+        rel_microarchs = self.tc.defaultMicroArchVersionNumberByRelease()
 
         for job in jobList:
             ad = {}
@@ -520,6 +525,11 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['Requirements'] = self.reqStr
 
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
+
+            # Allow oauth based token authentication
+            if self.useCMSToken:
+                ad['use_oauth_services'] = "cms"
+
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))
@@ -640,7 +650,14 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.REQUIRED_ARCH'] = classad.quote(str(requiredArchs))
                 ad['Requirements'] = 'stringListMember(TARGET.Arch, REQUIRED_ARCH)'
 
-            jobParameters.append(ad)    
+            # Inject a microarchitecture classad. If x86_64 not on arch list, return 0
+            if 'X86_64' not in requiredArchs.split(","):
+                ad['My.REQUIRED_MINIMUM_MICROARCH'] = "0"
+            else:
+                minMicroArch = self.tc.getGreaterMicroarchVersionNumber(cmsswVersions, rel_microarchs=rel_microarchs)
+                ad['My.REQUIRED_MINIMUM_MICROARCH'] = str(minMicroArch) 
+
+            jobParameters.append(ad)
              
         return jobParameters
 

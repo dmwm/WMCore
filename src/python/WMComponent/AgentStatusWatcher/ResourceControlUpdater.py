@@ -214,8 +214,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         for site in set(infoRC).intersection(set(infoSSB)):
             if self.tier0Mode and site.startswith('T1_'):
                 # T1 cores utilization for Tier0
-                infoSSB[site]['slotsCPU'] *= self.t1SitesCores // 100
-                infoSSB[site]['slotsIO'] *= self.t1SitesCores // 100
+                infoSSB[site]['slotsCPU'] = int(infoSSB[site]['slotsCPU'] * self.t1SitesCores / 100)
+                infoSSB[site]['slotsIO'] = int(infoSSB[site]['slotsIO'] * self.t1SitesCores / 100)
             else:
                 # round very small sites to the bare minimum
                 infoSSB[site]['slotsCPU'] = max(infoSSB[site]['slotsCPU'], self.minCPUSlots)
@@ -325,9 +325,9 @@ class ResourceControlUpdater(BaseWorkerThread):
         updateIO, updateCPU = False, False
         # if either CPU or IO bound thresholds are different, update local db
         for item in siteTaskSlots:
-            if item['task_type'] in self.tasksCPU and siteTaskSlots[0]['task_pending_slots'] != taskCPUPending:
+            if item['task_type'] in self.tasksCPU and item['task_pending_slots'] != taskCPUPending:
                 updateCPU = True
-            elif item['task_type'] in self.tasksIO and siteTaskSlots[0]['task_pending_slots'] != taskIOPending:
+            elif item['task_type'] in self.tasksIO and item['task_pending_slots'] != taskIOPending:
                 updateIO = True
 
         if updateCPU:

@@ -11,7 +11,7 @@ from builtins import str as newstr, bytes, map
 from future.utils import viewitems, viewvalues
 
 # system modules
-import collections
+import collections.abc
 import json
 import os
 import pprint
@@ -276,9 +276,9 @@ def priority_transition(docs):
 def toString(data):
     if isinstance(data, (newstr, bytes)):
         return str(data)
-    elif isinstance(data, collections.Mapping):
+    elif isinstance(data, collections.abc.Mapping):
         return dict(list(map(toString, viewitems(data))))
-    elif isinstance(data, collections.Iterable):
+    elif isinstance(data, collections.abc.Iterable):
         return type(data)(list(map(toString, data)))
     else:
         return data
@@ -334,7 +334,6 @@ class ReqMgrService(TemplatedPage):
         self.cssmap = {}
         self.jsmap = {}
         self.imgmap = {}
-        self.yuimap = {}
 
         std_specs_dir = os.path.join(self.rootdir, 'WMSpec/StdSpecs')
         self.std_specs = spec_list(std_specs_dir)
@@ -529,16 +528,6 @@ class ReqMgrService(TemplatedPage):
                                     specs=all_specs)
         return self.abs_page('create', content)
 
-    def generate_objs(self, script, jsondict):
-        """Generate objects from givem JSON template"""
-        self.update_scripts()
-        code = self.sdict.get(script, '')
-        if code.find('def genobjs(jsondict)') == -1:
-            return self.error(
-                "Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
-        exec (code)  # code snippet must starts with genobjs function
-        return [r for r in genobjs(jsondict)]
-
     @expose
     def config(self, name):
         "Fetch config for given request name"
@@ -713,19 +702,6 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('batches', content)
 
     ### Aux methods ###
-
-    @expose
-    def put_request(self, **kwds):
-        "PUT request callback to reqmgr server, should be used in AJAX"
-        reqname = kwds.get('RequestName', '')
-        status = kwds.get('RequestStatus', '')
-        if not reqname:
-            msg = 'Unable to update request status, empty request name'
-            raise cherrypy.HTTPError(406, msg)
-        if not status:
-            msg = 'Unable to update request status, empty status value'
-            raise cherrypy.HTTPError(406, msg)
-        return self.reqmgr.updateRequestStatus(reqname, status)
 
     @expose
     def images(self, *args):

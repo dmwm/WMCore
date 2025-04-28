@@ -9,15 +9,20 @@ from __future__ import print_function
 
 from builtins import next, range
 from future.utils import viewitems, viewvalues
+from collections  import namedtuple
+import inspect
 
-from Utils.Utilities import strToBool
+
+from Utils.Utilities import strToBool, makeList
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
-from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
+from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, validateUnknownArgs, validateSiteLists,
+                                           _validateArgumentOptions, loadSpecClassByType,
                                            setAssignArgumentsWithDefault)
 
 parseTaskPath = lambda p: [x for x in p.split('/') if x.strip() != '']
@@ -58,6 +63,16 @@ class WMWorkloadException(WMException):
     """
     pass
 
+class WMWorkloadUnhandledException(WMException):
+    """
+    _WMWorkloadUnhandledException_
+
+    Exceptions raised by the Workload during filling
+    """
+    pass
+
+
+setterTuple = namedtuple('SetterTuple', ['reqArg', 'setterFunc', 'setterSignature'])
 
 class WMWorkloadHelper(PersistencyHelper):
     """
@@ -68,6 +83,57 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def __init__(self, wmWorkload=None):
         self.data = wmWorkload
+        self.settersMap = {}
+
+    def updateWorkloadArgs(self, reqArgs):
+        """
+        Method to take a dictionary of arguments of the type:
+        {reqArg1: value,
+         reqArg2: value,
+         ...}
+        and update the workload by a predefined map of reqArg to setter methods.
+        :param reqArgs: A Dictionary of request arguments to be updated
+        :return:        Nothing, Raises an error of type WMWorkloadException if
+                        fails to apply the proper setter method
+        """
+        # NOTE: So far we support only a single argument setter methods, like
+        #       setSiteWhitelist or setPriority. This may change in the future,
+        #       but it will require a change in the logic of how we validate and
+        #       call the proper setter methods bellow.
+
+        # populate the current instance settersMap
+        self.settersMap['RequestPriority'] = setterTuple('RequestPriority', self.setPriority, inspect.signature(self.setPriority))
+        self.settersMap['SiteBlacklist'] = setterTuple('SiteBlacklist', self.setSiteBlacklist, inspect.signature(self.setSiteBlacklist))
+        self.settersMap['SiteWhitelist'] = setterTuple('SiteWhitelist', self.setSiteWhitelist, inspect.signature(self.setSiteWhitelist))
+
+        reqArgsNothandled = []
+        # First validate if we can properly call the setter function given the reqArgs passed.
+        for reqArg, argValue in reqArgs.items():
+            if reqArg not in self.settersMap:
+                reqArgsNothandled.append(reqArg)
+                continue
+            try:
+                self.settersMap[reqArg].setterSignature.bind(argValue)
+            except TypeError as ex:
+                msg = f"Setter's method signature does not match the method calls we currently support: Error: req{str(ex)}"
+                raise WMWorkloadException(msg) from None
+
+        if reqArgsNothandled:
+            msg = f"Unsupported or missing setter method for updating request arguments: {reqArgsNothandled}."
+            raise WMWorkloadUnhandledException(msg) from None
+
+        # Now go through the reqArg again and call every setter method according to the map
+        for reqArg, argValue in reqArgs.items():
+            try:
+                self.settersMap[reqArg].setterFunc(argValue)
+            except Exception as ex:
+                currFrame = inspect.currentframe()
+                argsInfo = inspect.getargvalues(currFrame)
+                argVals = {arg: argsInfo.locals.get(arg) for arg in argsInfo.args}
+                msg = f"Failure while calling setter method {self.settersMap[reqArg].setterFunc.__name__} "
+                msg += f"With arguments: {argVals}"
+                msg += f"Full exception string: {str(ex)}"
+                raise WMWorkloadException(msg) from None
 
     def setSpecUrl(self, url):
         self.data.persistency.specUrl = sanitizeURL(url)["url"]
@@ -673,6 +739,19 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.tasklist.remove(taskName)
         return
 
+    def getSiteWhitelist(self):
+        """
+        Get the site white list for the workflow
+        :return: site white list
+        """
+        # loop over tasks to see if there is white lists
+        taskIterator = self.taskIterator()
+        siteList = []
+        for task in taskIterator:
+            for site in task.siteWhitelist():
+                siteList.append(site)
+        return list(set(siteList))
+
     def setSiteWhitelist(self, siteWhitelist):
         """
         _setSiteWhitelist_
@@ -688,6 +767,19 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setSiteWhitelist(siteWhitelist)
 
         return
+
+    def getSiteBlacklist(self):
+        """
+        Get the site black list for the workflow
+        :return: site black list
+        """
+        # loop over tasks to see if there is black lists
+        taskIterator = self.getAllTasks(cpuOnly=False)
+        siteList = []
+        for task in taskIterator:
+            for site in task.siteBlacklist():
+                siteList.append(site)
+        return list(set(siteList))
 
     def setSiteBlacklist(self, siteBlacklist):
         """
@@ -1149,6 +1241,25 @@ class WMWorkloadHelper(PersistencyHelper):
                     return "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
 
         return getattr(self.data.request.schema, "DbsUrl")
+
+    def setStatus(self, status):
+        """
+        _setStatus_
+
+        Set the status of the workflow
+        Optional
+        :param: Request status
+        """
+        self.data.request.status = status
+        return
+
+    def getStatus(self):
+        """
+        _getStatus_
+
+        Get the Status for the workflow
+        """
+        return getattr(self.data.request, 'status', None)
 
     def setCampaign(self, campaign):
         """
@@ -1945,6 +2056,58 @@ class WMWorkloadHelper(PersistencyHelper):
         validateArgumentsUpdate(schema, argumentDefinition)
         return
 
+    def validateSiteListsUpdate(self, arguments):
+        """
+        Validate a dictionary of workflow arguments for possible  Site lists update
+        It must catch any eventual conflict between the currently existing site lists
+        and the ones provided by the user, presuming that the change would happen by
+        fully substituting an already existing site list at the workflow if provided
+        with the arguments here.
+        """
+        # NOTE: We have 3 different use cases to validate for siteLists conflicts:
+        #       * A change to both SiteWhitelist and SiteBlacklist
+        #       * A change only to SiteWhitelist
+        #       * A change only to SiteBlacklist
+        if "SiteWhitelist" in arguments and "SiteBlacklist" in arguments:
+            validateSiteLists(arguments)
+            return
+        fullSiteWhitelist = set()
+        fullSiteBlacklist = set()
+        if "SiteWhitelist" in arguments and "SiteBlacklist" not in arguments:
+            fullSiteWhitelist = set(makeList(arguments["SiteWhitelist"]))
+            fullSiteBlacklist = set(self.getSiteBlacklist())
+        if "SiteBlacklist" in arguments and "SiteWhitelist" not in arguments:
+            fullSiteWhitelist = set(self.getSiteWhitelist())
+            fullSiteBlacklist = set(makeList(arguments["SiteBlacklist"]))
+        siteConflicts = fullSiteWhitelist & fullSiteBlacklist
+        if siteConflicts:
+            msg = "Validation of Site Lists for update failed due to conflicts with existing Site Lists. "
+            msg += f"A site can only be black listed or whitelisted. Conflicting sites: {list(siteConflicts)}"
+            raise WMSpecFactoryException(msg)
+        return
+
+    def validateArgumentsPartialUpdate(self, arguments):
+        """
+        Validates the provided parameters schema for workflow arguments update, using
+        the arguments definitions for assignment as provided at StdBase.getWorkloadAssignArgs
+        :param arguments: Workflow arguments schema to be validated - Must be a properly
+                          defined dictionary of {arg: value} pairs.
+        :return:          Nothing. Raises proper exceptions when argument validation fails
+
+        NOTE: In order to avoid full schema validation and enforcing mandatory arguments,
+              we set the optionKey argument for this call to NONE. This way it is ignored
+              during the next step of the validation process (namely at
+              WMWorkloadTools._validateArgumentOptions), and all of the so provided
+              arguments in the schema are considered optional, but nonetheless they
+              still go through the full value validation process.
+        """
+        specClass = loadSpecClassByType(self.getRequestType())
+        argumentDefinition = specClass.getWorkloadAssignArgs()
+        validateUnknownArgs(arguments, argumentDefinition)
+        _validateArgumentOptions(arguments, argumentDefinition, optionKey=None)
+        self.validateSiteListsUpdate(arguments)
+        return
+
     def updateArguments(self, kwargs):
         """
         set up all the argument related to assigning request.
@@ -2070,6 +2233,7 @@ class WMWorkload(ConfigSection):
         # //
         self.section_("request")
         self.request.priority = None  # what should be the default value
+        self.request.status = None
         #  //
         # // owner related information
         # //

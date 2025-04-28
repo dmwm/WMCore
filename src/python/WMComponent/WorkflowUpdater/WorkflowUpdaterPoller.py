@@ -12,9 +12,10 @@ Among the actions performed by this component, we can list:
 * update this json in the workflow sandbox
 """
 
-import os
 import json
 import logging
+import os
+import shutil
 import tarfile
 import tempfile
 import threading
@@ -23,13 +24,14 @@ from Utils.CertTools import cert, ckey
 from Utils.IteratorTools import flattenList
 from Utils.FileTools import tarMode, findFiles
 from Utils.Timers import timeFunction, CodeTimer
-from WMCore.Services.MSPileup.MSPileupUtils import getPileupDocs
+from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.DBS.DBSConcurrency import getBlockInfo4PU
+from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 
 
 def findJsonSandboxFiles(tfile):
@@ -220,9 +222,9 @@ def writePileupJson(tfile, jdict, logger, dest=None):
             tar.add(tmpDir, arcname='')
         # overwrite existing tarball with new one
         if dest:
-            os.rename(ofile, dest)
+            shutil.move(ofile, dest)
         else:
-            os.rename(ofile, tfile)
+            shutil.move(ofile, tfile)
 
 
 class WorkflowUpdaterException(WMException):
@@ -494,11 +496,13 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
             if pileupItem["pileupName"] not in uniquePUList:
                 # no active workflow requires this pileup
                 continue
-
-            if pileupItem["customName"]:
-                logging.info("Fetching blocks for custom pileup container: %s", pileupItem["customName"])
-                pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["customName"],
-                                                                       scope=self.rucioCustomScope)
-            else:
-                logging.info("Fetching blocks for pileup container: %s", pileupItem["pileupName"])
-                pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["pileupName"], scope='cms')
+            try:
+                if pileupItem["customName"]:
+                    logging.info("Fetching blocks for custom pileup container: %s", pileupItem["customName"])
+                    pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["customName"],
+                                                                           scope=self.rucioCustomScope)
+                else:
+                    logging.info("Fetching blocks for pileup container: %s", pileupItem["pileupName"])
+                    pileupItem["blocks"] = self.rucio.getBlocksInContainer(pileupItem["pileupName"], scope='cms')
+            except WMRucioDIDNotFoundException as ex:
+                logging.error(f"Could not find Rucio DID for an active PU! Original exception: {str(ex)}" )

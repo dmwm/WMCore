@@ -221,6 +221,7 @@ config.JobSubmitter.skipRefreshCount = 20  # (If above the threshold meet, cache
 config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], submitScript)
 config.JobSubmitter.extraMemoryPerCore = 500  # in MB
 config.JobSubmitter.drainGraceTime = 2 * 24 * 60 * 60  # in seconds
+config.JobSubmitter.useOauthToken = False
 
 config.component_("JobTracker")
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
@@ -378,7 +379,7 @@ config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
 config.RucioInjector.metaDIDProject = "Production"
-config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
+config.RucioInjector.containerDiskRuleParams = {"weight": "dm_weight", "copies": 2, "grouping": "DATASET"}
 config.RucioInjector.blockRuleParams = {}
 # this RSEExpr below might be updated by wmagent-mod-config script
 config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
@@ -392,6 +393,7 @@ config.WorkflowUpdater.componentDir = config.General.workDir + "/WorkflowUpdater
 config.WorkflowUpdater.logLevel = globalLogLevel
 config.WorkflowUpdater.pollInterval = 8 * 60 * 60  # every 8 hours
 config.WorkflowUpdater.dbsUrl = "OVER_WRITE_BY_SECRETS"
+config.WorkflowUpdater.wmstatsUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.rucioAccount = "wmcore_pileup"
 config.WorkflowUpdater.rucioUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"

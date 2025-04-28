@@ -255,7 +255,7 @@ def getDqmInfo(url):
         except Exception:
             print("Failed to fetch data from DQM GUI")
             cachedDqmgui[url]['samples'] = []
-    return cachedDqmgui[url]['samples']
+    return cachedDqmgui[url].get('samples', [])
 
 
 def harvesting(workload, outDsets):

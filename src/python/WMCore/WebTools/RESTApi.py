@@ -19,7 +19,6 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-import cgi
 import traceback
 
 from cherrypy import expose, request, response, HTTPError
@@ -108,9 +107,6 @@ class RESTApi(WebAPI):
             # If something raises an HTTPError assume it's something that should
             # go to the client
             response.status = h.args[0]
-            for kwarg in kwargs:
-                if isinstance(kwargs[kwarg], cgi.FieldStorage):
-                    kwargs[kwarg] = 'FieldStorage class, not printed.'
             self.debug('call to %s with args: %s kwargs: %s resulted in %s' % (request.method, args, kwargs, h.args[1]))
             return self._formatResponse({'exception': h.args[0],
                                         'type': 'HTTPError',
@@ -120,9 +116,6 @@ class RESTApi(WebAPI):
             # If something raises a generic exception assume the details are private
             # and should not go to the client
             response.status = 500
-            for kwarg in kwargs:
-                if isinstance(kwargs[kwarg], cgi.FieldStorage):
-                    kwargs[kwarg] = 'FieldStorage class, not printed.'
             debugMsg = replaceToSantizeURL("""call to %s with args: %s kwargs: %s resulted in %s \n
                                               stack trace: %s""" % (request.method, args,
                                                      kwargs, e.__str__(), traceback.format_exc()))

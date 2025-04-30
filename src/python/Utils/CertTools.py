@@ -1,3 +1,6 @@
+"""
+Module to deal with user certificates and CAs
+"""
 from builtins import str
 import os
 
@@ -60,3 +63,38 @@ def getCAPathFromEnv():
     you need to set either the X509_CERT_DIR variable or the cacert key of the request.
     """
     return os.environ.get("X509_CERT_DIR")
+
+
+def caBundle(caPath="/etc/grid-security/certificates"):
+    """
+    Load all PEM certificates from the given caPath and write them as single CA bundle PEM.
+
+    :param caPath: Path to directory containing .pem certificate files.
+    :return: A single string containing all concatenated PEM pemCertificates which may be
+    written to a caBundleFile if necessary (used by requests library)
+    """
+    if not os.path.isdir(caPath):
+        raise ValueError(f"Invalid caPath: {caPath} is not a directory")
+
+    pemCertificates = []
+
+    for fileName in sorted(os.listdir(caPath)):
+        filePath = os.path.join(caPath, fileName)
+
+        # Only consider readable files that look like PEM certificates
+        if not os.path.isfile(filePath):
+            continue
+        if not fileName.endswith(".pem"):
+            continue
+
+        try:
+            with open(filePath, "r", encoding="utf-8") as istream:
+                certData = istream.read()
+                if "BEGIN CERTIFICATE" in certData:
+                    pemCertificates.append(certData)
+        except Exception as e:
+            print(f"Warning: Could not read {filePath}: {e}")
+
+    if len(pemCertificates) == 0:
+        raise ValueError(f"No PEM files found in {caPath}")
+    return "\n".join(pemCertificates)

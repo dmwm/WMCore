@@ -35,9 +35,8 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
 """
 
-import requests
-import time
 import os
+import requests
 
 def couchReplicationStatuses(couchdbUrl, username=None, password=None):
     """
@@ -110,7 +109,7 @@ def formatPrometheusMetrics(statuses):
     states = {'error': -1, 'completed': 0, 'started': 1, 'added': 2, 'waiting': 3, 'triggered': 4}
     lines = [
             f'# HELP couchdb_replication_state Replication state: {states}',
-            f'# TYPE couchdb_replication_state gauge'
+            '# TYPE couchdb_replication_state gauge'
     ]
     for key, status in statuses.items():
         label = f'replication_id="{key}",source="{status["source"]}",target="{status["target"]}"'
@@ -143,7 +142,7 @@ def couchCredentials(fname):
     user = ''
     password = ''
     data = ''
-    with open(fname, 'r') as istream:
+    with open(fname, 'r', encoding="utf-8") as istream:
         data = istream.read()
     for item in data.split('\n'):
         if 'COUCH_USER' in item:
@@ -177,7 +176,10 @@ def checkReplicationStatus(url=None, fname=None, prevStatus=None):
              'alerts': alerts}
     return sdict
 
-if __name__ == '__main__':
+def example():
+    """
+    Example function to test module functionality
+    """
     prev_status = {}
     sdict = checkReplicationStatus()
     print('--- status ---')
@@ -189,3 +191,7 @@ if __name__ == '__main__':
         print('--- alerts ---')
         for k, msg in sdict['alerts'].items():
             print(f"{k}: {msg}")
+
+
+if __name__ == '__main__':
+    example()

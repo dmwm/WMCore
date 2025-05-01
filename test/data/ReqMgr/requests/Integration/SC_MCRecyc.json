@@ -33,7 +33,7 @@
         "Comments": {
             "WorkFlowDesc": [
                 "StepChain MC recyling with 4CPU/8GB and 8CPU/8GB; with harvesting enabled; Different PrepID and CMSSW;",
-                "Different AcqEra/ProcStr/ProcVer; 5L for Step1 and 10L for Step2"
+                "Different AcqEra/ProcStr/ProcVer; Diff CMSSW versions, with 15_0_1 for Step2; 5LpJ"
             ],
             "CheckList": [
                 "StepChain: MC recycling; StepChain MC harvesting; StepChain PrimaryDataset override",
@@ -86,8 +86,8 @@
             "StepName": "DIGIHI2024"
         },
         "Step2": {
-            "AcquisitionEra": "CMSSW_15_0_0_pre3",
-            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "AcquisitionEra": "CMSSW_15_0_1",
+            "CMSSWVersion": "CMSSW_15_0_1",
             "Campaign": "CMSSW_15_0_0_pre3__Run3_2024HIN_noPU_Reference-1739207270",
             "ConfigCacheID": "574bef09fdd0275b3eae2ca9e87ca048",
             "EventStreams": 2,

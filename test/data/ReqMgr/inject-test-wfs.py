@@ -39,6 +39,9 @@ def makeSiteWhitelist(jsonName, siteList):
     elif 'LHE' in jsonName or 'DQMHarvest' in jsonName:
         siteList = ["T2_CH_CERN"]
         print("Overwritting SiteWhitelist to: %s" % siteList)
+    elif 'ReReco_RunBlocklists_Parents' in jsonName or 'Parent_LumiMask' in jsonName:
+        siteList = ["T1_US_FNAL"]
+        print("Overwritting SiteWhitelist to: %s" % siteList)
     return siteList
 
 
@@ -204,9 +207,7 @@ def main():
         templates = os.listdir(wmcorePath)
 
     # Filter out templates not allowed to be injected
-    disallowedList = ['ReReco_badBlocks.json', 'TaskChain_InclParents.json',
-                      'StepChain_InclParents.json', 'SC_Straight.json',
-                      'StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
+    disallowedList = ['ReReco_badBlocks.json', 'StoreResults.json', 'Resub_TaskChain_Multicore.json']
     logger.info("Skipping injection for these templates: %s\n", disallowedList)
     templates = [item for item in templates if item not in disallowedList]
     if not templates:
@@ -228,7 +229,7 @@ def main():
         strComand = "%s %s -u %s -f %s -i " % (pythonCmd, reqMgrCommand, args.url, tmpFile)
 
         # read the original json template
-        with open(wmcorePath + fname) as fo:
+        with open(wmcorePath + fname, encoding='utf-8') as fo:
             jsonData = json.load(fo)
 
         # tweak the create dict
@@ -244,7 +245,7 @@ def main():
             handleAssignment(args, fname, jsonData)
 
         # Dump the modified json in a temp file and use just it
-        with open(tmpFile, "w") as outfile:
+        with open(tmpFile, "w", encoding='utf-8') as outfile:
             json.dump(jsonData, outfile)
 
         if args.dryRun:

@@ -38,6 +38,7 @@
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
         "GlobalTag": "130X_dataRun3_Prompt_v4",
+        "Memory": 4000,
         "PrepID": "TEST-CMSSW_7_3_2__test2inwf-1510737328-RunHLTPhy2017B_RAWAOD",
         "ProcessingString": "DMWM_ProcStr_TEST",
         "ProcessingVersion": 18,
@@ -101,6 +102,6 @@
             "StepName": "DQMHLTonRAWAOD_2017"
         },
         "StepChain": 1,
-        "TimePerEvent": 110.5
+        "TimePerEvent": 55.5
     }
 }

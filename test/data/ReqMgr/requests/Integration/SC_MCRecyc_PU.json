@@ -33,7 +33,7 @@
         "Comments": {
             "WorkFlowDesc": [
                 "StepChain MC recycling with PU; Very similar to TC_MCRecyc.json but with PU that is not used in cmsDriver;",
-                "Also, same CMSSW version in both tasks; KeepOutput false for Step1 (GEN-SIM-*)"
+                "Diff CMSSW versions, 15_0_0_pre3 for Step1, 15_0_1 for Step2; KeepOutput false for Step1 (GEN-SIM-*)"
             ],
             "CheckList": "StepChain: MC recycling with PU; StepChain with KeepOutput false; StepChain MC harvesting"
         },
@@ -82,8 +82,8 @@
             "StepName": "DIGIHI2024"
         },
         "Step2": {
-            "AcquisitionEra": "CMSSW_15_0_0_pre3",
-            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "AcquisitionEra": "CMSSW_15_0_1",
+            "CMSSWVersion": "CMSSW_15_0_1",
             "Campaign": "CMSSW_15_0_0_pre3__Run3_2024HIN_noPU-1739709162",
             "ConfigCacheID": "574bef09fdd0275b3eae2ca9e87ca048",
             "EventStreams": 2,

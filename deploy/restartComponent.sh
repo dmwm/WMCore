@@ -10,9 +10,9 @@ HOST=$(hostname)
 DATENOW=$(date +%s)
 # look-up alert emails from WMA secret file where ALERT_EMAILS may contains multiple emails and spaces, e.g.
 # ALERT_EMAILS="user1@domain.com user2@domain.com" or ALERT_EMAILS = "user1@domain.com user2@domain.com"
-ALERT_EMAILS=`sed -E 's/^[[:space:]]*ALERT_EMAILS[[:space:]]*=[[:space:]]*"([^"]*)".*/\1/' $WMA_SECRETS_FILE`
+ALERT_EMAILS=`grep ALERT_EMAILS $WMA_SECRETS_FILE | sed -E 's/^[[:space:]]*ALERT_EMAILS[[:space:]]*=[[:space:]]*"([^"]*)".*/\1/'`
 
-[[ -z $ALERT_EMAILS ]] && {echo "ERROR: unable to find ALERT_EMAILS in $WMA_SECRETS_FILE"; exit 1;}
+[[ -z $ALERT_EMAILS ]] && { echo "ERROR: unable to find ALERT_EMAILS in $WMA_SECRETS_FILE"; exit 1; }
 
 [[ -z $WMA_INSTALL_DIR ]] && { echo "ERROR: Trying to run without having the full WMAgent environment set!";  exit 1 ;}
 

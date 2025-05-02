@@ -1,3 +1,6 @@
+2.3.10 to 2.3.11.1:
+  - First WMAgent stable release in the 2.3.11 series
+
 2.3.10rc19 to 2.3.10:
   - fix issue with restartComponent.sh script (Valentin Kuznetsov) #12352
 

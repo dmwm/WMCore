@@ -1,3 +1,6 @@
+2.3.10.1 to 2.3.10.2:
+  - Retriggering CD pipeline, as registry login insists in timing out
+
 2.3.10 to 2.3.10.1:
   - Retriggering CD pipeline, as docker image creation failed for 2.3.10
 

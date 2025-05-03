@@ -412,13 +412,15 @@ class JobCreatorPoller(BaseWorkerThread):
         """
         logging.info("Beginning JobCreator.pollSubscriptions() cycle.")
         myThread = threading.currentThread()
-
+        logging.info('TEST: jobCreator.pollSubscriptions 1')
         # First, get list of Subscriptions
         subscriptions = self.subscriptionList.execute()
-
+        logging.info('TEST: jobCreator.pollSubscriptions 2')
         # Okay, now we have a list of subscriptions
         for subscriptionID in subscriptions:
+            logging.info('TEST: jobCreator.pollSubscriptions 3. subscriptionID is {}'.format(subscriptionID))
             wmbsSubscription = Subscription(id=subscriptionID)
+            logging.info('TEST: jobCreator.pollSubscriptions 4. Subscription is {}'.format(wmbsSubscription))
             try:
                 wmbsSubscription.load()
             except IndexError:
@@ -431,8 +433,10 @@ class JobCreatorPoller(BaseWorkerThread):
                 continue
 
             workflow = Workflow(id=wmbsSubscription["workflow"].id)
+            logging.info('TEST: jobCreator.pollSubscriptions 5. workflow is {}'.format(workflow))
             workflow.load()
             wmbsSubscription['workflow'] = workflow
+            logging.info('TEST: jobCreator.pollSubscriptions 6. wmbsSubscription is {}'.format(wmbsSubscription))
             wmWorkload = retrieveWMSpec(workflow=workflow)
 
             if not workflow.task or not wmWorkload:

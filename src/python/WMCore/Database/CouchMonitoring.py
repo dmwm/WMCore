@@ -162,6 +162,40 @@ def checkReplicationStatus(url=None, fname=None, prevStatus=None):
     :param url: couchdb URL
     :param fname: secrets file name
     :return: dictionary of current couchdb replication
+
+    Here is an example of such dictionary structure:
+    {
+      "14843c24643f8960eb159f5912f0f938": {
+        "state": "started",
+        "source": "https://cmsweb.cern.ch/couchdb/workqueue/",
+        "target": "http://127.0.0.1:5984/workqueue_inbox/",
+        "error": "Job previously crashed at 2025-05-05T18:47:11Z due to {changes_reader_died,{timeout,ibrowse_stream_cleanup}}",
+        "history": [
+          {
+            "timestamp": "2025-05-05T18:47:11Z",
+            "type": "started"
+          },
+          ...
+         ]
+      },
+      "14843c24643f8960eb159f5912f0e51e": {
+        "state": "started",
+        "source": "http://127.0.0.1:5984/wmagent_summary/",
+        "target": "https://cmsweb.cern.ch/couchdb/wmstats/",
+        "error": null,
+        "history": [
+          {
+            "timestamp": "2025-04-09T11:19:36Z",
+            "type": "started"
+          },
+          {
+            "timestamp": "2025-04-09T11:19:36Z",
+            "type": "added"
+          }
+        ]
+      },
+    ...
+    }
     """
     if not prevStatus:
         prevStatus = {}

@@ -25,12 +25,14 @@ import logging
 import re
 import time
 import sys
+from pprint import pformat
 from datetime import datetime
 from http.client import HTTPException
 
 from Utils.IteratorTools import grouper, nestedDictUpdate
 from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.Requests import JSONRequests
+from WMCore.Database.CouchMonitoring import checkReplicationStatus
 
 
 def check_name(dbname):
@@ -1273,6 +1275,27 @@ class CouchMonitor(object):
             logging.warning("/_scheduler/docs API returned: %s", getattr(exc, "result", ""))
             return resp
         return data.get("docs", resp)
+
+    def couchReplicationStatus(self):
+        """
+        check couchdb replication status with compatible output of checkCouchReplications
+
+        :return: a dictionary with the status of the replications and an
+            error message
+        """
+        status = {'status': 'ok', 'error_message': ''}
+        sdict = checkReplicationStatus()
+        for rid, record in sdict.items():
+            if record['state'] == 'error':
+                status['state'] = 'error'
+                source = sanitizeURL(record['source'])
+                target = sanitizeURL(record['target'])
+                error = record['error']
+                history = pformat(record['history']
+                msg = f"Replication from {source} to {target} for document {rid} is in a bad state: {error}; "
+                msg += f"History: {history}"
+                return {'status': 'error', 'error_message': msg}
+        return status
 
     def checkCouchReplications(self, replicationsList):
         """

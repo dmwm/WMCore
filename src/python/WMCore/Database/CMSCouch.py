@@ -1291,7 +1291,7 @@ class CouchMonitor(object):
                 source = sanitizeURL(record['source'])
                 target = sanitizeURL(record['target'])
                 error = record['error']
-                history = pformat(record['history']
+                history = pformat(record['history'])
                 msg = f"Replication from {source} to {target} for document {rid} is in a bad state: {error}; "
                 msg += f"History: {history}"
                 return {'status': 'error', 'error_message': msg}

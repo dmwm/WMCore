@@ -38,6 +38,7 @@ if __name__ == "__main__":
 import os
 import requests
 
+
 def couchReplicationStatuses(couchdbUrl, username=None, password=None):
     """
     Fetch CouchDB replication statuses. The logic is based on /_scheduler/jons CouchDB end-point
@@ -76,7 +77,7 @@ def couchReplicationStatuses(couchdbUrl, username=None, password=None):
                 'target': target,
                 'error': error,
                 'history': history
-            }
+                }
 
         return statuses
     except requests.RequestException as e:
@@ -95,10 +96,11 @@ def compareReplicationStatus(prev, curr):
     for key in curr:
         if key not in prev or prev[key] != curr[key]:
             changes[key] = {
-                'old': prev.get(key),
-                'new': curr[key]
-            }
+                    'old': prev.get(key),
+                    'new': curr[key]
+                    }
     return changes
+
 
 def formatPrometheusMetrics(statuses):
     """
@@ -110,7 +112,7 @@ def formatPrometheusMetrics(statuses):
     lines = [
             f'# HELP couchdb_replication_state Replication state: {states}',
             '# TYPE couchdb_replication_state gauge'
-    ]
+            ]
     for key, status in statuses.items():
         label = f'replication_id="{key}",source="{status["source"]}",target="{status["target"]}"'
         value = 0   # default error/other
@@ -120,6 +122,7 @@ def formatPrometheusMetrics(statuses):
                 break
         lines.append(f'couchdb_replication_state{{{label}}} {value}')
     return '\n'.join(lines)
+
 
 def createAlerts(statuses):
     """
@@ -132,6 +135,7 @@ def createAlerts(statuses):
         if status['state'] != 'completed':
             alerts[key] = f"Replication state for {key} is '{status['state']}', error: {status['error']}"
     return alerts
+
 
 def couchCredentials(fname):
     """
@@ -150,6 +154,7 @@ def couchCredentials(fname):
         if 'COUCH_PASS' in item:
             password = item.split('=')[-1]
     return user, password
+
 
 def checkReplicationStatus(url=None, fname=None, prevStatus=None):
     """
@@ -176,17 +181,16 @@ def checkReplicationStatus(url=None, fname=None, prevStatus=None):
              'alerts': alerts}
     return sdict
 
+
 def example():
     """
     Example function to test module functionality
     """
-    prev_status = {}
     sdict = checkReplicationStatus()
     print('--- status ---')
     print(sdict['current_status'])
     print('--- metrics ---')
     print(sdict['metrics'])
-    alerts = sdict['alerts']
     if sdict.get('alerts', None):
         print('--- alerts ---')
         for k, msg in sdict['alerts'].items():

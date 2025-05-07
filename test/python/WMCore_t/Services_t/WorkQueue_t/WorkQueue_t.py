@@ -82,13 +82,13 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # This only checks minimum client call not exactly correctness of return
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
-                         [{'total_jobs': 339, 'request_name': specName}])
+                         [{'total_jobs': 237, 'request_name': specName}])
         # work still available, so no childQueue
         results = wqApi.getChildQueuesAndStatus()
         self.assertItemsEqual(set([item['agent_name'] for item in results]), ["AgentNotDefined"])
         result = wqApi.getElementsCountAndJobsByWorkflow()
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[specName]['Available']['Jobs'], 339)
+        self.assertEqual(result[specName]['Available']['Jobs'], 237)
 
         results = wqApi.getChildQueuesAndPriority()
         resultsPrio = set([item['priority'] for item in results if item['agent_name'] == "AgentNotDefined"])
@@ -185,18 +185,18 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # This only checks minimum client call not exactly correctness of return
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
-                         [{'total_jobs': 339, 'request_name': specName}])
+                         [{'total_jobs': 237, 'request_name': specName}])
 
         results = wqApi.getJobsByStatus()
-        self.assertEqual(results['Available']['sum_jobs'], 339)
+        self.assertEqual(results['Available']['sum_jobs'], 237)
         results = wqApi.getJobsByStatusAndPriority()
         resultsPrio = set([item['priority'] for item in results.get('Available')])
         self.assertItemsEqual(resultsPrio, [8000])
         resultsJobs = sum([item['sum_jobs'] for item in results.get('Available') if item['priority'] == 8000])
-        self.assertTrue(resultsJobs, 339)
+        self.assertTrue(resultsJobs, 237)
         result = wqApi.getElementsCountAndJobsByWorkflow()
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[specName]['Available']['Jobs'], 339)
+        self.assertEqual(result[specName]['Available']['Jobs'], 237)
         data = wqApi.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
                                  {'startkey': [specName], 'endkey': [specName, {}],
                                   'reduce': False})

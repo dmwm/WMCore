@@ -76,15 +76,15 @@ class StdBaseTest(unittest.TestCase):
         self.assertEqual((123, 123), StdBase.calcEvtsPerJobLumi(123, 345, 1))
         self.assertEqual((123, 123), StdBase.calcEvtsPerJobLumi(123, None, 1))
 
-        self.assertEqual((28800, 100), StdBase.calcEvtsPerJobLumi(None, 100, 1))
-        self.assertEqual((600, 100), StdBase.calcEvtsPerJobLumi(None, 100, 50.5))
-        self.assertEqual((570, 570), StdBase.calcEvtsPerJobLumi(None, 1000, 50.5))
+        self.assertEqual((43200, 100), StdBase.calcEvtsPerJobLumi(None, 100, 1))
+        self.assertEqual((900, 100), StdBase.calcEvtsPerJobLumi(None, 100, 50.5))
+        self.assertEqual((855, 855), StdBase.calcEvtsPerJobLumi(None, 1000, 50.5))
 
-        self.assertEqual((23040, 23040), StdBase.calcEvtsPerJobLumi(None, None, 1.25))
-        self.assertEqual((229, 229), StdBase.calcEvtsPerJobLumi(None, None, 125.5))
+        self.assertEqual((34560, 34560), StdBase.calcEvtsPerJobLumi(None, None, 1.25))
+        self.assertEqual((344, 344), StdBase.calcEvtsPerJobLumi(None, None, 125.5))
 
         self.assertEqual((23528, 11764), StdBase.calcEvtsPerJobLumi(24000, 11764, 10.157120496967591))
-        self.assertEqual((2835, 2835), StdBase.calcEvtsPerJobLumi(None, 11764, 10.157120496967591))
+        self.assertEqual((4253, 4253), StdBase.calcEvtsPerJobLumi(None, 11764, 10.157120496967591))
 
         self.assertEqual((10, 10), StdBase.calcEvtsPerJobLumi(123, 345, 1, requestedEvents=10))
         self.assertEqual((690, 345), StdBase.calcEvtsPerJobLumi(750, 345, 1, requestedEvents=700))

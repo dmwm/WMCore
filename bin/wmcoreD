@@ -35,12 +35,15 @@ __version__ = "$Revision: 1.16 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
-import logging
 import os
 import subprocess
 import sys
 import time
+import json
+import psutil
 
+from Utils.Utilities import extractFromXML
+from Utils.ProcFS import processStatus
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMFactory import WMFactory
@@ -177,7 +180,7 @@ def connectionTest(configFile):
         print("skipped.")
         return
 
-    (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
+    dialect, _ = config.CoreDatabase.connectUrl.split(":", 1)
     socket = getattr(config.CoreDatabase, "socket", None)
 
     try:
@@ -235,6 +238,15 @@ def startup(configFile):
         else:
             print('Path for daemon file does not exist!')
             sys.exit(1)
+        # write into component area process status information
+        cpath = os.path.join(compDir, "threads.json")
+        if os.path.exists(cpath):
+            os.remove(cpath)
+        cpid = extractFromXML(daemonXML, "ProcessID")
+        with open(cpath, 'w', encoding="utf-8") as istream:
+            procStatus = processStatus(cpid)
+            istream.write(json.dumps(procStatus))
+            print("Component %s started with %s threads, see %s\n" % (component, len(procStatus), cpath))
 
     return
     
@@ -274,6 +286,10 @@ def shutdown(configFile):
                 daemon.removeAndBackupDaemonFile()
             else:
                 daemon.killWithPrejudice()
+        # remove component threads.json file
+        cpath = os.path.join(compDir, "threads.json")
+        if os.path.exists(cpath):
+            os.remove(cpath)
         if doLogCleanup:
             #  //
             # // Log Cleanup
@@ -295,7 +311,7 @@ def shutdown(configFile):
             exitCode = subprocess.call(["rm", "-rf", "%s" % compDir])
             if exitCode:
                 msg = "Failed to clean up dir: %s\n" % compDir
-                msg += output
+                msg += f"with exit code {exitCode}"
                 print(msg)
 
     return
@@ -320,17 +336,61 @@ def status(configFile):
             return
         compDir = config.section_(component).componentDir
         compDir = os.path.expandvars(compDir)
-        daemonXml = os.path.join(compDir, "Daemon.xml")
-        if not os.path.exists(daemonXml):
-            print("Component:%s Not Running" % component)
-            continue
-        daemon = Details(daemonXml)
-        if not daemon.isAlive():
-            print("Component:%s Not Running" % component)
-        else:
-            print("Component:%s Running:%s" % (component, daemon['ProcessID']))
+        checkProcessThreads(component, compDir)
 
     sys.exit(0)
+
+def checkProcessThreads(component, compDir):
+    """
+    Helper function to check process and its threads for their statuses
+    :param component: component name
+    :return: prints status of the component process and its threads
+    """
+    # check if component daemon exists
+    daemonXml = os.path.join(compDir, "Daemon.xml")
+    if not os.path.exists(daemonXml):
+        print("Component:%s Not Running" % component)
+        return
+    pid = extractFromXML(daemonXML, "ProcessID")
+
+    jsonFile = os.path.join(compDir, "threads.json")
+    with open(jsonFile, "r", encoding="utf-8") as istream:
+        data = json.load(istream)
+
+    # Extract process and its threads
+    threadPids = []
+
+    for entry in data:
+        if str(entry["pid"]) == str(pid) and entry["type"] == "process":
+            continue
+        elif entry["type"] == "thread":
+            threadPids.append(entry["pid"])
+
+    # Check if process is running
+    processRunning = psutil.pid_exists(int(pid))
+
+    # Check if threads are running
+    runningThreads = []
+    orphanThreads = []
+    process = psutil.Process(int(pid))
+    for thread in process.threads():
+        if str(thread.id) == str(pid):
+            continue  # skip pid thread
+        if str(thread.id) in threadPids:
+            runningThreads.append(thread.id)
+        else:
+            orphanThreads.append(thread.id)
+
+    # Output result
+    status = "running" if processRunning else "not-running"
+    msg = f"Component:{component} {pid} {status} with threads {runningThreads}"
+    if status == "running":
+        if len(orphanThreads) > 0:
+            status = "partially-running" if processRunning else "not-running"
+            msg = f"Component:{component} {pid} {status} with threads {runningThreads}, lost {orphanThreads} threads"
+    else:
+        msg = f"Component:{component} {pid} {status}"
+    print(msg)
 
 def restart(config):
     """

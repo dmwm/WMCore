@@ -7,11 +7,14 @@ Unit test for the DBSUtils module
 
 import time
 import unittest
+import mock
 
 from nose.plugins.attrib import attr
 
-from WMCore.Services.DBS.DBSUtils import urlParams
+import WMCore.Services.DBS.DBSUtils
+from WMCore.Services.DBS.DBSUtils import urlParams, DBSErrors
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+from WMQuality.Emulators.DBS.DBSUtils import MockDBSErrors
 
 
 class DBSUtilsTest(unittest.TestCase):
@@ -139,6 +142,29 @@ class DBSUtilsTest(unittest.TestCase):
         time2 = time.time() - time0
         self.assertTrue(time2 > 0)  # to avoid pyling complaining about not used varaiable
         self.assertTrue(res1 == res2)
+
+    @attr("integration")
+    def testDBSErrors(self):
+        """
+        integration test for DBSErrors function
+        """
+        url = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader'
+        dbsErrors = DBSErrors(url)
+        self.assertTrue(100 in dbsErrors)
+        self.assertTrue(101 in dbsErrors)
+        self.assertTrue(300 in dbsErrors)
+        self.assertTrue(dbsErrors[100] == 'generic DBS error')
+
+    def testMockDBSErrors(self):
+        """
+        mock unit test for DBSErrors function
+        """
+        with mock.patch('WMCore.Services.DBS.DBSUtils.DBSErrors', new=MockDBSErrors):
+            dbsErrors = WMCore.Services.DBS.DBSUtils.DBSErrors("")  # mocked DBSErrors function
+            self.assertTrue(100 in dbsErrors)
+            self.assertTrue(101 in dbsErrors)
+            self.assertTrue(300 in dbsErrors)
+            self.assertTrue(dbsErrors[100] == 'generic DBS error')
 
 
 if __name__ == '__main__':

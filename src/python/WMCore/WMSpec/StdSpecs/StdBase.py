@@ -34,6 +34,9 @@ class StdBase(object):
     Base class with helper functions for standard WMSpec file.
     """
 
+    # Default target job length in seconds
+    target_job_length = 12.0 * 3600.0
+
     def __init__(self):
         """
         __init__
@@ -54,7 +57,6 @@ class StdBase(object):
         # Internal parameters
         self.workloadName = None
         self.config_cache = {}
-
         return
 
     def __call__(self, workloadName, arguments):
@@ -108,7 +110,7 @@ class StdBase(object):
         """
         # if not set, let's calculate an 8h job and set it for you
         if ePerJob is None:
-            ePerJob = int((8.0 * 3600.0) / tPerEvent)
+            ePerJob = int(StdBase.target_job_length / tPerEvent)
         if requestedEvents and ePerJob > requestedEvents:
             ePerJob = requestedEvents
 

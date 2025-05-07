@@ -167,7 +167,7 @@ class ReRecoWorkloadFactory(DataProcessing):
             if skimConfig["SkimJobSplitAlgo"] == "FileBased":
                 skimConfig["SkimJobSplitArgs"]["files_per_job"] = int(arguments.get("SkimFilesPerJob%s" % skimIndex, 1))
             elif skimConfig["SkimJobSplitAlgo"] in ["EventBased", "EventAwareLumiBased"]:
-                standardSkim = int((8.0 * 3600.0) / skimConfig["TimePerEvent"])
+                standardSkim = int(self.target_job_length / skimConfig["TimePerEvent"])
                 skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, standardSkim))
                 if skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
                     skimConfig["SkimJobSplitAlgo"]["job_time_limit"] = 48 * 3600  # 2 days

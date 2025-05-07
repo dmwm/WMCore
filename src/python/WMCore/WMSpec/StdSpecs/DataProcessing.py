@@ -26,7 +26,7 @@ class DataProcessing(StdBase):
         self.procJobSplitArgs = {"include_parents": self.includeParents}
         if self.procJobSplitAlgo in ["EventBased", "EventAwareLumiBased"]:
             if self.eventsPerJob is None:
-                self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+                self.eventsPerJob = int(self.target_job_length / self.timePerEvent)
             if self.procJobSplitAlgo == "EventAwareLumiBased":
                 self.procJobSplitArgs["job_time_limit"] = 48 * 3600  # 2 days
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob

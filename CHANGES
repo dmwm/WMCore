@@ -1,3 +1,9 @@
+2.3.10 to 2.4.0rc1:
+  - add thread info status to WMAgent info pushed to CouchDB (Valentin Kuznetsov) #12302
+  - Add getCodes method to fetch all dbs2go codes from its error JSON response (Valentin Kuznetsov) #12312
+  - Yuiserver was removed in 2013 (#4495) (Fredrik) #12356
+
+
 2.3.10rc19 to 2.3.10:
   - fix issue with restartComponent.sh script (Valentin Kuznetsov) #12352
 

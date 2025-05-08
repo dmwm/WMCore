@@ -6,10 +6,6 @@ Standard ReReco workflow.
 """
 from __future__ import division
 
-import json
-
-from future.utils import viewitems
-
 from Utils.Utilities import makeList
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate
@@ -245,7 +241,7 @@ class ReRecoWorkloadFactory(DataProcessing):
                                                            getOutputModules=True))
 
         # Skim facts have to be validated outside the usual master validation
-        skimSchema = {k: v for (k, v) in viewitems(schema) if k.startswith("Skim")}
+        skimSchema = {k: v for k, v in schema.items() if k.startswith("Skim")}
         skimArguments = self.getSkimArguments()
         skimIndex = 1
         skimInputs = set()

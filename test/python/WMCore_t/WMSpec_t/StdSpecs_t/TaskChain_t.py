@@ -252,11 +252,11 @@ def makeRealConfigs(couchDatabase):
     result = couchDatabase.commit()
 
     docMap = {
-        "Scratch": result[0][u'id'],
-        "Digi": result[1][u'id'],
-        "Aod": result[2][u'id'],
-        "MiniAod": result[3][u'id'],
-        "Harvest": result[4][u'id'],
+        "Scratch": result[0]['id'],
+        "Digi": result[1]['id'],
+        "Aod": result[2]['id'],
+        "MiniAod": result[3]['id'],
+        "Harvest": result[4]['id'],
     }
     return docMap
 
@@ -328,10 +328,10 @@ def makeProcessingConfigs(couchDatabase):
     result = couchDatabase.commit()
 
     docMap = {
-        "DigiHLT": result[0][u'id'],
-        "Reco": result[1][u'id'],
-        "ALCAReco": result[2][u'id'],
-        "Skims": result[3][u'id'],
+        "DigiHLT": result[0]['id'],
+        "Reco": result[1]['id'],
+        "ALCAReco": result[2]['id'],
+        "Skims": result[3]['id'],
     }
     return docMap
 

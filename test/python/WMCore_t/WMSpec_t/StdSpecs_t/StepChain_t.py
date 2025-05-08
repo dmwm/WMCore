@@ -156,11 +156,11 @@ def injectStepChainConfigMC(couchDatabase):
     couchDatabase.queue(harvestConfig)
     result = couchDatabase.commit()
 
-    docMap = {"Step1": result[0][u'id'],
-              "Step2": result[1][u'id'],
-              "Step3": result[2][u'id'],
-              "Step4": result[3][u'id'],
-              "Harvest": result[4][u'id']}
+    docMap = {"Step1": result[0]['id'],
+              "Step2": result[1]['id'],
+              "Step3": result[2]['id'],
+              "Step4": result[3]['id'],
+              "Harvest": result[4]['id']}
 
     return docMap
 

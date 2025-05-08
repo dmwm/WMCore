@@ -50,6 +50,8 @@ class StdBase(object):
         These parameters can be changed after the workflow has been created by
         the methods in the WMWorkloadHelper class.
         """
+        # just to resolve a pylint E0203 in DataProcessing
+        self.eventsPerJob = None
         argumentDefinition = self.getWorkloadCreateArgs()
         for arg in argumentDefinition:
             setattr(self, argumentDefinition[arg]["attr"], None)
@@ -1407,8 +1409,8 @@ class StdBase(object):
                 msg = "Request is set with RequiresGPU={}, ".format(schemaData["RequiresGPU"])
                 if not json.loads(schemaData["GPUParams"]):
                     msg += "but GPUParams argument is empty and/or incorrect."
-                    raise WMSpecFactoryException(msg)
+                    raise WMSpecFactoryException(msg) from None
             except KeyError:
                 msg += "but GPUParams argument has not been provided."
-                raise WMSpecFactoryException(msg)
+                raise WMSpecFactoryException(msg) from None
         return True

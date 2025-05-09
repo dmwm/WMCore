@@ -132,7 +132,7 @@ ALLOWED_ACTIONS_FOR_STATUS = {
     "staged": ["RequestPriority"],
     "acquired": ["RequestPriority", "SiteWhitelist", "SiteBlacklist"],
     "running-open": ["RequestPriority", "SiteWhitelist", "SiteBlacklist"],
-    "running-closed": ["RequestPriority"],
+    "running-closed": ["RequestPriority", "SiteWhitelist", "SiteBlacklist"],
     "failed": [],
     "force-complete": [],
     "completed": [],

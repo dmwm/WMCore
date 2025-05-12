@@ -37,7 +37,7 @@ def processStatusViaPsutil(pid):
     statusList = []
 
     try:
-        proc = psutil.Process(pid)
+        proc = psutil.Process(int(pid))
         processName = proc.name()
         processStatus = proc.status()
         statusList.append({

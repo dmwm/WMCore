@@ -489,8 +489,8 @@ else
         echo
         echo
         _createFilesDst $currTag $testFileList
-        _createFilesDst $curTag $toplevFileList
-        _createFilesDst $curTag $staticFileList
+        _createFilesDst $currTag $toplevFileList
+        _createFilesDst $currTag $staticFileList
         _zeroCodeBase $currTag $srcFileList
         echo
         echo

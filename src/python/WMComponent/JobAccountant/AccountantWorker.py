@@ -443,6 +443,7 @@ class AccountantWorker(WMConnectionBase):
 
         """
         jobSuccess = fwkJobReport.taskSuccessful()
+        logging.info("Task successful: %s", jobSuccess)
 
         outputMap = self.getOutputMapAction.execute(jobID=jobID,
                                                     conn=self.getDBConn(),
@@ -478,16 +479,18 @@ class AccountantWorker(WMConnectionBase):
                     cmsRunSteps = sum([1 for step in fwkJobReport.listSteps() if step.startswith("cmsRun")])
                     if cmsRunSteps == 1:
                         jobSuccess = False
+                        logging.info("Production/Processing single cmsRun step job does not match output modules.")
                     else:
                         msg = f"Job {jobID} accepted for multi-step CMSSW, even though "
                         msg += "the expected outputModules does not match content of the FWJR."
                         logging.warning(msg)
                 else:
                     jobSuccess = False
+                    logging.info("Non Production/Processing job does not match output modules.")
 
                 if jobSuccess is False:
                     sortedOutputMap = sorted(outputMap.keys())
-                    errMsg = f"Job {jobID}, expected output modules: {sortedOutputMap}, "
+                    errMsg = f"Failing job {jobID}, with expected output modules: {sortedOutputMap}, "
                     errMsg += f"but has FWJR output modules: {sorted(outputModules)}"
                     logging.error(errMsg)
                     # override file list by the logArch1 output only

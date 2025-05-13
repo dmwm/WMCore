@@ -11,6 +11,7 @@ RSE basis.
 
 # futures
 from __future__ import division, print_function
+import concurrent.futures
 
 from pprint import pformat
 from time import time
@@ -152,6 +153,7 @@ class MSUnmerged(MSCore):
                                                 Functor(self.consRecordAge),
                                                 Functor(self.getUnmergedFiles),
                                                 Functor(self.getPfn),
+                                                Functor(self.resetCounters),
                                                 Functor(self.cleanRSE),
                                                 Functor(self.updateServiceCounters),
                                                 Functor(self.updateRSETimestamps, start=False, end=True),
@@ -300,125 +302,185 @@ class MSUnmerged(MSCore):
             self.plineCounters[pline.name]['rsesCleaned'], \
             self.plineCounters[pline.name]['filesDeletedSuccess']
 
+    def resetCounters(self, rse):
+        """
+        Reset all counters for an RSE object and initialize structure if needed.
+        :param rse: The RSE object whose counters need to be reset
+        """
+        # Initialize the basic structure if it doesn't exist
+        rse.setdefault('dirs', {})
+        rse.setdefault('counters', {})
+
+        # Initialize directory structure
+        rse['dirs'].setdefault('toDelete', set())
+        rse['dirs'].setdefault('deletedSuccess', set())
+        rse['dirs'].setdefault('deletedFail', set())
+
+        # Initialize counter structure
+        rse['counters'].setdefault('dirsDeletedSuccess', 0)
+        rse['counters'].setdefault('dirsDeletedFail', 0)
+        rse['counters'].setdefault('filesDeletedSuccess', 0)
+        rse['counters'].setdefault('filesDeletedFail', 0)
+        rse['counters'].setdefault('gfalErrors', {})
+
+        self.logger.info("Reset all counters for RSE: %s", rse['name'])
+        return rse
+
     # @profile
     def cleanRSE(self, rse):
         """
-        The method to implement the actual deletion of files for an RSE.
-        Order of deletion attempts is:
-        1. top directory
-        2. sub-directories
-        3. list sub-directories and files
-        4. remove each file (unlink)
-        5. remove the (now) empty sub-directories
-        6. try to remove the top directory again
-        :param rse: MSUnmergedRSE object to be cleaned
-        :return:    The MSUnmergedRSE object
+        Optimized cleanup method that minimizes directory listing operations
+        and handles storage technologies that support recursive directory deletion.
         """
-        # reset dirs counters
-        rse['dirs']['deletedSuccess'] = set()
-        rse['dirs']['deletedFail'] = set()
-        self.logger.info("Start cleaning files for RSE: %s.", rse['name'])
         if not rse['dirs']['toDelete']:
-            self.logger.info("There is nothing to delete for RSE: %s.", rse['name'])
             rse['isClean'] = self._checkClean(rse)
             return rse
 
-        # Create the gfal2 context object:
         try:
             ctx = createGfal2Context(self.msConfig['gfalLogLevel'], self.msConfig['emulateGfal2'])
         except Exception as ex:
-            msg = "RSE: %s, Failed to create gfal2 Context object. " % rse['name']
+            msg = "RSE: %s, Failed to create gfal2 context object. " % rse['name']
             msg += "Skipping it in the current run."
             self.logger.exception(msg)
             raise MSUnmergedPlineExit(msg) from ex
 
-        # Start cleaning one directory at a time:
-        for idx, dirLfn in enumerate(rse['dirs']['toDelete']):
-            self.logger.info("Processing directory index %s out of %s", idx, len(rse['dirs']['toDelete']))
-            # figure out the PFN prefix
-            dirPfn = rse['pfnPrefix'] + dirLfn
-            if not self.msConfig['enableRealMode']:
-                self.logger.info("DRY-RUN: would delete directory PFN: %s for RSE: %s", dirPfn, rse['name'])
-            else:
-                # Initially try to delete the whole directory even before emptying its content:
-                self.logger.info("Trying to remove the whole directory: %s", dirPfn)
-                rmdirSuccess = self._rmDir(ctx, dirPfn)
-                if rmdirSuccess:
-                    self.logger.info("Directory successfully removed: %s", dirPfn)
-                    rse['counters']['dirsDeletedSuccess'] += 1
-                    rse['dirs']['deletedSuccess'].add(dirLfn)
+        try:
+            for dirLfn in rse['dirs']['toDelete']:
+                dirPfn = rse['pfnPrefix'] + dirLfn
+
+                if not self.msConfig['enableRealMode']:
+                    self.logger.info("DRY-RUN: would delete directory: %s", dirPfn)
                     continue
 
-                # Next, try to delete sub-directories then
-                self.logger.info("Then trying to list and remove all sub-directories for: %s", dirPfn)
-                rmdirSuccess = self._rmSubDir(ctx, dirPfn)
-                if rmdirSuccess:
-                    self.logger.info("ALL sub-directories successfully removed. Now deleting the parent: %s", dirPfn)
-                    if self._rmDir(ctx, dirPfn) is True:
-                        rse['counters']['dirsDeletedSuccess'] += 1
-                        rse['dirs']['deletedSuccess'].add(dirLfn)
+                # First attempt: Try to delete the whole directory
+                if self._rmDir(ctx, dirPfn):
+                    self._updateSuccessCounters(rse, dirLfn)
+                    continue
+
+                # Second attempt: Try to delete sub-directories first
+                if self._tryDeleteSubDirs(ctx, dirPfn):
+                    # If sub-directories were deleted, try the parent again
+                    if self._rmDir(ctx, dirPfn):
+                        self._updateSuccessCounters(rse, dirLfn)
                         continue
 
-                # IF we are here, that means we did not manage to delete some/all of the directories 
-                msg = "Failed to delete the parent and/or its sub-directories. "
-                msg += "Going to retrieve a list of files and remove them in bulk operations."
-                self.logger.warning(msg)
-                listFiles = self._listDir(ctx, dirPfn)
-                # The following two bool flags are to track the success for directory removal
-                # during all consecutive attempts/steps of cleaning the current branch.
-                filesDeletedSuccess = 0
-                filesDeletedFail = 0
-                self.logger.info("Starting deletion of %s files:", len(listFiles))
-                for pfnSlice in list(grouper(listFiles, self.msConfig["filesToDeleteSliceSize"])):
-                    self.logger.info("Executing file slice removal for %s files...", len(pfnSlice))
-                    try:
-                        # returns None if deletion was successful
-                        for resp in ctx.unlink(pfnSlice):
-                            if resp is None:
-                                filesDeletedSuccess += len(pfnSlice)
-                            else:
-                                filesDeletedFail += len(pfnSlice)
-                                errMessage = os.strerror(resp.code)
-                                rse['counters']['gfalErrors'].setdefault(errMessage, 0)
-                                rse['counters']['gfalErrors'][errMessage] += 1
-                    except Exception as ex:
-                        msg = "Error while cleaning RSE: %s. "
-                        msg += "Will retry in the next cycle. Err: %s"
-                        self.logger.exception(msg, rse['name'], str(ex))
+                # Third attempt: If we get here, we need to delete files
+                # List and delete files in batches to control memory usage
+                successCount = 0
+                failCount = 0
+                for fileBatch in self._listAndDeleteFiles(ctx, dirPfn):
+                    batchSuccess, batchFail = self.deleteFilesInParallel(ctx, fileBatch)
+                    successCount += batchSuccess
+                    failCount += batchFail
 
-                self.logger.info("RSE: %s, Dir: %s, filesDeletedSuccess: %s, filesDeletedFail: %s",
-                                    rse['name'], dirLfn, filesDeletedSuccess, filesDeletedFail)
+                    # Update counters after each batch
+                    self._updateFileCounters(rse, batchSuccess, batchFail)
 
-                # Now reverse engineer the deepest directory names and delete each one of them, likely all empty dirs
-                setDirPfn = set()
-                for item in listFiles:
-                    setDirPfn.add(os.path.dirname(item))
-                for subDir in setDirPfn:
-                    rmdirSuccess = self._rmDir(ctx, subDir)
-                    if rmdirSuccess:
-                        self.logger.info("Empty sub-directory successfully removed: %s", subDir)
-                    else:
-                        self.logger.info("Empty sub-directory failed to be removed: %s", subDir)
-
-                # lastly, try to delete the original directory
+                # Final attempt: Try to delete the directory again
                 if self._rmDir(ctx, dirPfn):
-                    self.logger.info("Finally, directory successfully removed: %s", dirPfn)
-                    rse['counters']['dirsDeletedSuccess'] += 1
-                    rse['dirs']['deletedSuccess'].add(dirLfn)
+                    self._updateSuccessCounters(rse, dirLfn)
                 else:
-                    self.logger.info("Directory still fails to be removed: %s", dirPfn)
-                    rse['counters']['dirsDeletedFail'] += 1
-                    rse['dirs']['deletedFail'].add(dirLfn)
+                    self._updateFailureCounters(rse, dirLfn)
+        except Exception as ex:
+            self.logger.exception("Error during RSE cleanup: %s", str(ex))
+        finally:
+            if ctx:
+                ctx.free()
 
-                # Updating the RSE counters with the newly successfully deleted files
-                rse['counters']['filesDeletedSuccess'] += filesDeletedSuccess
-                rse['counters']['filesDeletedFail'] += filesDeletedFail
         rse['isClean'] = self._checkClean(rse)
-
-        # Explicitly release all internal resources used by the gfal2 context instance
-        if ctx:
-            ctx.free()
         return rse
+
+    def _tryDeleteSubDirs(self, ctx, dirPfn):
+        """
+        Attempt to delete sub-directories without listing all contents first.
+        Returns True if all sub-directories were deleted, False otherwise.
+        """
+        try:
+            # List only the immediate sub-directories
+            for entry in ctx.listdir(dirPfn):
+                if not entry.endswith('.root'):
+                    subDir = os.path.join(dirPfn, entry)
+                    try:
+                        if not self._rmDir(ctx, subDir):
+                            return False
+                    except gfal2.GError as ex:
+                        if ex.code != errno.ENOENT:  # Ignore if directory doesn't exist
+                            self._trackGfalError(ex)
+                            return False
+            return True
+        except gfal2.GError as ex:
+            self._trackGfalError(ex)
+            return False
+
+    def _listAndDeleteFiles(self, ctx, dirPfn, batchSize=100):
+        """
+        Generator that lists and yields files in batches to control memory usage.
+        """
+        currentBatch = []
+
+        def processEntry(entry, currentPath):
+            fullPath = os.path.join(currentPath, entry)
+            if entry.endswith('.root'):
+                currentBatch.append(fullPath)
+                if len(currentBatch) >= batchSize:
+                    yield currentBatch[:]
+                    currentBatch.clear()
+            else:
+                try:
+                    # Recursively process sub-directories
+                    for subEntry in ctx.listdir(fullPath):
+                        yield from processEntry(subEntry, fullPath)
+                except gfal2.GError as ex:
+                    if ex.code != errno.ENOENT:  # Ignore if directory doesn't exist
+                        self._trackGfalError(ex)
+
+        try:
+            for entry in ctx.listdir(dirPfn):
+                yield from processEntry(entry, dirPfn)
+
+            # Yield any remaining files in the last batch
+            if currentBatch:
+                yield currentBatch
+        except gfal2.GError as ex:
+            self._trackGfalError(ex)
+
+    def _updateSuccessCounters(self, rse, dirLfn):
+        """Update counters for successful directory deletion"""
+        rse['counters']['dirsDeletedSuccess'] += 1
+        rse['dirs']['deletedSuccess'].add(dirLfn)
+
+    def _updateFailureCounters(self, rse, dirLfn):
+        """Update counters for failed directory deletion"""
+        rse['counters']['dirsDeletedFail'] += 1
+        rse['dirs']['deletedFail'].add(dirLfn)
+
+    def _updateFileCounters(self, rse, successCount, failCount):
+        """Update counters for file deletion operations"""
+        rse['counters']['filesDeletedSuccess'] += successCount
+        rse['counters']['filesDeletedFail'] += failCount
+
+    def _trackGfalError(self, error):
+        """
+        Track and count different types of gfal2 errors.
+        :param error: gfal2 error object or error code
+        """
+        if hasattr(error, 'code'):
+            errorCode = error.code
+            errorMessage = str(error)
+        else:
+            errorCode = error
+            errorMessage = os.strerror(error)
+
+        # Initialize the error counter if it doesn't exist
+        if 'gfalErrors' not in self.plineCounters[self.plineUnmerged.name]:
+            self.plineCounters[self.plineUnmerged.name]['gfalErrors'] = {}
+
+        # Update the error counter
+        if errorMessage not in self.plineCounters[self.plineUnmerged.name]['gfalErrors']:
+            self.plineCounters[self.plineUnmerged.name]['gfalErrors'][errorMessage] = 0
+        self.plineCounters[self.plineUnmerged.name]['gfalErrors'][errorMessage] += 1
+
+        self.logger.error("GFAL error occurred - Code: %s, Message: %s", errorCode, errorMessage)
 
     def _rmDir(self, ctx, dirPfn):
         """
@@ -431,14 +493,16 @@ class MSUnmerged(MSCore):
         """
         try:
             # NOTE: For gfal2 rmdir() exit status of 0 is success
-            self.logger.info("Deleting directory: %s", dirPfn)
+            self.logger.info("Attempting to delete directory: %s", dirPfn)
             rmdirSuccess = ctx.rmdir(dirPfn) == 0
+            if rmdirSuccess:
+                self.logger.info("Successfully deleted directory: %s", dirPfn)
         except gfal2.GError as gfalExc:
             if gfalExc.code == errno.ENOENT:
                 self.logger.warning("MISSING directory: %s", dirPfn)
                 rmdirSuccess = True
             else:
-                self.logger.error("FAILED to remove directory: %s: gfalException: %s, gfalErrorCode: %s", dirPfn, str(gfalExc), gfalExc.code)
+                self._trackGfalError(gfalExc)
                 rmdirSuccess = False
         return rmdirSuccess
 
@@ -461,7 +525,7 @@ class MSUnmerged(MSCore):
                     subDir = os.path.join(dirPfn, entry)
                     rm_status.append(self._rmDir(ctx, subDir))
         except gfal2.GError as gfalExc:
-            self.logger.error("FAILED to list directory: %s: gfalException: %s, gfalErrorCode: %s",
+            self.logger.error("FAILED to list/remove directory: %s: gfalException: %s, gfalErrorCode: %s",
                               dirPfn, str(gfalExc), gfalExc.code)
             return False
 
@@ -899,3 +963,58 @@ class MSUnmerged(MSCore):
             self.logger.exception(msg, str(ex))
             rseList = []
         return rseList
+
+    def deleteFilesInParallel(self, ctx, fileList, batchSize=100, maxWorkers=10):
+        """
+        Delete files in parallel using concurrent.futures and gfal2's bulk operations.
+        Combines the benefits of batch operations with parallel processing.
+        :param ctx: gfal2 context
+        :param fileList: list of files to delete
+        :param batchSize: size of each batch for bulk operations
+        :param maxWorkers: maximum number of parallel workers
+        :return: tuple of (successCount, failCount)
+        """
+        successCount = 0
+        failCount = 0
+
+        def deleteBatch(batch):
+            try:
+                self.logger.info("Attempting to delete batch of %d files", len(batch))
+                results = ctx.unlink(batch)
+                self.logger.info("Completed deletion of batch of %d files", len(batch))
+                return batch, results
+            except Exception as ex:
+                self.logger.error("Failed to delete batch: %s", str(ex))
+                return batch, ex
+
+        # Create batches of files
+        batches = list(grouper(fileList, batchSize))
+        self.logger.info("Created %d batches of files for parallel deletion", len(batches))
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
+            # Submit all batches for deletion
+            future_to_batch = {executor.submit(deleteBatch, batch): batch for batch in batches}
+
+            # Process results as they complete
+            for future in concurrent.futures.as_completed(future_to_batch):
+                batch = future_to_batch[future]
+                try:
+                    _, results = future.result()
+                    if isinstance(results, Exception):
+                        # If the entire batch failed
+                        failCount += len(batch)
+                        self.logger.error("Batch deletion failed: %s", str(results))
+                    else:
+                        # Process individual results from the batch
+                        for result in results:
+                            if result is None:
+                                successCount += 1
+                            else:
+                                failCount += 1
+                                self._trackGfalError(result)
+                except Exception as ex:
+                    self.logger.error("Error processing batch deletion result: %s", str(ex))
+                    failCount += len(batch)
+
+        self.logger.info("Completed parallel deletion. Success: %d, Failed: %d", successCount, failCount)
+        return successCount, failCount

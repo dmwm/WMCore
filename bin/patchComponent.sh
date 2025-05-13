@@ -392,7 +392,7 @@ do
 
     for file in $staticFileListTemp
     do
-        file=${file#a\/} && saticFileList="$saticFileList $file"
+        file=${file#a\/} && staticFileList="$staticFileList $file"
     done
 
 done

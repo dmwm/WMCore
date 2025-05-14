@@ -251,7 +251,7 @@ class StdBase(object):
 
         return outputModules
 
-    def addRuntimeMonitors(self, task):
+    def addRuntimeMonitors(self, task, maxpss=2.3):
         """
         _addRuntimeMonitors_
 
@@ -259,7 +259,6 @@ class StdBase(object):
         Memory settings are defined in Megabytes and timing in seconds.
         """
         # Default settings defined by CMS policy
-        maxpss = 2.3 * 1024  # 2.3 GiB, but in MiB
         softTimeout = 47 * 3600  # 47h
         hardTimeout = 47 * 3600 + 5 * 60  # 47h + 5 minutes
 
@@ -267,7 +266,7 @@ class StdBase(object):
         monitoring.interval = 300
         monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxPSS = maxpss
+        monitoring.PerformanceMonitor.maxPSS = maxpss * 1024  # in MiB
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
@@ -1098,6 +1097,7 @@ class StdBase(object):
                      "ProcessingString": {"validate": procstring, "optional": False},
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
+                     "MergeTaskMemory": {"default": 3000.0, "type": float, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
                      "EventStreams": {"type": int, "default": 0, "validate": lambda x: x >= 0, "null": True},
                      "MergedLFNBase": {"default": "/store/data"},

@@ -41,8 +41,8 @@
                 "StepChain multicore/eventStreams; StepChain with different CMSSW/ScramArch and PrepID"
             ],
             "WorkFlowDesc": [
-                "TC from scratch with PU at Step3; KeepOutput of Step5/6 only - AOD and MINI; Diff CMSSW/ScramArch and PrepID",
-                "2000EpJ and 4LpJ for Step1; Diff Multicore/Memory/EventStreams, T1: 2/1GB/2, T2: 4/2GB/0, T3: 4/4GB/0, T4: 2/4GB/2, T5:4/3GB/0, T6: 1/3GB/2"
+                "SC from scratch with PU at Step3; KeepOutput of Step5/6 only - AOD and MINI; Diff CMSSW/ScramArch and PrepID",
+                "2000EpJ and 4LpJ for Step1; 4GB of RAM for all steps and Cores/EventStream as: S1 2/2, S2 4/0, S3 4/0, S4 2/2, S5 4/0, S6 1/2"
             ]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",

@@ -94,30 +94,26 @@ for opt, arg in opts:
         config = arg
     if opt == "--start":
         if command != None:
-            msg = "Command specified twice:\n"
-            msg += usage()
-            print(msg)
+            print("Command specified twice:\n")
+            usage()
             sys.exit(1)
         command = "start"
     if opt == "--shutdown":
         if command != None:
-            msg = "Command specified twice:\n"
-            msg += usage()
-            print(msg)
+            print("Command specified twice:\n")
+            usage()
             sys.exit(1)
         command = "shutdown"
     if opt == "--status":
         if command != None:
-            msg = "Command specified twice:\n"
-            msg += usage()
-            print(msg)
+            print("Command specified twice:\n")
+            usage()
             sys.exit(1)
         command = "status"
     if opt == "--restart":
         if command != None:
-            msg = "Command specified twice:\n"
-            msg += usage()
-            print(msg)
+            print("Command specified twice:\n")
+            usage()
             sys.exit(1)
         command = "restart"
     if opt == "--cleanup-logs":
@@ -184,9 +180,9 @@ def connectionTest(configFile):
     socket = getattr(config.CoreDatabase, "socket", None)
 
     try:
-       wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
-                                    dialect = dialect,
-                                    socketLoc = socket)
+        wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
+                                     dialect = dialect,
+                                     socketLoc = socket)
     except Exception as ex:
         msg = "Unable to make connection to using \n"
         msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl 
@@ -351,7 +347,7 @@ def checkProcessThreads(component, compDir):
     if not os.path.exists(daemonXml):
         print("Component:%s Not Running" % component)
         return
-    pid = extractFromXML(daemonXML, "ProcessID")
+    pid = extractFromXML(daemonXml, "ProcessID")
 
     jsonFile = os.path.join(compDir, "threads.json")
     with open(jsonFile, "r", encoding="utf-8") as istream:

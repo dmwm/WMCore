@@ -16,7 +16,7 @@ import os
 import re
 
 from builtins import str, range
-
+from urllib.parse import urlparse
 
 class RucioFileCatalog(dict):
     """
@@ -245,3 +245,57 @@ def rseName(currentSite, currentSubsite, storageSite, volume):
             rse = jsElement['rse']
             break
     return rse
+
+def get_default_cmd(currentSite, currentSubsite, storageSite, volume, protocolName):
+    """
+    Return default command for a protocol, for example:
+    https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L17
+    :currentSite is the site where jobs are executing
+    :currentSubsite is the sub site if jobs are running here
+    :storageSite is the site for storage
+    :volume is the volume name, for example:
+        https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L3
+    :protocolName is the 'protocol' in site-local-config.xml under stageOut
+    """
+
+    storageJsonName = storageJsonPath(currentSite, currentSubsite, storageSite)
+    try:
+        with open(storageJsonName, encoding="utf-8") as jsonFile:
+            jsElements = json.load(jsonFile)
+    except Exception as ex:
+        msg = "RucioFileCatalog.py:getDefaultCmd() Error reading storage.json: %s\n" % storageJsonName
+        msg += str(ex)
+        raise RuntimeError(msg)
+    
+    url_scheme = ''
+    
+    for entry in jsElements:
+        if entry.get('site') != storageSite or entry.get('volume') != volume:
+            continue
+        
+        matchProto = ''
+        for proto in entry.get("protocols", []):
+            if proto.get("protocol") != protocolName:
+                continue
+
+            matchProto = proto
+            # First try rules
+            rules = proto.get("rules", [])
+            if rules:
+                pfn = rules[0].get("pfn", "")
+                url_scheme = urlparse(pfn).scheme
+
+            # If no rules try 'prefix'
+            if not url_scheme and "prefix" in proto:
+                url_scheme = urlparse(proto["prefix"]).scheme
+            
+            # Map scheme to command
+            return {
+                'root': 'xrdcp',
+                'davs': 'gfla2',
+                'file': 'cp'
+            }.get(url_scheme, 'gfal2')
+        
+        break  # matching site+volume found and processed
+    
+    return None #no matched protocol so command is None

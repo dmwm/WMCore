@@ -33,6 +33,7 @@ from WMQuality.TestInit import TestInit
 
 
 class ResourceControlTest(EmulatedUnitTestCase):
+
     def setUp(self):
         """
         _setUp_
@@ -43,10 +44,9 @@ class ResourceControlTest(EmulatedUnitTestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules=["WMCore.WMBS",
-                                               "WMCore.ResourceControl",
-                                               "WMCore.BossAir"],
-                                useDefault=False)
+
+        # Initialize all schemas using the new component-based method
+        self.testInit.init.setSchemaFromModules(['wmbs', 'bossair', 'resourcecontrol'])
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
@@ -690,11 +690,18 @@ class ResourceControlTest(EmulatedUnitTestCase):
             cmdline = ["python3", resControlPath, "--add-Test"]
         else:
             cmdline = [resControlPath, "--add-Test"]
+
         retval = subprocess.Popen(cmdline,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT,
-                                  env=env)
-        (_, _) = retval.communicate()
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                env=env)
+        (stdout, _) = retval.communicate()
+
+        # Check if the command succeeded
+        if retval.returncode != 0:
+            print(f"Command failed with output:\n{stdout.decode()}")
+            self.fail("wmagent-resource-control command failed")
+
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
         self.assertEqual(len(result), 1)

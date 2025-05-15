@@ -12,7 +12,6 @@ from functools import reduce
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
-from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
@@ -1211,8 +1210,8 @@ class SubscriptionTest(unittest.TestCase):
 
         Test the getSubTypes function
         """
-        createBase = CreateWMBSBase()
-        subTypes = createBase.subTypes
+        subTypes = [("Processing", 0), ("Merge", 4), ("Harvesting", 5), ("Cleanup", 1),
+                    ("LogCollect", 2), ("Skim", 3), ("Production", 0)]
 
         getSubTypes = self.daofactory(classname="Subscriptions.GetSubTypes")
         result = getSubTypes.execute()

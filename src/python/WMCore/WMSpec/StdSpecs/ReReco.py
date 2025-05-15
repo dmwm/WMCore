@@ -6,10 +6,6 @@ Standard ReReco workflow.
 """
 from __future__ import division
 
-import json
-
-from future.utils import viewitems
-
 from Utils.Utilities import makeList
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate
@@ -167,7 +163,7 @@ class ReRecoWorkloadFactory(DataProcessing):
             if skimConfig["SkimJobSplitAlgo"] == "FileBased":
                 skimConfig["SkimJobSplitArgs"]["files_per_job"] = int(arguments.get("SkimFilesPerJob%s" % skimIndex, 1))
             elif skimConfig["SkimJobSplitAlgo"] in ["EventBased", "EventAwareLumiBased"]:
-                standardSkim = int((8.0 * 3600.0) / skimConfig["TimePerEvent"])
+                standardSkim = int(self.target_job_length / skimConfig["TimePerEvent"])
                 skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, standardSkim))
                 if skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
                     skimConfig["SkimJobSplitAlgo"]["job_time_limit"] = 48 * 3600  # 2 days
@@ -245,7 +241,7 @@ class ReRecoWorkloadFactory(DataProcessing):
                                                            getOutputModules=True))
 
         # Skim facts have to be validated outside the usual master validation
-        skimSchema = {k: v for (k, v) in viewitems(schema) if k.startswith("Skim")}
+        skimSchema = {k: v for k, v in schema.items() if k.startswith("Skim")}
         skimArguments = self.getSkimArguments()
         skimIndex = 1
         skimInputs = set()

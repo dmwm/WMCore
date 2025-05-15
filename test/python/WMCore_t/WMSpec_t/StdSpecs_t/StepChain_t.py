@@ -291,7 +291,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy check
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        workqueueSplit = {'SliceSize': 200, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
+        workqueueSplit = {'SliceSize': 300, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
                           'SubSliceSize': 100, 'SubSliceType': 'NumberOfEventsPerLumi',
                           'policyName': 'MonteCarlo', 'OpenRunningTimeout': 0}
         self.assertDictEqual(testWorkload.startPolicyParameters(), workqueueSplit)
@@ -305,7 +305,7 @@ class StepChainTests(EmulatedUnitTestCase):
         step1Splitting = splitArgs['/TestWorkload/GENSIM']
         self.assertEqual(step1Splitting['type'], 'Production')
         self.assertEqual(step1Splitting['algorithm'], 'EventBased')
-        self.assertEqual(step1Splitting['events_per_job'], 200)
+        self.assertEqual(step1Splitting['events_per_job'], 300)
         self.assertEqual(step1Splitting['events_per_lumi'], 100)
         self.assertFalse(step1Splitting['lheInputFiles'])
         self.assertFalse(step1Splitting['trustSitelists'])
@@ -389,7 +389,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy check
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        workqueueSplit = {'SliceSize': 200, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
+        workqueueSplit = {'SliceSize': 300, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
                           'SubSliceSize': 100, 'SubSliceType': 'NumberOfEventsPerLumi',
                           'policyName': 'MonteCarlo', 'OpenRunningTimeout': 0}
         self.assertDictEqual(testWorkload.startPolicyParameters(), workqueueSplit)
@@ -408,7 +408,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         splitParams = task.jobSplittingParameters()
         self.assertEqual(splitParams['algorithm'], "EventBased", "Wrong job splitting algo")
-        self.assertEqual(splitParams['events_per_job'], 200)
+        self.assertEqual(splitParams['events_per_job'], 300)
         self.assertEqual(splitParams['events_per_lumi'], 100)
         self.assertFalse(splitParams['lheInputFiles'], "Wrong LHE flag")
         self.assertFalse(splitParams['deterministicPileup'])
@@ -688,7 +688,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         splitParams = task.jobSplittingParameters()
         self.assertEqual(splitParams['algorithm'], "EventAwareLumiBased", "Wrong job splitting algo")
-        self.assertEqual(splitParams['events_per_job'], 200)
+        self.assertEqual(splitParams['events_per_job'], 300)
         self.assertTrue(splitParams['performance']['timePerEvent'] >= 144)
         self.assertTrue(splitParams['performance']['sizePerEvent'] >= 512)
         self.assertTrue(splitParams['performance']['memoryRequirement'] == 3500)

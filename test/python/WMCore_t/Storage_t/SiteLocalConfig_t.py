@@ -73,7 +73,7 @@ class SiteLocalConfigTest(unittest.TestCase):
             "Error: Protocol is not correct."
         assert mySiteConfig.stageOuts[0]["option"] == "-p", \
             "Error: option is not correct."
-        # assert False
+        #assert False
         return
 
     def testLoadingConfigFromOverridenEnvVarriable(self):

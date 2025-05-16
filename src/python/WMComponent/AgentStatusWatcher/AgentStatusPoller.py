@@ -198,7 +198,11 @@ class AgentStatusPoller(BaseWorkerThread):
         """
         couchInfo = {'name': 'CouchServer', 'status': 'ok', 'error_message': ""}
 
-        cInfo = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
+        # original way we monitor CouchDB replication
+        #cInfo = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
+
+        # new way to monitor CouchDB replication, done via CouchMonitoring module
+        cInfo = self.localCouchMonitor.couchReplicationStatus()
         couchInfo.update(cInfo)
         return couchInfo
 

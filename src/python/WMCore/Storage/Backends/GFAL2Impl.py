@@ -24,7 +24,7 @@ class GFAL2Impl(StageOutImpl):
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
 
         self.setAuthX509 = "X509_USER_PROXY=$X509_USER_PROXY"
-        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE)"
+        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat \"$BEARER_TOKEN_FILE\")"
         self.unsetX509 = "unset X509_USER_PROXY;"
         self.unsetToken = "unset BEARER_TOKEN;"
 
@@ -33,7 +33,7 @@ class GFAL2Impl(StageOutImpl):
         # 2. forced authentication method (unset_auth)
         # 3. finally, debug mode or not (dry_run)
         self.setups = "env -i {{set_auth}} JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-        self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
+        self.copyOpts = '-t 2400 -T 2400 -p -vvv --abort-on-failure {checksum} {options} {source} {destination}'
         self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-copy ' + self.copyOpts)
         self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-rm -t 600 {}')
 

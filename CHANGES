@@ -1,3 +1,12 @@
+2.4.0rc2 to 2.4.0rc3:
+  - Avoid crashing ErrorHandler on failed DNS resolution (Alan Malta Rodrigues) #12369
+  - switch from distribution.data_files to distribution.package_data (Valentin Kuznetsov) #12359
+  - fix issues with WMagent start; and couple of major warnings reported by pylint (Valentin Kuznetsov) #12362
+  - Decrease site slot multiplier factor from .75 to .50 (Alan Malta Rodrigues) #12365
+  - python 3.12 - do not use codecs (Dario Mapelli) #12338
+  - Fix bash typoed variable (Fredrik) #12364
+
+
 2.4.0rc1 to 2.4.0rc2:
   - python 3.12 - necessary requirements.txt upgrades (Dario Mapelli) #12336
   - Split patch files by source files edited && Apply them separately (Todor Ivanov) #12346

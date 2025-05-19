@@ -249,7 +249,7 @@ class StdBase(object):
 
         return outputModules
 
-    def addRuntimeMonitors(self, task, maxpss=2.3):
+    def addRuntimeMonitors(self, task, maxpss=2.3 * 1024):
         """
         _addRuntimeMonitors_
 
@@ -264,7 +264,7 @@ class StdBase(object):
         monitoring.interval = 300
         monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxPSS = maxpss * 1024  # in MiB
+        monitoring.PerformanceMonitor.maxPSS = maxpss  # value is propagated in MiB
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
@@ -1091,7 +1091,6 @@ class StdBase(object):
                      "ProcessingString": {"validate": procstring, "optional": False},
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
-                     "MergeTaskMemory": {"default": 3000.0, "type": float, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
                      "EventStreams": {"type": int, "default": 0, "validate": lambda x: x >= 0, "null": True},
                      "MergedLFNBase": {"default": "/store/data"},

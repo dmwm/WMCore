@@ -225,7 +225,7 @@ _createFilesDst() {
         echo INFO: $FUNCNAME: dest: $fileDest
         curl -f $WMRawUrl/$srcBranch/$file  -o $fileDest || {
             echo INFO: $FUNCNAME: file: $file missing at the origin.
-            echo INFO: $FUNCNAME: Seems to be a new file for the curren patch.
+            echo INFO: $FUNCNAME: Seems to be a new file for the current patch.
             echo INFO: $FUNCNAME: Removing it from the destination as well!
             rm -f $fileDest
         }
@@ -252,7 +252,7 @@ _zeroCodeBase() {
         echo INFO: $FUNCNAME: dest: $pythonLibPath/$file
         curl -f $WMRawUrl/$srcBranch/$file  -o $pythonLibPath/$file || {
             echo INFO: $FUNCNAME: file: $file missing at the origin.
-            echo INFO: $FUNCNAME: Seems to be a new file for the curren patch.
+            echo INFO: $FUNCNAME: Seems to be a new file for the current patch.
             echo INFO: $FUNCNAME: Removing it from the destination as well!
             rm -f $pythonLibPath/$file
         }
@@ -338,7 +338,7 @@ _createPatchFiles(){
 }
 
 _warnFilelist(){
-    echo WARNING: Please consider checking the follwoing list of files for eventual code conflicts:
+    echo WARNING: Please consider checking the following list of files for eventual code conflicts:
     for file in $srcFileList $testFileList
     do
         echo WARNING: $pythonLibPath/$file
@@ -392,7 +392,7 @@ do
 
     for file in $staticFileListTemp
     do
-        file=${file#a\/} && saticFileList="$saticFileList $file"
+        file=${file#a\/} && staticFileList="$staticFileList $file"
     done
 
 done
@@ -489,8 +489,8 @@ else
         echo
         echo
         _createFilesDst $currTag $testFileList
-        _createFilesDst $curTag $toplevFileList
-        _createFilesDst $curTag $staticFileList
+        _createFilesDst $currTag $toplevFileList
+        _createFilesDst $currTag $staticFileList
         _zeroCodeBase $currTag $srcFileList
         echo
         echo

@@ -293,7 +293,7 @@ def get_default_cmd(currentSite, currentSubsite, storageSite, volume, protocolNa
             # Map scheme to command
             return {
                 'root': 'xrdcp',
-                'davs': 'gfla2',
+                'davs': 'gfal2',
                 'file': 'cp'
             }.get(url_scheme, 'gfal2')
 

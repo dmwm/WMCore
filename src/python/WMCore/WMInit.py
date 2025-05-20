@@ -299,7 +299,8 @@ class WMInit(object):
         """
         Return the SQL statements from the file.
         For MariaDB, it accepts the whole SQL file content in a single statement.
-        For Oracle, it splits the SQL file content into statements, removing the semicolon.
+        For Oracle, it splits the SQL file content into statements using the slash (/) terminator
+        when it appears as the first character in a line.
         """
         if not os.path.exists(sqlFile):
             raise WMInitException(f"SQL file not found: {sqlFile}")
@@ -310,7 +311,6 @@ class WMInit(object):
         if dialect == 'mariadb':
             return [sql]
         elif dialect == 'oracle':
-            # Split by semicolon and remove it from statements
             statements = []
             current_statement = []
 
@@ -319,14 +319,16 @@ class WMInit(object):
                 # Skip empty lines and comments
                 if not line or line.startswith('--'):
                     continue
-                current_statement.append(line)
-                if line.endswith(';'):
-                    # Remove the semicolon from the last line
-                    current_statement[-1] = current_statement[-1][:-1]
+
+                # If we find a slash terminator at the start of a line
+                if line == '/':
+                    # Join all lines collected so far into a statement
                     stmt = '\n'.join(current_statement)
                     if stmt.strip():
                         statements.append(stmt)
                     current_statement = []
+                else:
+                    current_statement.append(line)
 
             # Add any remaining statement
             if current_statement:

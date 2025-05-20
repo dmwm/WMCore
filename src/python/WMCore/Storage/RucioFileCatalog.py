@@ -37,7 +37,7 @@ class RucioFileCatalog(dict):
         """
         Add an lfn to pfn mapping to this instance
         :param protocol: name of protocol, for example XRootD
-        :param match: regular expression string to perform path matching 
+        :param match: regular expression string to perform path matching
         :param result: result of the path matching
         :param chain: name of chained protocol
         :param mapping_type: type of path matching
@@ -52,11 +52,14 @@ class RucioFileCatalog(dict):
 
     def _doMatch(self, protocol, path, style, caller):
         """
-        Generalised way of building up the mappings.         
+        Generalised way of building up the mappings.
         :param protocol: the name of a protocol, for example XRootD
         :path: a LFN path, for example /store/abc/xyz.root
         :style: type of conversion. lfn-to-pfn is to convert LFN to PFN and pfn-to-pfn is for PFN to LFN
-        :caller is the method from there this method was called. It's used for resolving chained rules. When a rule is chained, the path translation of protocol defined in "chain" attribute should be applied first before the one specified in this rule. Here is an example. In this storage description, https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json, the rule of protocol WebDAV of volume KIT_MSS is chained to the protocol pnfs of the same volume. The path translation of WebDAV rule must be done by applying the path translation of pnfs rule first before its own path translation is applied.
+        :caller: is the method from there this method was called. It's used for resolving chained rules.
+                 When a rule is chained, the path translation of protocol defined in "chain" attribute should be applied first before the one specified in this rule. Here is an example.
+                 In this storage description, https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json, the rule of protocol WebDAV of volume KIT_MSS is chained to the protocol pnfs of the same volume.
+                 The path translation of WebDAV rule must be done by applying the path translation of pnfs rule first before its own path translation is applied.
         """
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
@@ -136,7 +139,7 @@ def storageJsonPath(currentSite, currentSubsite, storageSite):
     # return path override if it is defined and exists
     siteConfigPathOverride = os.getenv('WMAGENT_RUCIO_CATALOG_OVERRIDE', None)
     if siteConfigPathOverride and os.path.exists(siteConfigPathOverride):
-        return siteConfigPathOverride    
+        return siteConfigPathOverride
 
     # get site config
     siteConfigPath = os.getenv('SITECONFIG_PATH', None)
@@ -182,7 +185,7 @@ def readRFC(filename, storageSite, volume, protocol):
     except Exception as ex:
         msg = "Error reading storage description file: %s\n" % filename
         msg += str(ex)
-        raise RuntimeError(msg)
+        raise RuntimeError(msg) from ex
     # now loop over elements, select the one matched with inputs (storageSite, volume, protocol) and fill lfn-to-pfn
     for jsElement in jsElements:
         # check to see if the storageSite and volume matchs with "site" and "volume" in storage.json
@@ -239,7 +242,7 @@ def rseName(currentSite, currentSubsite, storageSite, volume):
     except Exception as ex:
         msg = "RucioFileCatalog.py:rseName() Error reading storage.json: %s\n" % storageJsonName
         msg += str(ex)
-        raise RuntimeError(msg)
+        raise RuntimeError(msg) from ex
     for jsElement in jsElements:
         if jsElement['site'] == storageSite and jsElement['volume'] == volume:
             rse = jsElement['rse']
@@ -265,20 +268,18 @@ def get_default_cmd(currentSite, currentSubsite, storageSite, volume, protocolNa
     except Exception as ex:
         msg = "RucioFileCatalog.py:getDefaultCmd() Error reading storage.json: %s\n" % storageJsonName
         msg += str(ex)
-        raise RuntimeError(msg)
-    
+        raise RuntimeError(msg) from ex
+
     url_scheme = ''
-    
+
     for entry in jsElements:
         if entry.get('site') != storageSite or entry.get('volume') != volume:
             continue
-        
-        matchProto = ''
+
         for proto in entry.get("protocols", []):
             if proto.get("protocol") != protocolName:
                 continue
 
-            matchProto = proto
             # First try rules
             rules = proto.get("rules", [])
             if rules:
@@ -288,14 +289,14 @@ def get_default_cmd(currentSite, currentSubsite, storageSite, volume, protocolNa
             # If no rules try 'prefix'
             if not url_scheme and "prefix" in proto:
                 url_scheme = urlparse(proto["prefix"]).scheme
-            
+
             # Map scheme to command
             return {
                 'root': 'xrdcp',
                 'davs': 'gfla2',
                 'file': 'cp'
             }.get(url_scheme, 'gfal2')
-        
+
         break  # matching site+volume found and processed
-    
+
     return None #no matched protocol so command is None

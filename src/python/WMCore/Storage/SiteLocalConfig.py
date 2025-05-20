@@ -13,7 +13,7 @@ import os
 from builtins import next, str, object
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
-from WMCore.Storage.RucioFileCatalog import rseName,get_default_cmd
+from WMCore.Storage.RucioFileCatalog import rseName, get_default_cmd
 
 
 def loadSiteLocalConfig():
@@ -73,7 +73,6 @@ class SiteConfigError(Exception):
     Exception class placeholder
 
     """
-    pass
 
 
 class SiteLocalConfig(object):
@@ -138,7 +137,7 @@ class SiteLocalConfig(object):
         except Exception as ex:
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
-            raise SiteConfigError(msg)
+            raise SiteConfigError(msg) from ex
 
         nodeResult = nodeReader(node)
 
@@ -308,7 +307,7 @@ def processStageOut():
             localReport['volume'] = aVolume
             localReport['protocol'] = aProtocol
             localReport['phedex-node'] = rseName(report["siteName"], subSiteName, aStorageSite, aVolume)
-            
+
             report['stageOuts'].append(localReport)
 
 

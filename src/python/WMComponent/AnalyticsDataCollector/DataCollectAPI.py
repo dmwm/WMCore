@@ -41,7 +41,7 @@ def threadsDetails(component, pid, downProcessThreads):
             "last_updated": int(time.time()),
             "update_threshold": None,
             "poll_interval": None,
-            "cycle_time": None,
+            "cycle_time": 0.0,
             "outcome": None,
             "last_error": None,
             "error_message": f"Lost threads: {downProcessThreads}"

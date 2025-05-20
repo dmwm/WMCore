@@ -9,4 +9,5 @@ CREATE TABLE rc_threshold (
         REFERENCES wmbs_location(id) ON DELETE CASCADE,
     CONSTRAINT rc_threshold_fk2 FOREIGN KEY (sub_type_id) 
         REFERENCES wmbs_sub_types(id) ON DELETE CASCADE
-); 
+)
+/ 

@@ -308,7 +308,9 @@ class WMAgentDBData(object):
                 # check if all component process' threads are alive, otherwise set down flag
                 for proc in compProcessStatus:
                     # the alive process should be either in sleeping or running states
-                    if proc['status'] not in ["S (sleeping)", "R (running)"]:
+                    # 'S (sleeping) and 'R (running)' are states used by proc FS
+                    # 'sleeping' and 'running' are states used by psutils
+                    if proc['status'] not in ["S (sleeping)", "R (running)", 'sleeping', 'running']:
                         downFlag = True
                         downProcessThreads.append(proc)
             if downFlag and component not in agentInfo['down_components']:

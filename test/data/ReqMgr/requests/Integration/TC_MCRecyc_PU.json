@@ -32,8 +32,8 @@
         "Campaign": "Campaign-OVERRIDE-ME",
         "Comments": {
             "WorkFlowDesc": ["TaskChain MC recycling with PU; Very similar to TC_MCRecyc.json but with PU that is not used in cmsDriver;",
-                             "Also, same CMSSW version in both tasks; KeepOutput false for Task1 (GEN-SIM-*)"],
-	        "CheckList": "TaskChain: MC recycling with PU; TaskChain with KeepOutput false; TaskChain MC harvesting"
+                             "Also, same CMSSW version in both tasks; KeepOutput false for Task1 (GEN-SIM-*); 15_0_0_pre3 for Task1, 15_0_1 for Task2"],
+	        "CheckList": "TaskChain: MC recycling with PU; TaskChain with KeepOutput false; TaskChain MC harvesting; TC with diff CMSSW versions"
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache",
@@ -81,8 +81,8 @@
             "TaskName": "DIGIHI2024"
         },
         "Task2": {
-            "AcquisitionEra": "CMSSW_15_0_0_pre3",
-            "CMSSWVersion": "CMSSW_15_0_0_pre3",
+            "AcquisitionEra": "CMSSW_15_0_1",
+            "CMSSWVersion": "CMSSW_15_0_1",
             "Campaign": "CMSSW_15_0_0_pre3__Run3_2024HIN_noPU-1739709162",
             "ConfigCacheID": "574bef09fdd0275b3eae2ca9e87ca048",
             "EventStreams": 2,

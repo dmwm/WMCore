@@ -42,7 +42,7 @@
         "GlobalTag": "130X_dataRun3_Prompt_v4",
         "IncludeParents": true,
         "InputDataset": "/MinimumBias/Run2023C-22Sep2023_v4-v1/MINIAOD",
-        "Memory": 3000,
+        "Memory": 4000,
         "Multicore": 2,
         "PrepID": "TEST-ReReco-Run2023C-MinimumBias-JMENano12p5_v4-00001",
         "ProcessingString": "JMENano12p5_v4",

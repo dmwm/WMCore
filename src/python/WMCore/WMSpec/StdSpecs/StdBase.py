@@ -251,7 +251,7 @@ class StdBase(object):
 
         return outputModules
 
-    def addRuntimeMonitors(self, task):
+    def addRuntimeMonitors(self, task, maxpss=2.3 * 1024):
         """
         _addRuntimeMonitors_
 
@@ -259,7 +259,6 @@ class StdBase(object):
         Memory settings are defined in Megabytes and timing in seconds.
         """
         # Default settings defined by CMS policy
-        maxpss = 2.3 * 1024  # 2.3 GiB, but in MiB
         softTimeout = 47 * 3600  # 47h
         hardTimeout = 47 * 3600 + 5 * 60  # 47h + 5 minutes
 
@@ -267,7 +266,7 @@ class StdBase(object):
         monitoring.interval = 300
         monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxPSS = maxpss
+        monitoring.PerformanceMonitor.maxPSS = maxpss  # value is propagated in MiB
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task

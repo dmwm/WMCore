@@ -6,10 +6,12 @@ Test case for WMLogging module
 from builtins import range
 from datetime import date
 import logging
-import unittest
 import os
+from pathlib import Path
+import unittest
+import time
 
-from WMCore.WMLogging import CouchHandler, MyTimedRotatingFileHandler
+from WMCore.WMLogging import CouchHandler, WMTimedRotatingFileHandler
 from WMCore.Database.CMSCouch import CouchServer
 
 
@@ -34,18 +36,11 @@ class WMLoggingTest(unittest.TestCase):
         # This used to test self._exc_info to only run on success. Broke in 2.7. Removed.
         self.server.deleteDatabase(self.dbname)
 
-    def testRotatingLogHandler(self):
-        """
-        Test to make sure a date is in or will be added to the logName
-        """
-        todayStr = date.today().strftime("%Y%m%d")
-        logName = "mylog.log"
-        handler = MyTimedRotatingFileHandler(logName, 'midnight', backupCount=10)
-        self.assertIn(todayStr, handler.baseFilename)
-
-        logName = f"mylog-{todayStr}.log"
-        handler = MyTimedRotatingFileHandler(logName, 'midnight', backupCount=10)
-        self.assertIn(todayStr, handler.baseFilename)
+        # delete testRotate directory
+        logPath = Path('testRotate')
+        for _, _, filenames in os.walk(logPath):
+            for filename in filenames:
+                os.remove(logPath.joinpath(filename))
 
     def testLog(self):
         """
@@ -64,6 +59,40 @@ class WMLoggingTest(unittest.TestCase):
             myLogger.error('HOLLY CRAP!')
         logs = self.db.allDocs()['rows']
         self.assertEqual(30, len(logs))
+
+    def testWMRotateLogs(self):
+        """
+        Test to make sure a date is in or will be added to the logName
+        """
+        todayStr = date.today().strftime("%Y%m%d")
+        defaultToday = date.today().strftime("%Y-%m-%d")
+
+        myLogger = logging.getLogger('MyLogger2')
+        myLogger.setLevel(logging.DEBUG)
+        logPath = Path('testRotate')
+        logPath.mkdir(parents=True, exist_ok=True)
+        logName = logPath.joinpath("mylog.log")
+        formatter = logging.Formatter('%(message)s')
+        handler = WMTimedRotatingFileHandler(logName,
+                                             when='S',
+                                             interval=10,
+                                             backupCount=10)
+        handler.setFormatter(formatter)
+        myLogger.addHandler(handler)
+        myLogger.info('first log')
+        time.sleep(11)
+        myLogger.info('second log')
+
+        p = Path('testRotate')
+        for log in list(p.iterdir()):
+            with open(log, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                if log.name == 'mylog.log':
+                    self.assertEqual(lines[0].strip(), "second log")
+                else:
+                    self.assertEqual(lines[0].strip(), "first log")
+                    self.assertNotIn(defaultToday, log.name)
+                    self.assertIn(todayStr, log.name)
 
 
 if __name__ == "__main__":

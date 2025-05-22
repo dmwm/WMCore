@@ -32,10 +32,10 @@ class GFAL2Impl(StageOutImpl):
         # 1. authentication method (set_auth)
         # 2. forced authentication method (unset_auth)
         # 3. finally, debug mode or not (dry_run)
-        self.setups = "env -i {{set_auth}} JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+        self.setups = "ls -l /tmp; env -i {{set_auth}} JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
         self.copyOpts = '-t 2400 -T 2400 -p -vvv --abort-on-failure {checksum} {options} {source} {destination}'
-        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-copy ' + self.copyOpts)
-        self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-rm -t 600 {}')
+        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; ls -l /tmp; {dry_run} gfal-copy ' + self.copyOpts)
+        self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; ls -l /tmp; {dry_run} gfal-rm -t 600 {}')
 
     def createFinalPFN(self, pfn):
         """

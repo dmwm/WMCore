@@ -5,7 +5,6 @@ _WMLogging_
 Logging facilities used in WMCore.
 """
 import logging
-from datetime import date, timedelta
 from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 
@@ -41,7 +40,7 @@ def getTimeRotatingLogger(name, logFile, duration='midnight'):
     """
     logger = logging.getLogger(name)
     if duration == 'midnight':
-        handler = MyTimedRotatingFileHandler(logFile, duration, backupCount=10)
+        handler = WMTimedRotatingFileHandler(logFile, duration, backupCount=10)
     else:
         handler = TimedRotatingFileHandler(logFile, duration, backupCount=10)
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
@@ -52,47 +51,27 @@ def getTimeRotatingLogger(name, logFile, duration='midnight'):
     return logger
 
 
-class MyTimedRotatingFileHandler(TimedRotatingFileHandler):
+class WMTimedRotatingFileHandler(TimedRotatingFileHandler):
     """
-    _MyTimedRotatingFileHandler_
+    _WMTimedRotatingFileHandler_
 
     Overwrite the standard filename functionality from
-    logging.handlers.MyTimedRotatingFileHandler
+    logging.handlers.TimedRotatingFileHandler
     such that it mimics the same behaviour as rotatelogs tool.
 
     Source code from:
     https://stackoverflow.com/questions/338450/timedrotatingfilehandler-changing-file-name
     """
-    def __init__(self, logName, interval, backupCount):
-        """
-        Initializes MyTimedRotatingFileHandler
-
-        If logName doesn't contain a date, the day of runtime will be added
-        """
-        logPath = Path(logName)
-        todayStr = date.today().strftime("%Y%m%d")
-
-        if todayStr not in logName:
-            logPath = logPath.parent.joinpath(f"{logPath.stem}-{todayStr}{logPath.suffix}")
-
-        super(MyTimedRotatingFileHandler, self).__init__(logPath, when=interval,
-                                                         backupCount=backupCount)
-
-    def doRollover(self):
-        """
-        _doRollover_
-
-        Rotate the log file and add the date between the log name
-        and its extension, e.g.:
-        reqmgr2-20170814.log becomes reqmgr2-20170815.log
-        """
-        self.stream.close()
-        # replace yesterday's date by today
-        yesterdayStr = (date.today() - timedelta(1)).strftime("%Y%m%d")
-        todayStr = date.today().strftime("%Y%m%d")
-        self.baseFilename = self.baseFilename.replace(yesterdayStr, todayStr)
-        self.stream = open(self.baseFilename, 'w', encoding='utf-8')
-        self.rolloverAt = self.rolloverAt + self.interval
+    def namer(self, default_name):
+        '''
+        Name function called by rotation_filename
+        '''
+        # get the time from default_name
+        time_str = default_name.split('.')[-1]
+        time_str = time_str.replace('-', '')
+        log_path = Path(self.baseFilename)
+        logPath = f"{log_path.parent}/{log_path.stem}-{time_str}{log_path.suffix}"
+        return logPath
 
 
 class CouchHandler(logging.handlers.HTTPHandler):

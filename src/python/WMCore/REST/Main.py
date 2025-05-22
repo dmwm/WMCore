@@ -617,9 +617,6 @@ def main():
                 print("Refusing to start over an already running daemon, pid %d" % pid, file=sys.stderr)
                 sys.exit(1)
 
-        # If we are (re)starting and were given a log file option, convert
-        # the logfile option to a list if it looks like a pipe request, i.e.
-        # starts with "|", such as "|rotatelogs foo/bar-%Y%m%d.log".
         if opts.logfile:
             server.logfile = opts.logfile
 

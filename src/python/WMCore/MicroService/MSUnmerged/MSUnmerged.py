@@ -11,6 +11,7 @@ RSE basis.
 
 # futures
 from __future__ import division, print_function
+import concurrent.futures
 
 from pprint import pformat
 from time import time
@@ -20,7 +21,6 @@ import random
 import re
 import os
 import errno
-import stat
 try:
     import gfal2
 except ImportError:
@@ -152,8 +152,8 @@ class MSUnmerged(MSCore):
                                                 Functor(self.updateRSETimestamps, start=True, end=False),
                                                 Functor(self.consRecordAge),
                                                 Functor(self.getUnmergedFiles),
-                                                Functor(self.filterUnmergedFiles),
                                                 Functor(self.getPfn),
+                                                Functor(self.resetCounters),
                                                 Functor(self.cleanRSE),
                                                 Functor(self.updateServiceCounters),
                                                 Functor(self.updateRSETimestamps, start=False, end=True),
@@ -302,138 +302,185 @@ class MSUnmerged(MSCore):
             self.plineCounters[pline.name]['rsesCleaned'], \
             self.plineCounters[pline.name]['filesDeletedSuccess']
 
+    def resetCounters(self, rse):
+        """
+        Reset all counters for an RSE object and initialize structure if needed.
+        :param rse: The RSE object whose counters need to be reset
+        """
+        # Initialize the basic structure if it doesn't exist
+        rse.setdefault('dirs', {})
+        rse.setdefault('counters', {})
+
+        # Initialize directory structure
+        rse['dirs'].setdefault('toDelete', set())
+        rse['dirs'].setdefault('deletedSuccess', set())
+        rse['dirs'].setdefault('deletedFail', set())
+
+        # Initialize counter structure
+        rse['counters'].setdefault('dirsDeletedSuccess', 0)
+        rse['counters'].setdefault('dirsDeletedFail', 0)
+        rse['counters'].setdefault('filesDeletedSuccess', 0)
+        rse['counters'].setdefault('filesDeletedFail', 0)
+        rse['counters'].setdefault('gfalErrors', {})
+
+        self.logger.info("Reset all counters for RSE: %s", rse['name'])
+        return rse
+
     # @profile
     def cleanRSE(self, rse):
         """
-        The method to implement the actual deletion of files for an RSE.
-        :param rse: MSUnmergedRSE object to be cleaned
-        :return:    The MSUnmergedRSE object
+        Optimized cleanup method that minimizes directory listing operations
+        and handles storage technologies that support recursive directory deletion.
         """
+        if not rse['dirs']['toDelete']:
+            rse['isClean'] = self._checkClean(rse)
+            return rse
 
-        # Create the gfal2 context object:
         try:
             ctx = createGfal2Context(self.msConfig['gfalLogLevel'], self.msConfig['emulateGfal2'])
         except Exception as ex:
-            msg = "RSE: %s, Failed to create gfal2 Context object. " % rse['name']
+            msg = "RSE: %s, Failed to create gfal2 context object. " % rse['name']
             msg += "Skipping it in the current run."
             self.logger.exception(msg)
             raise MSUnmergedPlineExit(msg) from ex
 
-        filesToDeleteCurrRSE = 0
+        try:
+            for dirLfn in rse['dirs']['toDelete']:
+                dirPfn = rse['pfnPrefix'] + dirLfn
 
-        # Start cleaning one directory at a time:
-        for dirLfn, fileLfnGen in rse['files']['toDelete'].items():
-            if dirLfn in rse['dirs']['deletedSuccess']:
-                self.logger.info("RSE: %s, dir: %s already successfully deleted.", rse['name'], dirLfn)
-                continue
+                if not self.msConfig['enableRealMode']:
+                    self.logger.info("DRY-RUN: would delete directory: %s", dirPfn)
+                    continue
 
-            if self.msConfig['limitFilesPerRSE'] < 0 or \
-               filesToDeleteCurrRSE < self.msConfig['limitFilesPerRSE']:
+                # First attempt: Try to delete the whole directory
+                if self._rmDir(ctx, dirPfn):
+                    self._updateSuccessCounters(rse, dirLfn)
+                    continue
 
-                # Now we consume the rse['files']['toDelete'][dirLfn] generator
-                # upon that no values will be left in it. In case we need it again
-                # we will have to recreate the filter as we did in self.filterUnmergedFiles()
-                pfnList = []
-                if not rse['pfnPrefix']:
-                    # Fall back to calling Rucio on a per directory basis for
-                    # resolving the lfn to pfn mapping
-                    dirPfn = self.rucio.getPFN(rse['name'], dirLfn, operation='delete')[dirLfn]
-                    for fileLfn in fileLfnGen:
-                        fileLfnSuffix = fileLfn.split(dirLfn)[1]
-                        filePfn = dirPfn + fileLfnSuffix
-                        pfnList.append(filePfn)
+                # Second attempt: Try to delete sub-directories first
+                if self._tryDeleteSubDirs(ctx, dirPfn):
+                    # If sub-directories were deleted, try the parent again
+                    if self._rmDir(ctx, dirPfn):
+                        self._updateSuccessCounters(rse, dirLfn)
+                        continue
+
+                # Third attempt: If we get here, we need to delete files
+                # List and delete files in batches to control memory usage
+                successCount = 0
+                failCount = 0
+                for fileBatch in self._listAndDeleteFiles(ctx, dirPfn):
+                    batchSuccess, batchFail = self.deleteFilesInParallel(ctx, fileBatch)
+                    successCount += batchSuccess
+                    failCount += batchFail
+
+                    # Update counters after each batch
+                    self._updateFileCounters(rse, batchSuccess, batchFail)
+
+                # Final attempt: Try to delete the directory again
+                if self._rmDir(ctx, dirPfn):
+                    self._updateSuccessCounters(rse, dirLfn)
                 else:
-                    # Proceed with assembling the full filePfn out of the rse['pfnPrefix'] and the fileLfn
-                    dirPfn = rse['pfnPrefix'] + dirLfn
-                    for fileLfn in fileLfnGen:
-                        filePfn = rse['pfnPrefix'] + fileLfn
-                        pfnList.append(filePfn)
+                    self._updateFailureCounters(rse, dirLfn)
+        except Exception as ex:
+            self.logger.exception("Error during RSE cleanup: %s", str(ex))
+        finally:
+            if ctx:
+                ctx.free()
 
-                filesToDeleteCurrRSE += len(pfnList)
-                msg = "\nRSE: %s \nDELETING: %s."
-                msg += "\nPFN list with: %s entries: \n%s"
-                self.logger.debug(msg, rse['name'], dirLfn, len(pfnList), twFormat(pfnList, maxLength=4))
-
-                if self.msConfig['enableRealMode']:
-                    # The following two bool flags are to track the success for directory removal
-                    # during all consecutive attempts/steps of cleaning the current branch.
-                    rmdirSuccess = False
-                    purgeSuccess = False
-                    filesDeletedSuccess = 0
-                    filesDeletedFail = 0
-
-                    # Initially try to delete the whole directory even before emptying its content:
-                    self.logger.info("Trying to remove nonempty directory: %s", dirLfn)
-                    rmdirSuccess = self._rmDir(ctx, dirPfn)
-
-                    # If the directory was considered successfully removed, update the file counters with the length of the directory contents
-                    # If the above operation fails try to execute the directory contents deletion in bulk - full list of files per directory
-                    if rmdirSuccess:
-                        filesDeletedSuccess = len(pfnList)
-                    else:
-                        msg = "Trying to clean the contents of nonempty directory: %s "
-                        msg += "in slices of: %s files"
-                        self.logger.info(msg, dirLfn, self.msConfig["filesToDeleteSliceSize"])
-                        for pfnSlice in list(grouper(pfnList, self.msConfig["filesToDeleteSliceSize"])):
-                            try:
-                                delResult = ctx.unlink(pfnSlice)
-                                # Count all the successfully deleted files (if a deletion was
-                                # successful a value of None is put in the delResult list):
-                                self.logger.debug("RSE: %s, Dir: %s, delResult: %s",
-                                                  rse['name'], dirLfn, pformat(delResult))
-                                for gfalErr in delResult:
-                                    if gfalErr is None:
-                                        filesDeletedSuccess += 1
-                                    else:
-                                        filesDeletedFail += 1
-                                        errMessage = os.strerror(gfalErr.code)
-                                        rse['counters']['gfalErrors'].setdefault(errMessage, 0)
-                                        rse['counters']['gfalErrors'][errMessage] += 1
-                            except Exception as ex:
-                                msg = "Error while cleaning RSE: %s. "
-                                msg += "Will retry in the next cycle. Err: %s"
-                                self.logger.exception(msg, rse['name'], str(ex))
-
-                        self.logger.info("RSE: %s, Dir: %s, filesDeletedSuccess: %s",
-                                          rse['name'], dirLfn, filesDeletedSuccess)
-
-                        # Now delete the whole branch, which was previously cleaned file by file
-                        # First try to delete the base directory:
-                        rmdirSuccess = self._rmDir(ctx, dirPfn)
-
-                        # Then if unable to delete the base directory due to nonEmpty err or similar, try with _purgeTree() recursively
-                        if not rmdirSuccess:
-                            self.logger.info("Trying to recursively purge directory: %s:\n", dirLfn)
-                            purgeSuccess = self._purgeTree(ctx, dirPfn)
-
-                    # Updating the RSE counters with the newly successfully deleted files
-                    rse['counters']['filesDeletedSuccess'] += filesDeletedSuccess
-                    rse['counters']['filesDeletedFail'] += filesDeletedFail
-
-                    if purgeSuccess or rmdirSuccess:
-                        rse['dirs']['deletedSuccess'].add(dirLfn)
-                        rse['counters']['dirsDeletedSuccess'] = len(rse['dirs']['deletedSuccess'])
-                        # if dirLfn in rse['dirs']['toDelete']:
-                        #     rse['dirs']['toDelete'].remove(dirLfn)
-                        if dirLfn in rse['dirs']['deletedFail']:
-                            rse['dirs']['deletedFail'].remove(dirLfn)
-                        msg = "RSE: %s  Success deleting directory: %s"
-                        self.logger.info(msg, rse['name'], dirLfn)
-                    else:
-                        rse['dirs']['deletedFail'].add(dirLfn)
-                        rse['counters']['dirsDeletedFail'] = len(rse['dirs']['deletedFail'])
-                        msg = "RSE: %s Failed to purge directory: %s"
-                        self.logger.error(msg, rse['name'], dirLfn)
-            else:
-                msg = "RSE: %s reached limit of files per RSE to be deleted. Skipping directory: %s. It will be retried on the next cycle."
-                self.logger.warning(msg, rse['name'], dirLfn)
         rse['isClean'] = self._checkClean(rse)
-
-        # Explicitly release all internal resources used by the gfal2 context instance
-        if ctx:
-            ctx.free()
-
         return rse
+
+    def _tryDeleteSubDirs(self, ctx, dirPfn):
+        """
+        Attempt to delete sub-directories without listing all contents first.
+        Returns True if all sub-directories were deleted, False otherwise.
+        """
+        try:
+            # List only the immediate sub-directories
+            for entry in ctx.listdir(dirPfn):
+                if not entry.endswith('.root'):
+                    subDir = os.path.join(dirPfn, entry)
+                    try:
+                        if not self._rmDir(ctx, subDir):
+                            return False
+                    except gfal2.GError as ex:
+                        if ex.code != errno.ENOENT:  # Ignore if directory doesn't exist
+                            self._trackGfalError(ex)
+                            return False
+            return True
+        except gfal2.GError as ex:
+            self._trackGfalError(ex)
+            return False
+
+    def _listAndDeleteFiles(self, ctx, dirPfn, batchSize=100):
+        """
+        Generator that lists and yields files in batches to control memory usage.
+        """
+        currentBatch = []
+
+        def processEntry(entry, currentPath):
+            fullPath = os.path.join(currentPath, entry)
+            if entry.endswith('.root'):
+                currentBatch.append(fullPath)
+                if len(currentBatch) >= batchSize:
+                    yield currentBatch[:]
+                    currentBatch.clear()
+            else:
+                try:
+                    # Recursively process sub-directories
+                    for subEntry in ctx.listdir(fullPath):
+                        yield from processEntry(subEntry, fullPath)
+                except gfal2.GError as ex:
+                    if ex.code != errno.ENOENT:  # Ignore if directory doesn't exist
+                        self._trackGfalError(ex)
+
+        try:
+            for entry in ctx.listdir(dirPfn):
+                yield from processEntry(entry, dirPfn)
+
+            # Yield any remaining files in the last batch
+            if currentBatch:
+                yield currentBatch
+        except gfal2.GError as ex:
+            self._trackGfalError(ex)
+
+    def _updateSuccessCounters(self, rse, dirLfn):
+        """Update counters for successful directory deletion"""
+        rse['counters']['dirsDeletedSuccess'] += 1
+        rse['dirs']['deletedSuccess'].add(dirLfn)
+
+    def _updateFailureCounters(self, rse, dirLfn):
+        """Update counters for failed directory deletion"""
+        rse['counters']['dirsDeletedFail'] += 1
+        rse['dirs']['deletedFail'].add(dirLfn)
+
+    def _updateFileCounters(self, rse, successCount, failCount):
+        """Update counters for file deletion operations"""
+        rse['counters']['filesDeletedSuccess'] += successCount
+        rse['counters']['filesDeletedFail'] += failCount
+
+    def _trackGfalError(self, error):
+        """
+        Track and count different types of gfal2 errors.
+        :param error: gfal2 error object or error code
+        """
+        if hasattr(error, 'code'):
+            errorCode = error.code
+            errorMessage = str(error)
+        else:
+            errorCode = error
+            errorMessage = os.strerror(error)
+
+        # Initialize the error counter if it doesn't exist
+        if 'gfalErrors' not in self.plineCounters[self.plineUnmerged.name]:
+            self.plineCounters[self.plineUnmerged.name]['gfalErrors'] = {}
+
+        # Update the error counter
+        if errorMessage not in self.plineCounters[self.plineUnmerged.name]['gfalErrors']:
+            self.plineCounters[self.plineUnmerged.name]['gfalErrors'][errorMessage] = 0
+        self.plineCounters[self.plineUnmerged.name]['gfalErrors'][errorMessage] += 1
+
+        self.logger.error("GFAL error occurred - Code: %s, Message: %s", errorCode, errorMessage)
 
     def _rmDir(self, ctx, dirPfn):
         """
@@ -446,81 +493,68 @@ class MSUnmerged(MSCore):
         """
         try:
             # NOTE: For gfal2 rmdir() exit status of 0 is success
+            self.logger.info("Attempting to delete directory: %s", dirPfn)
             rmdirSuccess = ctx.rmdir(dirPfn) == 0
+            if rmdirSuccess:
+                self.logger.info("Successfully deleted directory: %s", dirPfn)
         except gfal2.GError as gfalExc:
             if gfalExc.code == errno.ENOENT:
                 self.logger.warning("MISSING directory: %s", dirPfn)
                 rmdirSuccess = True
             else:
-                self.logger.error("FAILED to remove directory: %s: gfalException: %s, gfalErrorCode: %s", dirPfn, str(gfalExc), gfalExc.code)
+                self._trackGfalError(gfalExc)
                 rmdirSuccess = False
         return rmdirSuccess
 
-
-    def _purgeTree(self, ctx, baseDirPfn, isDirEntry=False):
+    def _rmSubDir(self, ctx, dirPfn):
         """
-        A method to be used for purging the tree bellow a specific branch.
-        It deletes every empty directory bellow that branch + the origin at the end.
-        :param ctx:        The gfal2 context object
-        :param baseDirPfn: The base entry for starting the recursion
-        :param isDirEntry: Bool flag to avoid extra `stat` operations
-                           NOTE: When called from inside a recursion, we have already checked if the entry point is a directory
-        :return:           Bool: True if it managed to purge everything, False otherwise
+        Similar to the _rmDir method, but it first lists the content of a given
+        directory, identify directories with a cheap logic and tries to delete
+        each of the sub-directories.
+        :param ctx:    Gfal Context Manager object.
+        :param dirPfn: The Pfn of the directory to be removed
+        :return:       Bool: True if the removal was successful, False otherwise
         """
-        # NOTE: It deletes only directories and does not try to unlink any file.
-
-        # First, test if baseDirPfn is actually a directory entry:
-        if not isDirEntry:
-            try:
-                entryStat = ctx.stat(baseDirPfn)
-                if not stat.S_ISDIR(entryStat.st_mode):
-                    self.logger.error("The base pfn: %s is not a directory entry.", baseDirPfn)
-                    return False
-            except gfal2.GError as gfalExc:
-                if gfalExc.code == errno.ENOENT:
-                    self.logger.warning("MISSING baseDir: %s", baseDirPfn)
-                    return True
-                else:
-                    self.logger.error("FAILED to open baseDir: %s: gfalException: %s, gfalErrorCode: %s", baseDirPfn, str(gfalExc), gfalExc.code)
-                    return False
-
-        # Second, recursively iterate down the tree:
-        successList = []
+        # list with status of the directory removal (True is success, False otherwise)
+        rm_status = []
         try:
-            dirEntryList = ctx.listdir(baseDirPfn)
+            self.logger.info("Listing content for parent directory: %s", dirPfn)
+            for entry in ctx.listdir(dirPfn):
+                if not entry.endswith(".root"):
+                    # then assume it is a directory
+                    subDir = os.path.join(dirPfn, entry)
+                    rm_status.append(self._rmDir(ctx, subDir))
         except gfal2.GError as gfalExc:
-            if gfalExc.code == errno.ENOENT:
-                self.logger.warning("MISSING baseDir: %s", baseDirPfn)
-                return True
-            else:
-                self.logger.error("FAILED to list dirEntry: %s: gfalException: %s, gfalErrorCode: %s", baseDirPfn, str(gfalExc), gfalExc.code)
-                return False
+            self.logger.error("FAILED to list/remove directory: %s: gfalException: %s, gfalErrorCode: %s",
+                              dirPfn, str(gfalExc), gfalExc.code)
+            return False
 
-        for dirEntry in dirEntryList:
-            if dirEntry in ['.', '..']:
-                continue
-            dirEntryPfn = baseDirPfn + dirEntry
-            entryStat = None
-            try:
-                entryStat = ctx.stat(dirEntryPfn)
-            except gfal2.GError as gfalExc:
-                if gfalExc.code == errno.ENOENT:
-                    self.logger.warning("MISSING dirEntry: %s", dirEntryPfn)
-                    successList.append(True)
+        self.logger.info("Sub-directories successful deletion for %s and failed for %d directories.",
+                         rm_status.count(True), rm_status.count(False))
+        # return True (success) only if all sub-directories were deleted
+        return (rm_status.count(True) == len(rm_status))
+
+    def _listDir(self, ctx, dirPfn):
+        """
+        Recursively lists all files in the given directory and its subdirectories.
+
+        :param ctx: Gfal context manager object
+        :param dirPfn: string with a directory pfn
+        """
+        files = []
+        try:
+            for entry in ctx.listdir(dirPfn):
+                # are there files inside this folder
+                if entry.endswith(".root"):
+                    files.append(os.path.join(dirPfn, entry))
                 else:
-                    self.logger.error("FAILED to open dirEntry: %s: gfalException: %s, gfalErrorCode: %s", dirEntryPfn, str(gfalExc), gfalExc.code)
-                    successList.append(False)
-                continue
+                    # it is a directory. Go deeper another directory level
+                    files.extend(self._listDir(ctx, os.path.join(dirPfn, entry)))
+        except gfal2.GError as gfalExc:
+            self.logger.warning("Failed to list directory: %s, gfal code: %s", dirPfn, gfalExc.code)
 
-            if entryStat and stat.S_ISDIR(entryStat.st_mode):
-                successList.append(self._purgeTree(ctx, dirEntryPfn, isDirEntry=True))
-
-        # Finally, remove the baseDir:
-        self.logger.debug("RM baseDir: %s", baseDirPfn)
-        success = self._rmDir(ctx, baseDirPfn)
-        successList.append(success)
-
-        return all(successList)
+        self.logger.info("Entries under directory: %s is: %s", dirPfn, len(files))
+        return files
 
     def _checkClean(self, rse):
         """
@@ -538,6 +572,7 @@ class MSUnmerged(MSCore):
         :return:    rse or raises MSUnmergedPlineExit
         """
         rseName = rse['name']
+        self.logger.info("Evaluating consistency record agent for RSE: %s.", rse['name'])
 
         if rseName not in self.rseConsStats:
             msg = "RSE: %s Missing in stats records at Rucio Consistency Monitor. " % rseName
@@ -615,19 +650,40 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
-        rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
-        for filePath in rse['files']['allUnmerged']:
-            # Check if what we start with is under /store/unmerged/*
-            if self.regStoreUnmergedLfn.match(filePath):
-                # Cut the path to the deepest level known to WMStats protected LFNs
-                dirPath = self._cutPath(filePath)
-                # Check if what is left is still under /store/unmerged/*
-                if self.regStoreUnmergedLfn.match(dirPath):
-                    # Add it to the set of allUnmerged
-                    rse['dirs']['allUnmerged'].add(dirPath)
+        rse['counters']['totalNumFiles'] = 0
+        rse['counters']['totalNumDirs'] = 0
+        rse['counters']['dirsToDelete'] = 0
+        rse['counters']['filesToDelete'] = 0
+        rse['dirs']['allUnmerged'] = []  # TODO FIXME: this is supposed to be the union of toDelete and protected
+        rse['dirs']['toDelete'] = set()
+        rse['dirs']['protected'] = set()
 
-        rse['counters']['totalNumFiles'] = len(rse['files']['allUnmerged'])
-        rse['counters']['totalNumDirs'] = len(rse['dirs']['allUnmerged'])
+        self.logger.info("Fetching data from Rucio ConMon for RSE: %s.", rse['name'])
+        for lfn in self.rucioConMon.getRSEUnmerged(rse['name'], zipped=True):
+            dirPath = self._cutPath(lfn)
+            # Check if what is left is still under /store/unmerged/*
+            if not self.regStoreUnmergedLfn.match(dirPath):
+                msg = f"Retrieved file from RucioConMon that does not belong to the unmerged area: {lfn}"
+                self.logger.critical(msg)
+
+            # general counter for possible files and unique directories
+            rse['counters']['totalNumFiles'] += 1
+
+            # now evaluate whether it is deletable or not, and persist it under the right field
+            if self._isDeletable(dirPath):
+                rse['dirs']['toDelete'].add(dirPath)
+                rse['counters']['filesToDelete'] += 1
+            else:
+                rse['dirs']['protected'].add(dirPath)
+
+        if not rse['counters']['totalNumFiles']:
+            self.logger.error("RSE: %s has an empty list of unmerged files in Rucio ConMon.", rse['name'])
+
+        rse['counters']['totalNumDirs'] = len(rse['dirs']['toDelete']) + len(rse['dirs']['protected'])
+        rse['counters']['dirsToDelete'] = len(rse['dirs']['toDelete'])
+
+        self.logger.info("RSE post-filter stats for: %s: %s", rse['name'], twFormat(rse, maxLength=8))
+
         return rse
 
     def _cutPath(self, filePath):
@@ -661,82 +717,33 @@ class MSUnmerged(MSCore):
         finalPath = os.path.join(*newPath)
         return finalPath
 
-    # @profile
-    def filterUnmergedFiles(self, rse):
+    def _isDeletable(self, dirPath):
         """
-        This method is applying set compliment operation to the set of unmerged
-        files per RSE in order to exclude the protected LFNs.
-        :param rse: The RSE to work on
-        :return:    rse
+        Given a short directory path, verify if this directory can be
+        deleted or not. Checks are performed against:
+         * directory inclusion filter
+         * directory exclusion filter
+         * protected lfns
+
+        :param dirPath: string with a shorter version of the LFN
+        :return _type_: True if the directory can be deleted, False otherwise
         """
-        rse['dirs']['toDelete'] = rse['dirs']['allUnmerged'] - self.protectedLFNs
-        rse['dirs']['protected'] = rse['dirs']['allUnmerged'] & self.protectedLFNs
+        # Check against the inclusion filter
+        if self.msConfig['dirFilterIncl']:
+            respFilter = [dirPath.startswith(filterItem) for filterItem in self.msConfig['dirFilterIncl']]
+            if any(respFilter) is False:
+                # does not match against any of the inclusion filters
+                return False
 
-        # The following check may seem redundant, but better stay safe than sorry
-        if not (rse['dirs']['toDelete'] | rse['dirs']['protected']) == rse['dirs']['allUnmerged']:
-            rse['counters']['dirsToDelete'] = -1
-            msg = "Incorrect set check while trying to estimate the final set for deletion."
-            raise MSUnmergedPlineExit(msg)
+        # Check against the exclusion filter
+        if self.msConfig['dirFilterExcl']:
+            respFilter = [dirPath.startswith(filterItem) for filterItem in self.msConfig['dirFilterExcl']]
+            if any(respFilter) is True:
+                # matches against at least one exclusion filter
+                return False
 
-        # Get rid of 'allUnmerged' directories
-        rse['dirs']['allUnmerged'].clear()
-
-        # NOTE: Here we may want to filter out all protected files from allUnmerged and leave just those
-        #       eligible for deletion. This will minimize the iteration time of the filters
-        #       from toDelete later on.
-        # while rse['files']['allUnmerged'
-
-        # Now create the filters for rse['files']['toDelete'] - those should be pure generators
-        # A simple generator:
-        def genFunc(pattern, iterable):
-            for i in iterable:
-                if i.startswith(pattern):
-                    yield i
-
-        # NOTE: If the 'dirFilterIncl' is non empty then the cleaning process will
-        #       be enclosed only in this part of the tree and will ignore anything
-        #       from /store/unmerged/ which does not belong to the included filter
-        # NOTE: 'dirFilterExcl' is always applied.
-
-        # Merge the additional filters into a final set to be applied:
-        dirFilterIncl = set(self.msConfig['dirFilterIncl'])
-        dirFilterExcl = set(self.msConfig['dirFilterExcl'])
-
-        # Update directory/files with no service filters
-        if not dirFilterIncl and not dirFilterExcl:
-            for dirName in rse['dirs']['toDelete']:
-                rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-            rse['counters']['dirsToDelete'] = len(rse['files']['toDelete'])
-            self.logger.info("RSE: %s: %s", rse['name'], twFormat(rse, maxLength=8))
-            return rse
-
-        # If we are here, then there are service filters...
-        for dirName in rse['dirs']['toDelete']:
-            # apply exclusion filter
-            dirFilterExclMatch = []
-            for pathExcl in dirFilterExcl:
-                dirFilterExclMatch.append(dirName.startswith(pathExcl))
-            if any(dirFilterExclMatch):
-                # then it matched one of the exclusion paths
-                continue
-            if not dirFilterIncl:
-                # there is no inclusion filter, simply add this directory/files
-                rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-                continue
-
-            # apply inclusion filter
-            for pathIncl in dirFilterIncl:
-                if dirName.startswith(pathIncl):
-                    rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-                    break
-
-        # Now apply the filters back to the set in rse['dirs']['toDelete']
-        rse['dirs']['toDelete'] = set(rse['files']['toDelete'].keys())
-
-        # Update the counters:
-        rse['counters']['dirsToDelete'] = len(rse['files']['toDelete'])
-        self.logger.info("RSE: %s: %s", rse['name'], twFormat(rse, maxLength=8))
-        return rse
+        # Finally, check against the protected LFNs
+        return dirPath not in self.protectedLFNs
 
     def getPfn(self, rse):
         """
@@ -747,10 +754,11 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to be checked
         :return:    rse
         """
+        self.logger.info("Fetching PFN map for RSE: %s.", rse['name'])
         # NOTE:  pfnPrefix here is considered the full part of the pfn up to the
         #        beginning of the lfn part rather than just the protocol prefix
-        if rse['files']['allUnmerged']:
-            lfn = next(iter(rse['files']['allUnmerged']))
+        if rse['dirs']['toDelete']:
+            lfn = next(iter(rse['dirs']['toDelete']))
             pfnDict = self.rucio.getPFN(rse['name'], lfn, operation='delete')
             pfnFull = pfnDict[lfn]
             if self.regStoreUnmergedPfn.match(pfnFull):
@@ -760,6 +768,10 @@ class MSUnmerged(MSCore):
                 msg = "Could not establish the correct pfn Prefix for RSE: %s. " % rse['name']
                 msg += "Will fall back to calling Rucio on a directory basis for lfn to pfn resolution."
                 self.logger.warning(msg)
+            if not rse['pfnPrefix']:
+                msg = f"Failed to resolve PFN from LFN for RSE: {rse['name']}. Will retry later."
+                raise MSUnmergedPlineExit(msg)
+
         return rse
 
     # @profile
@@ -771,6 +783,7 @@ class MSUnmerged(MSCore):
         :param dumpRSEToLog: Dump the whole RSEobject into the service log.
         :return:    rse
         """
+        self.logger.info("Purging RSE in-memory information for RSE: %s.", rse['name'])
         msg = "\n----------------------------------------------------------"
         msg += "\nMSUnmergedRSE: \n%s"
         msg += "\n----------------------------------------------------------"
@@ -788,6 +801,8 @@ class MSUnmerged(MSCore):
         :param rse:   The RSE to work on
         :return:      rse
         """
+        self.logger.info("Updating timestamps for RSE: %s. With start: %s, end: %s.", rse['name'], start, end)
+
         rseName = rse['name']
         currTime = time()
 
@@ -820,6 +835,8 @@ class MSUnmerged(MSCore):
         :param pName: The pipeline name whose counters to be updated
         :return:      rse
         """
+        self.logger.info("Updating service counters for RSE: %s.", rse['name'])
+
         pName = self.plineUnmerged.name
         self.plineCounters[pName]['totalNumFiles'] += rse['counters']['totalNumFiles']
         self.plineCounters[pName]['totalNumDirs'] += rse['counters']['totalNumDirs']
@@ -869,7 +886,7 @@ class MSUnmerged(MSCore):
         :return:    rse
         """
         try:
-            self.logger.info("RSE: %s Writing rse data to MongoDB.", rse['name'])
+            self.logger.info("Uploading RSE information to MongoDB for RSE: %s.", rse['name'])
             rse.writeRSEToMongoDB(self.msUnmergedColl, fullRSEToDB=fullRSEToDB, overwrite=overwrite, retryCount=self.msConfig['mongoDBRetryCount'])
         except NotPrimaryError:
             msg = "Could not write RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
@@ -946,3 +963,63 @@ class MSUnmerged(MSCore):
             self.logger.exception(msg, str(ex))
             rseList = []
         return rseList
+
+    def deleteFilesInParallel(self, ctx, fileList, batchSize=100, maxWorkers=10):
+        """
+        Delete files in parallel using concurrent.futures and gfal2's bulk operations.
+        Combines the benefits of batch operations with parallel processing.
+        :param ctx: gfal2 context
+        :param fileList: list of files to delete
+        :param batchSize: size of each batch for bulk operations
+        :param maxWorkers: maximum number of parallel workers
+        :return: tuple of (successCount, failCount)
+        """
+        successCount = 0
+        failCount = 0
+        msg = f"Have a list of {len(fileList)} files to delete, "
+        msg += f"with a batch size of {batchSize} and max workers set to {maxWorkers}"
+        self.logger.info(msg)
+
+        def deleteBatch(batch):
+            "Delete a batch of files and return a list of results"
+            try:
+                self.logger.info("Attempting to delete batch of %d files", len(batch))
+                results = ctx.unlink(batch)
+                self.logger.info("Completed deletion of batch of %d files", len(batch))
+                return results
+            except Exception as ex:
+                self.logger.error("Failed to delete batch: %s", str(ex))
+                return ex
+
+        # Create batches of files
+        batches = list(grouper(fileList, batchSize))
+        self.logger.info("Created %d batches of files for parallel deletion", len(batches))
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
+            # Submit all batches for deletion
+            future_to_batch = {executor.submit(deleteBatch, batch): batch for batch in batches}
+
+            # Process results as they complete
+            for future in concurrent.futures.as_completed(future_to_batch):
+                batch = future_to_batch[future]
+                try:
+                    results = future.result()
+                    if isinstance(results, Exception):
+                        # If the entire batch failed
+                        failCount += len(batch)
+                        self.logger.error("Batch deletion failed: %s", str(results))
+                    else:
+                        # Process individual results from the batch
+                        for result in results:
+                            if result is None:
+                                successCount += 1
+                            else:
+                                failCount += 1
+                                self._trackGfalError(result)
+                except Exception as ex:
+                    self.logger.error("Error processing batch deletion result: %s", str(ex))
+                    failCount += len(batch)
+
+        self.logger.info("Completed parallel deletion of %d batches. Success: %d, Failed: %d",
+                         len(batches), successCount, failCount)
+        return successCount, failCount

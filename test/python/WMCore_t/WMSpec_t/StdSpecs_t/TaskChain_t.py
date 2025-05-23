@@ -252,11 +252,11 @@ def makeRealConfigs(couchDatabase):
     result = couchDatabase.commit()
 
     docMap = {
-        "Scratch": result[0][u'id'],
-        "Digi": result[1][u'id'],
-        "Aod": result[2][u'id'],
-        "MiniAod": result[3][u'id'],
-        "Harvest": result[4][u'id'],
+        "Scratch": result[0]['id'],
+        "Digi": result[1]['id'],
+        "Aod": result[2]['id'],
+        "MiniAod": result[3]['id'],
+        "Harvest": result[4]['id'],
     }
     return docMap
 
@@ -328,10 +328,10 @@ def makeProcessingConfigs(couchDatabase):
     result = couchDatabase.commit()
 
     docMap = {
-        "DigiHLT": result[0][u'id'],
-        "Reco": result[1][u'id'],
-        "ALCAReco": result[2][u'id'],
-        "Skims": result[3][u'id'],
+        "DigiHLT": result[0]['id'],
+        "Reco": result[1]['id'],
+        "ALCAReco": result[2]['id'],
+        "Skims": result[3]['id'],
     }
     return docMap
 
@@ -1195,7 +1195,7 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy checks
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        workqueueSplit = {'SliceSize': 300, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
+        workqueueSplit = {'SliceSize': 400, 'SliceType': 'NumberOfEvents', 'SplittingAlgo': 'EventBased',
                           'SubSliceSize': 100, 'SubSliceType': 'NumberOfEventsPerLumi', 'blowupFactor': 3.4,
                           'policyName': 'MonteCarlo', 'OpenRunningTimeout': 0}
         self.assertDictEqual(testWorkload.startPolicyParameters(), workqueueSplit)
@@ -1205,7 +1205,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         task1Splitting = splitArgs['/ComplexChain/myTask1']
         self.assertEqual(task1Splitting['type'], 'Production')
         self.assertEqual(task1Splitting['algorithm'], 'EventBased')
-        self.assertEqual(task1Splitting['events_per_job'], 300)
+        self.assertEqual(task1Splitting['events_per_job'], 400)
         self.assertEqual(task1Splitting['events_per_lumi'], 100)
         self.assertFalse(task1Splitting['deterministicPileup'])
         self.assertFalse(task1Splitting['lheInputFiles'])
@@ -1217,7 +1217,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         task2Splitting = splitArgs['/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2']
         self.assertEqual(task2Splitting['type'], 'Processing')
         self.assertEqual(task2Splitting['algorithm'], 'EventAwareLumiBased')
-        self.assertEqual(task2Splitting['events_per_job'], 320)
+        self.assertEqual(task2Splitting['events_per_job'], 480)
         self.assertFalse(task2Splitting['deterministicPileup'])
         self.assertFalse(task2Splitting['lheInputFiles'])
         self.assertFalse(task2Splitting['trustSitelists'])
@@ -1229,7 +1229,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3']
         self.assertEqual(task3Splitting['type'], 'Processing')
         self.assertEqual(task3Splitting['algorithm'], 'EventAwareLumiBased')
-        self.assertEqual(task3Splitting['events_per_job'], 360)
+        self.assertEqual(task3Splitting['events_per_job'], 540)
         self.assertFalse(task3Splitting['deterministicPileup'])
         self.assertFalse(task3Splitting['lheInputFiles'])
         self.assertFalse(task3Splitting['trustSitelists'])
@@ -1241,7 +1241,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3/myTask3MergeAODSIMoutput/myTask4']
         self.assertEqual(task4Splitting['type'], 'Processing')
         self.assertEqual(task4Splitting['algorithm'], 'EventAwareLumiBased')
-        self.assertEqual(task4Splitting['events_per_job'], 411)
+        self.assertEqual(task4Splitting['events_per_job'], 617)
         self.assertFalse(task4Splitting['deterministicPileup'])
         self.assertFalse(task4Splitting['lheInputFiles'])
         self.assertFalse(task4Splitting['trustSitelists'])

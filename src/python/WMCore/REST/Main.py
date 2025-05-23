@@ -79,6 +79,18 @@ def sig_graceful(signum=None, frame=None):
     cherrypy.engine.graceful()
 
 
+@cherrypy.tools.register('before_request_body')
+def add_content_length_if_missing():
+    """
+    The older version of CherryPy server explicitly requires Content-Length equal 0 HTTP header
+    for HTTP DELETE requests when payload body is nil. Depending on HTTP proxy server such HTTP
+    header can be set or not, therefore we provide new method to explicitly set it here.
+    """
+    if cherrypy.request.method == "DELETE":
+        if cherrypy.request.headers.get("Content-Length") is None:
+            cherrypy.request.headers["Content-Length"] = "0"
+
+
 class ProfiledApp(Application):
     """Wrapper CherryPy Application object which generates aggregated
     profiles for the component on each call. Note that there needs to
@@ -204,6 +216,7 @@ class RESTMain(object):
         # Set default server configuration.
         cherrypy.log = Logger()
 
+        cpconfig.update({'tools.add_content_length_if_missing.on': True})
         cpconfig.update({'server.max_request_body_size': 0})
         cpconfig.update({'server.environment': 'production'})
         cpconfig.update({'server.socket_host': '0.0.0.0'})

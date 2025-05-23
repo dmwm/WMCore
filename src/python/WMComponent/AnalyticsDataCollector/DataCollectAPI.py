@@ -41,7 +41,7 @@ def threadsDetails(component, pid, downProcessThreads):
             "last_updated": int(time.time()),
             "update_threshold": None,
             "poll_interval": None,
-            "cycle_time": None,
+            "cycle_time": 0.0,
             "outcome": None,
             "last_error": None,
             "error_message": f"Lost threads: {downProcessThreads}"
@@ -308,7 +308,9 @@ class WMAgentDBData(object):
                 # check if all component process' threads are alive, otherwise set down flag
                 for proc in compProcessStatus:
                     # the alive process should be either in sleeping or running states
-                    if proc['status'] not in ["S (sleeping)", "R (running)"]:
+                    # 'S (sleeping) and 'R (running)' are states used by proc FS
+                    # 'sleeping' and 'running' are states used by psutils
+                    if proc['status'] not in ["S (sleeping)", "R (running)", 'sleeping', 'running']:
                         downFlag = True
                         downProcessThreads.append(proc)
             if downFlag and component not in agentInfo['down_components']:

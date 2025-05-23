@@ -1,3 +1,10 @@
+2.4.0rc3 to 2.4.0rc4:
+  - setup default value for cycle_time (Valentin Kuznetsov) #12372
+  - Change look-up states for process status (Valentin Kuznetsov) #12372
+  - Switch default job length from 8 to 12h (Alan Malta Rodrigues) #12360
+  - Further updates to the JSON templates, fix some comments and resource requirements (Alan Malta Rodrigues) #12354
+
+
 2.4.0rc2 to 2.4.0rc3:
   - Avoid crashing ErrorHandler on failed DNS resolution (Alan Malta Rodrigues) #12369
   - switch from distribution.data_files to distribution.package_data (Valentin Kuznetsov) #12359

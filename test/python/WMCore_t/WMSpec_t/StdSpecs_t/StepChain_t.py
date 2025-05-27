@@ -2489,9 +2489,10 @@ class StepChainTests(EmulatedUnitTestCase):
             testArguments[s]['ConfigCacheID'] = configDocs[s]
         testArguments['Step2']['KeepOutput'] = False
 
-        gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
-        testArguments['Step1'].update({"RequiresGPU": "optional", "GPUParams": json.dumps(gpuParams)})
-        testArguments['Step2'].update({"RequiresGPU": "required", "GPUParams": json.dumps(gpuParams)})
+        gpuParams1 = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
+        testArguments['Step1'].update({"RequiresGPU": "optional", "GPUParams": json.dumps(gpuParams1)})
+        gpuParams2 = {"GPUMemoryMB": 2345, "CUDARuntime": "9.6", "CUDACapabilities": ["7.4"]}
+        testArguments['Step2'].update({"RequiresGPU": "required", "GPUParams": json.dumps(gpuParams2)})
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
@@ -2503,8 +2504,8 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # validate GPU parameters
         self.assertEqual(testArguments['GPUParams'], json.dumps(None))
-        self.assertEqual(testArguments["Step1"]['GPUParams'], json.dumps(gpuParams))
-        self.assertEqual(testArguments["Step2"]['GPUParams'], json.dumps(gpuParams))
+        self.assertEqual(testArguments["Step1"]['GPUParams'], json.dumps(gpuParams1))
+        self.assertEqual(testArguments["Step2"]['GPUParams'], json.dumps(gpuParams2))
         self.assertTrue("GPUParams" not in testArguments["Step3"])
 
         for taskName in testWorkload.listAllTaskNames():
@@ -2520,10 +2521,10 @@ class StepChainTests(EmulatedUnitTestCase):
                 elif stepHelper.stepType() == "CMSSW" and taskName == "GENSIM":
                     if stepHelper.name() == "cmsRun1":
                         self.assertEqual(stepHelper.data.application.gpu.gpuRequired, testArguments["Step1"]['RequiresGPU'])
-                        self.assertItemsEqual(stepHelper.data.application.gpu.gpuRequirements, gpuParams)
+                        self.assertItemsEqual(stepHelper.data.application.gpu.gpuRequirements, gpuParams1)
                     elif stepHelper.name() == "cmsRun2":
                         self.assertEqual(stepHelper.data.application.gpu.gpuRequired, testArguments["Step2"]['RequiresGPU'])
-                        self.assertItemsEqual(stepHelper.data.application.gpu.gpuRequirements, gpuParams)
+                        self.assertItemsEqual(stepHelper.data.application.gpu.gpuRequirements, gpuParams2)
                     elif stepHelper.name() == "cmsRun3":
                         self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "forbidden")
                         self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
@@ -2535,16 +2536,15 @@ class StepChainTests(EmulatedUnitTestCase):
         prodTask = testWorkload.getTask('GENSIM')
         gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun1').getGPUSettings()
         self.assertEqual(gpuRequired, testArguments["Step1"]['RequiresGPU'])
-        self.assertItemsEqual(gpuRequirements, gpuParams)
+        self.assertItemsEqual(gpuRequirements, gpuParams1)
 
         gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun2').getGPUSettings()
         self.assertEqual(gpuRequired, testArguments["Step2"]['RequiresGPU'])
-        self.assertItemsEqual(gpuRequirements, gpuParams)
+        self.assertItemsEqual(gpuRequirements, gpuParams2)
 
         gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun3').getGPUSettings()
         self.assertEqual(gpuRequired, testArguments["Step3"].get('RequiresGPU', "forbidden"))
         self.assertIsNone(gpuRequirements)
-
 
 
         # test assignment with wrong Trust flags
@@ -2560,18 +2560,18 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # validate GPU parameters
         self.assertEqual(testArguments['GPUParams'], json.dumps(None))
-        self.assertEqual(testArguments["Step1"]['GPUParams'], json.dumps(gpuParams))
-        self.assertEqual(testArguments["Step2"]['GPUParams'], json.dumps(gpuParams))
+        self.assertEqual(testArguments["Step1"]['GPUParams'], json.dumps(gpuParams1))
+        self.assertEqual(testArguments["Step2"]['GPUParams'], json.dumps(gpuParams2))
         self.assertTrue("GPUParams" not in testArguments["Step3"])
 
         prodTask = testWorkload.getTask('GENSIM')
         gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun1').getGPUSettings()
         self.assertEqual(gpuRequired, testArguments["Step1"]['RequiresGPU'])
-        self.assertItemsEqual(gpuRequirements, gpuParams)
+        self.assertItemsEqual(gpuRequirements, gpuParams1)
 
         gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun2').getGPUSettings()
         self.assertEqual(gpuRequired, testArguments["Step2"]['RequiresGPU'])
-        self.assertItemsEqual(gpuRequirements, gpuParams)
+        self.assertItemsEqual(gpuRequirements, gpuParams2)
 
         gpuRequired, gpuRequirements = prodTask.getStepHelper('cmsRun3').getGPUSettings()
         self.assertEqual(gpuRequired, testArguments["Step3"].get('RequiresGPU', "forbidden"))

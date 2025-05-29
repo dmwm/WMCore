@@ -5,15 +5,16 @@ _WMLogging_
 Logging facilities used in WMCore.
 """
 import logging
-from datetime import date, timedelta
 from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
+from pathlib import Path
 
 # a new log level which is lower than debug
 # to prevent a tsunami of log messages in debug
 # mode but to have the possibility to see all
 # database queries if necessary.
 logging.SQLDEBUG = 5
-logging.addLevelName(logging.SQLDEBUG,"SQLDEBUG")
+logging.addLevelName(logging.SQLDEBUG, "SQLDEBUG")
+
 
 def sqldebug(msg):
     """
@@ -22,7 +23,8 @@ def sqldebug(msg):
     """
     logging.log(logging.SQLDEBUG, msg)
 
-def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
+
+def setupRotatingHandler(fileName, maxBytes=200000000, backupCount=3):
     """
     _setupRotatingHandler_
 
@@ -30,17 +32,17 @@ def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
     """
     handler = RotatingFileHandler(fileName, "a", maxBytes, backupCount)
     logging.getLogger().addHandler(handler)
-    return
 
 
-def getTimeRotatingLogger(name, logFile, duration = 'midnight'):
-    """ Set the logger for time based lotaing.
+def getTimeRotatingLogger(name, logFile, duration='midnight'):
+    """
+    Set the logger for time based rotating.
     """
     logger = logging.getLogger(name)
     if duration == 'midnight':
-        handler = MyTimedRotatingFileHandler(logFile, duration, backupCount = 10)
+        handler = WMTimedRotatingFileHandler(logFile, duration, backupCount=10)
     else:
-        handler = TimedRotatingFileHandler(logFile, duration, backupCount = 10)
+        handler = TimedRotatingFileHandler(logFile, duration, backupCount=10)
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -49,36 +51,27 @@ def getTimeRotatingLogger(name, logFile, duration = 'midnight'):
     return logger
 
 
-class MyTimedRotatingFileHandler(TimedRotatingFileHandler):
+class WMTimedRotatingFileHandler(TimedRotatingFileHandler):
     """
-    _MyTimedRotatingFileHandler_
+    _WMTimedRotatingFileHandler_
 
     Overwrite the standard filename functionality from
-    logging.handlers.MyTimedRotatingFileHandler
+    logging.handlers.TimedRotatingFileHandler
     such that it mimics the same behaviour as rotatelogs tool.
 
     Source code from:
     https://stackoverflow.com/questions/338450/timedrotatingfilehandler-changing-file-name
     """
-    def __init__(self, logName, interval, backupCount):
-        super(MyTimedRotatingFileHandler, self).__init__(logName, when=interval,
-                                                         backupCount=backupCount)
-
-    def doRollover(self):
-        """
-        _doRollover_
-
-        Rotate the log file and add the date between the log name
-        and its extension, e.g.:
-        reqmgr2.log becomes reqmgr2-20170815.log
-        """
-        self.stream.close()
-        # replace yesterday's date by today
-        yesterdayStr = (date.today() - timedelta(1)).strftime("%Y%m%d")
-        todayStr = date.today().strftime("%Y%m%d")
-        self.baseFilename = self.baseFilename.replace(yesterdayStr, todayStr)
-        self.stream = open(self.baseFilename, 'w', encoding='utf-8')
-        self.rolloverAt = self.rolloverAt + self.interval
+    def namer(self, default_name):
+        '''
+        Name function called by rotation_filename
+        '''
+        # get the time from default_name
+        time_str = default_name.split('.')[-1]
+        time_str = time_str.replace('-', '')
+        log_path = Path(self.baseFilename)
+        logPath = f"{log_path.parent}/{log_path.stem}-{time_str}{log_path.suffix}"
+        return logPath
 
 
 class CouchHandler(logging.handlers.HTTPHandler):

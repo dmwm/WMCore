@@ -16,6 +16,5 @@ class BulkNewReturn(MySQLBulkNewReturn):
 
     """
 
-    sql = """INSERT INTO wmbs_jobgroup (id, subscription, guid, output,
-                      last_update) VALUES (wmbs_jobgroup_SEQ.nextval, :subscription,
-                      :guid, :output, :timestamp)"""
+    sql = """INSERT INTO wmbs_jobgroup (subscription, guid, output, last_update)
+             VALUES (:subscription, :guid, :output, :timestamp)"""

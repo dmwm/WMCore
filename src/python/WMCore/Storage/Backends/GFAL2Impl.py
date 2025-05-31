@@ -5,7 +5,7 @@ Implementation of StageOutImpl interface for gfal-copy
 """
 import argparse
 import os
-
+import logging
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
@@ -84,10 +84,16 @@ class GFAL2Impl(StageOutImpl):
         :forceMethod: bool to isolate and force a given authentication method
         :dryRun: bool, dry run mode (to enable debug mode)
         """
-        if authMethod is None:
-            set_auth = self.setAuthToken + " " + self.setAuthX509
-            unset_auth = ""
-        elif authMethod == 'X509':
+        if authMethod == 'TOKEN':
+            if not self.isBearerTokenFileSet():
+                msg = "File removal requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
+
+        if authMethod == 'X509':
             set_auth = self.setAuthX509
             unset_auth = self.unsetToken if forceMethod else ""
         elif authMethod == 'TOKEN':

@@ -71,6 +71,17 @@ class StageOutImpl:
         echo
         """
 
+    def isBearerTokenFileSet(self):
+        """
+        Method to check if the BEARER_TOKEN_FILE environment variable is
+        set and not empty. If so, whether the file exists.
+        :return: True if BEARER_TOKEN_FILE envir var is set and exists, False otherwise.
+        """
+        if os.getenv("BEARER_TOKEN_FILE"):
+            if os.path.exists(os.getenv("BEARER_TOKEN_FILE")):
+                return True
+        return False
+
     @staticmethod
     def splitPFN(pfn):
         """

@@ -368,7 +368,7 @@ class MSUnmerged(MSCore):
                 # List and delete files in batches to control memory usage
                 successCount = 0
                 failCount = 0
-                for fileBatch in self._listAndDeleteFiles(ctx, dirPfn):
+                for fileBatch in self._listFilesForDeletion(ctx, dirPfn):
                     batchSuccess, batchFail = self.deleteFilesInParallel(ctx, fileBatch)
                     successCount += batchSuccess
                     failCount += batchFail
@@ -886,7 +886,7 @@ class MSUnmerged(MSCore):
             rseList = []
         return rseList
 
-    def _listAndDeleteFiles(self, ctx, dirPfn, batchSize=1000):
+    def _listFilesForDeletion(self, ctx, dirPfn, batchSize=1000):
         """
         Generator that lists and yields files in batches to control memory usage.
         :param ctx: Gfal context manager object
@@ -894,31 +894,39 @@ class MSUnmerged(MSCore):
         :param batchSize: int with the batch size for file paths to be deleted
         :return: generator with batches of file PFNs
         """
-        currentBatch = []
+        self.logger.info("Listing files for deletion in directory: %s", dirPfn)
 
         def processEntry(entry, currentPath):
             fullPath = os.path.join(currentPath, entry)
             if entry.endswith('.root'):
-                currentBatch.append(fullPath)
-                if len(currentBatch) >= batchSize:
-                    yield currentBatch[:]
-                    currentBatch.clear()
+                return [fullPath]
             else:
                 try:
                     # Recursively process sub-directories
+                    subEntries = []
                     for subEntry in ctx.listdir(fullPath):
-                        yield from processEntry(subEntry, fullPath)
+                        subEntries.extend(processEntry(subEntry, fullPath))
+                    return subEntries
                 except gfal2.GError as ex:
                     if ex.code != errno.ENOENT:  # Ignore if directory doesn't exist
                         self._trackGfalError(ex)
+                    return []
 
         try:
+            currentBatch = []
             for entry in ctx.listdir(dirPfn):
-                yield from processEntry(entry, dirPfn)
+                files = processEntry(entry, dirPfn)
+                currentBatch.extend(files)
+
+                if len(currentBatch) >= batchSize:
+                    # yield copies of batches to prevent reference/memory retention
+                    yield currentBatch[:]
+                    currentBatch.clear()
 
             # Yield any remaining files in the last batch
             if currentBatch:
-                yield currentBatch
+                yield currentBatch[:]
+                currentBatch.clear()
         except gfal2.GError as ex:
             self._trackGfalError(ex)
 

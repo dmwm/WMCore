@@ -358,7 +358,7 @@ class MSUnmerged(MSCore):
                     continue
 
                 # Second attempt: Try to delete sub-directories first
-                if self._rmSubDirs(ctx, dirPfn):
+                if self._rmSubDirsInParallel(ctx, dirPfn):
                     # If sub-directories were deleted, try the parent again
                     if self._rmDir(ctx, dirPfn):
                         self._updateSuccessCounters(rse, dirLfn)
@@ -452,13 +452,13 @@ class MSUnmerged(MSCore):
                 rmdirSuccess = False
         return rmdirSuccess
 
-    def _rmSubDirs(self, ctx, dirPfn):
+    def _rmSubDirsInParallel(self, ctx, dirPfn):
         """
-        Attempt to delete sub-directories without listing all contents first.
+        Attempt to delete sub-directories in parallel, without listing their contents.
         Returns True if all sub-directories were deleted, False otherwise.
         """
+        self.logger.info("Listing sub-directories for deletion in directory: %s", dirPfn)
         listSubDirs = []
-        rm_status = []
         try:
             # List only the immediate sub-directories
             for entry in ctx.listdir(dirPfn):
@@ -469,14 +469,34 @@ class MSUnmerged(MSCore):
             self._trackGfalError(ex)
             return False
 
-        # Try to delete each sub-directory
-        for subDir in listSubDirs:
-            rm_status.append(self._rmDir(ctx, subDir))
+        if not listSubDirs:
+            self.logger.info("No sub-directories found for deletion in directory: %s", dirPfn)
+            return True
 
-        self.logger.info("Sub-directories successful deletion for %s and failed for %d directories.",
-                         rm_status.count(True), rm_status.count(False))
-        # return True (success) only if all sub-directories were deleted
-        return (rm_status.count(True) == len(rm_status))
+        def deleteBatchDir(subDir):
+            return self._rmDir(ctx, subDir)
+
+        successCount = 0
+        failCount = 0
+        maxWorkers = 10
+        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
+            # Submit all directories for deletion
+            future_to_dir = {executor.submit(deleteBatchDir, subDir): subDir for subDir in listSubDirs}
+
+            # Process results as they complete
+            for future in concurrent.futures.as_completed(future_to_dir):
+                subDir = future_to_dir[future]
+                try:
+                    if future.result():
+                        successCount += 1
+                    else:
+                        failCount += 1
+                except Exception as ex:
+                    self.logger.error("Error processing directory deletion result for %s: %s", subDir, str(ex))
+                    failCount += 1
+
+        self.logger.info("Sub-directories deletion completed. Success: %d, Failed: %d", successCount, failCount)
+        return failCount == 0
 
     def _checkClean(self, rse):
         """

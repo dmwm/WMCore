@@ -84,7 +84,7 @@ class GFAL2Impl(StageOutImpl):
         :forceMethod: bool to isolate and force a given authentication method
         :dryRun: bool, dry run mode (to enable debug mode)
         """
-        if authMethod == 'TOKEN':
+        if authMethod and authMethod.upper() == 'TOKEN':
             if not self.isBearerTokenFileSet():
                 msg = "File removal requested with tokens, but environment variable is not defined."
                 msg += " Forcing it to use X509 authentication method instead."
@@ -145,10 +145,16 @@ class GFAL2Impl(StageOutImpl):
         copyCommandDict['source'] = self.createFinalPFN(sourcePFN)
         copyCommandDict['destination'] = self.createFinalPFN(targetPFN)
 
-        if authMethod is None:
-            copyCommandDict['set_auth'] = ""
-            copyCommandDict['unset_auth'] = ""
-        elif authMethod.upper() == 'X509':
+        if authMethod and authMethod.upper() == 'TOKEN':
+            if not self.isBearerTokenFileSet():
+                msg = "Stage out requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
+
+        if authMethod.upper() == 'X509':
             copyCommandDict['set_auth'] = self.setAuthX509
             copyCommandDict['unset_auth'] = self.unsetToken if forceMethod else ""
         elif authMethod.upper() == 'TOKEN':

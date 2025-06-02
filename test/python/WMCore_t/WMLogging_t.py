@@ -41,6 +41,7 @@ class WMLoggingTest(unittest.TestCase):
         for _, _, filenames in os.walk(logPath):
             for filename in filenames:
                 os.remove(logPath.joinpath(filename))
+                pass
 
     def testLog(self):
         """
@@ -75,24 +76,45 @@ class WMLoggingTest(unittest.TestCase):
         formatter = logging.Formatter('%(message)s')
         handler = WMTimedRotatingFileHandler(logName,
                                              when='S',
-                                             interval=10,
+                                             interval=1,
                                              backupCount=10)
         handler.setFormatter(formatter)
         myLogger.addHandler(handler)
-        myLogger.info('first log')
-        time.sleep(11)
-        myLogger.info('second log')
+        myLogger.info('log 1')
+        time.sleep(2)
+        myLogger.info('log 2')
 
         p = Path('testRotate')
-        for log in list(p.iterdir()):
+        files = list(p.iterdir())
+        self.assertEqual(len(files), 2)
+        for idx, log in enumerate(sorted(files)):
             with open(log, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
-                if log.name == 'mylog.log':
-                    self.assertEqual(lines[0].strip(), "second log")
+                if idx == 0:
+                    self.assertEqual(lines[0].strip(), "log 1")
                 else:
-                    self.assertEqual(lines[0].strip(), "first log")
+                    self.assertEqual(lines[0].strip(), "log 2")
                     self.assertNotIn(defaultToday, log.name)
                     self.assertIn(todayStr, log.name)
+
+        # test backupCount
+        time.sleep(2)
+        for i in range(3, 11):
+            myLogger.info('log %s', i)
+            time.sleep(2)
+        files = list(p.iterdir())
+        self.assertEqual(len(files), 10)
+
+        myLogger.info('log %s', 11)
+        files = list(p.iterdir())
+        self.assertEqual(len(files), 11)
+
+        time.sleep(2)
+        myLogger.info('log %s', 12)
+        time.sleep(2)
+        files = list(p.iterdir())
+        self.assertEqual(len(files), 11)
+
 
 
 if __name__ == "__main__":

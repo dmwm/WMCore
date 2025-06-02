@@ -67,7 +67,7 @@ class RucioConMon(Service):
         if clearCache:
             self.clearCache(cachedApi, args)
         with self.refreshCache(cachedApi, apiUrl, decoder=True, binary=False) as istream:
-            return json.loads(istream.read())
+            return json.load(istream)
 
     def _getResultZipped(self, uri, callname="", clearCache=True):
         """

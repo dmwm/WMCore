@@ -4,9 +4,13 @@ _WMLogging_
 
 Logging facilities used in WMCore.
 """
+from datetime import datetime, date
 import logging
-from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
+from logging.handlers import (HTTPHandler,
+                              RotatingFileHandler,
+                              TimedRotatingFileHandler)
 from pathlib import Path
+
 
 # a new log level which is lower than debug
 # to prevent a tsunami of log messages in debug
@@ -40,9 +44,9 @@ def getTimeRotatingLogger(name, logFile, duration='midnight'):
     """
     logger = logging.getLogger(name)
     if duration == 'midnight':
-        handler = WMTimedRotatingFileHandler(logFile, duration, backupCount=10)
+        handler = WMTimedRotatingFileHandler(logFile, when=duration, backupCount=10)
     else:
-        handler = TimedRotatingFileHandler(logFile, duration, backupCount=10)
+        handler = TimedRotatingFileHandler(logFile, when=duration, backupCount=10)
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -59,19 +63,48 @@ class WMTimedRotatingFileHandler(TimedRotatingFileHandler):
     logging.handlers.TimedRotatingFileHandler
     such that it mimics the same behaviour as rotatelogs tool.
 
-    Source code from:
-    https://stackoverflow.com/questions/338450/timedrotatingfilehandler-changing-file-name
+    More information here:
+    https://docs.python.org/3/library/logging.handlers.html#baserotatinghandler
     """
+    def __init__(self, filename, when='midnight', backupCount=10, **kwargs):
+        """
+        Initializes WMTimedRotatingFileHandler
+        """
+        super().__init__(filename, when=when, backupCount=backupCount,
+                         delay=True, **kwargs)
+
+        today = datetime.now().strftime(self.suffix).replace('-', '')
+        # store our filename and set the filename to be used
+        self.loggerBaseName = self.baseFilename
+        filepath = Path(self.baseFilename)
+        self.baseFilename = f"{filepath.parent}/{filepath.stem}-{today}{filepath.suffix}"
+
+        self.stream = self._open()
+
     def namer(self, default_name):
-        '''
-        Name function called by rotation_filename
-        '''
+        """
+        namer called by rotation_filename in TimedRotatingFileHandler.doRollover
+
+        For us to replicate rotatelogs, we need to add the time_str to the
+        filename before the .log suffix
+        """
         # get the time from default_name
-        time_str = default_name.split('.')[-1]
-        time_str = time_str.replace('-', '')
-        log_path = Path(self.baseFilename)
+        today = datetime.now().strftime(self.suffix).replace('-', '')
+        time_str = today.replace('-', '')
+        log_path = Path(self.loggerBaseName)
         logPath = f"{log_path.parent}/{log_path.stem}-{time_str}{log_path.suffix}"
         return logPath
+
+    def rotator(self, src, dest):
+        """
+        rotator is called by the self.rotate
+
+        Gets the new date, then sets the proper self.baseFilename
+        We don't use the default behavior of the current file being renamed
+        """
+        today = datetime.now().strftime(self.suffix).replace('-', '')
+        filepath = Path(self.loggerBaseName)
+        self.baseFilename = f"{filepath.parent}/{filepath.stem}-{today}{filepath.suffix}"
 
 
 class CouchHandler(logging.handlers.HTTPHandler):

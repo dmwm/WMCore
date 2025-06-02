@@ -24,7 +24,8 @@ class GFAL2Impl(StageOutImpl):
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
 
         self.setAuthX509 = "X509_USER_PROXY=$X509_USER_PROXY"
-        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE)"
+        # if BEARER_TOKEN_FILE is not set, use /dev/null as a fallback to suppress the error
+        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat ${BEARER_TOKEN_FILE:-/dev/null})"
         self.unsetX509 = "unset X509_USER_PROXY;"
         self.unsetToken = "unset BEARER_TOKEN;"
 

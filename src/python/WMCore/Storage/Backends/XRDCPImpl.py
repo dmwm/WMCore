@@ -29,7 +29,8 @@ class XRDCPImpl(StageOutImpl):
         self.retryPause = 300
         self.xrdfsCmd = "xrdfs"
         self.setAuthX509 = "env X509_USER_PROXY=$X509_USER_PROXY "
-        self.setAuthToken = "env BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE) "
+        # if BEARER_TOKEN_FILE is not set, use /dev/null as a fallback to suppress the error
+        self.setAuthToken = "env BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat ${BEARER_TOKEN_FILE:-/dev/null}) "
         self.unsetX509 = "X509_USER_PROXY= "
         self.unsetToken = "BEARER_TOKEN_FILE= BEARER_TOKEN= "
         self.debuggingTemplate = "#!/bin/bash\n"

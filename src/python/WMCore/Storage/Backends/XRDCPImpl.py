@@ -112,7 +112,7 @@ class XRDCPImpl(StageOutImpl):
         if authMethod is None:
             return authEnv
 
-        if authMethod.upper() == 'TOKEN':
+        if authMethod.upper() == 'TOKEN' and forceMethod is False:
             if not self.isBearerTokenFileSet():
                 msg = "Stage out requested with tokens, but environment variable is not defined."
                 msg += " Forcing it to use X509 authentication method instead."

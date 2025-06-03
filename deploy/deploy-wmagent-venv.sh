@@ -16,7 +16,8 @@ help(){
       -b  <wmcore_source_branch>     WMCore source branch [Default: master]
       -t  <wmcore_tag>               WMCore tag to be used for this deployment [Default: None]
       -d  <wmagent_path>             WMAgent virtual environment target path to be used for this deployment [Default: ./WMAgent.venv3]
-      -h <help>                      Provides help to the current script
+      -p  <python_executable>        The path to the python executable to be used, in case we do not want to rely on the OS default.
+      -h  <help>                     Provides help to the current script
 
     # Example: Deploy WMAgent version 2.0.3rc1 from 'test' pypi index:
     #          at destination /data/tmp/WMAgent.venv3/
@@ -79,7 +80,7 @@ pythonCmd=python
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
-while getopts ":t:r:d:b:i:snvyh" opt; do
+while getopts ":t:r:d:b:i:p:snvyh" opt; do
     case ${opt} in
         d)
             venvPath=$OPTARG
@@ -92,6 +93,8 @@ while getopts ":t:r:d:b:i:snvyh" opt; do
             wmSrcBranch=$OPTARG ;;
         i)
             pipIndex=$OPTARG ;;
+        p)
+            pythonCmd=$OPTARG ;;
         s)
             runFromSource=true ;;
         n)

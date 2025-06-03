@@ -172,6 +172,17 @@ class GFAL2Impl(StageOutImpl):
         :forceMethod: bool to isolate and force a given authentication method
         returns: a string with the full stage out script
         """
+
+        #security check for authMethod to avoid trigger unwanted failures with certain dCache versions
+        if authMethod == 'TOKEN':
+            if not self.isBearerTokenFileSet():
+                msg = "File removal requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
+
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums,
                                                     authMethod, forceMethod)
         copyCommand = self.copyCommand.format_map(copyCommandDict)
@@ -206,6 +217,16 @@ class GFAL2Impl(StageOutImpl):
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
         """
+
+        # security check for authMethod to avoid trigger unwanted failures with certain dCache versions
+        if authMethod == 'TOKEN':
+            if not self.isBearerTokenFileSet():
+                msg = "File removal requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
 
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums,
                                                     authMethod, forceMethod, dryRun=True)

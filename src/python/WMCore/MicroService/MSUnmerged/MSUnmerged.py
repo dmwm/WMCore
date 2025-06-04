@@ -106,6 +106,11 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("dirFilterExcl", [])
         self.msConfig.setdefault("emulateGfal2", False)
         self.msConfig.setdefault("filesToDeleteSliceSize", 100)
+        # settings for parallel file and sub-directory deletion
+        self.msConfig.setdefault("parallelFileDeletionMaxWorkers", 10)
+        self.msConfig.setdefault("parallelFileDeletionBatchSize", 100)
+        # note that sub-directory deletion has a single directory per batch
+        self.msConfig.setdefault("parallelSubDirDeletionMaxWorkers", 20)
 
         self.msConfig.setdefault("mongoDBRetryCount", 3)
         self.msConfig.setdefault("mongoDBReplicaSet", None)
@@ -476,9 +481,11 @@ class MSUnmerged(MSCore):
         def deleteBatchDir(subDir):
             return self._rmDir(ctx, subDir)
 
+        maxWorkers = self.msConfig['parallelSubDirDeletionMaxWorkers']
+        self.logger.info("Found a total of %d sub-directories for deletion.", len(listSubDirs))
+        self.logger.info("To be deleted with up to %d concurrent workers.", maxWorkers)
         successCount = 0
         failCount = 0
-        maxWorkers = 10
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             # Submit all directories for deletion
             future_to_dir = {executor.submit(deleteBatchDir, subDir): subDir for subDir in listSubDirs}
@@ -919,29 +926,25 @@ class MSUnmerged(MSCore):
         def processEntry(entry, currentPath):
             fullPath = os.path.join(currentPath, entry)
             if entry.endswith('.root'):
-                return [fullPath]
+                yield fullPath
             else:
                 try:
-                    # Recursively process sub-directories
-                    subEntries = []
+                    # Since we know it's at most 2 levels deep, we can directly yield .root files
                     for subEntry in ctx.listdir(fullPath):
-                        subEntries.extend(processEntry(subEntry, fullPath))
-                    return subEntries
+                        if subEntry.endswith('.root'):
+                            yield os.path.join(fullPath, subEntry)
                 except gfal2.GError as ex:
                     if ex.code != errno.ENOENT:  # Ignore if directory doesn't exist
                         self._trackGfalError(ex)
-                    return []
 
         try:
             currentBatch = []
             for entry in ctx.listdir(dirPfn):
-                files = processEntry(entry, dirPfn)
-                currentBatch.extend(files)
-
-                if len(currentBatch) >= batchSize:
-                    # yield copies of batches to prevent reference/memory retention
-                    yield currentBatch[:]
-                    currentBatch.clear()
+                for filePath in processEntry(entry, dirPfn):
+                    currentBatch.append(filePath)
+                    if len(currentBatch) >= batchSize:
+                        yield currentBatch[:]
+                        currentBatch.clear()
 
             # Yield any remaining files in the last batch
             if currentBatch:
@@ -950,7 +953,7 @@ class MSUnmerged(MSCore):
         except gfal2.GError as ex:
             self._trackGfalError(ex)
 
-    def deleteFilesInParallel(self, ctx, fileList, batchSize=100, maxWorkers=10):
+    def deleteFilesInParallel(self, ctx, fileList):
         """
         Delete files in parallel using concurrent.futures and gfal2's bulk operations.
         Combines the benefits of batch operations with parallel processing.
@@ -962,12 +965,15 @@ class MSUnmerged(MSCore):
         """
         successCount = 0
         failCount = 0
+
+        batchSize = self.msConfig['parallelFileDeletionBatchSize']
+        maxWorkers = self.msConfig['parallelFileDeletionMaxWorkers']
         msg = f"Have a list of {len(fileList)} files to delete, "
-        msg += f"with a batch size of {batchSize} and max workers set to {maxWorkers}"
+        msg += f"with a batch size of {batchSize} and max workers set to {maxWorkers}."
         self.logger.info(msg)
 
         def deleteBatch(batch):
-            "Delete a batch of files and return a list of results"
+            """Delete a batch of files and return a list of results"""
             try:
                 self.logger.info("Attempting to delete batch of %d files", len(batch))
                 results = ctx.unlink(batch)
@@ -977,17 +983,21 @@ class MSUnmerged(MSCore):
                 self.logger.error("Failed to delete batch: %s", str(ex))
                 return ex
 
-        # Create batches of files
-        batches = list(grouper(fileList, batchSize))
-        self.logger.info("Created %d batches of files for parallel deletion", len(batches))
+        def batchGenerator():
+            """Generator to create batches on demand"""
+            for i in range(0, len(fileList), batchSize):
+                yield fileList[i:i + batchSize]
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
-            # Submit all batches for deletion
-            future_to_batch = {executor.submit(deleteBatch, batch): batch for batch in batches}
+            # Submit batches as they are generated
+            future_to_batch = {}
+            for batch in batchGenerator():
+                future = executor.submit(deleteBatch, batch)
+                future_to_batch[future] = batch
 
-            # Process results as they complete
+            # Process results as they complete and clean up
             for future in concurrent.futures.as_completed(future_to_batch):
-                batch = future_to_batch[future]
+                batch = future_to_batch.pop(future)  # Remove from dict to allow GC
                 try:
                     results = future.result()
                     if isinstance(results, Exception):
@@ -1005,7 +1015,10 @@ class MSUnmerged(MSCore):
                 except Exception as ex:
                     self.logger.error("Error processing batch deletion result: %s", str(ex))
                     failCount += len(batch)
+                finally:
+                    # Ensure future is cleaned up
+                    future.cancel()
 
-        self.logger.info("Completed parallel deletion of %d batches. Success: %d, Failed: %d",
-                         len(batches), successCount, failCount)
+        self.logger.info("Completed parallel deletion. Success: %d, Failed: %d",
+                         successCount, failCount)
         return successCount, failCount

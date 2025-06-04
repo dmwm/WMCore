@@ -21,6 +21,8 @@ import random
 import re
 import os
 import errno
+import gc
+import psutil
 try:
     import gfal2
 except ImportError:
@@ -350,6 +352,7 @@ class MSUnmerged(MSCore):
             raise MSUnmergedPlineExit(msg) from ex
 
         try:
+            self._logMemoryUsage(f"before processing RSE {rse['name']}")
             for dirLfn in rse['dirs']['toDelete']:
                 dirPfn = rse['pfnPrefix'] + dirLfn
 
@@ -381,16 +384,25 @@ class MSUnmerged(MSCore):
                     # Update counters after each batch
                     self._updateFileCounters(rse, batchSuccess, batchFail)
 
+                    # Force garbage collection after each batch
+                    gc.collect()
+
                 # Final attempt: Try to delete the directory again
                 if self._rmDir(ctx, dirPfn):
                     self._updateSuccessCounters(rse, dirLfn)
                 else:
                     self._updateFailureCounters(rse, dirLfn)
+
+                # Log memory usage after processing each directory
+                self._logMemoryUsage(f"after processing directory {dirLfn}")
         except Exception as ex:
             self.logger.exception("Error during RSE cleanup: %s", str(ex))
         finally:
             if ctx:
                 ctx.free()
+            # Final memory cleanup
+            gc.collect()
+            self._logMemoryUsage(f"after completing RSE {rse['name']}")
 
         rse['isClean'] = self._checkClean(rse)
         return rse
@@ -959,8 +971,6 @@ class MSUnmerged(MSCore):
         Combines the benefits of batch operations with parallel processing.
         :param ctx: gfal2 context
         :param fileList: list of files to delete
-        :param batchSize: size of each batch for bulk operations
-        :param maxWorkers: maximum number of parallel workers
         :return: tuple of (successCount, failCount)
         """
         successCount = 0
@@ -988,6 +998,7 @@ class MSUnmerged(MSCore):
             for i in range(0, len(fileList), batchSize):
                 yield fileList[i:i + batchSize]
 
+        self._logMemoryUsage("before parallel deletion")
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             # Submit batches as they are generated
             future_to_batch = {}
@@ -1019,6 +1030,22 @@ class MSUnmerged(MSCore):
                     # Ensure future is cleaned up
                     future.cancel()
 
+        self._logMemoryUsage("after parallel deletion")
         self.logger.info("Completed parallel deletion. Success: %d, Failed: %d",
                          successCount, failCount)
         return successCount, failCount
+
+    def _logMemoryUsage(self, context=""):
+        """
+        Log current memory usage of the process using RSS (Resident Set Size).
+        This is a simplified version that only uses RSS to avoid any threading issues.
+        :param context: Optional string to identify where the memory check is happening
+        """
+        try:
+            process = psutil.Process(os.getpid())
+            memoryInfo = process.memory_info()
+            self.logger.info("Memory usage%s: RSS=%.1fMB",
+                           f" ({context})" if context else "",
+                           memoryInfo.rss / 1024 / 1024)
+        except Exception as ex:
+            self.logger.warning("Failed to log memory usage: %s", str(ex))

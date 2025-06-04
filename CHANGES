@@ -1,3 +1,13 @@
+2.4.0rc4 to 2.4.0rc5:
+  - Add option to chose custom built python (Todor Ivanov) #12381
+  - Do not hang on unset BEARER_TOKEN_FILE env var (Alan Malta Rodrigues) #12380
+  - Default first stage out to X509 in case bearer token is not set (Alan Malta Rodrigues) #12380
+  - Add Oracle DatabaseError DPI-1080 as a soft error (Alan Malta Rodrigues) #12379
+  - Avoid token-based file deletion in GFAL2, unless environ is defined (Alan Malta Rodrigues) #12377
+  - Force cherrypy to set content-length=0 before request body if FE does not provide it (Valentin Kuznetsov) #12371
+  - Make JobAccountant output module evaluation more verbose (Alan Malta Rodrigues) #12351
+
+
 2.4.0rc3 to 2.4.0rc4:
   - setup default value for cycle_time (Valentin Kuznetsov) #12372
   - Change look-up states for process status (Valentin Kuznetsov) #12372

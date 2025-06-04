@@ -24,7 +24,7 @@ class GFAL2Impl(StageOutImpl):
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
 
         self.setAuthX509 = "X509_USER_PROXY=$X509_USER_PROXY"
-        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE)"
+        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat \"$BEARER_TOKEN_FILE\")"
         self.unsetX509 = "unset X509_USER_PROXY;"
         self.unsetToken = "unset BEARER_TOKEN;"
 
@@ -32,10 +32,10 @@ class GFAL2Impl(StageOutImpl):
         # 1. authentication method (set_auth)
         # 2. forced authentication method (unset_auth)
         # 3. finally, debug mode or not (dry_run)
-        self.setups = "env -i {{set_auth}} JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
-        self.copyOpts = '-t 2400 -T 2400 -p -v --abort-on-failure {checksum} {options} {source} {destination}'
-        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-copy ' + self.copyOpts)
-        self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; {dry_run} gfal-rm -t 600 {}')
+        self.setups = "ls -l /tmp; env -i {{set_auth}} JOBSTARTDIR=$JOBSTARTDIR bash -c '{}'"
+        self.copyOpts = '-t 2400 -T 2400 -p -vvv --abort-on-failure {checksum} {options} {source} {destination}'
+        self.copyCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; ls -l /tmp; {dry_run} gfal-copy ' + self.copyOpts)
+        self.removeCommand = self.setups.format('. $JOBSTARTDIR/startup_environment.sh; {unset_auth} date; ls -l /tmp; {dry_run} gfal-rm -t 600 {}')
 
     def createFinalPFN(self, pfn):
         """
@@ -172,6 +172,17 @@ class GFAL2Impl(StageOutImpl):
         :forceMethod: bool to isolate and force a given authentication method
         returns: a string with the full stage out script
         """
+
+        #security check for authMethod to avoid trigger unwanted failures with certain dCache versions
+        if authMethod == 'TOKEN':
+            if not self.isBearerTokenFileSet():
+                msg = "File removal requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
+
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums,
                                                     authMethod, forceMethod)
         copyCommand = self.copyCommand.format_map(copyCommandDict)
@@ -206,6 +217,16 @@ class GFAL2Impl(StageOutImpl):
         :options: str, additional options for gfal-cp
         :checksums: dict, collect checksums according to the algorithms saved as keys
         """
+
+        # security check for authMethod to avoid trigger unwanted failures with certain dCache versions
+        if authMethod == 'TOKEN':
+            if not self.isBearerTokenFileSet():
+                msg = "File removal requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
 
         copyCommandDict = self.buildCopyCommandDict(sourcePFN, targetPFN, options, checksums,
                                                     authMethod, forceMethod, dryRun=True)

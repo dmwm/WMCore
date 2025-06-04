@@ -257,7 +257,7 @@ class StageOutImpl:
         # // Create the command to be used.
         # //
         # // This will actually only enforce the definition of the bearer token variables, still x509 auth activated as a backup
-        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authMethod="TOKEN")
+        command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums, authMethod="X509") #only for debug porpuses! "TOKEN")
         # //
         # // Run the command
         # //

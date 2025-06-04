@@ -42,3 +42,4 @@ rucio-clients~=1.29.10        # wmcore,wmagent,wmglobalqueue,msunmerged,msoutput
 Sphinx~=5.1.1                 # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,acdcserver,wmglobalqueue
 SQLAlchemy~=1.4.40            # wmcore,wmagent
 PyJWT~=2.4.0                  # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,acdcserver,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
+requests~=2.32.2              # wmcore,wmagent

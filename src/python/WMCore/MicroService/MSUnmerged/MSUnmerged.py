@@ -21,6 +21,7 @@ import random
 import re
 import os
 import errno
+import psutil
 try:
     import gfal2
 except ImportError:
@@ -41,7 +42,6 @@ from WMCore.Database.MongoDB import MongoDB
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
 from Utils.TwPrint import twFormat
-from Utils.IteratorTools import grouper
 
 # from memory_profiler import profile
 
@@ -156,9 +156,9 @@ class MSUnmerged(MSCore):
                                       funcLine=[Functor(self.getRSEFromMongoDB),
                                                 Functor(self.updateRSETimestamps, start=True, end=False),
                                                 Functor(self.consRecordAge),
+                                                Functor(self.resetCounters),
                                                 Functor(self.getUnmergedFiles),
                                                 Functor(self.getPfn),
-                                                Functor(self.resetCounters),
                                                 Functor(self.cleanRSE),
                                                 Functor(self.updateServiceCounters),
                                                 Functor(self.updateRSETimestamps, start=False, end=True),
@@ -312,23 +312,19 @@ class MSUnmerged(MSCore):
         Reset all counters for an RSE object and initialize structure if needed.
         :param rse: The RSE object whose counters need to be reset
         """
-        # Initialize the basic structure if it doesn't exist
-        rse.setdefault('dirs', {})
-        rse.setdefault('counters', {})
+        rseName = rse['name']
+        self.logger.info("Resetting RSE object for '%s' to start a fresh cleanup.", rseName)
+        try:
+            rse.resetRSE(self.msUnmergedColl, keepTimestamps=True, retryCount=self.msConfig['mongoDBRetryCount'])
+        except NotPrimaryError:
+            msg = "Could not reset RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
+            msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
+            msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
+            raise MSUnmergedPlineExit(msg) from None
 
-        # Initialize directory structure
-        rse['dirs'].setdefault('toDelete', set())
-        rse['dirs'].setdefault('deletedSuccess', set())
-        rse['dirs'].setdefault('deletedFail', set())
+        # Before returning the RSE update Consistency StatTime:
+        rse['timestamps']['rseConsStatTime'] = self.rseConsStats[rseName]['end_time']
 
-        # Initialize counter structure
-        rse['counters'].setdefault('dirsDeletedSuccess', 0)
-        rse['counters'].setdefault('dirsDeletedFail', 0)
-        rse['counters'].setdefault('filesDeletedSuccess', 0)
-        rse['counters'].setdefault('filesDeletedFail', 0)
-        rse['counters'].setdefault('gfalErrors', {})
-
-        self.logger.info("Reset all counters for RSE: %s", rse['name'])
         return rse
 
     # @profile
@@ -336,6 +332,8 @@ class MSUnmerged(MSCore):
         """
         Optimized cleanup method that minimizes directory listing operations
         and handles storage technologies that support recursive directory deletion.
+        :param rse: MSUnmergedRSE object to be cleaned
+        :return:    The MSUnmergedRSE object with updated counters and isClean flag
         """
         if not rse['dirs']['toDelete']:
             rse['isClean'] = self._checkClean(rse)
@@ -350,7 +348,19 @@ class MSUnmerged(MSCore):
             raise MSUnmergedPlineExit(msg) from ex
 
         try:
+            self._logMemoryUsage(f"before processing RSE {rse['name']}")
             for dirLfn in rse['dirs']['toDelete']:
+                # Check memory usage and recreate context if needed
+                try:
+                    process = psutil.Process(os.getpid())
+                    if process.memory_info().rss > 1024 * 1024 * 1024:  # 1GB in bytes
+                        self.logger.warning("Memory usage exceeded 1GB, recreating gfal2 context")
+                        if ctx:
+                            ctx.free()
+                        ctx = createGfal2Context(self.msConfig['gfalLogLevel'], self.msConfig['emulateGfal2'])
+                except Exception as ex:
+                    self.logger.warning("Failed to check memory usage or manage gfal2 context: %s", str(ex))
+
                 dirPfn = rse['pfnPrefix'] + dirLfn
 
                 if not self.msConfig['enableRealMode']:
@@ -386,11 +396,15 @@ class MSUnmerged(MSCore):
                     self._updateSuccessCounters(rse, dirLfn)
                 else:
                     self._updateFailureCounters(rse, dirLfn)
+
+                # Log memory usage after processing each directory
+                self._logMemoryUsage(f"after processing directory {dirLfn}")
         except Exception as ex:
             self.logger.exception("Error during RSE cleanup: %s", str(ex))
         finally:
             if ctx:
                 ctx.free()
+            self._logMemoryUsage(f"after completing RSE {rse['name']}")
 
         rse['isClean'] = self._checkClean(rse)
         return rse
@@ -438,9 +452,9 @@ class MSUnmerged(MSCore):
         Auxiliary method to be used for removing a single directory entry with gfal2
         and handling eventual gfal errors raised.
         :param ctx:    Gfal Context Manager object.
-        :param dirPfn: The Pfn of the directory to be removed
+        :param dirPfn: string with the PFN of the directory to be removed
         :return:       Bool: True if the removal was successful, False otherwise
-                       NOTE: An attempt to delete an already missing directory is considered a success
+        NOTE: An attempt to delete an already missing directory is considered a success
         """
         try:
             # NOTE: For gfal2 rmdir() exit status of 0 is success
@@ -518,7 +532,8 @@ class MSUnmerged(MSCore):
         """
         A method to check the duration of the consistency record for the RSE
         :param rse: The RSE to be checked
-        :return:    rse or raises MSUnmergedPlineExit
+        :return:    rse object it if can proceeed with cleanup,
+                    else it raises an MSUnmergedPlineExit exception
         """
         rseName = rse['name']
         self.logger.info("Evaluating consistency record agent for RSE: %s.", rse['name'])
@@ -564,19 +579,7 @@ class MSUnmerged(MSCore):
             #       the RSE in RucioConMOn and we are then about to start a new RSE cleanup
             #       so we will need to wipe out all but the timestamps from both
             #       the current object and the MongoDB record for the object.
-            msg = "RSE: %s With new consistency record in Rucio Consistency Monitor. " % rseName
-            msg += "Resetting RSE and starting a fresh cleanup process in the current run."
-            self.logger.info(msg)
-            try:
-                rse.resetRSE(self.msUnmergedColl, keepTimestamps=True, retryCount=self.msConfig['mongoDBRetryCount'])
-            except NotPrimaryError:
-                msg = "Could not reset RSE to MongoDB for the maximum of %s mongoDBRetryCounts configured." % self.msConfig['mongoDBRetryCount']
-                msg += "Giving up now. The whole cleanup process will be retried for this RSE on the next run."
-                msg += "Duplicate deletion retries may cause error messages from false positives and wrong counters during next polling cycle."
-                raise MSUnmergedPlineExit(msg) from None
-
-        # Before returning the RSE update Consistency StatTime:
-        rse['timestamps']['rseConsStatTime'] = self.rseConsStats[rseName]['end_time']
+            self.logger.info("RSE: %s with new consistency record in Rucio Consistency Monitor.", rseName)
         return rse
 
     # @profile
@@ -599,14 +602,6 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
-        rse['counters']['totalNumFiles'] = 0
-        rse['counters']['totalNumDirs'] = 0
-        rse['counters']['dirsToDelete'] = 0
-        rse['counters']['filesToDelete'] = 0
-        rse['dirs']['allUnmerged'] = []  # TODO FIXME: this is supposed to be the union of toDelete and protected
-        rse['dirs']['toDelete'] = set()
-        rse['dirs']['protected'] = set()
-
         self.logger.info("Fetching data from Rucio ConMon for RSE: %s.", rse['name'])
         for lfn in self.rucioConMon.getRSEUnmerged(rse['name'], zipped=True):
             dirPath = self._cutPath(lfn)
@@ -953,14 +948,30 @@ class MSUnmerged(MSCore):
         except gfal2.GError as ex:
             self._trackGfalError(ex)
 
+    def _logMemoryUsage(self, context=""):
+        """
+        Log current memory usage of the process using RSS (Resident Set Size).
+        This is a simplified version that only uses RSS to avoid any threading issues.
+        :param context: Optional string to identify where the memory check is happening
+        """
+        try:
+            process = psutil.Process(os.getpid())
+            memoryInfo = process.memory_info()
+            # Get a count of active threads
+            threadCount = len(process.threads())
+            self.logger.info("Memory usage%s: RSS=%.1fMB, Threads=%d",
+                           f" ({context})" if context else "",
+                           memoryInfo.rss / 1024 / 1024,
+                           threadCount)
+        except Exception as ex:
+            self.logger.warning("Failed to log memory usage: %s", str(ex))
+
     def deleteFilesInParallel(self, ctx, fileList):
         """
         Delete files in parallel using concurrent.futures and gfal2's bulk operations.
         Combines the benefits of batch operations with parallel processing.
         :param ctx: gfal2 context
         :param fileList: list of files to delete
-        :param batchSize: size of each batch for bulk operations
-        :param maxWorkers: maximum number of parallel workers
         :return: tuple of (successCount, failCount)
         """
         successCount = 0
@@ -988,16 +999,14 @@ class MSUnmerged(MSCore):
             for i in range(0, len(fileList), batchSize):
                 yield fileList[i:i + batchSize]
 
+        self._logMemoryUsage("before parallel deletion")
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             # Submit batches as they are generated
-            future_to_batch = {}
-            for batch in batchGenerator():
-                future = executor.submit(deleteBatch, batch)
-                future_to_batch[future] = batch
+            future_to_batch = {executor.submit(deleteBatch, batch): batch for batch in batchGenerator()}
 
             # Process results as they complete and clean up
             for future in concurrent.futures.as_completed(future_to_batch):
-                batch = future_to_batch.pop(future)  # Remove from dict to allow GC
+                batch = future_to_batch[future]
                 try:
                     results = future.result()
                     if isinstance(results, Exception):
@@ -1019,6 +1028,7 @@ class MSUnmerged(MSCore):
                     # Ensure future is cleaned up
                     future.cancel()
 
+        self._logMemoryUsage("after parallel deletion")
         self.logger.info("Completed parallel deletion. Success: %d, Failed: %d",
                          successCount, failCount)
         return successCount, failCount

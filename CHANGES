@@ -1,3 +1,6 @@
+2.4.0rc5 to 2.4.0rc6:
+  - Previous build release failed; trigger a new one
+
 2.4.0rc4 to 2.4.0rc5:
   - Add option to chose custom built python (Todor Ivanov) #12381
   - Do not hang on unset BEARER_TOKEN_FILE env var (Alan Malta Rodrigues) #12380

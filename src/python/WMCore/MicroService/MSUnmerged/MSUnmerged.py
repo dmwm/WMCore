@@ -21,7 +21,6 @@ import random
 import re
 import os
 import errno
-import gc
 import psutil
 try:
     import gfal2
@@ -354,6 +353,17 @@ class MSUnmerged(MSCore):
         try:
             self._logMemoryUsage(f"before processing RSE {rse['name']}")
             for dirLfn in rse['dirs']['toDelete']:
+                # Check memory usage and recreate context if needed
+                try:
+                    process = psutil.Process(os.getpid())
+                    if process.memory_info().rss > 1024 * 1024 * 1024:  # 1GB in bytes
+                        self.logger.warning("Memory usage exceeded 1GB, recreating gfal2 context")
+                        if ctx:
+                            ctx.free()
+                        ctx = createGfal2Context(self.msConfig['gfalLogLevel'], self.msConfig['emulateGfal2'])
+                except Exception as ex:
+                    self.logger.warning("Failed to check memory usage or manage gfal2 context: %s", str(ex))
+
                 dirPfn = rse['pfnPrefix'] + dirLfn
 
                 if not self.msConfig['enableRealMode']:
@@ -384,9 +394,6 @@ class MSUnmerged(MSCore):
                     # Update counters after each batch
                     self._updateFileCounters(rse, batchSuccess, batchFail)
 
-                    # Force garbage collection after each batch
-                    gc.collect()
-
                 # Final attempt: Try to delete the directory again
                 if self._rmDir(ctx, dirPfn):
                     self._updateSuccessCounters(rse, dirLfn)
@@ -400,8 +407,6 @@ class MSUnmerged(MSCore):
         finally:
             if ctx:
                 ctx.free()
-            # Final memory cleanup
-            gc.collect()
             self._logMemoryUsage(f"after completing RSE {rse['name']}")
 
         rse['isClean'] = self._checkClean(rse)
@@ -965,6 +970,24 @@ class MSUnmerged(MSCore):
         except gfal2.GError as ex:
             self._trackGfalError(ex)
 
+    def _logMemoryUsage(self, context=""):
+        """
+        Log current memory usage of the process using RSS (Resident Set Size).
+        This is a simplified version that only uses RSS to avoid any threading issues.
+        :param context: Optional string to identify where the memory check is happening
+        """
+        try:
+            process = psutil.Process(os.getpid())
+            memoryInfo = process.memory_info()
+            # Get a count of active threads
+            threadCount = len(process.threads())
+            self.logger.info("Memory usage%s: RSS=%.1fMB, Threads=%d",
+                           f" ({context})" if context else "",
+                           memoryInfo.rss / 1024 / 1024,
+                           threadCount)
+        except Exception as ex:
+            self.logger.warning("Failed to log memory usage: %s", str(ex))
+
     def deleteFilesInParallel(self, ctx, fileList):
         """
         Delete files in parallel using concurrent.futures and gfal2's bulk operations.
@@ -1001,14 +1024,11 @@ class MSUnmerged(MSCore):
         self._logMemoryUsage("before parallel deletion")
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             # Submit batches as they are generated
-            future_to_batch = {}
-            for batch in batchGenerator():
-                future = executor.submit(deleteBatch, batch)
-                future_to_batch[future] = batch
+            future_to_batch = {executor.submit(deleteBatch, batch): batch for batch in batchGenerator()}
 
             # Process results as they complete and clean up
             for future in concurrent.futures.as_completed(future_to_batch):
-                batch = future_to_batch.pop(future)  # Remove from dict to allow GC
+                batch = future_to_batch[future]
                 try:
                     results = future.result()
                     if isinstance(results, Exception):
@@ -1034,18 +1054,3 @@ class MSUnmerged(MSCore):
         self.logger.info("Completed parallel deletion. Success: %d, Failed: %d",
                          successCount, failCount)
         return successCount, failCount
-
-    def _logMemoryUsage(self, context=""):
-        """
-        Log current memory usage of the process using RSS (Resident Set Size).
-        This is a simplified version that only uses RSS to avoid any threading issues.
-        :param context: Optional string to identify where the memory check is happening
-        """
-        try:
-            process = psutil.Process(os.getpid())
-            memoryInfo = process.memory_info()
-            self.logger.info("Memory usage%s: RSS=%.1fMB",
-                           f" ({context})" if context else "",
-                           memoryInfo.rss / 1024 / 1024)
-        except Exception as ex:
-            self.logger.warning("Failed to log memory usage: %s", str(ex))

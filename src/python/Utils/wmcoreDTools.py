@@ -184,11 +184,11 @@ def status(configFile, componentsList=None):
 
     print('Status components: '+str(componentsList))
     for component in componentsList:
-        checkProcessThreads(configFile, component)
+        checkComponentThreads(configFile, component)
 
     sys.exit(0)
 
-def checkProcessThreads(configFile, component):
+def checkComponentThreads(configFile, component):
     """
     Helper function to check process and its threads for their statuses
     :param component: component name
@@ -249,7 +249,7 @@ def checkProcessThreads(configFile, component):
     else:
         msg = f"Component:{component} {pid} {status}"
     print(msg)
-    return runningThreads
+    return runningThreads, orphanThreads
 
 def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False):
     """

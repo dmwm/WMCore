@@ -184,24 +184,26 @@ def status(configFile, componentsList=None):
 
     print('Status components: '+str(componentsList))
     for component in componentsList:
-        try:
-            compDir = config.section_(component).componentDir
-        except AttributeError:
-            print ("Failed to check component: Could not find component named %s in config" % component)
-            print ("Aborting")
-            return
-        compDir = config.section_(component).componentDir
-        compDir = os.path.expandvars(compDir)
-        checkProcessThreads(component, compDir)
+        checkProcessThreads(configFile, component)
 
     sys.exit(0)
 
-def checkProcessThreads(component, compDir):
+def checkProcessThreads(configFile, component):
     """
     Helper function to check process and its threads for their statuses
     :param component: component name
     :return: prints status of the component process and its threads
     """
+    config = loadConfigurationFile(configFile)
+    try:
+        compDir = config.section_(component).componentDir
+    except AttributeError:
+        print ("Failed to check component: Could not find component named %s in config" % component)
+        print ("Aborting")
+        return
+    compDir = config.section_(component).componentDir
+    compDir = os.path.expandvars(compDir)
+
     # check if component daemon exists
     daemonXml = os.path.join(compDir, "Daemon.xml")
     if not os.path.exists(daemonXml):
@@ -247,6 +249,7 @@ def checkProcessThreads(component, compDir):
     else:
         msg = f"Component:{component} {pid} {status}"
     print(msg)
+    return runningThreads
 
 def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False):
     """

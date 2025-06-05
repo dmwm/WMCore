@@ -20,6 +20,7 @@ standard_library.install_aliases()
 from datetime import date
 import errno
 import logging
+from multiprocessing import Queue, Process
 import os
 import os.path
 import re
@@ -44,7 +45,7 @@ from cherrypy.lib import profiler
 import WMCore.REST.Tools
 
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
-from WMCore.WMLogging import getTimeRotatingLogger
+from WMCore.WMLogging import getTimeRotatingLogger, log_listener
 from Utils.Utilities import lowerCmsHeaders
 from Utils.PythonVersion import PY2
 
@@ -189,6 +190,7 @@ class RESTMain(object):
         self.silent = False
         self.extensions = {}
         self.views = {}
+        self.logQueue = None
 
     def validate_config(self):
         """Check the server configuration has the required sections."""
@@ -221,10 +223,15 @@ class RESTMain(object):
         if local_base.find(':') == -1:
             local_base = '%s:%d' % (local_base, port)
 
-        # Set default server configuration.
+        # setup the cherrypy access logs to log to a queue
         cherrypy.log = Logger()
+        handler = logging.handlers.QueueHandler(self.logQueue)
+        cherrypy.log.access_file = ""
+        cherrypy.log.error_file = ""
+        cherrypy.log.access_log.addHandler(handler)
+        cherrypy.log.error_log.addHandler(handler)
 
-        cpconfig.update({'tools.add_content_length_if_missing.on': True})
+        # Set default server configuration.
         cpconfig.update({'server.max_request_body_size': 0})
         cpconfig.update({'server.environment': 'production'})
         cpconfig.update({'server.socket_host': '0.0.0.0'})
@@ -422,24 +429,6 @@ class RESTDaemon(RESTMain):
         os.chdir(self.statedir)
 
         if daemonize:
-            # Redirect all output to the logging daemon.
-            devnull = open(os.devnull, "w")
-            if isinstance(self.logfile, list):
-                subproc = Popen(self.logfile, stdin=PIPE, stdout=devnull, stderr=devnull,
-                                bufsize=0, close_fds=True, shell=False)
-                logger = subproc.stdin
-            elif isinstance(self.logfile, str):
-                # if a unix pipe is set as the logfile, it must be opened to append to the end of the file
-                # if file/pipe does not exist, create it
-                logger = open(self.logfile, "a")
-            else:
-                raise TypeError("'logfile' must be a string or array")
-            os.dup2(logger.fileno(), sys.stdout.fileno())
-            os.dup2(logger.fileno(), sys.stderr.fileno())
-            os.dup2(devnull.fileno(), sys.stdin.fileno())
-            logger.close()
-            devnull.close()
-
             # First fork. Discard the parent.
             pid = os.fork()
             if pid > 0:
@@ -633,8 +622,14 @@ def main():
         if opts.logfile:
             server.logfile = opts.logfile
 
-            # setup rotating log
-            getTimeRotatingLogger(None, server.logfile)
+            # setup the queue for the QueueHandler
+            logQueue = Queue()
+            server.logQueue = logQueue
+
+            listener = Process(target=log_listener,
+                               args=(logQueue, server.logfile))
+
+            logger = getTimeRotatingLogger(None, server.logfile)
 
         # Actually start the daemon now.
         server.start_daemon()

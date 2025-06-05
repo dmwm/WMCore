@@ -8,7 +8,9 @@ from datetime import datetime, date
 import logging
 from logging.handlers import (HTTPHandler,
                               RotatingFileHandler,
-                              TimedRotatingFileHandler)
+                              TimedRotatingFileHandler,
+                              QueueHandler,
+                              QueueListener)
 from pathlib import Path
 
 
@@ -26,6 +28,32 @@ def sqldebug(msg):
     have for publishing log messages.
     """
     logging.log(logging.SQLDEBUG, msg)
+
+
+def log_listener(queue, name, logFile):
+    """
+    Listener process for process to fetch logs from a queue and log to the
+    root logger. The root logger is set to a TimeRotatingLogger
+
+    From
+    https://docs.python.org/3/howto/logging-cookbook.html#logging-to-a-single-file-from-multiple-processes
+
+    :param queue: The queue to listen to
+    :param name: The logger name
+    :param logFile: The TimeRotatingLogger filename
+    """
+    getTimeRotatingLogger(name, logFile)
+    while True:
+        try:
+            record = queue.get()
+            if record is None:
+                break
+            logger = logger.getLogger(record.name)
+            logger.handle(record)
+        except Exception:
+            import sys, traceback
+            print('Problem with log listener:', file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
 
 
 def setupRotatingHandler(fileName, maxBytes=200000000, backupCount=3):
@@ -50,7 +78,7 @@ def getTimeRotatingLogger(name, logFile, duration='midnight'):
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+    # logger.setLevel(logging.INFO)
 
     return logger
 

@@ -751,6 +751,8 @@ class MSRuleCleaner(MSCore):
         """
         Cleans all the Rules present in the field 'RulesToClean' in the MSRuleCleaner
         workflow representation. And fills the relevant Cleanup Status.
+        Lifetime of rule will be updated to 0 rather than deleted, following
+        issue: https://github.com/dmwm/CMSRucio/issues/921
         :param wflow:   A MSRuleCleaner workflow representation
         :return:        The workflow object
         """
@@ -762,15 +764,15 @@ class MSRuleCleaner(MSCore):
         delResults = []
         if self.msConfig['enableRealMode']:
             for rule in wflow['RulesToClean'][currPline]:
-                self.logger.info("%s: Deleting ruleId: %s ", currPline, rule)
-                delResult = self.rucio.deleteRule(rule)
+                self.logger.info("%s: Updating lifetime=0 to ruleId: %s ", currPline, rule)
+                delResult = self.rucio.updateRule(rule, {"lifetime": 0})
                 delResults.append(delResult)
                 if not delResult:
-                    self.logger.warning("%s: Failed to delete ruleId: %s ", currPline, rule)
+                    self.logger.warning("%s: Failed to update ruleId: %s ", currPline, rule)
         else:
             for rule in wflow['RulesToClean'][currPline]:
                 delResults.append(True)
-                self.logger.info("%s: DRY-RUN: Is about to delete ruleId: %s ", currPline, rule)
+                self.logger.info("%s: DRY-RUN: Is about to update ruleId: %s ", currPline, rule)
 
         # Set the cleanup flag:
         wflow['CleanupStatus'][currPline] = all(delResults)

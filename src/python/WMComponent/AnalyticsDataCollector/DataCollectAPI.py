@@ -283,6 +283,8 @@ class WMAgentDBData(object):
             compDir = os.path.expandvars(compDir)
             daemonXml = os.path.join(compDir, "Daemon.xml")
             downFlag = False
+            downProcessThreads = []
+            daemon = {}
             if not os.path.exists(daemonXml):
                 downFlag = True
             else:
@@ -295,7 +297,6 @@ class WMAgentDBData(object):
                 agentComponents.update({compName: compProcessStatus})
                 # check if number of component threads is equal to initial set
                 cpath = os.path.join(compDir, "threads.json")
-                downProcessThreads = []
                 if os.path.exists(cpath):
                     origThreads = []
                     with open(cpath, 'r', encoding='utf-8') as istream:
@@ -306,19 +307,21 @@ class WMAgentDBData(object):
                             if proc not in compProcessStatus:
                                 downProcessThreads.append(proc)
                 # check if all component process' threads are alive, otherwise set down flag
+                # the alive process should be either in sleeping or running states
+                # 'S (sleeping) and 'R (running)' are states used by proc FS
+                # 'sleeping' and 'running' are states used by psutils
+                validStatuses = ["S (sleeping)", "R (running)", 'sleeping', 'running']
                 for proc in compProcessStatus:
-                    # the alive process should be either in sleeping or running states
-                    # 'S (sleeping) and 'R (running)' are states used by proc FS
-                    # 'sleeping' and 'running' are states used by psutils
-                    if proc['status'] not in ["S (sleeping)", "R (running)", 'sleeping', 'running']:
+                    if proc.get('status', None) not in validStatuses:
                         downFlag = True
                         downProcessThreads.append(proc)
             if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
                 agentInfo['down_components'].append(component)
                 if len(downProcessThreads) > 0:
+                    pid = daemon.get('ProcessID', f'PID is not available in {daemonXml}')
                     agentInfo['down_component_detail'].append(
-                            threadsDetails(component, daemon['ProcessID'], downProcessThreads))
+                            threadsDetails(component, pid, downProcessThreads))
                 else:
                     agentInfo['down_component_detail'].append(component)
 

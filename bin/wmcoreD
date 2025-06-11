@@ -364,6 +364,10 @@ def checkProcessThreads(component, compDir):
 
     # Check if process is running
     processRunning = psutil.pid_exists(int(pid))
+    if not processRunning:
+        msg = f"Component:{component} with PID={pid} is no longer available on OS"
+        print(msg)
+        return
 
     # Check if threads are running
     runningThreads = []

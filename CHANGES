@@ -1,3 +1,7 @@
+2.4.0rc6 to 2.4.0rc7:
+  - provide necessary checks to look-up valid process ID status (Valentin Kuznetsov) #12387
+
+
 2.4.0rc5 to 2.4.0rc6:
   - Previous build release failed; trigger a new one
 

@@ -6,7 +6,10 @@
 # when only one of the threads is down.
 ###
 
-HOST=$(hostname)
+USER=$(whoami)
+FQDN=$(hostname)
+HOST_NAME=$(hostname -s)
+DOMAIN_NAME=$(hostname -d)
 DATENOW=$(date +%s)
 # look-up alert emails from WMA secret file where ALERT_EMAILS may contains multiple emails and spaces, e.g.
 # ALERT_EMAILS="user1@domain.com user2@domain.com" or ALERT_EMAILS = "user1@domain.com user2@domain.com"
@@ -38,7 +41,7 @@ for comp in $comps; do
     echo -e "Restarting component: $comp"
     manage execute-agent wmcoreD --restart --components=$comp
     echo -e "ComponentLog quiet for $INTERVAL secs\n\nTail of the log is:\n$TAIL_LOG" |
-      mail -s "$HOST : $comp restarted" $ALERT_EMAILS
+      mail -s "$FQDN : $comp restarted" -r $USER-$HOST_NAME@$DOMAIN_NAME $ALERT_EMAILS
   fi
 done
 

@@ -451,7 +451,16 @@ class WMBSHelper(WMConnectionBase):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
             self.isDBS = True
-            blockPNNs = block['PhEDExNodeNames']
+            # Location to be used in WMBS follows the order of: first use Rucio, otherwise use LQE
+            if block['PhEDExNodeNames']:
+                # See https://github.com/dmwm/WMCore/blob/d0b6d7d/src/python/WMCore/WorkQueue/WorkQueue.py#L415
+                logging.info("Using actual Rucio data locality for data: %s", self.block)
+                blockPNNs = block['PhEDExNodeNames']
+            else:
+                # See https://github.com/dmwm/WMCore/blob/d0b6d7d/src/python/WMCore/WorkQueue/WorkQueue.py#L454
+                # In other words, it could be that data is not available in this list and will be read through AAA
+                logging.info("Using workqueue element location (including AAA flags) for data: %s", self.block)
+                blockPNNs = self.commonLocation
             logging.info('Adding files into WMBS for %s with PNNs: %s', self.wmSpec.name(), blockPNNs)
             for dbsFile in self.validFiles(block['Files']):
                 self._addDBSFileToWMBSFile(dbsFile, blockPNNs)

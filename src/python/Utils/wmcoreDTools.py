@@ -249,7 +249,11 @@ def checkComponentThreads(configFile, component):
     else:
         msg = f"Component:{component} {pid} {status}"
     print(msg)
-    return runningThreads, orphanThreads
+    pidTree = {}
+    pidTree['Parent'] = pid
+    pidTree['RunningThreads'] = runningThreads
+    pidTree['OrphanThreads'] = orphanThreads
+    return pidTree
 
 def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False):
     """

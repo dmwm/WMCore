@@ -1,3 +1,8 @@
+2.4.0rc7 to 2.4.0rc8:
+  - Replaces nose with pynose, remove nose2 in requirements (Dennis Lee) #12390
+  - Update checkProxy script to use valid domain name (Alan Malta Rodrigues) #12392
+
+
 2.4.0rc6 to 2.4.0rc7:
   - provide necessary checks to look-up valid process ID status (Valentin Kuznetsov) #12387
 

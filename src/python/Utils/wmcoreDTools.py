@@ -1,6 +1,5 @@
 import os
 import subprocess
-import sys
 import time
 import json
 import psutil
@@ -54,6 +53,7 @@ def startup(configFile, componentsList=None):
     Start up the component daemons
 
     """
+    exitCode = 0
     config = loadConfigurationFile(configFile)
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
@@ -86,10 +86,10 @@ def startup(configFile, componentsList=None):
             if not daemon.isAlive():
                 print("Error: Component %s Did not start properly..." % component)
                 print("Check component log to see why")
-                sys.exit(1)
+                return 1
         else:
             print('Path for daemon file does not exist!')
-            sys.exit(1)
+            return 1
         # write into component area process status information
         cpath = os.path.join(compDir, "threads.json")
         if os.path.exists(cpath):
@@ -100,7 +100,7 @@ def startup(configFile, componentsList=None):
             istream.write(json.dumps(procStatus))
             print("Component %s started with %s threads, see %s\n" % (component, len(procStatus), cpath))
 
-    return
+    return exitCode
 
 def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=False):
     """
@@ -113,6 +113,7 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
     content and purge the ProdAgentDB
 
     """
+    exitCode = 0
     config = loadConfigurationFile(configFile)
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
@@ -168,7 +169,7 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
                 msg += f"with exit code {exitCode}"
                 print(msg)
 
-    return
+    return exitCode
 
 
 def status(configFile, componentsList=None):
@@ -178,6 +179,7 @@ def status(configFile, componentsList=None):
     Print status of all components in config file
 
     """
+    exitCode = 0
     config = loadConfigurationFile(configFile)
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
@@ -185,8 +187,7 @@ def status(configFile, componentsList=None):
     print('Status components: '+str(componentsList))
     for component in componentsList:
         checkComponentThreads(configFile, component)
-
-    sys.exit(0)
+    return exitCode
 
 def checkComponentThreads(configFile, component):
     """
@@ -262,6 +263,7 @@ def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False)
     do a shutdown and startup again
 
     """
-    shutdown(config, componentsList, doDirCleanup, doLogCleanup)
-    startup(config, componentsList)
-    return
+    exitCode = 0
+    exitCode += shutdown(config, componentsList, doDirCleanup, doLogCleanup)
+    exitCode += startup(config, componentsList)
+    return exitCode

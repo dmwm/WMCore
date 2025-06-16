@@ -155,18 +155,18 @@ if componentsList != None:
 
 if command == "start":
     connectionTest(config)
-    startup(config, componentsList)
-    sys.exit(0)
+    exitCode = startup(config, componentsList)
+    sys.exit(exitCode)
 elif command == "shutdown":
     connectionTest(config)
-    shutdown(config, componentsList, doDirCleanup, doLogCleanup)
-    sys.exit(0)
+    exitCode = shutdown(config, componentsList, doDirCleanup, doLogCleanup)
+    sys.exit(exitCode)
 elif command == "status":
     connectionTest(config)
-    status(config, componentsList)
-    sys.exit(0)
+    exitCode = status(config, componentsList)
+    sys.exit(exitCode)
 elif command == "restart":
     connectionTest(config)
-    restart(config, componentsList, doDirCleanup, doLogCleanup)
-    sys.exit(0)
+    exitCode = restart(config, componentsList, doDirCleanup, doLogCleanup)
+    sys.exit(exitCode)
 

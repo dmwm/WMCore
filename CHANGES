@@ -1,3 +1,6 @@
+2.4.0rc8 to 2.4.0:
+  - just for cutting a new release
+
 2.4.0rc7 to 2.4.0rc8:
   - Replaces nose with pynose, remove nose2 in requirements (Dennis Lee) #12390
   - Update checkProxy script to use valid domain name (Alan Malta Rodrigues) #12392

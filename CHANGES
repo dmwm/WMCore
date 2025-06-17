@@ -1,3 +1,6 @@
+2.4.0.1 to 2.4.0.2:
+  - Previous PyPi pipeline failed, so cutting a new tag 
+
 2.4.0 to 2.4.0.1:
   - Previous PyPi pipeline failed, so cutting a new tag 
 

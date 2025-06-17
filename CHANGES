@@ -1,3 +1,6 @@
+2.4.0 to 2.4.0.1:
+  - Previous PyPi pipeline failed, so cutting a new tag 
+
 2.4.0rc8 to 2.4.0:
   - just for cutting a new release
 

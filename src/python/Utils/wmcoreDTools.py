@@ -227,6 +227,10 @@ def checkComponentThreads(configFile, component):
 
     # Check if process is running
     processRunning = psutil.pid_exists(int(pid))
+    if not processRunning:
+        msg = f"Component:{component} with PID={pid} is no longer available on OS"
+        print(msg)
+        return
 
     # Check if threads are running
     runningThreads = []
@@ -267,3 +271,12 @@ def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False)
     exitCode += shutdown(config, componentsList, doDirCleanup, doLogCleanup)
     exitCode += startup(config, componentsList)
     return exitCode
+
+def isComponentAlive(config, component):
+    """
+    _isComponentAlive_
+    A function to asses if a component is stuck or is still doing its job in the background.
+    It uses the ptrace module to monitor the component's system calls instead of just
+    declaring the component dead only because of lack of log entries as it was in the past.
+    """
+    

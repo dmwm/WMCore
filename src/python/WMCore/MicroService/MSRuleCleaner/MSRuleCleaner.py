@@ -23,6 +23,8 @@ import time
 from threading import current_thread
 from pprint import pformat
 
+from future.utils import viewitems
+
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import RULECLEANER_REPORT
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
@@ -36,6 +38,12 @@ from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.MicroService.Tools.Common import findParent
 from Utils.Pipeline import Pipeline, Functor
 from Utils.CertTools import ckey, cert
+
+
+def chunks(lst, chunkSize):
+    """Helper function to yield n-sized chunks from lst."""
+    for idx in range(0, len(lst), chunkSize):
+        yield lst[idx:idx + chunkSize]
 
 
 class MSRuleCleanerResolveParentError(WMException):
@@ -102,6 +110,9 @@ class MSRuleCleaner(MSCore):
         self.alertServiceName = "ms-rulecleaner"
         # 2 days of expiration time
         self.alertExpiration = self.msConfig.get("alertExpireSecs", 2 * 24 * 60 * 60)
+
+        # chunk size for requests processing
+        self.chunkSize = self.msConfig.get("requestChunkSize", 100)
 
         # Building all the Pipelines:
         pName = 'plineMSTrCont'
@@ -214,16 +225,12 @@ class MSRuleCleaner(MSCore):
             cleanNumRequests = 0
             totalNumRequests = 0
             for status in reqStatus:
-                req = self.getRequestRecords(status)
-                wflow = MSRuleCleanerWflow(req)
-                self._dispatchWflow(wflow)
-                msg = "\n----------------------------------------------------------"
-                msg += "\nMSRuleCleanerWflow: %s"
-                msg += "\n----------------------------------------------------------"
-                self.logger.debug(msg, pformat(wflow))
-                totalNumRequests += 1
-                if self._checkClean(wflow):
-                    cleanNumRequests += 1
+                reqIds = self.getRequestRecords(status, detail=False)
+                ids = reqIds.keys()
+                for chunk in chunks(ids, self.chunkSize):
+                    cnum, tnum = self.processRequestsChunk(chunk)
+                    cleanNumRequests += cnum
+                    totalNumRequests += tnum
 
             # Report the counters:
             for pline in self.cleanuplines:
@@ -242,6 +249,30 @@ class MSRuleCleaner(MSCore):
             self.updateReportDict(summary, "error", msg)
 
         return summary
+
+    def processRequestsChunk(self, chunk):
+        """
+        Helper function to process requests chunk
+        :param chunk: list of request's ids
+        :return: tuple of clean and total number of requests
+        """
+        cleanNumRequests = 0
+        totalNumRequests = 0
+        result = self.reqmgr2.getRequestByNames(chunk)
+        requests = {}
+        if result:
+            requests = result[0]
+        for req in viewitems(requests):
+            wflow = MSRuleCleanerWflow(req)
+            self._dispatchWflow(wflow)
+            msg = "\n----------------------------------------------------------"
+            msg += "\nMSRuleCleanerWflow: %s"
+            msg += "\n----------------------------------------------------------"
+            self.logger.debug(msg, pformat(wflow))
+            totalNumRequests += 1
+            if self._checkClean(wflow):
+                cleanNumRequests += 1
+        return cleanNumRequests, totalNumRequests
 
     def updateAllMetrics(self, summary, totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests):
         msg = "\nNumber of processed workflows: %s."
@@ -754,14 +785,14 @@ class MSRuleCleaner(MSCore):
         wflow['CleanupStatus'][currPline] = all(delResults)
         return wflow
 
-    def getRequestRecords(self, reqStatus):
+    def getRequestRecords(self, reqStatus, detail=True):
         """
         Queries ReqMgr2 for requests in a given status.
         :param reqStatus: The status for the requests to be fetched from ReqMgr2
         :return requests: A dictionary with all the workflows in the given status
         """
         self.logger.info("Fetching requests in status: %s", reqStatus)
-        result = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
+        result = self.reqmgr2.getRequestByStatus([reqStatus], detail=detail)
         if not result:
             requests = {}
         else:

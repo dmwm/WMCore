@@ -13,7 +13,7 @@ import time
 from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.Database.CMSCouch import (CouchServer, CouchMonitor, Document, Database,
                                       CouchInternalServerError, CouchNotFoundError)
-
+from WMCore.Database.CouchMonitoring import checkStatus
 
 class CMSCouchTest(unittest.TestCase):
 
@@ -116,6 +116,49 @@ class CMSCouchTest(unittest.TestCase):
         time.sleep(1)
         self.assertEqual(self.db.document(doc_id), repl_db.document(doc_id))
         self.server.deleteDatabase(repl_db.name)
+
+    def testReplicationStatus(self):
+        repl_db = self.server.connectDatabase(self.db.name + 'repl')
+
+        doc_id = self.db.commitOne({'foo':123}, timestamp=True)[0]['id']
+        doc_v1 = self.db.document(doc_id)
+
+        #replicate
+        resp = self.server.replicate(self.db.name, repl_db.name, sleepSecs=5)
+        self.assertTrue(resp["ok"])
+        self.assertTrue("id" in resp)
+        self.assertTrue("rev" in resp)
+
+        # wait for a few seconds to replication to be triggered.
+        time.sleep(1)
+        self.assertEqual(self.db.document(doc_id), repl_db.document(doc_id))
+
+        # Use CouchMonitoring module to check status of replication
+        sdict = checkStatus(url=self.server.url, kind='scheduler')
+        rdict = checkStatus(url=self.server.url, kind='replicator')
+        for key, val in rdict['current_status'].items():
+            if key not in sdict['current_status']:
+                sdict[key] = val
+        stateFailures = ['error', 'failed']
+        # this time replication failures should not be present
+        for _, record in sdict['current_status'].items():
+            self.assertEqual(record['state'] in stateFailures, False)
+
+        # delete replication database
+        self.server.deleteDatabase(repl_db.name)
+
+        # wait for a few seconds to replication to fail
+        time.sleep(1)
+
+        # repeat usage of CouchMonitoring module to check status of replication
+        sdict = checkStatus(url=self.server.url, kind='scheduler')
+        rdict = checkStatus(url=self.server.url, kind='replicator')
+        for key, val in rdict.items():
+            if key not in sdict:
+                sdict[key] = val
+        # this time replication failures should be present
+        for _, record in sdict['current_status'].items():
+            self.assertEqual(record['state'] in stateFailures, True)
 
     def testSlashInDBName(self):
         """
@@ -540,6 +583,12 @@ class CouchMonitorTest(unittest.TestCase):
         self.assertEqual(resp["total_rows"], 1)
         self.assertEqual(len(resp["docs"]), 1)
         self.assertEqual(len(resp["docs"]["database"]), "_replicator")
+
+    def testCouchReplicationStatus(self):
+        """Very basic tests for the 'couchReplicationStatus' method"""
+        resp = self.monitor.couchReplicationStatus()
+        self.assertEqual(resp["status"], "ok")
+        self.assertEqual(resp["error_message"], "")
 
     def testCheckCouchReplications(self):
         """Very basic tests for the 'checkCouchReplications' method"""

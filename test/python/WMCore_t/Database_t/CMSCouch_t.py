@@ -541,6 +541,12 @@ class CouchMonitorTest(unittest.TestCase):
         self.assertEqual(len(resp["docs"]), 1)
         self.assertEqual(len(resp["docs"]["database"]), "_replicator")
 
+    def testCouchReplicationStatus(self):
+        """Very basic tests for the 'couchReplicationStatus' method"""
+        resp = self.monitor.couchReplicationStatus([])
+        self.assertEqual(resp["status"], "ok")
+        self.assertEqual(resp["error_message"], "")
+
     def testCheckCouchReplications(self):
         """Very basic tests for the 'checkCouchReplications' method"""
         resp = self.monitor.checkCouchReplications([])

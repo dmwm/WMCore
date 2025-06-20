@@ -77,7 +77,7 @@ def startup(configFile, componentsList=None):
             except AttributeError:
                 print ("Failed to start component: Could not find component named %s in config" % component)
                 print ("Aborting")
-                return
+                return 1
             componentObject = factory.loadObject(classname = namespace, args = config)
             componentObject.startDaemon(keepParent = True)
 
@@ -131,7 +131,7 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
         except AttributeError:
             print ("Failed to shutdown component: Could not find component named %s in config" % component)
             print ("Aborting")
-            return
+            return 1
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):
@@ -228,8 +228,7 @@ def checkComponentThreads(configFile, component):
         if str(entry["pid"]) == str(pid) and entry["type"] == "process":
             continue
         elif entry["type"] == "thread":
-            threadPids.append(entry["pid"])
-
+            threadPids.append(int(entry["pid"]))
     # Check if process is running
     processRunning = psutil.pid_exists(int(pid))
     if not processRunning:
@@ -237,32 +236,42 @@ def checkComponentThreads(configFile, component):
         print(msg)
         return
 
-    # Check if threads are running
-    runningThreads = []
-    orphanThreads = []
+    # Check if threads are running - the list threadPids is fetched from the threads.json file
+    # as it has been constructed at Daemon startup time
     process = psutil.Process(int(pid))
-    for thread in process.threads():
-        if str(thread.id) == str(pid):
-            continue  # skip pid thread
-        if str(thread.id) in threadPids:
-            runningThreads.append(thread.id)
-        else:
-            orphanThreads.append(thread.id)
+    currThreads = set([thread.id for thread in process.threads()])
+    startupThreads = set(threadPids)
+    # Remove the parent pid from the list of currently running threads
+    try:
+        currThreads.remove(int(pid))
+    except ValueError or KeyError:
+        pass
+
+    runningThreads = currThreads & startupThreads
+    orphanThreads = currThreads - startupThreads
+    lostThreads = startupThreads - currThreads
 
     # Output result
+    msg=""
+    runningMsg=""
+    orphanMsg=""
+    lostMsg=""
     status = "running" if processRunning else "not-running"
-    msg = f"Component:{component} {pid} {status} with threads {runningThreads}"
     if status == "running":
+        runningMsg = f"with threads: {runningThreads}"
+        if len(lostThreads) > 0:
+            status = f"{status}-partially"
+            lostMsg = f", lost threads: {lostThreads}"
         if len(orphanThreads) > 0:
-            status = "partially-running" if processRunning else "not-running"
-            msg = f"Component:{component} {pid} {status} with threads {runningThreads}, lost {orphanThreads} threads"
-    else:
-        msg = f"Component:{component} {pid} {status}"
+            status = f"{status}-untracked"
+            orphanMsg = f", untracked threads: {orphanThreads}"
+    msg = f"Component:{component} {pid} {status} {runningMsg} {lostMsg} {orphanMsg}"
     print(msg)
     pidTree = {}
     pidTree['Parent'] = int(pid)
     pidTree['RunningThreads'] = runningThreads
     pidTree['OrphanThreads'] = orphanThreads
+    pidTree['LostThreads'] = lostThreads
     return pidTree
 
 def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False):
@@ -305,7 +314,7 @@ def isComponentAlive(config, component):
 
     # If we already have found there are orphaned/lost threads stemming from the current pidTree
     # we already declare the first check as Failed (in such case we can return even from this point here)
-    if pidTree['OrphanThreads']:
+    if pidTree['OrphanThreads'] or pidTree['LostThreads']:
         checkList.append(False)
     else:
         checkList.append(True)

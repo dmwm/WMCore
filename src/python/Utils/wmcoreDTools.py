@@ -292,6 +292,9 @@ def isComponentAlive(config, component):
     A function to asses if a component is stuck or is still doing its job in the background.
     It uses the ptrace module to monitor the component's system calls instead of just
     declaring the component dead only because of lack of log entries as it was in the past.
+    :param config: Path to WMAgent configuration file
+    :param component: Component name to be checked (str)
+    :return: Bool - True if all checks has passed, False if any of the checks has returned an error
 
     NOTE: We basically have three eventual reasons for a process to seemingly has gotten
           stuck and doing nothing:

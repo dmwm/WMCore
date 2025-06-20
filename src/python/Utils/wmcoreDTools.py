@@ -1,11 +1,16 @@
 import os
+import signal
 import subprocess
 import time
 import json
 import psutil
 
+from ptrace.debugger import PtraceProcess, PtraceDebugger
+from ptrace.error import PtraceError
+from pprint import pformat, pprint
 from Utils.Utilities import extractFromXML
 from Utils.ProcFS import processStatus
+from Utils.ProcessStats import processThreadsInfo
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMFactory import WMFactory
@@ -255,7 +260,7 @@ def checkComponentThreads(configFile, component):
         msg = f"Component:{component} {pid} {status}"
     print(msg)
     pidTree = {}
-    pidTree['Parent'] = pid
+    pidTree['Parent'] = int(pid)
     pidTree['RunningThreads'] = runningThreads
     pidTree['OrphanThreads'] = orphanThreads
     return pidTree
@@ -278,5 +283,54 @@ def isComponentAlive(config, component):
     A function to asses if a component is stuck or is still doing its job in the background.
     It uses the ptrace module to monitor the component's system calls instead of just
     declaring the component dead only because of lack of log entries as it was in the past.
+
+    NOTE: We basically have three eventual reasons for a process to seemingly has gotten
+          stuck and doing nothing:
+          * Soft Lockup:
+            When a thread or task is not releasing the CPU for long period of time
+            and not allowing other tasks to proceed. Typical reason could be -  the CPU
+            is stuck in executing code in kernel space.
+          * Blocking System Calls:
+            When a process is stuck in a system call (e.g. waiting for I/O).
+          * Unkillable process:
+            When a process does not respond to any signals, e.g. stuck in an Uninterruptable
+            Sleep state. Which means, it cannot be woken by any signal, not even SIGKILL.
+            Such processes are marked with State:D in the output from the `ps` command.
     """
-    
+
+    checkList = []
+    # First create the pidTree and collect information for the examined process:
+    pidTree = checkComponentThreads(config, 'WorkflowUpdater')
+    pidInfo = processThreadsInfo(pidTree['Parent'])
+
+    # If we already have found there are orphaned/lost threads stemming from the current pidTree
+    # we already declare the first check as Failed (in such case we can return even from this point here)
+    if pidTree['OrphanThreads']:
+        checkList.append(False)
+    else:
+        checkList.append(True)
+
+    # Setup the debugger and tracer process objects for every thread from the pidTree
+    debugger = PtraceDebugger()
+    tracers = {}
+    for threadId in pidTree['RunningThreads']:
+        try:
+            # Initially try to attach the process as a non traced one
+            tracers[threadId] = PtraceProcess(debugger, threadId, False, parent=pidTree['Parent'], is_thread=True)
+        except PtraceError:
+            # in case of an error make an attempt to attach it as already traced one (supposing
+            # a previous execution of the current function could not finish and release it.
+            tracers[threadId] = PtraceProcess(debugger, threadId, True, parent=pidTree['Parent'], is_thread=True)
+
+    # Now start designing all the tests per thread in order to cover the three possible problematic
+    # states as explained in the function docstring for each one of them.
+    for threadId, tracer in tracers.items():
+        # .....
+        checkList.append(True)
+
+    # Detach all tracers before returning:
+    for threadId, tracer in tracers.items():
+        tracer.detach()
+
+    return all(checkList)
+    # return tracers

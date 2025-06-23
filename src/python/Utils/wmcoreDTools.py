@@ -269,9 +269,9 @@ def checkComponentThreads(configFile, component):
     print(msg)
     pidTree = {}
     pidTree['Parent'] = int(pid)
-    pidTree['RunningThreads'] = runningThreads
-    pidTree['OrphanThreads'] = orphanThreads
-    pidTree['LostThreads'] = lostThreads
+    pidTree['RunningThreads'] = list(runningThreads)
+    pidTree['OrphanThreads'] = list(orphanThreads)
+    pidTree['LostThreads'] = list(lostThreads)
     return pidTree
 
 def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False):
@@ -286,7 +286,7 @@ def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False)
     exitCode += startup(config, componentsList)
     return exitCode
 
-def isComponentAlive(config, component):
+def isComponentAlive(config, component=None, pid=None, trace=True, timeout=6):
     """
     _isComponentAlive_
     A function to asses if a component is stuck or is still doing its job in the background.
@@ -294,6 +294,11 @@ def isComponentAlive(config, component):
     declaring the component dead only because of lack of log entries as it was in the past.
     :param config: Path to WMAgent configuration file
     :param component: Component name to be checked (str)
+    :param trace: Bool flag to chose whether to use strace like mechanisms to examine the component's
+                  system calls during the tests or to just check if the process tree of the component is sane
+    :param timeout: The amount of time to wait during a test before declaring it failed (Default 60 sec.)
+                    NOTE: In case the component's system calls will be traced, this timeout would be used
+                          to wait for any system call before entering deeper logic in the tests.
     :return: Bool - True if all checks has passed, False if any of the checks has returned an error
 
     NOTE: We basically have three eventual reasons for a process to seemingly has gotten
@@ -311,9 +316,32 @@ def isComponentAlive(config, component):
     """
 
     checkList = []
+
     # First create the pidTree and collect information for the examined process:
-    pidTree = checkComponentThreads(config, 'WorkflowUpdater')
+    if component:
+        pidTree = checkComponentThreads(config, component)
+    elif pid:
+        pidTree = {}
+        process = psutil.Process(int(pid))
+        currThreads = [thread.id for thread in process.threads()]
+        # # Remove the parent pid from the list of currently running threads
+        # try:
+        #     currThreads.remove(int(pid))
+        # except ValueError or KeyError:
+        #     pass
+        pidTree['Parent'] = int(pid)
+        pidTree['RunningThreads'] = currThreads
+        pidTree['OrphanThreads'] = []
+        pidTree['LostThreads'] = []
+    else:
+        print(f"You must provide Pid or Component Name")
+        return False
+    if not pidTree:
+        return False
+    # Get the pid's statistics and major resource usage
     pidInfo = processThreadsInfo(pidTree['Parent'])
+    # pprint(pidInfo)
+    pprint(pidTree)
 
     # If we already have found there are orphaned/lost threads stemming from the current pidTree
     # we already declare the first check as Failed (in such case we can return even from this point here)
@@ -328,21 +356,25 @@ def isComponentAlive(config, component):
     for threadId in pidTree['RunningThreads']:
         try:
             # Initially try to attach the process as a non traced one
+            print(f"Tracing {threadId} as unattached process")
             tracers[threadId] = PtraceProcess(debugger, threadId, False, parent=pidTree['Parent'], is_thread=True)
         except PtraceError:
             # in case of an error make an attempt to attach it as already traced one (supposing
             # a previous execution of the current function could not finish and release it.
+            print(f"Tracing {threadId} as already attached process")
             tracers[threadId] = PtraceProcess(debugger, threadId, True, parent=pidTree['Parent'], is_thread=True)
 
-    # Now start designing all the tests per thread in order to cover the three possible problematic
-    # states as explained in the function docstring for each one of them.
+    # Now start designing all the tests per each thread in order to cover the three possible problematic
+    # states as explained in the function docstring.
+    print("Start all tests")
     for threadId, tracer in tracers.items():
         # .....
         checkList.append(True)
 
-    # Detach all tracers before returning:
-    for threadId, tracer in tracers.items():
-        tracer.detach()
+    # print("Detaching from all the threads")
+    # # Detach all tracers before returning:
+    # for threadId, tracer in tracers.items():
+    #     tracer.detach()
 
     return all(checkList)
     # return tracers

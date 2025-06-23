@@ -38,12 +38,7 @@ from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.MicroService.Tools.Common import findParent
 from Utils.Pipeline import Pipeline, Functor
 from Utils.CertTools import ckey, cert
-
-
-def chunks(lst, chunkSize):
-    """Helper function to yield n-sized chunks from lst."""
-    for idx in range(0, len(lst), chunkSize):
-        yield lst[idx:idx + chunkSize]
+from Utils.IteratorTools import getChunk
 
 
 class MSRuleCleanerResolveParentError(WMException):
@@ -227,7 +222,7 @@ class MSRuleCleaner(MSCore):
             for status in reqStatus:
                 reqIds = self.getRequestRecords(status, detail=False)
                 ids = reqIds.keys()
-                for chunk in chunks(ids, self.chunkSize):
+                for chunk in getChunk(ids, self.chunkSize):
                     cnum, tnum = self.processRequestsChunk(chunk)
                     cleanNumRequests += cnum
                     totalNumRequests += tnum

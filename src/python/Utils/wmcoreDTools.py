@@ -191,10 +191,10 @@ def status(configFile, componentsList=None):
 
     print('Status components: '+str(componentsList))
     for component in componentsList:
-        checkComponentThreads(configFile, component)
+        getComponentThreads(configFile, component)
     return exitCode
 
-def checkComponentThreads(configFile, component):
+def getComponentThreads(configFile, component):
     """
     Helper function to check process and its threads for their statuses
     :param component: component name
@@ -286,20 +286,23 @@ def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False)
     exitCode += startup(config, componentsList)
     return exitCode
 
-def isComponentAlive(config, component=None, pid=None, trace=True, timeout=6):
+def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
     """
     _isComponentAlive_
     A function to asses if a component is stuck or is still doing its job in the background.
-    It uses the ptrace module to monitor the component's system calls instead of just
-    declaring the component dead only because of lack of log entries as it was in the past.
-    :param config: Path to WMAgent configuration file
+    It uses psutil and ptrace modules to monitor the component threads' state and system calls instead
+    of just declaring the component dead only because of lack of log entries as it was in the past.
+    :param config:    Path to WMAgent configuration file
     :param component: Component name to be checked (str)
-    :param trace: Bool flag to chose whether to use strace like mechanisms to examine the component's
-                  system calls during the tests or to just check if the process tree of the component is sane
-    :param timeout: The amount of time to wait during a test before declaring it failed (Default 60 sec.)
-                    NOTE: In case the component's system calls will be traced, this timeout would be used
+                      NOTE: mutually exclusive with the pid parameter)
+    :param pid:       The process ID to be checked if not component name was provided
+                      NOTE: component name takes precedence so pid will be ignored if both are to be provided
+    :param trace:     Bool flag to chose whether to use strace like mechanisms to examine the component's
+                      system calls during the tests or to just check if the process tree of the component is sane
+    :param timeout:   The amount of time to wait during a ptrace based test before declaring it failed (Default 60 sec.)
+                      NOTE: In case the component's system calls will be traced, this timeout would be used
                           to wait for any system call before entering deeper logic in the tests.
-    :return: Bool - True if all checks has passed, False if any of the checks has returned an error
+    :return:          Bool - True if all checks has passed, False if any of the checks has returned an error
 
     NOTE: We basically have three eventual reasons for a process to seemingly has gotten
           stuck and doing nothing:
@@ -319,7 +322,7 @@ def isComponentAlive(config, component=None, pid=None, trace=True, timeout=6):
 
     # First create the pidTree and collect information for the examined process:
     if component:
-        pidTree = checkComponentThreads(config, component)
+        pidTree = getComponentThreads(config, component)
     elif pid:
         pidTree = {}
         process = psutil.Process(int(pid))
@@ -336,6 +339,7 @@ def isComponentAlive(config, component=None, pid=None, trace=True, timeout=6):
     else:
         print(f"You must provide PID or Component Name")
         return False
+
     if not pidTree:
         return False
 
@@ -378,7 +382,7 @@ def isComponentAlive(config, component=None, pid=None, trace=True, timeout=6):
 
         # Now start designing all the tests per each thread in order to cover the three possible problematic
         # states as explained in the function docstring.
-        print("Start all tests")
+        print("Start ptrace based tests")
         for threadId, tracer in tracers.items():
             # .....
             checkList.append(True)

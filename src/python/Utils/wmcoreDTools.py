@@ -334,14 +334,17 @@ def isComponentAlive(config, component=None, pid=None, trace=True, timeout=6):
         pidTree['OrphanThreads'] = []
         pidTree['LostThreads'] = []
     else:
-        print(f"You must provide Pid or Component Name")
+        print(f"You must provide PID or Component Name")
         return False
     if not pidTree:
         return False
-    # Get the pid's statistics and major resource usage
+
+    # Get the PID status,statistics and major resource usage
+    # NOTE: If we've lost some threads or they have run as zombies we will miss them in the structure produced here.
+    #       Those must have been caught and accounted for while building the pidTree
     pidInfo = processThreadsInfo(pidTree['Parent'])
     # pprint(pidInfo)
-    pprint(pidTree)
+    # pprint(pidTree)
 
     # If we already have found there are orphaned/lost threads stemming from the current pidTree
     # we already declare the first check as Failed (in such case we can return even from this point here)
@@ -350,31 +353,40 @@ def isComponentAlive(config, component=None, pid=None, trace=True, timeout=6):
     else:
         checkList.append(True)
 
+    # Check Main process status:
+    checkList.append(pidInfo['is_running'] and pidInfo['status'] is not psutil.STATUS_ZOMBIE)
+
+    # Check all threads statuses:
+    for threadInfo in pidInfo['threads']:
+        checkList.append(threadInfo['is_running'] and threadInfo['status'] is not psutil.STATUS_ZOMBIE)
+
+    # Build strace like tests if it was chosen to
     # Setup the debugger and tracer process objects for every thread from the pidTree
-    debugger = PtraceDebugger()
-    tracers = {}
-    for threadId in pidTree['RunningThreads']:
-        try:
-            # Initially try to attach the process as a non traced one
-            print(f"Tracing {threadId} as unattached process")
-            tracers[threadId] = PtraceProcess(debugger, threadId, False, parent=pidTree['Parent'], is_thread=True)
-        except PtraceError:
-            # in case of an error make an attempt to attach it as already traced one (supposing
-            # a previous execution of the current function could not finish and release it.
-            print(f"Tracing {threadId} as already attached process")
-            tracers[threadId] = PtraceProcess(debugger, threadId, True, parent=pidTree['Parent'], is_thread=True)
+    if trace:
+        debugger = PtraceDebugger()
+        tracers = {}
+        for threadId in pidTree['RunningThreads']:
+            try:
+                # Initially try to attach the process as a non traced one
+                print(f"Tracing {threadId} as unattached process")
+                tracers[threadId] = PtraceProcess(debugger, threadId, False, parent=pidTree['Parent'], is_thread=True)
+            except PtraceError:
+                # in case of an error make an attempt to attach it as already traced one (supposing
+                # a previous execution of the current function could not finish and release it.
+                print(f"Tracing {threadId} as already attached process")
+                tracers[threadId] = PtraceProcess(debugger, threadId, True, parent=pidTree['Parent'], is_thread=True)
 
-    # Now start designing all the tests per each thread in order to cover the three possible problematic
-    # states as explained in the function docstring.
-    print("Start all tests")
-    for threadId, tracer in tracers.items():
-        # .....
-        checkList.append(True)
+        # Now start designing all the tests per each thread in order to cover the three possible problematic
+        # states as explained in the function docstring.
+        print("Start all tests")
+        for threadId, tracer in tracers.items():
+            # .....
+            checkList.append(True)
 
-    # print("Detaching from all the threads")
-    # # Detach all tracers before returning:
-    # for threadId, tracer in tracers.items():
-    #     tracer.detach()
+        print("Detaching from all the threads")
+        # Detach all tracers before returning:
+        for threadId, tracer in tracers.items():
+            tracer.detach()
 
     return all(checkList)
     # return tracers

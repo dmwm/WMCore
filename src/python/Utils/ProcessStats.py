@@ -104,6 +104,7 @@ def processThreadsInfo(pid):
             "pid": process.pid,
             "status": process.status(),
             "ppid": process.ppid(),  # Parent Process ID
+            "is_running":process.is_running(), # NOTE: Zombie processes could also be reported as running
             "cmdline": process.cmdline(),  # Full command-line arguments
             "cpu_usage_percent": process.cpu_percent(interval=1.0),  # CPU usage in percentage
             "memory_usage_percent": process.memory_percent(),  # RAM usage in percentage
@@ -127,7 +128,8 @@ def processThreadsInfo(pid):
                 "memory_usage_bytes": None,
                 "num_open_files": None,
                 "num_connections": None,
-                "state": "unknown",
+                "is_running":process.is_running(), # NOTE: Zombie processes could also be reported as running
+                "status": "unknown",
                 "name": "thread"
             }
             if str(pid) == str(thread_id):
@@ -136,9 +138,9 @@ def processThreadsInfo(pid):
             # Try getting thread status
             try:
                 thread_status = psutil.Process(thread_id).status()
-                thread_info["state"] = thread_status
+                thread_info["status"] = thread_status
             except psutil.NoSuchProcess:
-                thread_info["state"] = "zombie"
+                thread_info["state"] = psutil.STATUS_ZOMBIE
 
             # Try getting per-thread CPU usage
             try:

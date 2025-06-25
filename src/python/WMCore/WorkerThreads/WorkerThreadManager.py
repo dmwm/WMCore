@@ -109,6 +109,9 @@ class WorkerThreadManager(object):
         # Actually start the thread
         workerThread.start()
 
+        # Return the actual thread object
+        return workerThread
+
     def terminateWorkers(self):
         """
         Terminates all threads

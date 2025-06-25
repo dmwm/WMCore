@@ -12,21 +12,25 @@ from Utils.Utilities import extractFromXML
 from Utils.ProcFS import processStatus
 from Utils.ProcessStats import processThreadsInfo
 from WMCore.Agent.Daemon.Details import Details
-from WMCore.Configuration import loadConfigurationFile
+from WMCore.Configuration import loadConfigurationFile, Configuration
 from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
 
-def connectionTest(configFile, componentsList=None):
+def connectionTest(configFile):
     """
     _connectionTest_
 
     Create a DB Connection instance to test the connection specified
     in the config file.
 
+    :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
+    :return: None
     """
-    config = loadConfigurationFile(configFile)
-    if componentsList == None:
-        componentsList = config.listComponents_() + config.listWebapps_()
+    if isinstance(configFile, Configuration):
+        config = configFile
+    else:
+        config = loadConfigurationFile(configFile)
+
     wmInit = WMInit()
 
     print("Checking default database connection...", end=' ')
@@ -43,7 +47,7 @@ def connectionTest(configFile, componentsList=None):
                                      socketLoc = socket)
     except Exception as ex:
         msg = "Unable to make connection to using \n"
-        msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl 
+        msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl
         msg += str(ex)
         print(msg)
         raise ex
@@ -57,9 +61,16 @@ def startup(configFile, componentsList=None):
 
     Start up the component daemons
 
+    :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
+    :param componentsList: A list of components to be acted upon.
+    :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
-    config = loadConfigurationFile(configFile)
+    if isinstance(configFile, Configuration):
+        config = configFile
+    else:
+        config = loadConfigurationFile(configFile)
+
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
 
@@ -117,9 +128,16 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
     If cleanup-all option is specified, wipe out all component dir
     content and purge the ProdAgentDB
 
+    :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
+    :param componentsList: A list of components to be acted upon.
+    :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
-    config = loadConfigurationFile(configFile)
+    if isinstance(configFile, Configuration):
+        config = configFile
+    else:
+        config = loadConfigurationFile(configFile)
+
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
 
@@ -183,9 +201,16 @@ def status(configFile, componentsList=None):
 
     Print status of all components in config file
 
+    :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
+    :param componentsList: A list of components to be acted upon.
+    :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
-    config = loadConfigurationFile(configFile)
+    if isinstance(configFile, Configuration):
+        config = configFile
+    else:
+        config = loadConfigurationFile(configFile)
+
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
 
@@ -197,16 +222,23 @@ def status(configFile, componentsList=None):
 def getComponentThreads(configFile, component):
     """
     Helper function to check process and its threads for their statuses
-    :param component: component name
-    :return: prints status of the component process and its threads
+
+    :param configFile: Either path to the WMAgent configuration file or a WMCore.Configuration instance
+    :param component:  Component name
+    :return: The process tree for the component and prints status of the component process and its threads
     """
-    config = loadConfigurationFile(configFile)
+    pidTree = {}
+    if isinstance(configFile, Configuration):
+        config = configFile
+    else:
+        config = loadConfigurationFile(configFile)
+
     try:
         compDir = config.section_(component).componentDir
     except AttributeError:
         print ("Failed to check component: Could not find component named %s in config" % component)
         print ("Aborting")
-        return
+        return pidTree
     compDir = config.section_(component).componentDir
     compDir = os.path.expandvars(compDir)
 
@@ -214,7 +246,7 @@ def getComponentThreads(configFile, component):
     daemonXml = os.path.join(compDir, "Daemon.xml")
     if not os.path.exists(daemonXml):
         print("Component:%s Not Running" % component)
-        return
+        return pidTree
     pid = extractFromXML(daemonXml, "ProcessID")
 
     jsonFile = os.path.join(compDir, "threads.json")
@@ -234,7 +266,7 @@ def getComponentThreads(configFile, component):
     if not processRunning:
         msg = f"Component:{component} with PID={pid} is no longer available on OS"
         print(msg)
-        return
+        return pidTree
 
     # Check if threads are running - the list threadPids is fetched from the threads.json file
     # as it has been constructed at Daemon startup time
@@ -267,7 +299,7 @@ def getComponentThreads(configFile, component):
             orphanMsg = f", untracked threads: {orphanThreads}"
     msg = f"Component:{component} {pid} {status} {runningMsg} {lostMsg} {orphanMsg}"
     print(msg)
-    pidTree = {}
+
     pidTree['Parent'] = int(pid)
     pidTree['RunningThreads'] = list(runningThreads)
     pidTree['OrphanThreads'] = list(orphanThreads)
@@ -279,7 +311,8 @@ def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False)
     _restart_
 
     do a shutdown and startup again
-
+    :param configFile: Either path to the WMAgent configuration file or a WMCore.Configuration instance
+    :return:           int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
     exitCode += shutdown(config, componentsList, doDirCleanup, doLogCleanup)
@@ -292,7 +325,7 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
     A function to asses if a component is stuck or is still doing its job in the background.
     It uses psutil and ptrace modules to monitor the component threads' state and system calls instead
     of just declaring the component dead only because of lack of log entries as it was in the past.
-    :param config:    Path to WMAgent configuration file
+    :param config:    Path to WMAgent configuration file or an instance of WMCore.Configuration
     :param component: Component name to be checked (str)
                       NOTE: mutually exclusive with the pid parameter)
     :param pid:       The process ID to be checked if not component name was provided

@@ -99,6 +99,15 @@ def startup(configFile, componentsList=None):
         daemonXML = os.path.join( compDir, "Daemon.xml")
         if os.path.exists(daemonXML):
             daemon = Details(daemonXML)
+            # write into component area process status information
+            cpath = os.path.join(compDir, "threads.json")
+            if os.path.exists(cpath):
+                os.remove(cpath)
+            cpid = extractFromXML(daemonXML, "ProcessID")
+            with open(cpath, 'w', encoding="utf-8") as istream:
+                procStatus = processStatus(cpid)
+                istream.write(json.dumps(procStatus))
+
             if not daemon.isAlive():
                 print("Error: Component %s Did not start properly..." % component)
                 print("Check component log to see why")
@@ -106,16 +115,8 @@ def startup(configFile, componentsList=None):
         else:
             print('Path for daemon file does not exist!')
             return 1
-        # write into component area process status information
-        cpath = os.path.join(compDir, "threads.json")
-        if os.path.exists(cpath):
-            os.remove(cpath)
-        cpid = extractFromXML(daemonXML, "ProcessID")
-        with open(cpath, 'w', encoding="utf-8") as istream:
-            procStatus = processStatus(cpid)
-            istream.write(json.dumps(procStatus))
-            print("Component %s started with %s threads, see %s\n" % (component, len(procStatus), cpath))
 
+        print("Component %s started with %s threads, see %s\n" % (component, len(procStatus), cpath))
     return exitCode
 
 def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=False):
@@ -256,11 +257,16 @@ def getComponentThreads(configFile, component):
     # Extract process and its threads
     threadPids = []
 
+    # Properly parsing the thread.json file
     for entry in data:
+        if 'error' in entry:
+            print(f"Error recorded at threads.json during component startup: {entry['error']}")
+            break
         if str(entry["pid"]) == str(pid) and entry["type"] == "process":
             continue
         elif entry["type"] == "thread":
             threadPids.append(int(entry["pid"]))
+
     # Check if process is running
     processRunning = psutil.pid_exists(int(pid))
     if not processRunning:

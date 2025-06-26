@@ -115,8 +115,9 @@ def startup(configFile, componentsList=None):
         else:
             print('Path for daemon file does not exist!')
             return 1
-
-        print("Component %s started with %s threads, see %s\n" % (component, len(procStatus), cpath))
+        numThreads = len([proc for proc in procStatus if proc['type'] == 'thread'])
+        numProcs = len([proc for proc in procStatus if proc['type'] == 'process'])
+        print("Component %s started with %s main process(es) and %s threads, see %s\n" % (component, numProcs, numThreads, cpath))
     return exitCode
 
 def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=False):
@@ -296,13 +297,13 @@ def getComponentThreads(configFile, component):
     lostMsg=""
     status = "running" if processRunning else "not-running"
     if status == "running":
-        runningMsg = f"with threads: {runningThreads}"
+        runningMsg = f"with {len(runningThreads)} running threads: {runningThreads}"
         if len(lostThreads) > 0:
             status = f"{status}-partially"
-            lostMsg = f", lost threads: {lostThreads}"
+            lostMsg = f", {len(lostThreads)} lost threads: {lostThreads}"
         if len(orphanThreads) > 0:
             status = f"{status}-untracked"
-            orphanMsg = f", untracked threads: {orphanThreads}"
+            orphanMsg = f", {len(orphanThreads)} untracked/zombie threads: {orphanThreads}"
     msg = f"Component:{component} {pid} {status} {runningMsg} {lostMsg} {orphanMsg}"
     print(msg)
 

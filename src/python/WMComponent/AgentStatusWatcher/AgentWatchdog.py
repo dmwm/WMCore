@@ -27,7 +27,6 @@ class AgentWatchdog(BaseWorkerThread):
     def  __init__(self, config):
         BaseWorkerThread.__init__(self)
         self.config = config
-        self.configPath = os.getenv('WMA_CONFIG_FILE')
         # myThread = threading.currentThread()
 
         self.watchedPid = None
@@ -57,8 +56,9 @@ class AgentWatchdog(BaseWorkerThread):
             logging.info(f"Sleeping for {self.watchdogTimeout} secs")
             time.sleep(self.watchdogTimeout)
             logging.info(f"Restarting {self.watchedComponent}")
-            exitCode = forkRestart(self.configPath, [self.watchedComponent])
-            logging.info(f"Exit code from forkRestart: {str(exitCode.output)}")
+            exitCode = forkRestart(componentsList=[self.watchedComponent], useWmcoreD=True)
+            # exitCode = forkRestart(config=self.config, componentsList=[self.watchedComponent], useWmcoreD=False)
+            logging.info(f"Exit code from forkRestart of {self.watchedComponent}: {exitCode}")
         except Exception as ex:
             logging.error(f"Exception: {str(ex)}")
 

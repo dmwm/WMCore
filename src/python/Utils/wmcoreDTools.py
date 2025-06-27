@@ -326,29 +326,44 @@ def restart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False)
     exitCode += startup(config, componentsList)
     return exitCode
 
-def forkRestart(config, componentsList=None, doLogCleanup=False, doDirCleanup=False):
+def forkRestart(config=None, componentsList=None, useWmcoreD=False):
     """
     _frokRestart_
 
     Call component restart actions by forking a subprocess in the background
-    :param configFile: Path to the WMAgent configuration file
-    :return:           int ExitCode - 0 in case of success, nonzero value otherwise
+    :param config:         Path to the WMAgent configuration file
+    :param componentsList: The list of components to be restarted
+    :param useWmcoreD:     Bool Flag to tell if to use wmcoreD for this action or to act directly
+                           with python and the functions imported from wmcoreDTools (Default: False)
+                           NOTE: if False, requires config to be provided.
+    :return:               int ExitCode - 0 in case of success, nonzero value otherwise
 
     NOTE: This function works only with a path to the WMAgent configuration file, because it is
           supposed to be called independently as a separate process through the subprocess module
           to which we cannot pass python objects as arguments
     """
     try:
-        if componentsList:
-            componentsListStr = ','.join(componentsList)
-            res =  subprocess.run(["wmcoreD", "--restart", "--component", f"{componentsListStr}"], capture_output=True, check=True)
+        if useWmcoreD:
+            if componentsList:
+                componentsListStr = ','.join(componentsList)
+                res =  subprocess.run(["wmcoreD", "--restart", "--component", f"{componentsListStr}"], capture_output=True, check=True)
+            else:
+                res =  subprocess.run(["wmcoreD", "--restart"], capture_output=True, check=True)
         else:
-            res =  subprocess.run(["wmcoreD", "--restart"], capture_output=True, check=True)
-        # NOTE: An alternative and shorter way of calling the above without referring to `wmcoreD`
-        #       and the extra burden of converting all python options into strings
-        #       (but resulting in a longer and more obscure `ps uxf` output line) would be:
-        # cmd = f"from Utils.wmcoreDTools import restart; restart('{config}', {componentsList})"
-        # res = subprocess.run(['python', '-c', cmd], capture_output=True, check=True)
+            # NOTE: Here follows an alternative and shorter way of calling the above without referring to `wmcoreD`
+            #       and the extra burden of converting all python options into strings.
+            #       This method results in a longer and a bit more obscure `ps uxf` output line):
+            #       Another difference between those two methods is that `wmcoreD` takes WMAGENT_CONFIG
+            #       from the environment, while the later method requires the config to be passed explicitly
+            if isinstance(config, Configuration):
+                configFile = config.getLoadPath()
+            else:
+                configFile = confg
+                if not os.path.exists(str(configFile)):
+                    print(f"ERROR: Could not find configuration path: {configFile}")
+                    return 1
+            cmd = f"from Utils.wmcoreDTools import restart; restart('{configFile}', {componentsList})"
+            res = subprocess.run(['python', '-c', cmd], capture_output=True, check=True)
     except subprocess.CalledProcessError as ex:
         print(f"ERROR: The called subprocess returned an error: {ex.returncode}")
         print(f"ERROR: Full subprocess Output: {ex.output}")

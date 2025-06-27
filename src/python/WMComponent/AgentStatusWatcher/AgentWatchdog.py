@@ -13,24 +13,63 @@ import os
 import signal
 import logging
 import time
+import subprocess
+
+from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.WMInit import connectToDB
 
 class AgentWatchdog(BaseWorkerThread):
     """
     A basic watchdog class
     """
     def  __init__(self, config):
+        BaseWorkerThread.__init__(self)
         self.config = config
+        self.configPath = os.getenv('WMA_CONFIG_FILE')
+        # myThread = threading.currentThread()
+
         self.watchedPid = None
         self.watchedComponent = None
-        self.watchdogTimeout = self.config.AgentWatchdog.watchdogTimeout
+        # self.watchdogTimeout = self.config.AgentWatchdog.watchdogTimeout
+        self.watchdogTimeout = 5
+        self.timers = {}
 
-    def setup(self, parameters):
+    def _timer(self, interval):
+        """
+        """
+        pass
+
+    def setupTimer(self, timerName, interval):
+        """
+        """
+        pass
+
+    @timeFunction
+    def algorithm(self, parameters=None):
+        """
+        Spawn and register watchdog timers
+        """
+        logging.info(f"Started to watch {self.watchedComponent}")
+        try:
+            # pidTree = getComponentThreads(self.watchedComponent)
+            logging.info(f"Sleeping for {self.watchdogTimeout} secs")
+            time.sleep(self.watchdogTimeout)
+            logging.info(f"Restarting {self.watchedComponent}")
+            exitCode = forkRestart(self.configPath, [self.watchedComponent])
+            logging.info(f"Exit code from forkRestart: {str(exitCode.output)}")
+        except Exception as ex:
+            logging.error(f"Exception: {str(ex)}")
+
+    def setup(self, parameters=None):
         """
         __setup__
 
         Setup the name of the component to be watched
         """
-        self.setWatchedComponent()
+        self.setWatchedComponent('ErrorHandler')
+        return
 
     def setWatchedPid(self, pid):
         """
@@ -45,11 +84,3 @@ class AgentWatchdog(BaseWorkerThread):
         :param componentName: the component name to be watched (Default: AgentStatusWatcher')
         """
         self.watchedComponent = componentName
-
-    def algorithm(self):
-        """
-        __algorithm__
-
-        The main algorithm for the watchdog thread
-        """
-        

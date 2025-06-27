@@ -12,6 +12,7 @@ from WMCore.Agent.Harness import Harness
 from WMComponent.AgentStatusWatcher.ResourceControlUpdater import ResourceControlUpdater
 from WMComponent.AgentStatusWatcher.AgentStatusPoller import AgentStatusPoller
 from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
+from WMComponent.AgentStatusWatcher.AgentWatchdog import AgentWatchdog
 
 class AgentStatusWatcher(Harness):
     """
@@ -41,8 +42,7 @@ class AgentStatusWatcher(Harness):
         myThread = threading.currentThread()
 
         logging.info("Setting AgentWatchdog thread.")
-        agentWatchdogThread = myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
-                                               agentPollInterval)
+        agentWatchdogThread = myThread.workerThreadManager.addWorker(AgentWatchdog(self.config), 10)
 
         logging.info("Setting AgentStatusPoller poll interval to %s seconds", agentPollInterval)
         agentStatusPollerThread = myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),

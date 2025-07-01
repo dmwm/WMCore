@@ -180,7 +180,51 @@ class WMInit_t(unittest.TestCase):
         else:
             init.clearDatabase()
 
+    def testGetSQLStatementsMariaDB(self):
+        """
+        Test the _getSQLStatements method.
+        """
+        dialect = 'mariadb'
+        # Get the base directory (WMCore root)
+        if os.environ.get('WMCORE_ROOT'):
+            baseDir = os.environ['WMCORE_ROOT']
+        else:
+            baseDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
+        sql_file = os.path.join('sql', dialect, 'agent', 'create_agent.sql')
+        dialect_sql_file = os.path.join(baseDir, sql_file)
+
+        wminit = WMInit()
+        stmt = wminit._getSQLStatements(dialect_sql_file, dialect)
+        self.assertEqual(len(stmt), 1)
+        self.assertTrue("CREATE TABLE wm_init" in stmt[0])
+        self.assertTrue("CREATE TABLE wm_components" in stmt[0])
+        self.assertTrue("CREATE TABLE wm_workers" in stmt[0])
+        self.assertTrue(") ENGINE=InnoDB ROW_FORMAT=DYNAMIC;" in stmt[0])
+
+    def testGetSQLStatementsOracle(self):
+        """
+        Test the _getSQLStatements method.
+        """
+        dialect = 'oracle'
+        print(f"getWMBASE(): {getWMBASE()}")
+        # Get the base directory (WMCore root)
+        if os.environ.get('WMCORE_ROOT'):
+            baseDir = os.environ['WMCORE_ROOT']
+        else:
+            baseDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+        sql_file = os.path.join('sql', dialect, 'agent', 'create_agent.sql')
+        dialect_sql_file = os.path.join(baseDir, sql_file)
+
+        wminit = WMInit()
+        stmt = wminit._getSQLStatements(dialect_sql_file, dialect)
+        for s in stmt:
+            print(f"stmt: {s}")
+        self.assertEqual(len(stmt), 3)
+        self.assertTrue("CREATE TABLE wm_init" in stmt[0])
+        self.assertTrue("CREATE TABLE wm_components" in stmt[1])
+        self.assertTrue("CREATE TABLE wm_workers" in stmt[2])
 
 if __name__ == '__main__':
     unittest.main()

@@ -17,8 +17,6 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 
 from WMCore.JobStateMachine.Transitions import Transitions
-from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
@@ -81,7 +79,7 @@ class MonitoringTest(unittest.TestCase):
         listSubTypes = self.daoFactory(classname = "Monitoring.ListSubTypes")
         subTypes = listSubTypes.execute()
 
-        schemaTypes = [x[0] for x in CreateWMBSBase().subTypes]
+        schemaTypes = ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim", "Production"]
         assert len(subTypes) == len(schemaTypes), \
                "Error: Number of subscription types don't match."
         for subType in subTypes:

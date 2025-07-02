@@ -398,3 +398,13 @@ config.WorkflowUpdater.rucioAccount = "wmcore_pileup"
 config.WorkflowUpdater.rucioUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.msPileupUrl = "OVER_WRITE_BY_SECRETS"
+
+config.component_("AgentWatchdog")
+config.AgentWatchdog.namespace = "WMComponent.AgentWatchdog.AgentWatchdog"
+config.AgentWatchdog.componentDir = config.General.workDir + "/AgentWatchdog"
+config.AgentWatchdog.logLevel = globalLogLevel
+config.AgentWatchdog.pollInterval = 1 * 1 * 20  # every 20 sec.
+# This next timeout is to be added on top of the watched component's polling cycle
+# in order to create some minimal hysteresis in the watchdog timers' logic
+config.AgentWatchdog.watchdogTimeout = 1 * 1 * 10  # 10 sec.
+config.AgentWatchdog.watchedComponents = ['ErrorHandler']

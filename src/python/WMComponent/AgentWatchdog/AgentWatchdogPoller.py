@@ -17,6 +17,7 @@ import signal
 import logging
 import time
 import subprocess
+import psutil
 
 from pprint import pformat
 
@@ -54,12 +55,16 @@ class AgentWatchdogPoller(BaseWorkerThread):
         and only the one to whom this signal was intended would react, by recognizing the senders pid
         """
         myThread = threading.currentThread()
-        logging.info(f"{myThread.name}: resetTimer args: {pformat(args)}")
-        logging.info(f"{myThread.name}: resetTimer kwargs: {pformat(kwargs)}")
-        logging.info(f"{myThread.name}: all timers: {pformat(self.timers)}")
+        sigInfo = {}
+        # sigInfo = signal.sigwaitinfo([self.expectedSignal])
+        logging.info(f"{myThread.name} with pid:{myThread.native_id}: resetTimer args: {pformat(args)}")
+        logging.info(f"{myThread.name} with pid:{myThread.native_id}: resetTimer kwargs: {pformat(kwargs)}")
+        logging.info(f"{myThread.name} with pid:{myThread.native_id}: all timers: {pformat(self.timers)}")
+        logging.info(f"{myThread.name} with pid:{myThread.native_id}: received signal info: {pformat(sigInfo)}")
         for timerName, timerThread in self.timers.items():
             logging.info(f"Redirecting signal to timer: {timerName}")
             try:
+                # signal.pthread_kill(timerThread.native_id, self.expectedSignal)
                 os.kill(timerThread.native_id, self.expectedSignal)
             except ProcessLookupError:
                 logging.warning(f"Missing timer: {timerName}. It will be recreated on the next AgentWatchdogPoller cycle.")
@@ -97,27 +102,27 @@ class AgentWatchdogPoller(BaseWorkerThread):
         while True:
             sigInfo = signal.sigtimedwait([self.expectedSignal], self._countdown(endTime))
             if sigInfo:
-                logging.info(f"Timer: {timerName}: Received signal: {pformat(sigInfo)}")
+                logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Received signal: {pformat(sigInfo)}")
                 if sigInfo.si_pid == expPid:
                     # Resetting the timer starting again from the current time
-                    logging.info(f"Timer: {timerName}: Resetting timer")
+                    logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Resetting timer")
                     endTime = time.time() + interval
                 else:
                     # Continue to wait for signal from the correct origin
-                    logging.info(f"Timer: {timerName}: Continue to wait for signal from the correct origin. Remaining time: {self._countdown(endTime)}")
+                    logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Continue to wait for signal from the correct origin. Remaining time: {self._countdown(endTime)}")
                     continue
             else:
-                logging.info(f"Timer: {timerName}: Reached the end of timer.")
+                logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Reached the end of timer.")
                 break
 
 
     def _countdown(self, endTime):
         """
-        __countDown__
+        __countdown__
 
         Aux function to return the remaining time before reaching the endTime
         :param endTime: The end time in seconds since the epoch.
-        :retun:         Remaining time in seconds or 0 if the endTime has already passed
+        :return:        Remaining time in seconds or 0 if the endTime has already passed
                         No negative values are returned
         """
         remTime = endTime - time.time()
@@ -152,17 +157,32 @@ class AgentWatchdogPoller(BaseWorkerThread):
         """
         Spawn and register watchdog timers
         """
-        logging.info(f"Component polling cycle started with the following list of watched components: {list(self.timers.keys())}")
-        try:
-            # pidTree = getComponentThreads(self.watchedComponent)
-            logging.info(f"Sleeping for {self.pollInterval} secs")
-            time.sleep(self.pollInterval)
-            # logging.info(f"Restarting {self.watchedComponent}")
-            # exitCode = forkRestart(componentsList=[self.watchedComponent], useWmcoreD=True)
-            # exitCode = forkRestart(config=self.config, componentsList=[self.watchedComponent], useWmcoreD=False)
-            # logging.info(f"Exit code from forkRestart of {self.watchedComponent}: {exitCode}")
-        except Exception as ex:
-            logging.error(f"Exception: {str(ex)}")
+        startTime = time.time()
+        endTime = startTime + self.pollInterval
+
+        # while True:
+        logging.info(f"{self.mainThread.name}: Polling cycle started with the following list of watched components: {list(self.timers.keys())}")
+        logging.info(f"{self.mainThread.name}: Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
+        for timer in self.timers:
+            if not self.timers[timer].is_alive():
+                logging.info(f"{self.mainThread.name}: Re-configuring expired timer: {timer}.")
+                self.setupTimer(timer)
+
+        #     sigInfo = signal.sigtimedwait([self.expectedSignal], self._countdown(endTime))
+        #     if sigInfo:
+        #         logging.info(f"{self.mainThread.name}: Received signal: {pformat(sigInfo)}")
+        #         # resetting the correct timer:
+        #         # if sigInfo.si_pid == expPid:
+        #         #     # Resetting the timer starting again from the current time
+        #         #     logging.info(f"{self.mainThread.name}: Resetting timer")
+        #         #     endTime = time.time() + interval
+        #         # else:
+        #         #     # Continue to wait for signal from the correct origin
+        #         #     logging.info(f"Timer: {timerName}: Continue to wait for signal from the correct origin. Remaining time: {self._countdown(endTime)}")
+        #         #     continue
+        #     else:
+        #         logging.info(f"{self.mainThread.name}: Reached the end of polling cycle. Re-configuring expired timers.")
+        #         endTime = time.time() + self.pollInterval
 
     def setup(self, parameters=None):
         """

@@ -59,7 +59,11 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.info(f"{myThread.name}: all timers: {pformat(self.timers)}")
         for timerName, timerThread in self.timers.items():
             logging.info(f"Redirecting signal to timer: {timerName}")
-            os.kill(timerThread.native_id, self.expectedSignal)
+            try:
+                os.kill(timerThread.native_id, self.expectedSignal)
+            except ProcessLookupError:
+                logging.warning(f"Missing timer: {timerName}. It will be recreated on the next AgentWatchdogPoller cycle.")
+
         return True
 
     def _timer(self, expPid=None, compName=None, interval=None):
@@ -100,7 +104,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
                     endTime = time.time() + interval
                 else:
                     # Continue to wait for signal from the correct origin
-                    logging.info(f"Timer: {timerName}: Continue to wait for signal from the correct origin")
+                    logging.info(f"Timer: {timerName}: Continue to wait for signal from the correct origin. Remaining time: {self._countdown(endTime)}")
                     continue
             else:
                 logging.info(f"Timer: {timerName}: Reached the end of timer.")

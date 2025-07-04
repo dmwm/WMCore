@@ -19,6 +19,7 @@ import time
 import subprocess
 import psutil
 import inspect
+import random
 
 from pprint import pformat
 
@@ -107,17 +108,17 @@ class AgentWatchdogPoller(BaseWorkerThread):
         while True:
             sigInfo = signal.sigtimedwait([self.expectedSignal], self._countdown(endTime))
             if sigInfo:
-                logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Received signal: {pformat(sigInfo)}")
+                logging.info(f"Timer: {timerName} with pid: {myThread.native_id} : Received signal: {pformat(sigInfo)}")
                 if sigInfo.si_pid in expPids:
                     # Resetting the timer starting again from the current time
-                    logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Resetting timer")
+                    logging.info(f"Timer: {timerName} with pid: {myThread.native_id} : Resetting timer")
                     endTime = time.time() + interval
                 else:
                     # Continue to wait for signal from the correct origin
-                    logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Continue to wait for signal from the correct origin. Remaining time: {self._countdown(endTime)}")
+                    logging.info(f"Timer: {timerName} with pid: {myThread.native_id} : Continue to wait for signal from the correct origin. Remaining time: {self._countdown(endTime)}")
                     continue
             else:
-                logging.info(f"Timer: {timerName} with pid:{myThread.native_id}: Reached the end of timer.")
+                logging.info(f"Timer: {timerName} with pid: {myThread.native_id} : Reached the end of timer.")
                 break
 
 
@@ -145,11 +146,22 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # which are to be allowed to reset the timer
         compPidTree = getComponentThreads(self.config, compName)
         expPids = compPidTree['RunningThreads']
+
+        # Here to add the full set of possible origin pids due to the signal redirection
+        # (current thread, main thread, parent thread, etc.)
         expPids.append(2840827)
 
-        # Here to find the correct timer's interval by finding the pid with the
-        # shortest polling interval and merge it with the watchdog timeout
-        timerInterval = self.watchdogTimeout
+        # Here to find the correct timer's interval
+        # NOTE: We estimate the timer's interval by finding the pid with the shortest polling cycle and:
+        #       * Merge it with the watchdog timeout, in order to implement some static
+        #         hysteresis in the watchdog logic
+        #       * Add some random factor between 1-10% on top of it, in order to avoid periodical
+        #         overlaps between the timer's interval and the component's polling cycle,
+        #         which would cause oscillations (the component being periodically rebooted due
+        #         to lost signals caused by the intervals overlaps explained above)
+        timerInterval = 0
+        timerInterval += self.watchdogTimeout
+        timerInterval *= random.uniform(1.01, 1.1)
 
         # Here to spawn the thread for the timer
         # NOTE: For the time being, it is a must the thread name and the compName to match,
@@ -177,10 +189,10 @@ class AgentWatchdogPoller(BaseWorkerThread):
         startTime = time.time()
         endTime = startTime + self.pollInterval
         currThread = threading.currentThread()
-        logging.info(f"{self.mainThread.name} with pid:{currThread.native_id}: Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
+        logging.info(f"{self.mainThread.name} with main pid: {self.mainThread.native_id} and current pid: {currThread.native_id} : Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
 
         while True:
-            logging.info(f"{self.mainThread.name} with pid:{currThread.native_id}: Polling cycle started with the following list of watched components: {list(self.timers.keys())}")
+            logging.info(f"{self.mainThread.name} with main pid: {self.mainThread.native_id} and current pid: {currThread.native_id} : Polling cycle started with the following list of watched components: {list(self.timers.keys())}")
 
             sigInfo = signal.sigtimedwait([self.expectedSignal], self._countdown(endTime))
             if sigInfo:

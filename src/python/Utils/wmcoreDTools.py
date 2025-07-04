@@ -275,8 +275,15 @@ def getComponentThreads(configFile, component):
         print(msg)
         return pidTree
 
-    # Check if threads are running - the list threadPids is fetched from the threads.json file
-    # as it has been constructed at Daemon startup time
+    # Check if initial threads are running.
+    # NOTE: The list threadPids is fetched from the threads.json file
+    #       as it has been constructed at Daemon startup time. Any threads spawn later during
+    #       the component's lifetime are not tracked by threads.json file, which means
+    #       they will always fall either into orphanThreads or lostThreads. That's why the
+    #       results from this function cannot be used for components like AgentWatchdog,
+    #       where every timer has its own thread and those are regularly restarted.
+    #       Such a mechanism always results in non-constant and nonzero values in the orphanThreads and
+    #       lostThreads fields of the pidTree, which are changing flowing the child threads life cycle.
     process = psutil.Process(int(pid))
     currThreads = set([thread.id for thread in process.threads()])
     startupThreads = set(threadPids)

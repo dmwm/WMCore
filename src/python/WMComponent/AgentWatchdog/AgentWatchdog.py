@@ -34,7 +34,20 @@ class AgentWatchdog(Harness):
         Sets up the worker thread
         """
         logging.info("AgentWatchdog.preInitialization")
-        agentWatchdogPollInterval = self.config.AgentWatchdog.pollInterval
+
+        # Do not wait between runs.
+        # NOTE: The configured pooling interval will actually be used as a wait time inside
+        #       the main thread to drive the cyclic process for regular refresh of all timers.
+        #       The result will be, that we will be executing every time for exactly the amount
+        #       of time configured as polling cycle in the component config and wait for 0 seconds
+        #       between re-execution. In contrast to how all other WMAgent components behave,
+        #       where, they execute for a random amount of time (driven by their resource consumption
+        #       and other delays during the execution itself), and then pause for the time configured
+        #       as component's poll interval before re-executing the main thread algorithm method again.
+        #       If we were to follow the order established for the other components, the value here should
+        #       have been:
+        #       agentWatchdogPollInterval = self.config.AgentWatchdog.pollInterval
+        agentWatchdogPollInterval = 0
         myThread = threading.currentThread()
 
         if not hasattr(self.config, "Tier0Feeder"):

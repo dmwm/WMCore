@@ -42,7 +42,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         # Register the expected signal handler:
         self.expectedSignal = signal.SIGCONT
-        signal.signal(self.expectedSignal, self.resetTimer)
+        signal.signal(self.expectedSignal, self.sigHandler)
 
         self.watchedPid = None
         self.watchdogTimeout = self.config.AgentWatchdog.watchdogTimeout
@@ -50,7 +50,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         self.watchedComponents = self.config.AgentWatchdog.watchedComponents
         self.timers = {}
 
-    def resetTimer(self, sigNum, currFrame, **kwargs):
+    def sigHandler(self, sigNum, currFrame, **kwargs):
         """
         A simple call back function to be used for resetting timers in the AgentWatchdog class
         It will be actually redirecting the received signal to all of the currently running timers/threads,
@@ -60,9 +60,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # myThread = threading.currentThread()
         # sigInfo = {}
         # # sigInfo = signal.sigwaitinfo([self.expectedSignal])
-        # logging.info(f"{myThread.name} with pid:{myThread.native_id}: resetTimer sigNum: {sigNum}")
-        # logging.info(f"{myThread.name} with pid:{myThread.native_id}: resetTimer currFrame: {currFrame}")
-        # logging.info(f"{myThread.name} with pid:{myThread.native_id}: resetTimer kwargs: {pformat(kwargs)}")
+        # logging.info(f"{myThread.name} with pid:{myThread.native_id}: sigHandler sigNum: {sigNum}")
+        # logging.info(f"{myThread.name} with pid:{myThread.native_id}: sigHandler currFrame: {currFrame}")
+        # logging.info(f"{myThread.name} with pid:{myThread.native_id}: sigHandler kwargs: {pformat(kwargs)}")
         # logging.info(f"{myThread.name} with pid:{myThread.native_id}: all timers: {pformat(self.timers)}")
         # logging.info(f"{myThread.name} with pid:{myThread.native_id}: received signal info: {pformat(sigInfo)}")
         # logging.info(f"{myThread.name} with pid:{myThread.native_id}: current signal queue: {pformat(signal.sigpending())}")

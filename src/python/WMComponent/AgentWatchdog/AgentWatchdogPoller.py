@@ -155,7 +155,10 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # Here to find the correct timer's interval
         # NOTE: We estimate the timer's interval by finding the pid with the shortest polling cycle and:
         #       * Merge it with the watchdog timeout, in order to implement some static
-        #         hysteresis in the watchdog logic
+        #         hysteresis in the watchdog logic. In the future instead of the shortest polling cycle
+        #         (which does not reflect how long a component has run, but rather for how long we wait
+        #         between component runs), we should use an estimator based on the runtime distribution
+        #         of the slowest thread in the component.
         #       * Add some random factor between 1-10% on top of it, in order to avoid periodical
         #         overlaps between the timer's interval and the component's polling cycle,
         #         which would cause oscillations (the component being periodically rebooted due

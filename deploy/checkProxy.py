@@ -129,7 +129,7 @@ def processTimeLeft(sendMail, verbose, proxyInfo, time, mail):
         timeLeft = []
         for line in proxyInfo:
             if line.find(b'timeleft') > -1:
-                dateReg = re.compile(b'\d{1,3}[:/]\d{2}[:/]\d{2}')
+                dateReg = re.compile(rb'\d{1,3}[:/]\d{2}[:/]\d{2}')
                 timeLeft = dateReg.findall(line)[0]
                 timeLeft = timeLeft.split(b':')[0]
                 continue

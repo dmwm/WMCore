@@ -786,7 +786,6 @@ class StdBase(object):
         harvestTask = parentTask.addTask("%s%sDQMHarvest%s" % (parentTask.name(),
                                                                harvestType,
                                                                parentOutputModuleName))
-
         self.addRuntimeMonitors(harvestTask, maxpss=self.taskMemory)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
@@ -1328,6 +1327,8 @@ class StdBase(object):
                 schema[arg] = "GT_DP_V1"
             elif arg == "InputDataset":
                 schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
+            elif arg == "TaskMemory":
+                schema[arg] = 3000
             elif not workloadDefinition[arg]["optional"]:
                 if workloadDefinition[arg]["type"] == str:
                     if arg == "InputDataset":

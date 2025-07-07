@@ -25,6 +25,7 @@ from pprint import pformat
 
 from Utils.Timers import timeFunction
 from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart
+from WMComponent.AgentWatchdog.Timer import Timer, _countdown
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
 
@@ -78,60 +79,6 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #         logging.warning(f"Missing timer: {timerName}. It will be recreated on the next AgentWatchdogPoller cycle.")
         # return True
 
-    def _timer(self, expPids=[], compName=None, interval=None):
-        """
-        A simple timer function, which is to be started in a separate thread and is to
-        expect one particular PID to reset it. It is supposed to be the one with the
-        shortest polling interval. If the timer reaches to the end of its interval, without
-        being reset, it would reset the component it is associated with.
-        :param expPids:  The list of expected pids allowed to reset the timer, signals from anybody else would be ignored
-        :param compName: The component name this timer is associated with
-        :param interval: The interval or the timer
-        :return:         Nothing
-        """
-
-        myThread = threading.currentThread()
-        timerName = myThread.name
-
-        # NOTE: Temporary protection for as long as we are about to be starting
-        #       a single timer even for multi-threaded components
-        if str(timerName) != str(compName):
-            raise(NameError)
-
-        startTime = time.time()
-        endTime = startTime + interval
-
-        while True:
-            sigInfo = signal.sigtimedwait([self.expectedSignal], self._countdown(endTime))
-            if sigInfo:
-                logging.info(f"Timer: {timerName}, pid: {myThread.native_id} : Received signal: {pformat(sigInfo)}")
-                if sigInfo.si_pid in expPids:
-                    # Resetting the timer starting again from the current time
-                    logging.info(f"Timer: {timerName}, pid: {myThread.native_id} : Resetting timer")
-                    endTime = time.time() + interval
-                else:
-                    # Continue to wait for signal from the correct origin
-                    logging.info(f"Timer: {timerName}, pid: {myThread.native_id} : Continue to wait for signal from the correct origin. Remaining time: {self._countdown(endTime)}")
-                    continue
-            else:
-                logging.info(f"Timer: {timerName}, pid: {myThread.native_id} : Reached the end of timer.")
-                break
-
-
-    def _countdown(self, endTime):
-        """
-        __countdown__
-
-        Aux function to return the remaining time before reaching the endTime
-        :param endTime: The end time in seconds since the epoch.
-        :return:        Remaining time in seconds or 0 if the endTime has already passed
-                        No negative values are returned
-        """
-        remTime = endTime - time.time()
-        if remTime < 0:
-            remTime = 0
-        return remTime
-
     def setupTimer(self, compName):
         """
         We spawn a separate thread for every timer.
@@ -150,7 +97,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #       main thread of AgentWatchdogPoller which is then to redirect this signal to the
         #       correct timer.
         expPids.append(self.mainThread.native_id)
-        expPids.append(2840827)
+        expPids.extend([pid.native_id for pid in threading.enumerate()])
 
         # Here to find the correct timer's interval
         # NOTE: We estimate the timer's interval by finding the pid with the shortest polling cycle and:
@@ -175,22 +122,18 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #       In the future, if we move to spawning a timer per component's thread, then
         #       we might end up with multiple timers per component, and those two may differ.
         timerName = compName
-        timerThread = threading.Thread(target=self._timer, name=timerName, args=(), kwargs={"compName": compName,
-                                                                                            "interval": timerInterval})
+        # timerThread = threading.Thread(target=self._timer, name=timerName, args=(), kwargs={"compName": compName,
+        #                                                                                     "interval": timerInterval})
         # timerThread = multiprocessing.Process(target=self._timer , args=(), kwargs={"compName": compName,
         #                                                                             "interval": timerInterval})
 
         # Here to add the timer's thread to the timers list in the AgentWatchdog object
-        # TODO: To create a WatchdogTimer structure and pass it to the _timer callback method,
-        #       so that we can fetch all the timer's information from a single place rather than
-        #       once from both the timers list in the object and second from inside the timer thread
-        self.timers[timerName] = {}
-        self.timers[timerName]['expPids'] = expPids
-        self.timers[timerName]['name'] = timerName
-        self.timers[timerName]['compName'] = compName
-        self.timers[timerName]['thread'] = timerThread
-        self.timers[timerName]['thread'].start()
-        self.timers[timerName]['pid'] = self.timers[timerName]['thread'].native_id
+        self.timers[timerName] = Timer(name=timerName,
+                                       compName=compName,
+                                       expPids=expPids,
+                                       interval=timerInterval,
+                                       config=self.config)
+        self.timers[timerName].start()
 
     @timeFunction
     def algorithm(self, parameters=None):
@@ -206,20 +149,22 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}, main pid: {self.mainThread.native_id}, list of watched components: {list(self.timers.keys())}")
         logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers.")
         for timer in self.timers:
-            if not self.timers[timer]['thread'].is_alive():
+            if not self.timers[timer].is_alive():
                 logging.info(f"{self.mainThread.name}: Re-configuring expired timer: {timer}.")
                 self.setupTimer(timer)
 
         while True:
-            sigInfo = signal.sigtimedwait([self.expectedSignal], self._countdown(endTime))
+            sigInfo = signal.sigtimedwait([self.expectedSignal], _countdown(endTime))
             if sigInfo:
                 # Resetting the correct timer:
                 logging.info(f"{self.mainThread.name}: Received signal: {pformat(sigInfo)}")
 
                 # First, find the correct timer:
-                correctTimer=None
+                correctTimer = None
                 for timer in self.timers.values():
-                    if sigInfo.si_pid in timer['expPids']:
+                    logging.info(f"timer: {timer}")
+                    logging.info(f"timer.expPids: {timer.expPids}")
+                    if sigInfo.si_pid in timer.expPids:
                         correctTimer = timer
                         break
 
@@ -227,10 +172,10 @@ class AgentWatchdogPoller(BaseWorkerThread):
                 if correctTimer:
                     # try to reset it:
                     try:
-                        logging.info(f"{self.mainThread.name}: Resetting timer: {correctTimer['name']}")
-                        os.kill(correctTimer['pid'], self.expectedSignal)
+                        logging.info(f"{self.mainThread.name}: Resetting timer: {correctTimer.name}")
+                        os.kill(correctTimer.native_id, self.expectedSignal)
                     except ProcessLookupError:
-                        logging.warning(f"{self.mainThread.name}: Missing timer: {correctTimer['name']}. It will be recreated on the next AgentWatchdogPoller cycle, but the current signal is lost and the component may be restarted soon.")
+                        logging.warning(f"{self.mainThread.name}: Missing timer: {correctTimer.name}. It will be recreated on the next AgentWatchdogPoller cycle, but the current signal is lost and the component may be restarted soon.")
                 else:
                     # Ignore signals from unknown origin:
                     logging.info(f"{self.mainThread.name}: The sender's pid: {sigInfo.si_pid} was not recognized. Ignoring the signal")

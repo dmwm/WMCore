@@ -786,7 +786,7 @@ class StdBase(object):
         harvestTask = parentTask.addTask("%s%sDQMHarvest%s" % (parentTask.name(),
                                                                harvestType,
                                                                parentOutputModuleName))
-        self.addRuntimeMonitors(harvestTask, maxpss=self.taskMemory)
+        self.addRuntimeMonitors(harvestTask, maxpss=self.harvestingTaskMemory)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 
@@ -1105,7 +1105,7 @@ class StdBase(object):
                      "MergedLFNBase": {"default": "/store/data"},
                      "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
-                     "TaskMemory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
+                     "HarvestingTaskMemory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                      }
 
         # these arguments are internally set by ReqMgr2 and should not be provided by the user
@@ -1327,7 +1327,7 @@ class StdBase(object):
                 schema[arg] = "GT_DP_V1"
             elif arg == "InputDataset":
                 schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
-            elif arg == "TaskMemory":
+            elif arg == "HarvestingTaskMemory":
                 schema[arg] = 3000
             elif not workloadDefinition[arg]["optional"]:
                 if workloadDefinition[arg]["type"] == str:

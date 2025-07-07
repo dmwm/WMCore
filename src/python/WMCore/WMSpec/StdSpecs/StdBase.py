@@ -1105,7 +1105,7 @@ class StdBase(object):
                      "MergedLFNBase": {"default": "/store/data"},
                      "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
-                     "HarvestingTaskMemory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
+                     "HarvestingTaskMemory": {"default": 3000.0, "type": float, "validate": lambda x: x > 0},
                      }
 
         # these arguments are internally set by ReqMgr2 and should not be provided by the user

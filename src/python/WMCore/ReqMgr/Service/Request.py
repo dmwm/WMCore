@@ -433,6 +433,7 @@ class Request(RESTEntity):
         try:
             # Commit all Global WorkQueue changes per workflow in a single go:
             self.gq_service.updateElementsByWorkflow(workload, reqArgs, status=['Available', 'Negotiating', 'Acquired'])
+            cherrypy.log('Updated workqueue elements of "{}", with:  {}'.format(workload.name(), reqArgs))
         except WMWorkloadUnhandledException as ex:
             # Handling assignment-approved arguments differently to avoid code duplication
             if reqStatus == 'assignment-approved':
@@ -459,10 +460,13 @@ class Request(RESTEntity):
 
         # Update reqmgr workload cache:
         dbUrl = self.reqmgr_db['host']
-        workload.saveCouch(dbUrl, 'reqmgr_workload_cache' , metadata={'name': workload.name()})
+        dbName = 'reqmgr_workload_cache'
+        workload.saveCouch(dbUrl, dbName, metadata={'name': workload.name()})
+        cherrypy.log(f"Updated {dbUrl}/{dbName} for {workload.name()}, with: {reqArgs}")
 
         # Finally update ReqMgr Database
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), reqArgs, dn)
+        cherrypy.log('Updated reqmgr database of "{}", with:  {}'.format(workload.name(), reqArgs))
 
         return report
 

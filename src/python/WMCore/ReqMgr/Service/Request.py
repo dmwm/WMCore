@@ -457,6 +457,10 @@ class Request(RESTEntity):
             cherrypy.log(msg + " Reason: %s" % ex)
             raise cherrypy.HTTPError(500, msg)
 
+        # Update reqmgr workload cache:
+        dbUrl = self.reqmgr_db['host']
+        workload.saveCouch(dbUrl, 'reqmgr_workload_cache' , metadata={'name': workload.name()})
+
         # Finally update ReqMgr Database
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), reqArgs, dn)
 

@@ -584,8 +584,14 @@ class SimpleCondorPlugin(BasePlugin):
             if job.get('gpuRequirements', None):
                 ad['My.GPUMemoryMB'] = str(job['gpuRequirements']['GPUMemoryMB'])
                 cudaCapabilities = ','.join(sorted(job['gpuRequirements']['CUDACapabilities']))
-                ad['My.CUDACapability'] = classad.quote(str(cudaCapabilities))
-                ad['My.CUDARuntime'] = classad.quote(job['gpuRequirements']['CUDARuntime'])
+                minimalCapability = self.cudaCapabilityToSingleVersion(job['gpuRequirements']['CUDACapabilities'])
+                if minimalCapability is None:  # this should never happen!!
+                    ad['My.CUDACapability'] = undefined
+                else:
+                    ad['My.CUDACapability'] = classad.quote(str(minimalCapability))
+                ad['My.OriginalCUDACapability'] = classad.quote(str(cudaCapabilities))
+                cudaRuntime = ','.join(sorted(job['gpuRequirements']['CUDARuntime']))
+                ad['My.CUDARuntime'] = classad.quote(str(cudaRuntime))
             else:
                 ad['My.GPUMemoryMB'] = undefined
                 ad['My.CUDACapability'] = undefined

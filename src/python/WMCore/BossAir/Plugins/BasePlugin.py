@@ -7,6 +7,7 @@ Base class for BossAir plugins
 
 from builtins import object, str, bytes
 from future.utils import viewvalues
+from distutils.version import StrictVersion
 
 from Utils.Utilities import decodeBytesToUnicode
 from WMCore.WMException import WMException
@@ -181,3 +182,32 @@ class BasePlugin(object):
             archs = defaultArch
 
         return archs
+
+    @staticmethod
+    def cudaCapabilityToSingleVersion(capabilities=None):
+        """
+        Given a list of CUDA capabilities (with strings in a version style),
+        finds the smallest version required and convert it to a single integer
+        for comparison/job matchmaking purposes.
+        Version conversion formula is: (1000 * major + 10 * medium + minor)
+        :param capabilities: a list of string versions
+        :return: an integer with the version value; None in case of failure
+
+        For further details:
+        https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART____VERSION.html
+        """
+        if not (isinstance(capabilities, list) and capabilities):
+            return None
+        # now order the list of string versions in place. Precedence of digits is from left to right
+        #    from: ["2.3.1", "1.2.3", "3.2.1", "1.3.2"]
+        #    to:   ["1.2.3", "1.3.2", "2.3.1", "3.2.1"]
+        capabilities.sort(key=StrictVersion)
+
+        smallestVersion = capabilities[0]
+        smallestVersion = smallestVersion.split(".")
+        # deal with versions like: "1", "1.2" and "1.2.3"
+        for _i in range(0, 3 - len(smallestVersion)):
+            smallestVersion.append(0)
+
+        intVersion = int(smallestVersion[0]) * 1000 + int(smallestVersion[1]) * 10 + int(smallestVersion[2])
+        return intVersion

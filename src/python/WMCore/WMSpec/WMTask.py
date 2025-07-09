@@ -1570,16 +1570,31 @@ class WMTaskHelper(TreeHelper):
     def getGPURequirements(self):
         """
         Return the GPU requirements for this task.
-        If it's a multi-step task, the first step with a meaningful
-        dictionary value will be returned
+        For multi-step tasks, the following logic is applied:
+          * GPUMemoryMB: return the max of them
+          * CUDARuntime: returns a flat list of unique runtime versions
+          * CUDACapabilities: returns a flat list of unique capabilities
         :return: a dictionary with the GPU requirements for this task
         """
-        gpuRequirements = {}
+        gpuRequirements = []
         for stepName in sorted(self.listAllStepNames()):
             stepHelper = self.getStep(stepName)
             if stepHelper.stepType() == "CMSSW" and stepHelper.getGPURequirements():
-                return stepHelper.getGPURequirements()
-        return gpuRequirements
+                gpuRequirements.append(stepHelper.getGPURequirements())
+        if not gpuRequirements:
+            return {}
+
+        # in this case, it requires GPUs and it can be multi-steps GPU
+        bestGPUParams = {"GPUMemoryMB": 0, "CUDARuntime": [], "CUDACapabilities": []}
+        for params in gpuRequirements:
+            if params["GPUMemoryMB"] > bestGPUParams["GPUMemoryMB"]:
+                bestGPUParams["GPUMemoryMB"] = params["GPUMemoryMB"]
+            bestGPUParams["CUDARuntime"].append(params["CUDARuntime"])
+            bestGPUParams["CUDACapabilities"].extend(params["CUDACapabilities"])
+        # make the flat list elements unique
+        bestGPUParams["CUDARuntime"] = list(set(bestGPUParams["CUDARuntime"]))
+        bestGPUParams["CUDACapabilities"] = list(set(bestGPUParams["CUDACapabilities"]))
+        return bestGPUParams
 
     def _getStepValue(self, keyDict, defaultValue):
         """

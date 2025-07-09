@@ -1,3 +1,7 @@
+2.4.2rc2 to 2.4.2rc3:
+  - Install setuptools in the CD pipeline (Alan Malta Rodrigues) #12411
+
+
 2.4.2rc1 to 2.4.2rc2:
   - Update python version in the CD pipeline image to 3.12 (Alan Malta Rodrigues) #12410
   - Skip PyPi publication if same package+version has already been uploaded (Alan Malta Rodrigues) #12410

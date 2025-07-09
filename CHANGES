@@ -1,3 +1,8 @@
+2.4.2rc1 to 2.4.2rc2:
+  - Update python version in the CD pipeline image to 3.12 (Alan Malta Rodrigues) #12410
+  - Skip PyPi publication if same package+version has already been uploaded (Alan Malta Rodrigues) #12410
+
+
 2.4.1 to 2.4.2rc1:
   - Add SQL schema wmcoredb package as a dependency (Alan Malta Rodrigues) #12408
   - fix bug checkProxy incompatible (Viphava280444) #12403

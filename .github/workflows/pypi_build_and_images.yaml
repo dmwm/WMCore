@@ -35,11 +35,13 @@ jobs:
                  msoutput, mspileup, msrulecleaner, mstransferor, msmonitor]
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup python 3.8
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: '3.12'
 
       # setup ubuntu Linux with packages required for installing locally WM
       # python packages, e.g. we need curl-config for pycurl (it comes from dev
@@ -98,6 +100,8 @@ jobs:
       # perform CI/CD actions to upload WM packages to PyPi
       - name: Upload package distribution to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
   # second job, depends on build_and_publish_services, builds and upload
   # docker images to CERN registry

@@ -98,6 +98,8 @@ jobs:
       # perform CI/CD actions to upload WM packages to PyPi
       - name: Upload package distribution to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
   # second job, depends on build_and_publish_services, builds and upload
   # docker images to CERN registry

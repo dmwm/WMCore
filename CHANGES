@@ -1,3 +1,12 @@
+2.4.1 to 2.4.2rc1:
+  - Add SQL schema wmcoredb package as a dependency (Alan Malta Rodrigues) #12408
+  - fix bug checkProxy incompatible (Viphava280444) #12403
+  - Do not load full LFN list in memory; use thread pool for deletions (Alan Malta Rodrigues) #12059
+  - Return unique list of protected LFNS from wmstatsserver (Alan Malta Rodrigues) #12059
+  - Fix RucioConMon gzipped response content (Alan Malta Rodrigues) #12059
+  - update rucio client version (Valentin Kuznetsov) #12201
+
+
 2.4.0 to 2.4.1:
  - just for cutting a new WMAgent release
 

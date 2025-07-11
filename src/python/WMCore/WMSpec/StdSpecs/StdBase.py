@@ -254,7 +254,7 @@ class StdBase(object):
 
         return outputModules
 
-    def addRuntimeMonitors(self, task):
+    def addRuntimeMonitors(self, task, maxpss=2.3 * 1024):
         """
         _addRuntimeMonitors_
 
@@ -262,7 +262,6 @@ class StdBase(object):
         Memory settings are defined in Megabytes and timing in seconds.
         """
         # Default settings defined by CMS policy
-        maxpss = 2.3 * 1024  # 2.3 GiB, but in MiB
         softTimeout = 47 * 3600  # 47h
         hardTimeout = 47 * 3600 + 5 * 60  # 47h + 5 minutes
 
@@ -270,7 +269,7 @@ class StdBase(object):
         monitoring.interval = 300
         monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxPSS = maxpss
+        monitoring.PerformanceMonitor.maxPSS = maxpss  # value is propagated in MiB
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
@@ -787,7 +786,7 @@ class StdBase(object):
         harvestTask = parentTask.addTask("%s%sDQMHarvest%s" % (parentTask.name(),
                                                                harvestType,
                                                                parentOutputModuleName))
-        self.addRuntimeMonitors(harvestTask)
+        self.addRuntimeMonitors(harvestTask, maxpss=self.harvestingTaskMemory)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 
@@ -1106,6 +1105,7 @@ class StdBase(object):
                      "MergedLFNBase": {"default": "/store/data"},
                      "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
+                     "HarvestingTaskMemory": {"default": 3000.0, "type": float, "validate": lambda x: x > 0},
                      }
 
         # these arguments are internally set by ReqMgr2 and should not be provided by the user
@@ -1327,6 +1327,8 @@ class StdBase(object):
                 schema[arg] = "GT_DP_V1"
             elif arg == "InputDataset":
                 schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
+            elif arg == "HarvestingTaskMemory":
+                schema[arg] = 3000
             elif not workloadDefinition[arg]["optional"]:
                 if workloadDefinition[arg]["type"] == str:
                     if arg == "InputDataset":

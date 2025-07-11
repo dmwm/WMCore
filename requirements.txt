@@ -27,6 +27,7 @@ Jinja2~=3.1.2                 # wmcore,wmagent
 memory-profiler~=0.60.0       # wmcore,wmagentdev
 mock~=4.0.3                   # wmcore,wmagent,wmagentdev
 mox3~=1.1.0                   # wmcore,wmagentdev
+mongomock~=4.3.0              # wmcore,wmagentdev
 mysqlclient~=2.1.1            # wmcore,wmagent
 pynose~=1.5.4                 # wmcore,wmagentdev
 pycodestyle~=2.8.0            # wmcore,wmagentdev

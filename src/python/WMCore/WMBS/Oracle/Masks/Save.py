@@ -29,20 +29,14 @@ class Save(SaveMasksMySQL):
             # Hope you didn't send us a list of empty masks
             binds = []
             for m in mask:
-                inclusiveMask = 'T'
-                if m['inclusivemask'] is False:
-                    inclusiveMask = 'F'
                 binds.append({"jobid": m['jobID'], 'firstevent': m['FirstEvent'], 'lastevent': m['LastEvent'],
                               'firstrun': m['FirstRun'], 'lastrun': m['LastRun'], 'firstlumi': m['FirstLumi'],
-                              'lastlumi': m['LastLumi'], 'inclusivemask': inclusiveMask})
+                              'lastlumi': m['LastLumi'], 'inclusivemask': m['inclusivemask']})
         else:
             # Simple one-part mask
-            inclusiveMask = 'T'
-            if mask['inclusivemask'] is False:
-                inclusiveMask = 'F'
             binds = {"jobid": jobid, 'firstevent': mask['FirstEvent'], 'lastevent': mask['LastEvent'],
                      'firstrun': mask['FirstRun'], 'lastrun': mask['LastRun'], 'firstlumi': mask['FirstLumi'],
-                     'lastlumi': mask['LastLumi'], 'inclusivemask': inclusiveMask}
+                     'lastlumi': mask['LastLumi'], 'inclusivemask': mask['inclusivemask']}
 
             fail = True
             for key in binds:

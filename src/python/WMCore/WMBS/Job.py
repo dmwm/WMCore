@@ -118,6 +118,8 @@ class Job(WMBSBase, WMJob):
 
         if MaskAndFiles:
             self['mask'].save(jobID=self['id'])
+            # NOTE that file association happens multiple times (create(), save() and updates to the jobs).
+            # Hence, we need to ensure the INSERT query ignores existent rows (does not insert again)
             self.associateFiles()
             # self.associateWorkUnits()
 

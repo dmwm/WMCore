@@ -32,30 +32,6 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
 
 
-def tReset(configFile, compName, tPid=None, tHash=None):
-    """
-    _tReset_
-
-    Resets a given watchdog timer. The timer can be identified by component name or by the timer's PID
-
-    :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
-    :param compName:       The name of the component this timer is associated with. This also determines
-                           the place where the component's timer will be searched for.
-    :param tPid:           The timer PID, if known in advance. To be used for extra identification. (Default: None)
-    :param tHash:          The timer Hash, if known in advance. To be used for extra identification. (Default: None)
-    :return:               int ExitCode - 0 in case of success, nonzero value otherwise
-    """
-
-    exitCode = 0
-    if isinstance(configFile, Configuration):
-        config = configFile
-    else:
-        config = loadConfigurationFile(configFile)
-
-    compDir = config.section_(compName).componentDir
-    compDir = os.path.expandvars(compDir)
-
-
 class AgentWatchdogPoller(BaseWorkerThread):
     """
     A basic watchdog class

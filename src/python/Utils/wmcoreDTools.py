@@ -377,6 +377,40 @@ def forkRestart(config=None, componentsList=None, useWmcoreD=False):
         raise
     return res.returncode
 
+def resetWatchdogTimer(configFile, component):
+    """
+    _resetWatchdogTimer_
+
+    Resets a given watchdog timer. The timer can be identified by component name or by the timer's PID
+
+    :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
+    :param component:       The name of the component this timer is associated with. This also determines
+                           the place where the component's timer will be searched for.
+    :return:               int ExitCode - 0 in case of success, nonzero value otherwise
+    """
+
+    exitCode = 0
+    try:
+        if isinstance(configFile, Configuration):
+            config = configFile
+        else:
+            config = loadConfigurationFile(configFile)
+
+        compDir = config.section_(component).componentDir
+        compDir = os.path.expandvars(compDir)
+        timerPath = compDir + '/' + 'ComponentTimer'
+        with open(timerPath, 'r') as timerFile:
+            timer = json.load(timerFile)
+
+            # Reset the timer by sending it the expected signal.
+            os.kill(timer['native_id'], timer['expSig'])
+
+    except Exception as ex:
+        exitCode = 1
+        msg = f"ERROR: Failed to reset {component} component's timer. ERROR: {str(ex)}"
+        print(msg)
+    return exitCode
+
 def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
     """
     _isComponentAlive_

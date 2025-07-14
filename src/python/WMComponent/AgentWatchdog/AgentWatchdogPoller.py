@@ -20,6 +20,7 @@ import subprocess
 import psutil
 import inspect
 import random
+import json
 
 from pprint import pformat
 
@@ -90,7 +91,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         and only the one to whom this signal was intended would react, by recognizing the senders pid
         """
         currThread = threading.currentThread()
-        logging.info(f"{currThread.name}, pid:{currThread.native_id}: sigHandler for sigNum: {sigNum}")
+        logging.info(f"{currThread.name}, pid: {currThread.native_id}, sigHandler for sigNum: {sigNum}")
         return True
 
     def setupTimer(self, compName):
@@ -99,6 +100,8 @@ class AgentWatchdogPoller(BaseWorkerThread):
         :param compName: The component name this timer  is associated with.
         :return:         Nothing
         """
+        currThread = threading.currentThread()
+        logging.info(f"{currThread.name}, pid: {currThread.native_id}, setting up timer for component: {compName}.")
 
         # Here to walk the pidTree of the component and set all expected pids
         # which are to be allowed to reset the timer
@@ -112,8 +115,8 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #       main thread of AgentWatchdogPoller which is then to redirect this signal to the
         #       correct timer.
         expPids.append(self.mainThread.native_id)
-        expPids.extend(self.mainThread.parents)
-        expPids.extend([pid.native_id for pid in threading.enumerate()])
+        expPids.extend([thr.native_id for thr in threading.enumerate()])
+        expPids = list(set(expPids))
 
         # Here to find the correct timer's interval
         # NOTE: We estimate the timer's interval by finding the pid with the shortest polling cycle and:
@@ -145,7 +148,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         # Create the action description to be executed at the end of the timer.
         action = actionTuple(forkRestart, [], {'config': self.config, 'componentsList': [compName]})
-        logging.warning(action)
+        logging.debug(f"{currThread.name}, pid: {currThread.native_id}, action function: {action}.")
 
         # Here to add the timer's thread to the timers list in the AgentWatchdog object
         self.timers[timerName] = Timer(name=timerName,
@@ -155,6 +158,24 @@ class AgentWatchdogPoller(BaseWorkerThread):
                                        interval=timerInterval)
 
         self.timers[timerName].start()
+
+        # Here to preserve the timer on disk, such that its parameters can later be found by the
+        # components itself, and it can be reset on time.
+        # NOTE: This must happen upon timer's startup, because otherwise the timer attributes
+        #       would be incomplete and later the component won't be able to reset it.
+        compDir = self.config.section_(compName).componentDir
+        compDir = os.path.expandvars(compDir)
+        timerPath = compDir + '/' + 'ComponentTimer'
+        # NOTE: The so preserved timer would reflect only the state of the timer
+        #       at init time, and won't be updated later until recreated. So any
+        #       dynamic property like endTime, remTime may not reflect the real
+        #       state of the timer as it is currently in memory.
+        # TODO: To implement a mechanism for dumping the timer's content/state
+        #       upon receiving a signal.SIGUSR1. This way the main thread can update
+        #       the contents of its timers on a regular basis(e.g. with a rate depending
+        #       on the AgentWatchDog polling cycle).
+        with open(timerPath, 'w') as timerFile:
+            json.dump(self.timers[timerName].dictionary_(), timerFile , indent=4)
 
     @timeFunction
     def algorithm(self, parameters=None):

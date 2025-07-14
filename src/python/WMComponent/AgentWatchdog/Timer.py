@@ -2,6 +2,7 @@ import signal
 import logging
 import time
 import inspect
+import json
 
 from collections  import namedtuple
 from threading import Thread
@@ -39,7 +40,7 @@ class Timer(Thread):
     Watchdog timer class.
     All instances of this class are about to spawn a separate thread and are to
     expect a list of particular PIDs to reset the timer. If the timer reaches to the end
-    of its interval, without being reset, it would call the action function it provided
+    of its interval, without being reset, it would call the action function provided
     at initialization time with the respective arguments.
     """
     def __init__(self,
@@ -91,6 +92,29 @@ class Timer(Thread):
         Returns the current timer's remaining time (in seconds) before the timer's action is to be applied
         """
         return _countdown(self.endTime)
+
+    @staticmethod
+    def _isSerializable(obj):
+        """
+        __isSerializable__
+        Auxiliary function to check for object serialization
+        :param obj: Object of any type to be checked
+        :return:    Bool - True if the object is serializable, False otherwise
+        """
+        try:
+            json.dumps(obj)
+            logging.debug(f"{obj} is serializable")
+            return True
+        except TypeError:
+            logging.debug(f"{obj} is NOT serializable")
+            return False
+
+    def dictionary_(self):
+        """
+        _dictionary__
+        Returns a dictionary representation of the current timer
+        """
+        return {attr: value for attr,value in inspect.getmembers(self) if self._isSerializable(value)}
 
     def _timer(self):
         """

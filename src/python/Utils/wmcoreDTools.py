@@ -282,8 +282,8 @@ def getComponentThreads(configFile, component):
     #       they will always fall either into orphanThreads or lostThreads. That's why the
     #       results from this function cannot be used for components like AgentWatchdog,
     #       where every timer has its own thread and those are regularly restarted.
-    #       Such a mechanism always results in non-constant and nonzero values in the orphanThreads and
-    #       lostThreads fields of the pidTree, which are changing flowing the child threads life cycle.
+    #       Such mechanism always results in non-constant and nonzero values in the orphanThreads and
+    #       lostThreads fields of the pidTree, which are changing following the child threads life cycle.
     process = psutil.Process(int(pid))
     currThreads = set([thread.id for thread in process.threads()])
     startupThreads = set(threadPids)

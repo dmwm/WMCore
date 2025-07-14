@@ -1,7 +1,9 @@
 import signal
 import logging
 import time
+import inspect
 
+from collections  import namedtuple
 from threading import Thread
 from pprint import pformat
 
@@ -20,15 +22,33 @@ def _countdown(endTime):
         remTime = 0
     return remTime
 
+actionTuple = namedtuple('ActionTuple', ['func', 'args', 'kwArgs'])
+
+class TimerException(Exception):
+    """
+    __TimerException__
+    Exception raised by the agent related to AgentWatchdog timers.
+    """
+    def __init__(self, message, errorNo=None, **data):
+        self.name = str(self.__class__.__name__)
+        Exception.__init__(self, self.name, message)
+
 
 class Timer(Thread):
     """
     Watchdog timer class.
-    The instances  of this class are about to a separate thread and are to
-    expect one particular PID to reset the timer. If the timer reaches to the end
-    of its interval, without being reset, it would restart the component it is associated with.
+    All instances of this class are about to spawn a separate thread and are to
+    expect a list of particular PIDs to reset the timer. If the timer reaches to the end
+    of its interval, without being reset, it would call the action function it provided
+    at initialization time with the respective arguments.
     """
-    def __init__(self, name=None, compName=None, expPids=[], expSig=None, interval=0, config=None):
+    def __init__(self,
+                 name=None,
+                 compName=None,
+                 action=None,
+                 expPids=[],
+                 expSig=None,
+                 interval=0):
         """
         __init__
         :param expPids:  The list of expected pids allowed to reset the timer, signals from anybody else would be ignored
@@ -40,11 +60,22 @@ class Timer(Thread):
         self.name = name
         self.compName = compName
         self.interval = interval
-        self.config = config
+        self.endTime = 0
+        self.startTime = 0
         self.expPids = expPids
         self.expSig = expSig or signal.SIGCONT
         self.daemon = True
-
+        self.action = action
+        if self.action:
+            # First, make sure the signature of the action defined for this timer matches the arguments provided:
+            try:
+                actionSignature = inspect.signature(self.action.func)
+                actionSignature.bind(self.action.args, self.action.kwArgs)
+            except TypeError as ex:
+                msg = f"{self.name}:  The timer's action method signature does not match the set of arguments provided. Error: {str(ex)}"
+                raise TimerException(msg) from None
+        else:
+            logging.warning(f"{self.name}: This is a timer with no action defined. This timer should be used mostly for debugging purposes.")
 
     def run(self):
         """
@@ -52,6 +83,14 @@ class Timer(Thread):
         Thread class run() method override
         """
         self._timer()
+
+    @property
+    def remTime(self):
+        """
+        _remTime_
+        Returns the current timer's remaining time (in seconds) before the timer's action is to be applied
+        """
+        return _countdown(self.endTime)
 
     def _timer(self):
         """
@@ -61,21 +100,31 @@ class Timer(Thread):
         :return:         Nothing
         """
 
-        startTime = time.time()
-        endTime = startTime + self.interval
+        self.startTime = time.time()
+        self.endTime = self.startTime + self.interval
 
         while True:
-            sigInfo = signal.sigtimedwait([self.expSig], _countdown(endTime))
+            sigInfo = signal.sigtimedwait([self.expSig], self.remTime)
             if sigInfo:
-                logging.info(f"Timer: {self.name}, pid: {self.native_id} : Received signal: {pformat(sigInfo)}")
+                logging.info(f"{self.name}, pid: {self.native_id}, Received signal: {pformat(sigInfo)}")
                 if sigInfo.si_pid in self.expPids:
                     # Resetting the timer starting again from the current time
-                    logging.info(f"Timer: {self.name}, pid: {self.native_id} : Resetting timer")
-                    endTime = time.time() + self.interval
+                    logging.info(f"{self.name}, pid: {self.native_id}, Resetting timer")
+                    self.endTime = time.time() + self.interval
                 else:
                     # Continue to wait for signal from the correct origin
-                    logging.info(f"Timer: {self.name}, pid: {self.native_id} : Continue to wait for signal from the correct origin. Remaining time: {_countdown(endTime)}")
+                    logging.info(f"{self.name}, pid: {self.native_id}, Continue to wait for signal from the correct origin. Remaining time: {self.remTime}")
                     continue
             else:
-                logging.info(f"Timer: {self.name}, pid: {self.native_id} : Reached the end of timer.")
+                logging.info(f"{self.name}, pid: {self.native_id}, Reached the end of timer. Applying action: {self.action}")
+                try:
+                    self.action.func(*self.action.args, **self.action.kwArgs)
+                except Exception as ex:
+                    currFrame = inspect.currentframe()
+                    argsInfo = inspect.getargvalues(currFrame)
+                    argVals = {arg: argsInfo.locals.get(arg) for arg in argsInfo.args}
+                    msg = f"Failure while applying {self.name} timer's action: {self.action.func.__name__} "
+                    msg += f"With arguments: {argVals}"
+                    msg += f"Full exception string: {str(ex)}"
+                    raise TimerException(msg) from None
                 break

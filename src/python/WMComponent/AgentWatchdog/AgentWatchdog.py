@@ -48,10 +48,12 @@ class AgentWatchdog(Harness):
         #       have been:
         #       agentWatchdogPollInterval = self.config.AgentWatchdog.pollInterval
         agentWatchdogPollInterval = 0
-        myThread = threading.currentThread()
+        currThread = threading.currentThread()
 
         if not hasattr(self.config, "Tier0Feeder"):
             logging.info("Setting AgentWatchdogPoller poll interval to %s seconds", agentWatchdogPollInterval)
-            agentStatusPollerThread = myThread.workerThreadManager.addWorker(AgentWatchdogPoller(self.config),
+            agentWatchdogPollerThread = currThread.workerThreadManager.addWorker(AgentWatchdogPoller(self.config),
                                                                              agentWatchdogPollInterval)
+            logging.info(f"AgentWatchdog thread PID: {currThread.native_id}")
+            logging.info(f"AgentWatchdogPoller thread PID: {agentWatchdogPollerThread.native_id}")
         return

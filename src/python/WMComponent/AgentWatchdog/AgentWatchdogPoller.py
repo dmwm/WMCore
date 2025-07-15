@@ -21,6 +21,7 @@ import psutil
 import inspect
 import random
 import json
+import re
 
 from pprint import pformat
 
@@ -107,7 +108,13 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #         overlaps between the timer's interval and the component's polling cycle,
         #         which would cause oscillations (the component being periodically rebooted due
         #         to lost signals caused by the intervals overlaps explained above)
-        timerInterval = 0
+        compConfigSection = self.config.component_(compName)
+        compPollIntervals = {attr: value for attr,value in inspect.getmembers(compConfigSection) if re.match( r"^.*[p,P]ollInterval$", attr)}
+
+        # Take the shortest interval:
+        shortestInterval = min(compPollIntervals)
+        timerInterval = compPollIntervals[shortestInterval]
+        logging.info(f"{currThread.name}, pid: {currThread.native_id}, selecting the shortest polling cycle in the component: {shortestInterval}:{timerInterval} sec.")
 
         # Now lets add some disturbance to the force:
         timerInterval += self.watchdogTimeout
@@ -211,7 +218,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
                     logging.info(f"{self.mainThread.name}: The sender's pid: {sigInfo.si_pid} was not recognized. Ignoring the signal.")
                     continue
             else:
-                logging.info(f"{self.mainThread.name}: Refreshing all timers' data on disk.")
+                logging.debug(f"{self.mainThread.name}: Refreshing all timers' data on disk.")
                 for timer in self.timers.values():
                     timer.write()
 

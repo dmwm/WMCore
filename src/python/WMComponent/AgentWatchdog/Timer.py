@@ -23,7 +23,7 @@ def _countdown(endTime):
         remTime = 0
     return remTime
 
-actionTuple = namedtuple('ActionTuple', ['func', 'args', 'kwArgs'])
+WatchdogAction = namedtuple('WatchdogAction', ['func', 'args', 'kwArgs'])
 
 class TimerException(Exception):
     """
@@ -49,6 +49,7 @@ class Timer(Thread):
                  action=None,
                  expPids=[],
                  expSig=None,
+                 path=None,
                  interval=0):
         """
         __init__
@@ -65,6 +66,7 @@ class Timer(Thread):
         self.startTime = 0
         self.expPids = expPids
         self.expSig = expSig or signal.SIGCONT
+        self.path = path
         self.daemon = True
         self.action = action
         if self.action:
@@ -84,6 +86,19 @@ class Timer(Thread):
         Thread class run() method override
         """
         self._timer()
+
+    def write(self):
+        """
+        _write_
+        Method to write the current timer's state on disk:
+        :return: Nothing. Logs an error in case the timer was not written correctly
+                 No exceptions would be raised
+        """
+        try:
+            with open(self.path, 'w') as timerFile:
+                json.dump(self.dictionary_(), timerFile , indent=4)
+        except Exception as ex:
+            logging.error(f"{self.name}: Failed to write timer data on disk. Timer path: {self.path}. ERROR: {str(ex)}")
 
     @property
     def remTime(self):

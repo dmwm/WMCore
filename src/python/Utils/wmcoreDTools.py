@@ -384,7 +384,7 @@ def resetWatchdogTimer(configFile, component):
     Resets a given watchdog timer. The timer can be identified by component name or by the timer's PID
 
     :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
-    :param component:       The name of the component this timer is associated with. This also determines
+    :param component:      The name of the component this timer is associated with. This also determines
                            the place where the component's timer will be searched for.
     :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """

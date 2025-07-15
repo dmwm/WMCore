@@ -1,3 +1,7 @@
+2.4.2rc4 to 2.4.2rc5:
+  - Added mongomock to requirements (Dennis Lee) #12413
+  - Update GFAL and MSUnmerged images to Debian Bookworm + Miniconda + Py3.12 https://github.com/dmwm/CMSKubernetes/pull/1627
+
 2.4.2rc3 to 2.4.2rc4:
   - update CMSMonitoring version to upgrade jsonschema dependency to align with rucio-clients (Valentin Kuznetsov) #12412
 

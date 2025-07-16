@@ -1,3 +1,7 @@
+2.4.2rc5 to 2.4.2rc6:
+  - Update Reqmgr workload cache for dynamic workflow parameter changes. (Todor Ivanov) #12405
+
+
 2.4.2rc4 to 2.4.2rc5:
   - Added mongomock to requirements (Dennis Lee) #12413
   - Update GFAL and MSUnmerged images to Debian Bookworm + Miniconda + Py3.12 https://github.com/dmwm/CMSKubernetes/pull/1627

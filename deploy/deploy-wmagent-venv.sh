@@ -519,6 +519,7 @@ wmaInstall() {
     _addWMCoreVenvVar  WMA_INSTALL_DIR $WMA_CURRENT_DIR/install
     _addWMCoreVenvVar  WMA_CONFIG_DIR $WMA_CURRENT_DIR/config
     _addWMCoreVenvVar  WMA_CONFIG_FILE $WMA_CONFIG_DIR/config.py
+    _addWMCoreVenvVar  WMAGENT_CONFIG $WMA_CONFIG_DIR/config.py
     _addWMCoreVenvVar  WMA_LOG_DIR $WMA_CURRENT_DIR/logs
     _addWMCoreVenvVar  WMA_DEPLOY_DIR $venvPath
     _addWMCoreVenvVar  WMA_MANAGE_DIR $WMA_DEPLOY_DIR/bin

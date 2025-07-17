@@ -4,6 +4,7 @@ import subprocess
 import time
 import json
 import psutil
+import logging
 
 from ptrace.debugger import PtraceProcess, PtraceDebugger
 from ptrace.error import PtraceError
@@ -33,9 +34,9 @@ def connectionTest(configFile):
 
     wmInit = WMInit()
 
-    print("Checking default database connection...", end=' ')
+    logging.info("Checking default database connection... ")
     if not hasattr(config, "CoreDatabase"):
-        print("skipped.")
+        logging.info("skipped.")
         return
 
     dialect, _ = config.CoreDatabase.connectUrl.split(":", 1)
@@ -49,10 +50,10 @@ def connectionTest(configFile):
         msg = "Unable to make connection to using \n"
         msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl
         msg += str(ex)
-        print(msg)
+        logging.error(msg)
         raise ex
 
-    print("ok.")
+    logging.info("ok.")
     return
 
 def startup(configFile, componentsList=None):
@@ -74,9 +75,9 @@ def startup(configFile, componentsList=None):
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
 
-    print('Starting components: '+str(componentsList))
+    logging.info('Starting components: '+str(componentsList))
     for component in componentsList:
-        print('Starting : '+component)
+        logging.info('Starting : '+component)
         if component in config.listWebapps_():
             from WMCore.WebTools.Root import Root
             webtoolsRoot = Root(config, webApp = component)
@@ -86,13 +87,13 @@ def startup(configFile, componentsList=None):
             try:
                 namespace = config.component_(component).namespace
             except AttributeError:
-                print ("Failed to start component: Could not find component named %s in config" % component)
-                print ("Aborting")
+                logging.error ("Failed to start component: Could not find component named %s in config" % component)
+                logging.error ("Aborting")
                 return 1
             componentObject = factory.loadObject(classname = namespace, args = config)
             componentObject.startDaemon(keepParent = True)
 
-        print('Waiting 1 seconds, to ensure daemon file is created')
+        logging.info('Waiting 1 seconds, to ensure daemon file is created')
         time.sleep(1)
         compDir = config.section_(component).componentDir
         compDir = os.path.expandvars(compDir)
@@ -109,15 +110,15 @@ def startup(configFile, componentsList=None):
                 istream.write(json.dumps(procStatus))
 
             if not daemon.isAlive():
-                print("Error: Component %s Did not start properly..." % component)
-                print("Check component log to see why")
+                logging.error("Error: Component %s Did not start properly..." % component)
+                logging.error("Check component log to see why")
                 return 1
         else:
-            print('Path for daemon file does not exist!')
+            logging.error('Path for daemon file does not exist!')
             return 1
         numThreads = len([proc for proc in procStatus if proc['type'] == 'thread'])
         numProcs = len([proc for proc in procStatus if proc['type'] == 'process'])
-        print("Component %s started with %s main process(es) and %s threads, see %s\n" % (component, numProcs, numThreads, cpath))
+        logging.info("Component %s started with %s main process(es) and %s threads, see %s\n" % (component, numProcs, numThreads, cpath))
     return exitCode
 
 def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=False):
@@ -143,24 +144,24 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
 
-    print('Stopping components: '+str(componentsList))
+    logging.info('Stopping components: '+str(componentsList))
     for component in componentsList:
-        print('Stopping: '+component)
+        logging.info('Stopping: '+component)
         try:
             compDir = config.section_(component).componentDir
         except AttributeError:
-            print ("Failed to shutdown component: Could not find component named %s in config" % component)
-            print ("Aborting")
+            logging.error ("Failed to shutdown component: Could not find component named %s in config" % component)
+            logging.error ("Aborting")
             return 1
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):
-            print("Cannot find Daemon.xml for component:", component)
-            print("Unable to shut it down")
+            logging.warning("Cannot find Daemon.xml for component:", component)
+            logging.warning("Unable to shut it down")
         else:
             daemon = Details(daemonXml)
             if not daemon.isAlive():
-                print("Component %s with process id %s is not running" % (
+                logging.warning("Component %s with process id %s is not running" % (
                     component, daemon['ProcessID'],
                     ))
                 daemon.removeAndBackupDaemonFile()
@@ -175,7 +176,7 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
             # // Log Cleanup
             #//
             msg = "Removing %s/ComponentLog" % compDir
-            print(msg)
+            logging.info(msg)
             try:
                 os.remove("%s/ComponentLog" % compDir)
             except Exception as ex:
@@ -187,12 +188,12 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
             #  //
             # // Cleanout everything in ComponentDir
             #//  for this component
-            print("Removing %s\n" % compDir)
+            logging.info("Removing %s\n" % compDir)
             exitCode = subprocess.call(["rm", "-rf", "%s" % compDir])
             if exitCode:
                 msg = "Failed to clean up dir: %s\n" % compDir
                 msg += f"with exit code {exitCode}"
-                print(msg)
+                logging.error(msg)
 
     return exitCode
 
@@ -216,7 +217,7 @@ def status(configFile, componentsList=None):
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
 
-    print('Status components: '+str(componentsList))
+    logging.info('Status components: '+str(componentsList))
     for component in componentsList:
         getComponentThreads(configFile, component)
     return exitCode
@@ -229,6 +230,13 @@ def getComponentThreads(configFile, component):
     :param component:  Component name
     :return: The process tree for the component and prints status of the component process and its threads
     """
+    #logger = logging.getLogger()
+
+    # if not logger:
+    #     print("missing logger")
+    # else:
+    #     print(f"logger.handler: {logger.handlers}")
+
     pidTree = {}
     if isinstance(configFile, Configuration):
         config = configFile
@@ -238,8 +246,8 @@ def getComponentThreads(configFile, component):
     try:
         compDir = config.section_(component).componentDir
     except AttributeError:
-        print ("Failed to check component: Could not find component named %s in config" % component)
-        print ("Aborting")
+        logging.error("Failed to check component: Could not find component named %s in config" % component)
+        logging.error("Aborting")
         return pidTree
     compDir = config.section_(component).componentDir
     compDir = os.path.expandvars(compDir)
@@ -247,7 +255,7 @@ def getComponentThreads(configFile, component):
     # check if component daemon exists
     daemonXml = os.path.join(compDir, "Daemon.xml")
     if not os.path.exists(daemonXml):
-        print("Component:%s Not Running" % component)
+        logging.error("Component:%s Not Running" % component)
         return pidTree
     pid = extractFromXML(daemonXml, "ProcessID")
 
@@ -261,7 +269,7 @@ def getComponentThreads(configFile, component):
     # Properly parsing the thread.json file
     for entry in data:
         if 'error' in entry:
-            print(f"Error recorded at threads.json during component startup: {entry['error']}")
+            logging.error(f"Error recorded at threads.json during component startup: {entry['error']}")
             break
         if str(entry["pid"]) == str(pid) and entry["type"] == "process":
             continue
@@ -272,7 +280,7 @@ def getComponentThreads(configFile, component):
     processRunning = psutil.pid_exists(int(pid))
     if not processRunning:
         msg = f"Component:{component} with PID={pid} is no longer available on OS"
-        print(msg)
+        logging.error(msg)
         return pidTree
 
     # Check if initial threads are running.
@@ -312,7 +320,7 @@ def getComponentThreads(configFile, component):
             status = f"{status}-untracked"
             orphanMsg = f", {len(orphanThreads)} untracked/zombie threads: {orphanThreads}"
     msg = f"Component:{component} {pid} {status} {runningMsg} {lostMsg} {orphanMsg}"
-    print(msg)
+    logging.info(msg)
 
     pidTree['Parent'] = int(pid)
     pidTree['RunningThreads'] = list(runningThreads)
@@ -367,13 +375,13 @@ def forkRestart(config=None, componentsList=None, useWmcoreD=False):
             else:
                 configFile = confg
                 if not os.path.exists(str(configFile)):
-                    print(f"ERROR: Could not find configuration path: {configFile}")
+                    logging.error(f"ERROR: Could not find configuration path: {configFile}")
                     return 1
             cmd = f"from Utils.wmcoreDTools import restart; restart('{configFile}', {componentsList})"
             res = subprocess.run(['python', '-c', cmd], capture_output=True, check=True)
     except subprocess.CalledProcessError as ex:
-        print(f"ERROR: The called subprocess returned an error: {ex.returncode}")
-        print(f"ERROR: Full subprocess Output: {ex.output}")
+        logging.error(f"ERROR: The called subprocess returned an error: {ex.returncode}")
+        logging.error(f"ERROR: Full subprocess Output: {ex.output}")
         raise
     return res.returncode
 
@@ -408,7 +416,7 @@ def resetWatchdogTimer(configFile, component):
     except Exception as ex:
         exitCode = 1
         msg = f"ERROR: Failed to reset {component} component's timer. ERROR: {str(ex)}"
-        print(msg)
+        logging.error(msg)
     return exitCode
 
 def componentName(obj):
@@ -474,7 +482,7 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
         pidTree['OrphanThreads'] = []
         pidTree['LostThreads'] = []
     else:
-        print(f"You must provide PID or Component Name")
+        logging.error(f"You must provide PID or Component Name")
         return False
 
     if not pidTree:
@@ -484,8 +492,8 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
     # NOTE: If we've lost some threads or they have run as zombies we will miss them in the structure produced here.
     #       Those must have been caught and accounted for while building the pidTree
     pidInfo = processThreadsInfo(pidTree['Parent'])
-    # pprint(pidInfo)
-    # pprint(pidTree)
+    # logging.debug(pidInfo)
+    # logging.debug(pidTree)
 
     # If we already have found there are orphaned/lost threads stemming from the current pidTree
     # we already declare the first check as Failed (in such case we can return even from this point here)
@@ -509,22 +517,22 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
         for threadId in pidTree['RunningThreads']:
             try:
                 # Initially try to attach the process as a non traced one
-                print(f"Tracing {threadId} as unattached process")
+                logging.info(f"Tracing {threadId} as unattached process")
                 tracers[threadId] = PtraceProcess(debugger, threadId, False, parent=pidTree['Parent'], is_thread=True)
             except PtraceError:
                 # in case of an error make an attempt to attach it as already traced one (supposing
                 # a previous execution of the current function could not finish and release it.
-                print(f"Tracing {threadId} as already attached process")
+                logging.info(f"Tracing {threadId} as already attached process")
                 tracers[threadId] = PtraceProcess(debugger, threadId, True, parent=pidTree['Parent'], is_thread=True)
 
         # Now start designing all the tests per each thread in order to cover the three possible problematic
         # states as explained in the function docstring.
-        print("Start ptrace based tests")
+        logging.info("Start ptrace based tests")
         for threadId, tracer in tracers.items():
             # .....
             checkList.append(True)
 
-        print("Detaching from all the threads")
+        logging.info("Detaching from all the threads")
         # Detach all tracers before returning:
         for threadId, tracer in tracers.items():
             tracer.detach()

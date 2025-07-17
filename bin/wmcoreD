@@ -41,9 +41,17 @@ import sys
 import time
 import json
 import psutil
+import logging
 
 from Utils.wmcoreDTools import connectionTest, startup, shutdown, status, restart
 from WMCore.Configuration import loadConfigurationFile
+
+# FORMAT = "%(asctime)s:%(levelname)s:%(module)s:%(funcName)s(): %(message)s"
+FORMAT = "%(message)s"
+LOGLEVEL = logging.INFO
+
+logStdoutHandler = logging.StreamHandler(sys.stdout)
+logging.basicConfig(handlers=[logStdoutHandler], format=FORMAT, level=LOGLEVEL)
 
 def usage():
 
@@ -53,19 +61,19 @@ Usage: wmcoreD <--start|--shutdown|--status> --config <opts>
 You must provide either --start OR --shutdown OR --status
 
 You must either set the WMAGENT_CONFIG environment variable or specify the config file with
---config 
+--config
 
 --start starts up the components
 --shutdown shutsdown the components
 --status prints the status of the components
---restart restarts components 
+--restart restarts components
 
 options:
 --cleanup-logs purges logs
 --cleanup-all purges component dirs
 
 """
-    print(msg)
+    logging.info(msg)
 
 
 valid = ['config=', 'start', 'shutdown', 'status', 'restart',
@@ -74,7 +82,7 @@ valid = ['config=', 'start', 'shutdown', 'status', 'restart',
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
 except getopt.GetoptError as ex:
-    print(str(ex))
+    logging.error(str(ex))
     usage()
     sys.exit(1)
 
@@ -90,25 +98,25 @@ for opt, arg in opts:
         config = arg
     if opt == "--start":
         if command != None:
-            print("Command specified twice:\n")
+            logging.error("Command specified twice:\n")
             usage()
             sys.exit(1)
         command = "start"
     if opt == "--shutdown":
         if command != None:
-            print("Command specified twice:\n")
+            logging.error("Command specified twice:\n")
             usage()
             sys.exit(1)
         command = "shutdown"
     if opt == "--status":
         if command != None:
-            print("Command specified twice:\n")
+            logging.error("Command specified twice:\n")
             usage()
             sys.exit(1)
         command = "status"
     if opt == "--restart":
         if command != None:
-            print("Command specified twice:\n")
+            logging.error("Command specified twice:\n")
             usage()
             sys.exit(1)
         command = "restart"
@@ -126,9 +134,9 @@ for opt, arg in opts:
 
 if command == None:
     msg = "No command specified\n"
-    print(msg)
+    logging.error(msg)
     usage()
-    sys.exit(0)
+    sys.exit(1)
 
 if config == None:
     config = os.environ.get("WMAGENT_CONFIG", None)
@@ -136,12 +144,12 @@ if config == None:
     if config == None:
         msg = "No Config file provided\n"
         msg += "provide one with the --config option"
-        print(msg)
+        logging.error(msg)
         usage()
         sys.exit(1)
 
 if not os.path.exists(config):
-    print("Can't find config: %s" % config)
+    logging.error("Can't find config: %s" % config)
     sys.exit(1)
 
 # load the config file here.
@@ -151,7 +159,7 @@ cfgObject = loadConfigurationFile(config)
 if componentsList != None:
     msg = "Components List Specified:\n"
     msg += str(componentsList).replace('\'', '')
-    print(msg)
+    logging.info(msg)
 
 if command == "start":
     connectionTest(config)

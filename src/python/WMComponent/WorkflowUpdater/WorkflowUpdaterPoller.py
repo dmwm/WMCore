@@ -24,6 +24,7 @@ from Utils.CertTools import cert, ckey
 from Utils.IteratorTools import flattenList
 from Utils.FileTools import tarMode, findFiles
 from Utils.Timers import timeFunction, CodeTimer
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMCore.Services.MSUtils.MSUtils import getPileupDocs
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMException import WMException
@@ -312,6 +313,11 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
             msg = f"Caught unexpected exception in WorkflowUpdater. Details:\n{str(ex)}"
             logging.exception(msg)
             raise WorkflowUpdaterException(msg) from None
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
 
     def adjustJSONSpec(self, puWflows, msPileupList, dest=None):
         """

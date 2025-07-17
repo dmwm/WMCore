@@ -15,6 +15,7 @@ import threading
 from pprint import pformat
 from Utils.Timers import timeFunction
 from Utils.Utilities import numberCouchProcess
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, initAgentInfo
 from WMCore.Credential.Proxy import Proxy
@@ -170,6 +171,11 @@ class AgentStatusPoller(BaseWorkerThread):
 
         except Exception as ex:
             logging.exception("Error occurred, will retry later.\nDetails: %s", str(ex))
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
 
     @timeFunction
     def collectWorkQueueInfo(self):

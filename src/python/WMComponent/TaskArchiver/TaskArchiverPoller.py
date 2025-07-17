@@ -31,6 +31,7 @@ import threading
 import traceback
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMComponent.TaskArchiver.DataCache import DataCache
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -152,6 +153,11 @@ class TaskArchiverPoller(BaseWorkerThread):
                     and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             raise TaskArchiverPollerException(msg)
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
 
         return
 

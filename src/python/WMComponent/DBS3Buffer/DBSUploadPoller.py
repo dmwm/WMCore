@@ -43,6 +43,7 @@ from dbs.apis.dbsClient import DbsApi
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
 from WMCore.Algorithms.MiscAlgos import sortListByKey
@@ -330,6 +331,11 @@ class DBSUploadPoller(BaseWorkerThread):
             msg = "Unhandled Exception in DBSUploadPoller! Error: %s" % str(ex)
             logging.exception(msg)
             raise DBSUploadException(msg) from None
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
 
     def updateDatasetParentageCache(self):
         """

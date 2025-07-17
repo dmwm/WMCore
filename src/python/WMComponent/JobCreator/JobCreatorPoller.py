@@ -16,6 +16,7 @@ import pickle
 from Utils.Timers import timeFunction
 from Utils.PythonVersion import HIGHEST_PICKLE_PROTOCOL
 from Utils.MathUtils import quantize
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMComponent.JobCreator.CreateWorkArea import CreateWorkArea
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.DAOFactory import DAOFactory
@@ -395,6 +396,12 @@ class JobCreatorPoller(BaseWorkerThread):
                 msg = "Failed to execute JobCreator. Error: %s" % str(ex)
                 logging.exception(msg)
                 raise JobCreatorException(msg)
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
+
 
     def terminate(self, params):
         """

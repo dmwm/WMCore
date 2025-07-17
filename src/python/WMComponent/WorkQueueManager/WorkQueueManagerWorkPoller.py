@@ -10,6 +10,7 @@ import threading
 import time
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
@@ -61,6 +62,12 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
             self.processWork()
         except Exception as ex:
             self.queue.logger.error("Error in new work split loop: %s", str(ex))
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
+
         return
 
     def passRetrieveCondition(self):

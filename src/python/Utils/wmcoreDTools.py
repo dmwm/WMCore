@@ -411,6 +411,18 @@ def resetWatchdogTimer(configFile, component):
         print(msg)
     return exitCode
 
+def componentName(obj):
+    """
+    Returns the component name the current object instance belongs to.
+    It relies on the fact that our component modules are always structured as:
+    WMComponent.<ComponentName>.<ComponentPoller/Thread>
+    :param obj:  Any instance of an object from any of the classes defined  under WMComponent module area
+    :return:     String - The Parent module name of the object instance:
+                 obj =  WMComponent.AgentStatusWatcher.AgentStatusPoller()
+                 findComponentName(obj) -> 'AgentStatusWatcher'
+    """
+    return obj.__module__.split('.')[1]
+
 def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
     """
     _isComponentAlive_

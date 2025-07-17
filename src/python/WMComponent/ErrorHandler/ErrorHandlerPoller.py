@@ -31,7 +31,7 @@ import threading
 from http.client import HTTPException
 from Utils.Timers import timeFunction
 from Utils.IteratorTools import grouper
-from Utils.wmcoreDTools import resetWatchdogTimer
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CouchUtils import CouchConnectionError
@@ -429,6 +429,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 raise ErrorHandlerException(msg) from ex
 
         # Reset its own watchdog timer at the end of the run cycle
-        logging.info("Resetting ErrorHandler watchdog timer.")
-        if resetWatchdogTimer(self.config, 'ErrorHandler'):
-            logging.info("Failed to reset ErrorHandler watchdog timer. The component might be restarted soon.")
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")

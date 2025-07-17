@@ -17,6 +17,7 @@ from pprint import pformat
 
 from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, componentName
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Rucio.Rucio import Rucio, WMRucioException
 from WMCore.Services.Rucio.RucioUtils import RUCIO_VALID_PROJECT, RUCIO_RULES_PRIORITY
@@ -192,6 +193,11 @@ class RucioInjectorPoller(BaseWorkerThread):
             msg = "Caught unexpected exception in RucioInjector. Details:\n%s" % str(ex)
             logging.exception(msg)
             raise RucioInjectorException(msg) from None
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {componentName(self)} watchdog timer.")
+        if resetWatchdogTimer(self.config, componentName(self)):
+            logging.info(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
 
         return
 

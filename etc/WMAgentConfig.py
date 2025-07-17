@@ -406,5 +406,20 @@ config.AgentWatchdog.logLevel = globalLogLevel
 config.AgentWatchdog.pollInterval = 1 * 1 * 60  # every 1 min.
 # This next timeout is to be added on top of the watched component's polling cycle
 # in order to create some minimal hysteresis in the watchdog timers' logic
-config.AgentWatchdog.watchdogTimeout = 1 * 1 * 10  # 10 sec.
-config.AgentWatchdog.watchedComponents = ['ErrorHandler']
+config.AgentWatchdog.watchdogTimeout = 1 * 1 * 60  # 60 sec.
+config.AgentWatchdog.watchedComponents = ['AgentStatusWatcher',
+                                          'AnalyticsDataCollector',
+                                          'ArchiveDataReporter',
+                                          'DBS3Buffer',
+                                          'ErrorHandler',
+                                          'JobAccountant',
+                                          'JobArchiver',
+                                          'JobCreator',
+                                          'JobSubmitter',
+                                          'JobTracker',
+                                          'JobUpdater',
+                                          'RetryManager',
+                                          'RucioInjector',
+                                          'TaskArchiver',
+                                          'WorkflowUpdater',
+                                          'WorkQueueManager']

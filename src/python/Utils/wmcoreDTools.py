@@ -442,7 +442,23 @@ def componentName(obj):
                  obj =  WMComponent.AgentStatusWatcher.AgentStatusPoller()
                  findComponentName(obj) -> 'AgentStatusWatcher'
     """
-    return obj.__module__.split('.')[1]
+    compName = ""
+    try:
+        objNamespace = obj.__module__
+        logging.debug(f"Current obj namespace: {objNamespace}")
+        if not getattr(obj, 'config', None) or not isinstance(obj.config, Configuration):
+            logging.error(f"The obj: {obj} is not an instance of WMComponent.* modules.")
+            return compName
+        for compName in obj.config.listComponents_():
+            compSection = obj.config.component_(compName)
+            parNamespace = compSection.namespace.split('.', 2)
+            parNamespace.pop()
+            parNamespace = '.'.join(parNamespace)
+            if objNamespace.startswith(parNamespace):
+                return compName
+    except Exception as ex:
+        logging.error(f"Could not find component name for: {obj}. ERROR: {str(ex)}")
+    return compName
 
 def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
     """

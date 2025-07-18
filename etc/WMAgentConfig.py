@@ -410,7 +410,7 @@ config.AgentWatchdog.watchdogTimeout = 1 * 1 * 60  # 60 sec.
 config.AgentWatchdog.watchedComponents = ['AgentStatusWatcher',
                                           'AnalyticsDataCollector',
                                           'ArchiveDataReporter',
-                                          'DBS3Buffer',
+                                          'DBS3Upload',
                                           'ErrorHandler',
                                           'JobAccountant',
                                           'JobArchiver',

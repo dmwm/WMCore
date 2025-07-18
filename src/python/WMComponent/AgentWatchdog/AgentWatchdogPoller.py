@@ -83,7 +83,16 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         # Here to walk the pidTree of the component and set all expected pids
         # which are to be allowed to reset the timer
-        compPidTree = getComponentThreads(self.config, compName)
+        try:
+            compPidTree = getComponentThreads(self.config, compName)
+            logging.info(f"{currThread.name}, pid: {currThread.native_id}, Current Process tree for: {compName}: {compPidTree}")
+        except Exception as ex:
+            logging.error(f"Exception was thrown while rebuilding the the process tree for component: {compName}")
+
+        if not compPidTree:
+            logging.error(f"Could not rebuild the the process tree for component: {compName}")
+            logging.error(f"Giving up on timer creation for component: {compName}")
+            return
         expPids = compPidTree['RunningThreads']
         expPids.append(compPidTree['Parent'])
 
@@ -109,7 +118,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #         which would cause oscillations (the component being periodically rebooted due
         #         to lost signals caused by the intervals overlaps explained above)
         compConfigSection = self.config.component_(compName)
-        compPollIntervals = {attr: value for attr,value in inspect.getmembers(compConfigSection) if re.match( r"^.*[p,P]ollInterval$", attr)}
+        compPollIntervals = {attr: value
+                             for attr,value in inspect.getmembers(compConfigSection)
+                             if re.match(r"^.*[p,P]ollInterval$", attr)}
 
         # Take the shortest interval:
         shortestInterval = min(compPollIntervals)
@@ -182,12 +193,21 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers.")
         logging.debug(f"{self.mainThread.name}: All current threads: {[thr.native_id for thr in  threading.enumerate()]}.")
 
+        # Re-configuring expired timers:
         for timer in self.timers:
             if not self.timers[timer].is_alive():
                 logging.info(f"{self.mainThread.name}: Re-configuring expired timer: {timer}.")
                 self.setupTimer(timer)
 
-        # Refresh all timers' data on disk every 1 second, or when a signal.SIGCONT is received from a particular component.
+        # Retrying to create timers for components present in the watched list
+        # but previously failed during initialization:
+        for compName in self.watchedComponents:
+            if compName not in [timer.compName for timer in self.timers.values()]:
+                logging.warning(f"Trying to recreate a previously failed timer for component: {compName}")
+                self.setupTimer(compName)
+
+        # Refresh all timers' data on disk every 1 second, or when a signal.SIGCONT
+        # is received from a particular component.
         while _countdown(endTime):
             sigInfo = signal.sigtimedwait([self.expectedSignal], 1)
             if sigInfo:

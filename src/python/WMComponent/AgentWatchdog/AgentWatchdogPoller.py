@@ -27,7 +27,7 @@ from pprint import pformat
 
 from Utils.ProcFS import processStatus
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart
+from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart, isComponentAlive
 from WMComponent.AgentWatchdog.Timer import Timer, _countdown, WatchdogAction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
@@ -72,6 +72,27 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.info(f"{currThread.name}, pid: {currThread.native_id}, sigHandler for sigNum: {sigNum}")
         return True
 
+    def checkCompAlive(self):
+        """
+        # Iterate through all components and check if they have a healthy process tree:
+        # Restart any of them found to have problems.
+        # NOTE: Exclude AgentWatchdog and itself from this logic, because:
+        #       * AgentWatchdog should never be touched since it monitors all others poling cycles
+        #       * AgentWatchdog is going to spawn threads dynamically and will fail all checks
+        #       * AgentWatchdog cannot restart itself
+        """
+        logging.info(f"Checking all components' threads:")
+        for component in [comp for comp in self.config.listComponents_() if comp != 'AgentWatchdog']:
+            if not isComponentAlive(self.config, component=component):
+                try:
+                    logging.warning(f"Restarting Unhealthy component: {component}")
+                    forkRestart(self.config, componentsList=[component])
+                    # rebuild the timer for this component upon restart
+                    self.setupTimer(component)
+                except Exception as ex:
+                    logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
+                    raise
+
     def setupTimer(self, compName):
         """
         We spawn a separate thread for every timer.
@@ -83,11 +104,13 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         # Here to walk the pidTree of the component and set all expected pids
         # which are to be allowed to reset the timer
+        compPidTree = {}
         try:
             compPidTree = getComponentThreads(self.config, compName)
             logging.info(f"{currThread.name}, pid: {currThread.native_id}, Current Process tree for: {compName}: {compPidTree}")
         except Exception as ex:
             logging.error(f"Exception was thrown while rebuilding the the process tree for component: {compName}")
+            logging.error(f"The full Error was : {str(ex)}")
 
         if not compPidTree:
             logging.error(f"Could not rebuild the the process tree for component: {compName}")
@@ -205,6 +228,16 @@ class AgentWatchdogPoller(BaseWorkerThread):
             if compName not in [timer.compName for timer in self.timers.values()]:
                 logging.warning(f"Trying to recreate a previously failed timer for component: {compName}")
                 self.setupTimer(compName)
+
+        # Check all components' health:
+        # TODO: To move it in a separate thread, not to mess up with the blocking calls
+        #       for refreshing the timers data on disk bellow. And here, mess up means delaying,
+        #       because the calls to wmcoreD.isComponentAlive have non zero runtime)
+        #       The example code bellow does not allow to rebuild the newly restarted
+        #       components timer, since the timer lives in the main thread not in the child
+        # compAliveThread = threading.Thread(target=self.checkCompAlive, name="ComponentsWatcher")
+        # compAliveThread.start()
+        self.checkCompAlive()
 
         # Refresh all timers' data on disk every 1 second, or when a signal.SIGCONT
         # is received from a particular component.

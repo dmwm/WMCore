@@ -259,17 +259,20 @@ def getComponentThreads(configFile, component):
         return pidTree
     pid = extractFromXML(daemonXml, "ProcessID")
 
-    # NOTE: We should not check for os.path.exists(jsonFile) here.
-    #       Letting the system to throw an exception in this situation
-    #       is actually the better approach, because threads.json file is created at
+    # NOTE: We should check for os.path.exists(jsonFile) here.
+    #       Letting the system to throw an exception in this situation actually
+    #       breaks other calls e.g. isComonentAlive. Because threads.json file is created at
     #       startup time few steps upon the Daemon.xml file creation. Having one of
     #       the files created and not the other means either:
     #       * Someone has called getComponentTreads during the process of the
     #         component startup - this simply should not work, because the full
-    #         set of threads to be spawned by the component is still undetermined
-    #       or
-    #       * Something went terribly wrong during the component startup.
+    #         set of threads to be spawned by the component is still undetermined. OR:
+    #       * Something went terribly wrong during the component startup. OR:
+    #       * The component has not shut down properly and a stale Daemon.xml file still exists
     jsonFile = os.path.join(compDir, "threads.json")
+    if not os.path.exists(jsonFile):
+        logging.error("Component:%s Not Running ... Either had problems at startup or not completed its shutdown sequence" % component)
+        return pidTree
     with open(jsonFile, "r", encoding="utf-8") as istream:
         data = json.load(istream)
 
@@ -491,7 +494,6 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
             Sleep state. Which means, it cannot be woken by any signal, not even SIGKILL.
             Such processes are marked with State:D in the output from the `ps` command.
     """
-
     checkList = []
 
     # First create the pidTree and collect information for the examined process:

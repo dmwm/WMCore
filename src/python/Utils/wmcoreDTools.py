@@ -229,14 +229,14 @@ def getComponentThreads(configFile, component):
     :param configFile: Either path to the WMAgent configuration file or a WMCore.Configuration instance
     :param component:  Component name
     :return: The process tree for the component and prints status of the component process and its threads
+
+    :Example: getComponentThreads(wmaConfig, "AgentWatchdog")
+
+              {'Parent': 1417248,
+               'RunningThreads': [1417249, 1417251, 1417252, 1417253],
+               'OrphanThreads': [],
+               'LostThreads': []}
     """
-    #logger = logging.getLogger()
-
-    # if not logger:
-    #     print("missing logger")
-    # else:
-    #     print(f"logger.handler: {logger.handlers}")
-
     pidTree = {}
     if isinstance(configFile, Configuration):
         config = configFile
@@ -259,6 +259,16 @@ def getComponentThreads(configFile, component):
         return pidTree
     pid = extractFromXML(daemonXml, "ProcessID")
 
+    # NOTE: We should not check for os.path.exists(jsonFile) here.
+    #       Letting the system to throw an exception in this situation
+    #       is actually the better approach, because threads.json file is created at
+    #       startup time few steps upon the Daemon.xml file creation. Having one of
+    #       the files created and not the other means either:
+    #       * Someone has called getComponentTreads during the process of the
+    #         component startup - this simply should not work, because the full
+    #         set of threads to be spawned by the component is still undetermined
+    #       or
+    #       * Something went terribly wrong during the component startup.
     jsonFile = os.path.join(compDir, "threads.json")
     with open(jsonFile, "r", encoding="utf-8") as istream:
         data = json.load(istream)
@@ -413,10 +423,13 @@ def resetWatchdogTimer(configFile, component):
             # Reset the timer by sending it the expected signal.
             os.kill(timer['native_id'], timer['expSig'])
 
+    except AttributeError:
+        exitcode = 1
+        logging.error("Failed to find {component} component config section.")
+        logging.error("Aborting")
     except Exception as ex:
         exitCode = 1
-        msg = f"ERROR: Failed to reset {component} component's timer. ERROR: {str(ex)}"
-        logging.error(msg)
+        logging.error(f"Failed to reset {component} component's timer. ERROR: {str(ex)}")
     return exitCode
 
 def componentName(obj):
@@ -467,7 +480,11 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
 
     # First create the pidTree and collect information for the examined process:
     if component:
-        pidTree = getComponentThreads(config, component)
+        try:
+            pidTree = getComponentThreads(config, component)
+        except Exception as ex:
+            logging.error(f"Could not rebuild the the process tree for component: {compName}. ERROR: {str(ex)}")
+            pidTree = {}
     elif pid:
         pidTree = {}
         process = psutil.Process(int(pid))

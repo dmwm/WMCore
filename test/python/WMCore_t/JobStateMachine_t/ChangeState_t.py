@@ -133,7 +133,6 @@ class TestChangeState(unittest.TestCase):
         testJobB["group"] = "DMWM"
         testJobB["taskType"] = "Processing"
 
-        change.propagate([testJobA, testJobB], "new", "none")
         change.propagate([testJobA, testJobB], "created", "new")
         change.propagate([testJobA, testJobB], "executing", "created")
 
@@ -258,7 +257,7 @@ class TestChangeState(unittest.TestCase):
         testJobA["taskType"] = "Merge"
         testJobA["couch_record"] = str(testJobA["id"])
 
-        change.propagate([testJobA], "new", "none")
+        change.propagate([testJobA], "created", "new")
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
         self.assertTrue("states" in testJobADoc)
@@ -281,7 +280,7 @@ class TestChangeState(unittest.TestCase):
         testJobB["taskType"] = "Merge"
         testJobB["couch_record"] = newstr(testJobB["id"])
 
-        change.propagate([testJobB], "new", "none")
+        change.propagate([testJobB], "created", "new")
         testJobBDoc = change.jobsdatabase.document(testJobB["couch_record"])
 
         self.assertTrue("states" in testJobBDoc)
@@ -937,7 +936,6 @@ class TestChangeState(unittest.TestCase):
         testJobB["taskType"] = "Processing"
         testJobB["site_cms_name"] = "site2"
 
-        change.propagate([testJobA, testJobB], "new", "none")
         change.propagate([testJobA, testJobB], "created", "new")
         change.propagate([testJobA, testJobB], "executing", "created")
 

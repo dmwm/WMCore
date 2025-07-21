@@ -254,7 +254,7 @@ class StdBase(object):
 
         return outputModules
 
-    def addRuntimeMonitors(self, task):
+    def addRuntimeMonitors(self, task, maxpss=2.3 * 1024):
         """
         _addRuntimeMonitors_
 
@@ -262,7 +262,6 @@ class StdBase(object):
         Memory settings are defined in Megabytes and timing in seconds.
         """
         # Default settings defined by CMS policy
-        maxpss = 2.3 * 1024  # 2.3 GiB, but in MiB
         softTimeout = 47 * 3600  # 47h
         hardTimeout = 47 * 3600 + 5 * 60  # 47h + 5 minutes
 
@@ -270,7 +269,7 @@ class StdBase(object):
         monitoring.interval = 300
         monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxPSS = maxpss
+        monitoring.PerformanceMonitor.maxPSS = maxpss  # value is propagated in MiB
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
@@ -767,7 +766,7 @@ class StdBase(object):
 
         return
 
-    def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy=None,
+    def addDQMHarvestTask(self, parentTask, parentOutputModuleName, maxpss=3.0*1024, uploadProxy=None,
                           periodic_harvest_interval=0, periodic_harvest_sibling=False,
                           parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun",
                           cmsswVersion=None, scramArch=None):
@@ -787,7 +786,7 @@ class StdBase(object):
         harvestTask = parentTask.addTask("%s%sDQMHarvest%s" % (parentTask.name(),
                                                                harvestType,
                                                                parentOutputModuleName))
-        self.addRuntimeMonitors(harvestTask)
+        self.addRuntimeMonitors(harvestTask, maxpss=maxpss)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 
@@ -828,6 +827,8 @@ class StdBase(object):
                                           periodic_harvest_sibling=periodic_harvest_sibling,
                                           dqmHarvestUnit=dqmHarvestUnit)
 
+        harvestTask.setJobResourceInformation(memoryReq=maxpss)
+
         datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
                                      getattr(parentOutputModule, "processedDataset"),
                                      getattr(parentOutputModule, "dataTier"))
@@ -855,6 +856,7 @@ class StdBase(object):
         # if this was a Periodic harvesting add another for EndOfRun
         if periodic_harvest_interval:
             self.addDQMHarvestTask(parentTask=parentTask, parentOutputModuleName=parentOutputModuleName,
+                                   maxpss=maxpss,
                                    uploadProxy=uploadProxy,
                                    periodic_harvest_interval=0, periodic_harvest_sibling=True,
                                    parentStepName=parentStepName, doLogCollect=doLogCollect,

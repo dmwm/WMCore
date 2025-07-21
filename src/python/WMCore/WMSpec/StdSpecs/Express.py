@@ -228,6 +228,7 @@ class ExpressWorkloadFactory(StdBase):
 
                 if expressOutInfo['dataTier'] in ["DQM", "DQMIO"]:
                     self.addDQMHarvestTask(mergeTask, "Merged",
+                                           maxpss=self.harvestingTaskMemory,
                                            uploadProxy=self.dqmUploadProxy,
                                            periodic_harvest_interval=self.periodicHarvestInterval,
                                            doLogCollect=True)
@@ -488,7 +489,7 @@ class ExpressWorkloadFactory(StdBase):
                     "MaxInputSize": {"type": int, "optional": False},
                     "MaxInputFiles": {"type": int, "optional": False},
                     "MaxLatency": {"type": int, "optional": False},
-
+                    "HarvestingTaskMemory": {"default": 3000.0, "type": float, "validate": lambda x: x > 0}
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

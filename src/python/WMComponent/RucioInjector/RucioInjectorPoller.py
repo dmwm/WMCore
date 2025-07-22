@@ -60,6 +60,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
 
         # dataset rule creation has a larger polling cycle
+        self.config = config
         self.pollRules = config.RucioInjector.pollIntervalRules
         self.lastRulesExecTime = 0
         self.createBlockRules = config.RucioInjector.createBlockRules

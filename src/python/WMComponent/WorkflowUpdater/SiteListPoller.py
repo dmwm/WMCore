@@ -29,6 +29,7 @@ class SiteListPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         myThread = threading.currentThread()
         self.logger = myThread.logger
+        self.config = config
 
         # get wmstats parameters
         self.wmstatsUrl = getattr(config.WorkflowUpdater, "wmstatsUrl")

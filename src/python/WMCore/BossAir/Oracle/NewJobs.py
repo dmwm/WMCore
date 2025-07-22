@@ -15,9 +15,9 @@ class NewJobs(MySQLNewJobs):
     Insert new jobs into bl_runjob
     """
 
-    sql = """INSERT INTO bl_runjob (id, wmbs_id, grid_id, bulk_id, sched_status,
+    sql = """INSERT INTO bl_runjob (wmbs_id, grid_id, bulk_id, sched_status,
                  retry_count, user_id, location, status_time)
-               SELECT bl_runjob_SEQ.nextval, :jobid, :gridid, :bulkid,
+               SELECT :jobid, :gridid, :bulkid,
                  (SELECT id FROM bl_status WHERE name = :status),
                  :retry_count,
                  (SELECT id FROM wmbs_users WHERE cert_dn = :userdn AND group_name = :usergroup AND role_name = :userrole),

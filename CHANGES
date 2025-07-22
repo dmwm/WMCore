@@ -1,3 +1,16 @@
+2.4.2rc6 to 2.4.2rc7:
+  - Fix WMAGENT_CONFIG exports (Todor Ivanov) #12400
+  - Remove CreateWMBSBase from unit tests; unit tests for WMInit (Alan Malta Rodrigues) #12341
+  - Keep wmbs_job_mask inclusivemask consistent in Oracle (Alan Malta Rodrigues) #12341
+  - Skip None checksum insertion for wmbs_file_checksums (Alan Malta Rodrigues) #12341
+  - Stop using SEQ.nextval in the WMBS & WMComponent DAOs, as it uses autoincrement now (Alan Malta Rodrigues) #12341
+  - Fix MySQL IGNORE constraint for WMBS.Job.AddFiles (Alan Malta Rodrigues) #12341
+  - Remove "none" job state from Transitions (Alan Malta Rodrigues) #12341
+  - Remove Python-based CreateWMBSBase/Create/Destroy modules (Alan Malta Rodrigues) #12341
+  - Remove unused DQMCat module (Alan Malta Rodrigues) #12341
+  - Adapt WMInit and TestInit to deal with mariadb SQL files (Alan Malta Rodrigues) #12341
+
+
 2.4.2rc5 to 2.4.2rc6:
   - Update Reqmgr workload cache for dynamic workflow parameter changes. (Todor Ivanov) #12405
 

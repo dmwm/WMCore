@@ -30,8 +30,8 @@
         "CMSSWVersion": "CMSSW_15_0_0_pre3",
         "Campaign": "Campaign-OVERRIDE-ME",
         "Comments": {
-            "CheckList": "",
-            "WorkFlowDesc": ""
+            "CheckList": "SC with required GPU in all 3 steps; 2 cores top level, but steps asking for 8; 8GB RAM",
+            "WorkFlowDesc": "SC with required GPU; 8 cores and 8GB RAM per step"
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache",
@@ -44,8 +44,8 @@
         "GPUParams": "null",
         "GlobalTag": "142X_mcRun3_2025_realistic_v5",
         "IncludeParents": false,
-        "Memory": 3000,
-        "Multicore": 1,
+        "Memory": 8000,
+        "Multicore": 2,
         "PrepID": "TEST-CMSSW_15_0_0_pre3__Run3_AMD_GPUValidation_SpecialRV_CNAF-TTbar_14TeV-00001",
         "ProcessingString": "DEFAULT_ProcStr",
         "ProcessingVersion": 1,

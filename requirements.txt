@@ -12,34 +12,35 @@
 # for more details please refer to official Python documentation, see
 # https://www.python.org/dev/peps/pep-0440/#version-specifiers
 
-Cheetah3~=3.2.6.post1         # wmcore,wmagent,reqmgr2,reqmon
+CT3~=3.4.0                    # wmcore,wmagent,reqmgr2,reqmon
 CherryPy~=18.8.0              # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
 CMSCouchapp~=1.3.4            # wmcore,wmagent
-CMSMonitoring~=0.6.10         # wmcore,wmagent,reqmgr2,reqmon,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
+CMSMonitoring~=0.6.13         # wmcore,wmagent,reqmgr2,reqmon,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
 coverage~=5.4                 # wmcore,wmagent,wmagentdev
 cx-Oracle~=8.3.0              # wmcore,wmagent
 dbs3-client==4.0.19           # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,wmglobalqueue,msoutput,mstransferor
-future~=0.18.2                # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,acdcserver,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
+future~=1.0.0                 # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,acdcserver,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
 gfal2-python~=1.11.0.post3    # wmcore,msunmerged
 httplib2~=0.20.4              # wmcore,wmagent,reqmgr2,reqmon,acdcserver,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
-htcondor~=24.3.0              # wmcore,wmagent
+htcondor~=24.0.7              # wmcore,wmagent
 Jinja2~=3.1.2                 # wmcore,wmagent
 memory-profiler~=0.60.0       # wmcore,wmagentdev
 mock~=4.0.3                   # wmcore,wmagent,wmagentdev
 mox3~=1.1.0                   # wmcore,wmagentdev
+mongomock~=4.3.0              # wmcore,wmagentdev
 mysqlclient~=2.1.1            # wmcore,wmagent
-nose~=1.3.7                   # wmcore,wmagentdev
-nose2~=0.12.0                 # wmcore,wmagentdev
+pynose~=1.5.4                 # wmcore,wmagentdev
 pycodestyle~=2.8.0            # wmcore,wmagentdev
-psutil~=5.9.1                 # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,wmglobalqueue
+psutil~=5.9.1                 # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,wmglobalqueue,msunmerged
 pycurl~=7.45.4                # wmcore,wmagent,reqmgr2,reqmon,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
 pylint~=2.14.5                # wmcore,wmagentdev
 pymongo~=4.2.0                # wmcore,wmagentdev,msunmerged,msoutput,mspileup
 pyOpenSSL~=25.0.0             # wmcore,wmagent
-pyzmq~=23.2.1                 # wmcore,wmagent
+pyzmq~=26.3.0                 # wmcore,wmagent
 retry~=0.9.2                  # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
-rucio-clients~=1.29.10        # wmcore,wmagent,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
+rucio-clients~=36.5.0         # wmcore,wmagent,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
 Sphinx~=5.1.1                 # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,acdcserver,wmglobalqueue
 SQLAlchemy~=1.4.40            # wmcore,wmagent
 PyJWT~=2.4.0                  # wmcore,wmagent,wmagentdev,reqmgr2,reqmon,acdcserver,wmglobalqueue,msunmerged,msoutput,mspileup,msmonitor,mstransferor,msrulecleaner
 requests~=2.32.2              # wmcore,wmagent
+wmcoredb>=0.9.3               # wmcore,wmagent,wmagentdev

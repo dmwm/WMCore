@@ -1514,7 +1514,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertItemsEqual(list(metrics), expectedMetrics)
 
         self.assertItemsEqual(list(metrics['workByStatus']), STATES)
-        self.assertEqual(metrics['workByStatus']['Available']['sum_jobs'], 678)
+        self.assertEqual(metrics['workByStatus']['Available']['sum_jobs'], 474)
         self.assertEqual(metrics['workByStatus']['Acquired'], {})
 
         self.assertItemsEqual(list(metrics['workByStatusAndPriority']), STATES)
@@ -1545,23 +1545,22 @@ class WorkQueueTest(WorkQueueTestCase):
         time.sleep(1)  # HACKY: query again to get the up-to-date views
         metrics = self.globalQueue.monitorWorkQueue(status=initialStatus)
 
-        self.assertTrue(metrics['workByStatus']['Available']['sum_jobs'] < 200)
-        self.assertTrue(metrics['workByStatus']['Acquired']['sum_jobs'] >= 500)
+        self.assertEqual(metrics['workByStatus']['Available'].get('sum_jobs', 0), 0)
+        self.assertEqual(metrics['workByStatus']['Acquired'].get('sum_jobs', 0), 474)
 
-        self.assertEqual(len(metrics['workByStatusAndPriority']['Available']), 1)
+        self.assertEqual(len(metrics['workByStatusAndPriority']['Available']), 0)
         self.assertEqual(len(metrics['workByStatusAndPriority']['Acquired']), 2)
-        self.assertEqual(metrics['workByStatusAndPriority']['Available'][0]['priority'], 8000)
         prios = [item['priority'] for item in metrics['workByStatusAndPriority']['Acquired']]
         self.assertItemsEqual(prios, [8000, 999998])
 
-        self.assertEqual(len(metrics['workByAgentAndStatus']), 2)
+        self.assertEqual(len(metrics['workByAgentAndStatus']), 1)
         for elem in metrics['workByAgentAndStatus']:
             if elem['status'] == 'Available':
                 self.assertEqual(elem['agent_name'], 'AgentNotDefined')
             else:  # in Acquired
                 self.assertTrue(elem['agent_name'] != 'AgentNotDefined')
 
-        self.assertEqual(len(metrics['workByAgentAndPriority']), 3)
+        self.assertEqual(len(metrics['workByAgentAndPriority']), 2)
         prios = []
         for item in metrics['workByAgentAndPriority']:
             if item['agent_name'] != 'AgentNotDefined':
@@ -1569,10 +1568,11 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertItemsEqual(prios, [8000, 999998])
 
         for met in ('uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA', 'uniqueJobsPerSite', 'possibleJobsPerSite'):
+            print(metrics[met])
             self.assertItemsEqual(list(metrics[met]), initialStatus)
-            self.assertEqual(len(metrics[met]['Available']), 2)
+            self.assertEqual(len(metrics[met]['Available']), 0)
             self.assertEqual(len(metrics[met]['Acquired']), 2)
-            self.assertItemsEqual(list(metrics[met]['Available']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(list(metrics[met]['Available']), "")
             self.assertItemsEqual(list(metrics[met]['Acquired']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
 
 

@@ -4,11 +4,14 @@ Unittests for Utilities functions
 """
 
 from builtins import object
+import os
+import tempfile
 import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
     safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
-    encodeUnicodeToBytes, diskUse, numberCouchProcess, normalize_spaces
+    encodeUnicodeToBytes, diskUse, numberCouchProcess, normalize_spaces, \
+    extractFromXML
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -235,6 +238,28 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         # there should be at least one process, but who knows...
         self.assertTrue(data >= 0)
 
+    def testExtractFromXML(self):
+        """Test extracting an existing element from XML."""
+
+        # create new xmlContent file
+        xmlContent = """<?xml version="1.0"?>
+        <Daemon>
+            <ProcessID Value="1953175"/>
+            <ParentProcessID Value="1"/>
+            <ProcessGroupID Value="1953174"/>
+        </Daemon>"""
+
+        tempXML = tempfile.NamedTemporaryFile(delete=False, suffix=".xml")
+        tempXML.write(xmlContent.encode("utf-8"))
+        tempXML.close()
+
+        value = extractFromXML(tempXML.name, "ProcessID")
+        self.assertEqual(value, "1953175")
+        value = extractFromXML(tempXML.name, "NonExistingElement")
+        self.assertIsNone(value)
+
+        # remove tempXML
+        os.unlink(tempXML.name)
 
 if __name__ == '__main__':
     unittest.main()

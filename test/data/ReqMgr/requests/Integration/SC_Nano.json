@@ -26,10 +26,10 @@
         "CMSSWVersion": "CMSSW_10_6_26",
         "Campaign": "Campaign-OVERRIDE-ME",
         "Comments": {
-            "CheckList": "StepChain with Dataset start policy",
+            "CheckList": "StepChain with Dataset start policy; EventAwareLumiBased splitting hardcoded to 10k EpJ (10 lumis)",
             "WorkFlowDesc": [
-                "TC processing a MINIAODSIM, thus locking all of the input blocks at the same location (with copies=2);",
-                "Request 4GB and 2 cores; Job splitting hardcoded to 40k EpJ and 40k EpL"
+                "SC processing a MINIAODSIM, thus locking all of the input blocks at the same location (with copies=2);",
+                "Request 4GB and 2 cores; Job splitting hardcoded to 10k EpJ (input data with 1k EpL"
             ]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
@@ -41,7 +41,7 @@
         "GPUParams": "null",
         "GlobalTag": "106X_mc2017_realistic_v9",
         "IncludeParents": false,
-        "Memory": 3000,
+        "Memory": 4000,
         "Multicore": 1,
         "PrepID": "TEST-task_SMP-RunIISummer20UL17NanoAODv9-00184",
         "ProcessingString": "DEFAULT_ProcStr",
@@ -59,8 +59,7 @@
             "CMSSWVersion": "CMSSW_10_6_26",
             "Campaign": "RunIIAutumn18NanoAODv5",
             "ConfigCacheID": "0fd238f99b39e8fef9f658d1dd1d6f61",
-            "EventsPerJob": 40000,
-            "EventsPerLumi": 40000,
+            "EventsPerJob": 10000,
             "FilterEfficiency": 1,
             "GlobalTag": "106X_mc2017_realistic_v9",
             "InputDataset": "/WplusToJJZToLNuJJ_mjj100_pTj10_QCD_LO_TuneCP5_13TeV-madgraph-pythia8/RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v2/MINIAODSIM",
@@ -76,6 +75,6 @@
             "StepName": "Step1_NanoAODv9"
         },
         "StepChain": 1,
-        "TimePerEvent": 0.3796
+        "TimePerEvent": 2.4
     }
 }

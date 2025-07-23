@@ -5,7 +5,7 @@ Implementation of StageOutImpl interface for gfal-copy
 """
 import argparse
 import os
-
+import logging
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
@@ -24,7 +24,8 @@ class GFAL2Impl(StageOutImpl):
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
 
         self.setAuthX509 = "X509_USER_PROXY=$X509_USER_PROXY"
-        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat $BEARER_TOKEN_FILE)"
+        # if BEARER_TOKEN_FILE is not set, use /dev/null as a fallback to suppress the error
+        self.setAuthToken = "BEARER_TOKEN_FILE=$BEARER_TOKEN_FILE BEARER_TOKEN=$(cat ${BEARER_TOKEN_FILE:-/dev/null})"
         self.unsetX509 = "unset X509_USER_PROXY;"
         self.unsetToken = "unset BEARER_TOKEN;"
 
@@ -84,10 +85,16 @@ class GFAL2Impl(StageOutImpl):
         :forceMethod: bool to isolate and force a given authentication method
         :dryRun: bool, dry run mode (to enable debug mode)
         """
-        if authMethod is None:
-            set_auth = self.setAuthToken + " " + self.setAuthX509
-            unset_auth = ""
-        elif authMethod == 'X509':
+        if authMethod and authMethod.upper() == 'TOKEN':
+            if not self.isBearerTokenFileSet():
+                msg = "File removal requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
+
+        if authMethod == 'X509':
             set_auth = self.setAuthX509
             unset_auth = self.unsetToken if forceMethod else ""
         elif authMethod == 'TOKEN':
@@ -139,10 +146,16 @@ class GFAL2Impl(StageOutImpl):
         copyCommandDict['source'] = self.createFinalPFN(sourcePFN)
         copyCommandDict['destination'] = self.createFinalPFN(targetPFN)
 
-        if authMethod is None:
-            copyCommandDict['set_auth'] = ""
-            copyCommandDict['unset_auth'] = ""
-        elif authMethod.upper() == 'X509':
+        if authMethod and authMethod.upper() == 'TOKEN' and forceMethod is False:
+            if not self.isBearerTokenFileSet():
+                msg = "Stage out requested with tokens, but environment variable is not defined."
+                msg += " Forcing it to use X509 authentication method instead."
+                logging.info(msg)
+                authMethod = 'X509'
+        else:
+            authMethod = 'X509'
+
+        if authMethod.upper() == 'X509':
             copyCommandDict['set_auth'] = self.setAuthX509
             copyCommandDict['unset_auth'] = self.unsetToken if forceMethod else ""
         elif authMethod.upper() == 'TOKEN':

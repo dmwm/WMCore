@@ -399,7 +399,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Performs the handleErrors method, looking for each type of failure
         And deal with it as desired.
         """
-        logging.debug("Running error handling algorithm")
+        logging.info("Running ErrorHandler algorithm")
         if not self.setupComponentParam():
             msg = "Component failed to retrieve agent configuration from central ReqMgr Aux DB."
             msg += " Skipping this cycle."
@@ -419,7 +419,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
         except Exception as ex:
             if getattr(myThread, 'transaction', None) is not None:
                 myThread.transaction.rollback()
-            msg = "Caught unexpected exception in ErrorHandler:\n"
-            msg += str(ex)
-            logging.exception(msg)
-            raise ErrorHandlerException(msg)
+            if "Could not resolve host" in str(ex):
+                msg = f"Temporarily DNS error. Will retry again in the next cycle. Details: {str(ex)}"
+                logging.error(msg)
+            else:
+                msg = "Caught unexpected exception in ErrorHandler:\n"
+                msg += str(ex)
+                raise ErrorHandlerException(msg) from ex

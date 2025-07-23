@@ -40,12 +40,24 @@ REQUEST = {
     'Outputs': [{'dataTier': "RAW",
                  'eventContent': "All",
                  'selectEvents': ["Path1:HLT,Path2:HLT"],
-                 'primaryDataset': "PrimaryDataset1"},
+                 'primaryDataset': "PrimaryDataset1",
+                 'rawSkim': None},
+                {'dataTier': "RAW",
+                 'eventContent': "All",
+                 'selectEvents': ["Path1:HLT,Path2:HLT"],
+                 'primaryDataset': "PrimaryDataset2",
+                 'rawSkim': None},
+                {'dataTier': "RAW",
+                 'eventContent': "All",
+                 'selectEvents': ["Path1:HLT,Path2:HLT"],
+                 'primaryDataset': "PrimaryDataset1-rawSkim1",
+                 'rawSkim': "rawSkim1"},
                 {'dataTier': "RAW",
                  'eventContent': "All",
                  'selectEvents': ["Path3:HLT,Path4:HLT"],
-                 'primaryDataset': "PrimaryDataset2"}]
-}
+                 'primaryDataset': "PrimaryDataset2-rawSkim2",
+                 'rawSkim': "rawSkim2"}]
+    }
 
 
 class RepackTests(unittest.TestCase):
@@ -242,7 +254,7 @@ class RepackTests(unittest.TestCase):
     def testMemCoresSettings(self):
         """
         _testMemCoresSettings_
-        
+
         Make sure the multicore and memory setings are properly propagated to
         all tasks and steps.
         """
@@ -299,15 +311,23 @@ class RepackTests(unittest.TestCase):
         # expected tasks, filesets, subscriptions, etc
         expOutTasks = ['/TestWorkload/Repack',
                        '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
-                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW']
+                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW',
+                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW',
+                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW']
         expWfTasks = ['/TestWorkload/Repack',
                       '/TestWorkload/Repack/LogCollect',
                       '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset1_RAW',
                       '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_RAW',
+                      '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset1_rawSkim1_RAW',
+                      '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_rawSkim2_RAW',
                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/Repackwrite_PrimaryDataset1_RAWMergeLogCollect',
                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW',
-                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/Repackwrite_PrimaryDataset2_RAWMergeLogCollect']
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/Repackwrite_PrimaryDataset2_RAWMergeLogCollect',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW/Repackwrite_PrimaryDataset1_rawSkim1_RAWMergeLogCollect',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW/Repackwrite_PrimaryDataset2_rawSkim2_RAWMergeLogCollect']
         expFsets = ['TestWorkload-Repack-StreamerFiles',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-logArchive',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-MergedRAW',
@@ -315,20 +335,38 @@ class RepackTests(unittest.TestCase):
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-logArchive',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-MergedRAW',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-MergedErrorRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW/merged-MergedRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW/merged-MergedErrorRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW/merged-MergedRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW/merged-MergedErrorRAW',
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAWRAW',
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_rawSkim1_RAWRAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_rawSkim2_RAWRAW',
                     '/TestWorkload/Repack/unmerged-logArchive']
         subMaps = [(4,
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-logArchive',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/Repackwrite_PrimaryDataset1_RAWMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (7,
+                   (10,
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-logArchive',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/Repackwrite_PrimaryDataset2_RAWMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (8,
+                   (7,
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW/Repackwrite_PrimaryDataset1_rawSkim1_RAWMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (13,
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW/Repackwrite_PrimaryDataset2_rawSkim2_RAWMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (14,
                     '/TestWorkload/Repack/unmerged-logArchive',
                     '/TestWorkload/Repack/LogCollect',
                     'MinFileBased',
@@ -343,14 +381,34 @@ class RepackTests(unittest.TestCase):
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
                     'RepackMerge',
                     'Merge'),
-                   (5,
+                   (8,
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_RAW',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (6,
+                   (9,
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW',
+                    'RepackMerge',
+                    'Merge'),
+                   (5,
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_rawSkim1_RAWRAW',
+                    '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset1_rawSkim1_RAW',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (6,
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_rawSkim1_RAWRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_rawSkim1_RAW',
+                    'RepackMerge',
+                    'Merge'),
+                   (11, 
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_rawSkim2_RAWRAW',
+                    '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_rawSkim2_RAW',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (12,
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_rawSkim2_RAWRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_rawSkim2_RAW',
                     'RepackMerge',
                     'Merge'),
                    (1,
@@ -358,6 +416,8 @@ class RepackTests(unittest.TestCase):
                     '/TestWorkload/Repack',
                     'Repack',
                     'Repack')]
+
+        self.maxDiff = None
 
         testArguments = RepackWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))

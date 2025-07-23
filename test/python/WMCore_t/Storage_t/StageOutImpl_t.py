@@ -1,7 +1,8 @@
 from __future__ import (print_function, division)
 
 import unittest
-
+import os
+import tempfile
 from mock import mock, call
 
 from WMCore.Storage.StageOutError import StageOutError
@@ -165,3 +166,16 @@ class StageOutImplTest(unittest.TestCase):
         mock_createOutputDirectory.assert_called_with("targetPFN")
         calls = [call(600), call(600)]
         mock_time.sleep.assert_has_calls(calls)
+
+    def testIsBearerTokenFileSet(self):
+        self.assertFalse(self.StageOutImpl.isBearerTokenFileSet())
+        os.environ["BEARER_TOKEN_FILE"] = ""
+        self.assertFalse(self.StageOutImpl.isBearerTokenFileSet())
+        os.environ["BEARER_TOKEN_FILE"] = "/test/token"
+        self.assertFalse(self.StageOutImpl.isBearerTokenFileSet())
+
+        with tempfile.NamedTemporaryFile(delete=True) as temp_file:
+            temp_file_path = temp_file.name
+            os.environ["BEARER_TOKEN_FILE"] = temp_file_path
+            self.assertTrue(self.StageOutImpl.isBearerTokenFileSet())
+        del os.environ["BEARER_TOKEN_FILE"]

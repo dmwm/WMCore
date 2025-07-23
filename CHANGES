@@ -1,3 +1,115 @@
+2.4.2rc6 to 2.4.2rc7:
+  - Fix WMAGENT_CONFIG exports (Todor Ivanov) #12400
+  - Remove CreateWMBSBase from unit tests; unit tests for WMInit (Alan Malta Rodrigues) #12341
+  - Keep wmbs_job_mask inclusivemask consistent in Oracle (Alan Malta Rodrigues) #12341
+  - Skip None checksum insertion for wmbs_file_checksums (Alan Malta Rodrigues) #12341
+  - Stop using SEQ.nextval in the WMBS & WMComponent DAOs, as it uses autoincrement now (Alan Malta Rodrigues) #12341
+  - Fix MySQL IGNORE constraint for WMBS.Job.AddFiles (Alan Malta Rodrigues) #12341
+  - Remove "none" job state from Transitions (Alan Malta Rodrigues) #12341
+  - Remove Python-based CreateWMBSBase/Create/Destroy modules (Alan Malta Rodrigues) #12341
+  - Remove unused DQMCat module (Alan Malta Rodrigues) #12341
+  - Adapt WMInit and TestInit to deal with mariadb SQL files (Alan Malta Rodrigues) #12341
+
+
+2.4.2rc5 to 2.4.2rc6:
+  - Update Reqmgr workload cache for dynamic workflow parameter changes. (Todor Ivanov) #12405
+
+
+2.4.2rc4 to 2.4.2rc5:
+  - Added mongomock to requirements (Dennis Lee) #12413
+  - Update GFAL and MSUnmerged images to Debian Bookworm + Miniconda + Py3.12 https://github.com/dmwm/CMSKubernetes/pull/1627
+
+2.4.2rc3 to 2.4.2rc4:
+  - update CMSMonitoring version to upgrade jsonschema dependency to align with rucio-clients (Valentin Kuznetsov) #12412
+
+
+2.4.2rc2 to 2.4.2rc3:
+  - Install setuptools in the CD pipeline (Alan Malta Rodrigues) #12411
+
+
+2.4.2rc1 to 2.4.2rc2:
+  - Update python version in the CD pipeline image to 3.12 (Alan Malta Rodrigues) #12410
+  - Skip PyPi publication if same package+version has already been uploaded (Alan Malta Rodrigues) #12410
+
+
+2.4.1 to 2.4.2rc1:
+  - Add SQL schema wmcoredb package as a dependency (Alan Malta Rodrigues) #12408
+  - fix bug checkProxy incompatible (Viphava280444) #12403
+  - Do not load full LFN list in memory; use thread pool for deletions (Alan Malta Rodrigues) #12059
+  - Return unique list of protected LFNS from wmstatsserver (Alan Malta Rodrigues) #12059
+  - Fix RucioConMon gzipped response content (Alan Malta Rodrigues) #12059
+  - update rucio client version (Valentin Kuznetsov) #12201
+
+
+2.4.0 to 2.4.1:
+ - just for cutting a new WMAgent release
+
+2.4.0rc8 to 2.4.0:
+  - just for cutting a new release
+
+2.4.0rc7 to 2.4.0rc8:
+  - Replaces nose with pynose, remove nose2 in requirements (Dennis Lee) #12390
+  - Update checkProxy script to use valid domain name (Alan Malta Rodrigues) #12392
+
+
+2.4.0rc6 to 2.4.0rc7:
+  - provide necessary checks to look-up valid process ID status (Valentin Kuznetsov) #12387
+
+
+2.4.0rc5 to 2.4.0rc6:
+  - Previous build release failed; trigger a new one
+
+2.4.0rc4 to 2.4.0rc5:
+  - Add option to chose custom built python (Todor Ivanov) #12381
+  - Do not hang on unset BEARER_TOKEN_FILE env var (Alan Malta Rodrigues) #12380
+  - Default first stage out to X509 in case bearer token is not set (Alan Malta Rodrigues) #12380
+  - Add Oracle DatabaseError DPI-1080 as a soft error (Alan Malta Rodrigues) #12379
+  - Avoid token-based file deletion in GFAL2, unless environ is defined (Alan Malta Rodrigues) #12377
+  - Force cherrypy to set content-length=0 before request body if FE does not provide it (Valentin Kuznetsov) #12371
+  - Make JobAccountant output module evaluation more verbose (Alan Malta Rodrigues) #12351
+
+
+2.4.0rc3 to 2.4.0rc4:
+  - setup default value for cycle_time (Valentin Kuznetsov) #12372
+  - Change look-up states for process status (Valentin Kuznetsov) #12372
+  - Switch default job length from 8 to 12h (Alan Malta Rodrigues) #12360
+  - Further updates to the JSON templates, fix some comments and resource requirements (Alan Malta Rodrigues) #12354
+
+
+2.4.0rc2 to 2.4.0rc3:
+  - Avoid crashing ErrorHandler on failed DNS resolution (Alan Malta Rodrigues) #12369
+  - switch from distribution.data_files to distribution.package_data (Valentin Kuznetsov) #12359
+  - fix issues with WMagent start; and couple of major warnings reported by pylint (Valentin Kuznetsov) #12362
+  - Decrease site slot multiplier factor from .75 to .50 (Alan Malta Rodrigues) #12365
+  - python 3.12 - do not use codecs (Dario Mapelli) #12338
+  - Fix bash typoed variable (Fredrik) #12364
+
+
+2.4.0rc1 to 2.4.0rc2:
+  - python 3.12 - necessary requirements.txt upgrades (Dario Mapelli) #12336
+  - Split patch files by source files edited && Apply them separately (Todor Ivanov) #12346
+
+
+2.3.10 to 2.4.0rc1:
+  - add thread info status to WMAgent info pushed to CouchDB (Valentin Kuznetsov) #12302
+  - Add getCodes method to fetch all dbs2go codes from its error JSON response (Valentin Kuznetsov) #12312
+  - Yuiserver was removed in 2013 (#4495) (Fredrik) #12356
+
+
+2.3.10rc19 to 2.3.10:
+  - fix issue with restartComponent.sh script (Valentin Kuznetsov) #12352
+
+
+2.3.10rc18 to 2.3.10rc19:
+  - Previous PyPi pipeline failed, so cutting a new tag
+
+2.3.10rc17 to 2.3.10rc18:
+  - Upgrade htcondor python bindings to v24.4.0 (Todor Ivanov) #12344
+  - support raw skim datasets for T0 repack workflows (Antonio) #12298
+  - deploy wmange-venv - small changes (Dario Mapelli) #12337
+  - Get rid of transactionId from the configuration, given that this feature was removed 9 years ago. (Kenyi Hurtado) #12331
+
+
 2.3.10rc16 to 2.3.10rc17:
   - Change global-workqueue to wmglobalqueue in its Dockerfile (error reported in CI/CD after https://github.com/dmwm/CMSKubernetes/pull/1586 build)
 

@@ -13,6 +13,8 @@ import os.path
 import sys
 import threading
 import traceback
+import warnings
+import wmcoredb
 
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.DAOFactory import DAOFactory
@@ -20,7 +22,6 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMBase import getWMBASE
 from WMCore.WMException import WMException
-from WMCore.WMFactory import WMFactory
 
 
 class WMInitException(WMException):
@@ -54,11 +55,12 @@ def connectToDB():
 
     socketLoc = getattr(wmAgentConfig.CoreDatabase, "socket", None)
     connectUrl = getattr(wmAgentConfig.CoreDatabase, "connectUrl", None)
-    (dialect, junk) = connectUrl.split(":", 1)
+    (dialect, _) = connectUrl.split(":", 1)
 
     myWMInit = WMInit()
     myWMInit.setDatabaseConnection(dbConfig=connectUrl, dialect=dialect,
                                    socketLoc=socketLoc)
+
     return
 
 
@@ -113,12 +115,12 @@ class WMInit(object):
             return
 
         options = {}
-        if dialect.lower() == 'mysql':
-            dialect = 'MySQL'
+        if dialect.lower() in ['mysql', 'mariadb']:
+            dialect = 'mariadb'  # Both MySQL and MariaDB use the mariadb directory
             if socketLoc != None:
                 options['unix_socket'] = socketLoc
         elif dialect.lower() == 'oracle':
-            dialect = 'Oracle'
+            dialect = 'oracle'  # Keep lowercase for consistency
         elif dialect.lower() == 'http':
             dialect = 'CouchDB'
         else:
@@ -146,31 +148,178 @@ class WMInit(object):
 
         This method needs to have been preceded by the
         setDatabaseConnection.
+
+        @deprecated: Use setSchemaFromModules instead
         """
-        modules = modules or []
+        warnings.warn("setSchema is deprecated. Use setSchemaFromModules instead.", DeprecationWarning)
+
+        # create a map of old to new SQL module names
+        moduleMap = {
+            'WMCore.WMBS': 'wmbs',
+            'WMCore.ResourceControl': 'resourcecontrol',
+            'WMCore.BossAir': 'bossair',
+            'WMCore.Agent.Database': 'agent',
+            'WMComponent.DBS3Buffer': 'dbs3buffer',
+            'T0.WMBS': 'tier0',
+            'WMQuality.TestDB': 'testdb'
+        }
+
+        # convert old module names to new format
+        if modules:
+            modules = [moduleMap.get(module, module) for module in modules]
+
+        self.setSchemaFromModules(modules)
+
+    def setSchemaFromModules(self, sqlModules):
+        """
+        Initialize database schema for one or more SQL packages.
+        It finds out which dialect is being used and then looks for the
+        appropriate SQL files in the sql directory.
+
+        :param sqlModules: List of SQL database modules to be initialized.
+            Current supported values are (default is 'wmbs'):
+            - 'wmbs'
+            - 'resourcecontrol'
+            - 'bossair'
+            - 'agent'
+            - 'dbs3buffer'
+            - 'tier0'
+        """
         myThread = threading.currentThread()
+        if not hasattr(myThread, 'dbi'):
+            raise WMInitException("Database connection not initialized. Call setDatabaseConnection first.")
 
-        parameters = None
-        flag = False
-        # Set up for typical DBCreator format: logger, dbi, params
-        if params != None:
-            parameters = [None, None, params]
-            flag = True
+        # Get the database dialect
+        dialect = myThread.dialect.lower()
+        if dialect not in ['mariadb', 'oracle']:
+            raise WMInitException(f"Unsupported database dialect: {dialect}")
 
-        myThread.transaction.begin()
-        for factoryName in modules:
-            # need to create these tables for testing.
-            # notice the default structure: <dialect>/Create
-            factory = WMFactory(factoryName, factoryName + "." + myThread.dialect)
+        # Get the base directory (WMCore root)
+        if os.environ.get('WMCORE_ROOT'):
+            baseDir = os.environ['WMCORE_ROOT']
+            logging.info("SQL base directory based on WMCORE_ROOT: %s", baseDir)
+        else:
+            baseDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+            logging.info("SQL base directory based on WMInit-relative path: %s", baseDir)
 
-            create = factory.loadObject("Create", args=parameters, listFlag=flag)
-            createworked = create.execute(conn=myThread.transaction.conn,
-                                          transaction=myThread.transaction)
-            if createworked:
-                logging.debug("Tables for " + factoryName + " created")
-            else:
-                logging.debug("Tables " + factoryName + " could not be created.")
-        myThread.transaction.commit()
+        # Define the SQL files needed for each module and their dependencies
+        # The order matters - modules that depend on others should come later
+        moduleSQLFiles = {
+            'wmbs': {
+                'files': ['create_wmbs_tables.sql', 'create_wmbs_indexes.sql', 'initial_wmbs_data.sql'],
+                'dependencies': []
+            },
+            'resourcecontrol': {
+                'files': ['create_resourcecontrol.sql'],
+                'dependencies': ['wmbs']
+            },
+            'bossair': {
+                'files': ['create_bossair.sql'],
+                'dependencies': ['wmbs']
+            },
+            'agent': {
+                'files': ['create_agent.sql'],
+                'dependencies': []
+            },
+            'dbs3buffer': {
+                'files': ['create_dbs3buffer.sql'],
+                'dependencies': ['wmbs']
+            },
+            'tier0': {
+                'files': ['create_tier0_tables.sql', 'create_tier0_indexes.sql', 'create_tier0_functions.sql', 'initial_tier0_data.sql'],
+                'dependencies': ['wmbs', 'dbs3buffer']
+            },
+            'testdb': {
+                'files': ['create_testdb.sql'],
+                'dependencies': []
+            },
+        }
+
+        # Validate all requested modules exist
+        for module in sqlModules:
+            if module not in moduleSQLFiles:
+                raise WMInitException(f"Unknown module: {module}")
+
+        # Sort modules based on dependencies
+        sorted_modules = []
+        remaining_modules = set(sqlModules)
+
+        while remaining_modules:
+            # Find modules with no remaining dependencies
+            ready_modules = [
+                mod for mod in remaining_modules
+                if all(dep in sorted_modules for dep in moduleSQLFiles[mod]['dependencies'])
+            ]
+
+            if not ready_modules:
+                # Circular dependency detected
+                raise WMInitException("Circular dependency detected in module dependencies")
+
+            sorted_modules.extend(ready_modules)
+            remaining_modules -= set(ready_modules)
+
+        # Execute SQL files in dependency order
+        for module in sorted_modules:
+            logging.info("Executing SQL files for: %s", module)
+            for sql_file in moduleSQLFiles[module]['files']:
+                dialect_sql_file = wmcoredb.get_sql_file(module_name=module, file_name=sql_file, backend=dialect)
+
+                # now execute each SQL statement
+                for stmt in self._getSQLStatements(dialect_sql_file, dialect):
+                    try:
+                        myThread.dbi.processData(stmt)
+                    except Exception as ex:
+                        msg = f"Error executing SQL file {dialect_sql_file}. "
+                        msg += f"Statement: {stmt}"
+                        msg += str(ex)
+                        raise WMInitException(msg)
+
+        return
+
+    def _getSQLStatements(self, sqlFile, dialect):
+        """
+        Return the SQL statements from the file.
+        For MariaDB, it accepts the whole SQL file content in a single statement.
+        For Oracle, it splits the SQL file content into statements using the slash (/) terminator
+        when it appears as the first character in a line.
+        """
+        if not os.path.exists(sqlFile):
+            raise WMInitException(f"SQL file not found: {sqlFile}")
+
+        with open(sqlFile, 'r', encoding='utf-8') as f:
+            sql = f.read()
+
+        if dialect == 'mariadb':
+            return [sql]
+        elif dialect == 'oracle':
+            statements = []
+            current_statement = []
+
+            for line in sql.split('\n'):
+                line = line.strip()
+                # Skip empty lines and comments
+                if not line or line.startswith('--'):
+                    continue
+
+                # If we find a slash terminator at the start of a line
+                if line == '/':
+                    # Join all lines collected so far into a statement
+                    stmt = '\n'.join(current_statement)
+                    if stmt.strip():
+                        statements.append(stmt)
+                    current_statement = []
+                else:
+                    current_statement.append(line)
+
+            # Add any remaining statement
+            if current_statement:
+                stmt = '\n'.join(current_statement)
+                if stmt.strip():
+                    statements.append(stmt)
+
+            return statements
+        else:
+            raise WMInitException(f"Unsupported database dialect: {dialect}")
 
     def clearDatabase(self, modules=None):
         """

@@ -10,8 +10,6 @@ Based on StageOutMgr class
 import logging
 
 from builtins import object
-from future.utils import viewitems
-
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.RucioFileCatalog import storageJsonPath, readRFC
 from WMCore.Storage.SiteLocalConfig import stageOutStr, loadSiteLocalConfig
@@ -149,7 +147,7 @@ class DeleteMgr(object):
         self.overrideConf = overrideConf
 
         msg = "=======Delete Override Initialised:================\n"
-        for key, val in viewitems(overrideConf):
+        for key, val in overrideConf.items():
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
         self.logger.info(msg)
@@ -250,6 +248,6 @@ class DeleteMgr(object):
             impl.removeFile(pfn)
         except Exception as ex:
             self.logger.exception("Failed to delete file: %s", pfn)
-            raise ex
+            raise ex from None
 
         return pfn

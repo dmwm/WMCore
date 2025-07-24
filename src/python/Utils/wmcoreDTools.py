@@ -140,6 +140,8 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
 
     :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
     :param componentsList: A list of components to be acted upon.
+    :param doLogCleanup:   A Bool flag identifying if all components' logs are to be cleaned upon shutdown
+    :param doDirCleanup:   A Bool flag identifying if the components' working area is to be cleaned upon shutdown
     :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
@@ -187,6 +189,7 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
                 msg = "Unable to cleanup Component Log: "
                 msg += "%s/ComponentLog\n" % compDir
                 msg += str(ex)
+                logging.error(msg)
 
         if doDirCleanup:
             #  //

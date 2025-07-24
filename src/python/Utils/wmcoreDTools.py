@@ -17,6 +17,19 @@ from WMCore.Configuration import loadConfigurationFile, Configuration
 from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
 
+
+def _loadConfig(configFile):
+    """
+    Auxiliary function to check the type of or load a wmagent configuration from file.
+    :param configFile: Either path to the WMAgent configuration file or a WMCore.Configuration instance.
+    :return:           A WMAgent configuration instance
+    """
+    if isinstance(configFile, Configuration):
+        config = configFile
+    else:
+        config = loadConfigurationFile(configFile)
+    return config
+
 def connectionTest(configFile):
     """
     _connectionTest_
@@ -27,10 +40,7 @@ def connectionTest(configFile):
     :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
     :return: None
     """
-    if isinstance(configFile, Configuration):
-        config = configFile
-    else:
-        config = loadConfigurationFile(configFile)
+    config = _loadConfig(configFile)
 
     wmInit = WMInit()
 
@@ -67,10 +77,7 @@ def startup(configFile, componentsList=None):
     :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
-    if isinstance(configFile, Configuration):
-        config = configFile
-    else:
-        config = loadConfigurationFile(configFile)
+    config = _loadConfig(configFile)
 
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
@@ -136,10 +143,7 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
     :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
-    if isinstance(configFile, Configuration):
-        config = configFile
-    else:
-        config = loadConfigurationFile(configFile)
+    config = _loadConfig(configFile)
 
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
@@ -209,10 +213,7 @@ def status(configFile, componentsList=None):
     :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
     exitCode = 0
-    if isinstance(configFile, Configuration):
-        config = configFile
-    else:
-        config = loadConfigurationFile(configFile)
+    config = _loadConfig(configFile)
 
     if componentsList == None:
         componentsList = config.listComponents_() + config.listWebapps_()
@@ -238,10 +239,7 @@ def getComponentThreads(configFile, component):
                'LostThreads': []}
     """
     pidTree = {}
-    if isinstance(configFile, Configuration):
-        config = configFile
-    else:
-        config = loadConfigurationFile(configFile)
+    config = _loadConfig(configFile)
 
     try:
         compDir = config.section_(component).componentDir
@@ -412,10 +410,7 @@ def resetWatchdogTimer(configFile, component):
 
     exitCode = 0
     try:
-        if isinstance(configFile, Configuration):
-            config = configFile
-        else:
-            config = loadConfigurationFile(configFile)
+        config = _loadConfig(configFile)
 
         compDir = config.section_(component).componentDir
         compDir = os.path.expandvars(compDir)

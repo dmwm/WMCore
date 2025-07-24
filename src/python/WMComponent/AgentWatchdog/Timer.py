@@ -69,6 +69,7 @@ class Timer(Thread):
         self.path = path
         self.daemon = True
         self.action = action
+        self.actionString = action.__str__()
         if self.action:
             # First, make sure the signature of the action defined for this timer matches the arguments provided:
             try:

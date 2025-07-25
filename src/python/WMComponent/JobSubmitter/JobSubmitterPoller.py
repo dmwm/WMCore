@@ -127,6 +127,10 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
+        
+        # Add tracking for threshold increases to prevent repeated increases
+        self.globalThresholdIncreased = set()  # Track sites where global threshold was increased
+        self.taskThresholdIncreased = set()    # Track (site, jobType) pairs where task threshold was increased
 
         self.useReqMgrForCompletionCheck = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
 
@@ -632,6 +636,25 @@ class JobSubmitterPoller(BaseWorkerThread):
             totalJobThreshold = totalPendingThreshold + totalRunningSlots
             totalTaskTheshold = taskPendingThreshold + taskRunningSlots
 
+        # Add overflow condition for specific job types
+        thresholdKey = (siteName, jobType)
+        
+        if (totalRunningJobs < totalRunningSlots or jobPrio >= 1000000) and totalPendingJobs >= totalPendingThreshold:
+            # Only increase global threshold if not already increased for this site
+            if siteName not in self.globalThresholdIncreased:
+                logging.info("Increasing pending threshold from %s to %s for job type %s at site %s for job priority %s",
+                             totalPendingThreshold, totalPendingThreshold + 1, jobType, siteName , jobPrio)
+                totalPendingThreshold = totalPendingJobs + 1
+                self.globalThresholdIncreased.add(siteName)
+                
+        if taskRunningJobs < taskRunningSlots and taskPendingJobs >= taskPendingThreshold:
+            # Only increase task threshold if not already increased for this site/task combination
+            if thresholdKey not in self.taskThresholdIncreased:
+                logging.info("Increasing task pending threshold from %s to %s for job type %s at site %s",
+                                taskPendingThreshold, taskPendingThreshold + 1, jobType, siteName)
+                taskPendingThreshold = taskPendingJobs + 1
+                self.taskThresholdIncreased.add(thresholdKey)
+    
         jobStats = [{"Condition": "NoPendingSlot",
                      "Current": totalPendingJobs,
                      "Threshold": totalPendingThreshold},

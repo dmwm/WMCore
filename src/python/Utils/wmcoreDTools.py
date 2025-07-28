@@ -5,8 +5,10 @@ import time
 import json
 import psutil
 import logging
+from collections  import namedtuple
 
 from ptrace.debugger import PtraceProcess, PtraceDebugger
+from ptrace.func_call import FunctionCallOptions
 from ptrace.error import PtraceError
 from pprint import pformat, pprint
 from Utils.Utilities import extractFromXML
@@ -461,7 +463,57 @@ def componentName(obj):
         logging.error(f"Could not find component name for: {obj}. ERROR: {str(ex)}")
     return compName
 
-def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
+def tracePid(pid, interval=10):
+    """
+    A helper function designed to build ptrace based tests per process
+    :param pid:      The process id to be traced
+    :param interval: The interval in seconds for which the process  will be traced. (Default: 10sec.)
+    :return:         Trace string|buffer|result (to be decided)
+    """
+    exitcode = 0
+    debugger = PtraceDebugger()
+    try:
+        # Initially try to attach the process as a non traced one
+        logging.info(f"Attempting to trace {pid} as unattached process")
+        process = debugger.addProcess(pid, is_attached=False)
+    except PtraceError:
+        # in case of an error make an attempt to attach it as already traced one (supposing
+        # a previous execution of the current function could not finish and release it.
+        logging.info(f"Tracing {pid} as already attached process")
+        process = debugger.addProcess(pid, is_attached=True)
+
+    # Now start sampling:
+    logging.info("Start system calls sampling.")
+
+    process.syscall_options = FunctionCallOptions()
+    endTime = time.time() + interval
+    while time.time() < endTime:
+        process.syscall()
+        try:
+            event = process.debugger.waitSyscall()
+        except ProcessExit as event:
+            if event.exitcode is not None:
+                exitcode = event.exitcode
+            continue
+        except ProcessSignal as event:
+            event.display()
+            event.process.syscall(event.signum)
+            exitcode = 128  + event.signum
+            continue
+
+        state = process.syscall_state
+        syscall = state.event(process.syscall_options)
+        if syscall and syscall.result is not None:
+            logging.info(syscall.format())
+
+    # Detach all tracers before returning:
+    logging.info(f"Detaching from PID:{pid}")
+    process.detach()
+    return exitcode
+
+ProcessTracer = namedtuple('ProcessTracer', ['traceFunc', 'args', 'kwArgs'])
+
+def isComponentAlive(config, component=None, pid=None, trace=False, traceInterval=10):
     """
     _isComponentAlive_
     A function to asses if a component is stuck or is still doing its job in the background.
@@ -474,9 +526,9 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
                       NOTE: component name takes precedence so pid will be ignored if both are to be provided
     :param trace:     Bool flag to chose whether to use strace like mechanisms to examine the component's
                       system calls during the tests or to just check if the process tree of the component is sane
-    :param timeout:   The amount of time to wait during a ptrace based test before declaring it failed (Default 60 sec.)
-                      NOTE: In case the component's system calls will be traced, this timeout would be used
-                          to wait for any system call before entering deeper logic in the tests.
+    :param traceInterval:   The amount of time to wait during a ptrace based test before declaring it failed (Default 60 sec.)
+                            NOTE: In case the component's system calls will be traced, this timeout would be used
+                                  to wait for any system call before entering deeper logic in the tests.
     :return:          Bool - True if all checks has passed, False if any of the checks has returned an error
 
     NOTE: We basically have three eventual reasons for a process to seemingly has gotten
@@ -545,30 +597,21 @@ def isComponentAlive(config, component=None, pid=None, trace=False, timeout=6):
     # Build strace like tests if it was chosen to
     # Setup the debugger and tracer process objects for every thread from the pidTree
     if trace:
-        debugger = PtraceDebugger()
         tracers = {}
         for threadId in pidTree['RunningThreads']:
-            try:
-                # Initially try to attach the process as a non traced one
-                logging.info(f"Tracing {threadId} as unattached process")
-                tracers[threadId] = PtraceProcess(debugger, threadId, False, parent=pidTree['Parent'], is_thread=True)
-            except PtraceError:
-                # in case of an error make an attempt to attach it as already traced one (supposing
-                # a previous execution of the current function could not finish and release it.
-                logging.info(f"Tracing {threadId} as already attached process")
-                tracers[threadId] = PtraceProcess(debugger, threadId, True, parent=pidTree['Parent'], is_thread=True)
+            logging.info(f"Creating process tracer for PID: {threadId}")
+            tracers[threadId] = ProcessTracer(tracePid, threadId, {'interval': traceInterval})
 
         # Now start designing all the tests per each thread in order to cover the three possible problematic
         # states as explained in the function docstring.
         logging.info("Start ptrace based tests")
         for threadId, tracer in tracers.items():
-            # .....
-            checkList.append(True)
-
-        logging.info("Detaching from all the threads")
-        # Detach all tracers before returning:
-        for threadId, tracer in tracers.items():
-            tracer.detach()
+            # As a start, run a basic strace just for proof of concept:
+            traceResult = tracer.traceFunc(tracer.args, **tracer.kwArgs)
+            if traceResult == 0:
+                checkList.append(True)
+            else:
+                checkList.append(False)
 
     return all(checkList)
     # return tracers

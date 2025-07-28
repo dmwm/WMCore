@@ -600,14 +600,14 @@ def isComponentAlive(config, component=None, pid=None, trace=False, traceInterva
         tracers = {}
         for threadId in pidTree['RunningThreads']:
             logging.info(f"Creating process tracer for PID: {threadId}")
-            tracers[threadId] = ProcessTracer(tracePid, threadId, {'interval': traceInterval})
+            tracers[threadId] = ProcessTracer(tracePid, [threadId], {'interval': traceInterval})
 
         # Now start designing all the tests per each thread in order to cover the three possible problematic
         # states as explained in the function docstring.
         logging.info("Start ptrace based tests")
         for threadId, tracer in tracers.items():
             # As a start, run a basic strace just for proof of concept:
-            traceResult = tracer.traceFunc(tracer.args, **tracer.kwArgs)
+            traceResult = tracer.traceFunc(*tracer.args, **tracer.kwArgs)
             if traceResult == 0:
                 checkList.append(True)
             else:

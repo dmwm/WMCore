@@ -1581,6 +1581,23 @@ class WMTaskHelper(TreeHelper):
                 return stepHelper.getGPURequirements()
         return gpuRequirements
 
+    def setJobExtraMatchRequirements(self, extraRequirements):
+        """
+        Set the job extra matchmaking requirements for this task
+        :param extraRequirements: string with the extra match requirements
+        :return: nothing, the workload spec is updated in place.
+        """
+        self.data.constraints.jobExtraMatchRequirements = extraRequirements
+        #for task in self.childTaskIterator():
+        #    task.setJobExtraMatchRequirements(extraRequirements)
+
+    def getJobExtraMatchRequirements(self):
+        """
+        Get the job extra matchmaking requirements for this task
+        :return: string with the extra match requirements
+        """
+        return getattr(self.data.constraints, 'jobExtraMatchRequirements', "")
+
     def _getStepValue(self, keyDict, defaultValue):
         """
         __getStepValue_

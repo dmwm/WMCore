@@ -2436,9 +2436,10 @@ class StepChainTests(EmulatedUnitTestCase):
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
         self.assertIsNone(testArguments['RequiresGPU'])
         self.assertEqual(testArguments['GPUParams'], json.dumps(None))
+        self.assertEqual(testArguments['JobExtraMatchRequirements'], "")
         for stepKey in ['Step1', 'Step2', 'Step3']:
-            self.assertTrue("RequiresGPU" not in testArguments[stepKey])
-            self.assertTrue("GPUParams" not in testArguments[stepKey])
+            for paramKey in ("RequiresGPU", "GPUParams", "JobExtraMatchRequirements"):
+                self.assertTrue(paramKey not in testArguments[stepKey])
 
         for taskName in testWorkload.listAllTaskNames():
             taskObj = testWorkload.getTaskByName(taskName)
@@ -2457,9 +2458,10 @@ class StepChainTests(EmulatedUnitTestCase):
 
         self.assertIsNone(testArguments['RequiresGPU'])
         self.assertEqual(testArguments['GPUParams'], json.dumps(None))
+        self.assertEqual(testArguments['JobExtraMatchRequirements'], "")
         for stepKey in ['Step1', 'Step2', 'Step3']:
-            self.assertTrue("RequiresGPU" not in testArguments[stepKey])
-            self.assertTrue("GPUParams" not in testArguments[stepKey])
+            for paramKey in ("RequiresGPU", "GPUParams", "JobExtraMatchRequirements"):
+                self.assertTrue(paramKey not in testArguments[stepKey])
 
         for taskName in testWorkload.listAllTaskNames():
             taskObj = testWorkload.getTaskByName(taskName)
@@ -2470,6 +2472,15 @@ class StepChainTests(EmulatedUnitTestCase):
                     self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
                 else:
                     self.assertFalse(hasattr(stepHelper.data.application, "gpu"))
+
+
+        # now test a failing case for the extra GPU parameters
+        for wrongValues in (None, {"test"}, 123, 123.4, ["wrong"], 20000 * "a"):
+            testArguments['JobExtraMatchRequirements'] = wrongValues
+            with self.assertRaises(WMSpecFactoryException):
+                factory.factoryWorkloadConstruction("PullingTheChain", testArguments)
+        # roll it back to a valid value
+        testArguments['JobExtraMatchRequirements'] = ""
 
         # last but not least, test a failing case
         testArguments['RequiresGPU'] = "required"

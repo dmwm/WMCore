@@ -436,6 +436,9 @@ class StdBase(object):
         else:
             gpuParams = json.loads(self.gPUParams)
         procTaskCmsswHelper.setGPUSettings(gpuRequired, gpuParams)
+        # Parameter used only for job classad (job matchmaking)
+        extraRequirements = self.jobExtraMatchRequirements
+        procTask.setJobExtraMatchRequirements(taskConf.get('JobExtraMatchRequirements', extraRequirements))
 
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
@@ -1084,7 +1087,8 @@ class StdBase(object):
                      "RequiresGPU": {"default": "forbidden",
                                      "validate": lambda x: x in ("forbidden", "optional", "required")},
                      "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
-
+                     "JobExtraMatchRequirements": {"default": "", "type": str,
+                                                   "validate": lambda x: len(x) < 10000},
 
                      # FIXME (Alan on 27/Mar/017): maybe used by T0 during creation???
                      "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,

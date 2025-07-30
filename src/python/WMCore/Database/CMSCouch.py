@@ -1280,10 +1280,10 @@ class CouchMonitor(object):
         """
         check couchdb replication status with compatible output of checkCouchReplications
 
-        :return: a dictionary with the status of the replications and an
+        :return: a list of dictionaries with the status of the replications and an
             error message
         """
-        status = {'name': 'CouchServer', 'status': 'ok', 'error_message': ''}
+        output = []
         sdict = checkStatus(kind='scheduler')
         rdict = checkStatus(kind='replicator')
         method = 'scheduler+replicator'
@@ -1301,7 +1301,8 @@ class CouchMonitor(object):
                 history = pformat(record['history'])
                 msg = f"Replication from {source} to {target} for document {rid} is in a bad state: {error}; "
                 msg += f"History: {history}"
-                return {'name': 'CouchServer', 'status': 'error', 'error_message': msg, 'method': method}
+                status = {'name': 'CouchServer', 'status': 'error', 'error_message': msg, 'method': method}
+                output.append(status)
 
         # if our replication is fine we should check that it is not in a stale phase
         activeTasks = self.getActiveTasks()
@@ -1317,8 +1318,12 @@ class CouchMonitor(object):
                 resp['error_message'] += msg
                 resp['method'] = 'stale phase'
                 resp['name'] = 'CouchServer'
-                return resp
-        return status
+                output.append(resp)
+        # check if we did not record any replication status, then add the ok status
+        if len(output) == 0:
+            status = {'name': 'CouchServer', 'status': 'ok', 'error_message': ''}
+            output.append(status)
+        return output
 
     def checkCouchReplications(self, replicationsList):
         """
@@ -1327,9 +1332,10 @@ class CouchMonitor(object):
 
         :param replicationsList: a list of dictionary with the replication
             document setup.
-        :return: a dictionary with the status of the replications and an
+        :return: a list of dictionaries with the status of the replications and an
             error message
         """
+        output = []
         method = 'comparison of replications docs vs active tasks'
         activeTasks = self.getActiveTasks()
         # filter out any task that is not a database replication
@@ -1339,12 +1345,12 @@ class CouchMonitor(object):
             msg = f"Expected to have {len(replicationsList)} replication tasks, "
             msg += f"but only {len(activeTasks)} in CouchDB. "
             msg += f"Current replications are: {activeTasks}"
-            return {'name': 'CouchServer', 'status': 'error', 'error_message': msg, 'method': method}
+            status = {'name': 'CouchServer', 'status': 'error', 'error_message': msg, 'method': method}
+            output.append(status)
 
         resp = self.checkReplicationState()
         if resp['status'] != 'ok':
-            # then there is a problem, return its status
-            return resp
+            output.append(resp)
 
         # finally, check if replications are being updated in a timely fashion
         for replTask in activeTasks:
@@ -1357,7 +1363,13 @@ class CouchMonitor(object):
                 resp['error_message'] += msg
                 resp['method'] = method
                 resp['name'] = 'CouchServer'
-        return resp
+                output.append(resp)
+
+        # check if we did not record any replication status, then add the ok status
+        if len(output) == 0:
+            status = {'name': 'CouchServer', 'status': 'ok', 'error_message': ''}
+            output.append(status)
+        return output
 
     def checkReplicationState(self):
         """

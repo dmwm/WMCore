@@ -199,12 +199,16 @@ class AgentStatusPoller(BaseWorkerThread):
         couchInfo = []
 
         # original way we monitor CouchDB replication
-        cInfo = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
-        couchInfo.append(cInfo)
+        statuses = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
+        for cInfo in statuses:
+            if cInfo not in couchInfo:
+                couchInfo.append(cInfo)
 
         # new way to monitor CouchDB replication, done via CouchMonitoring module
-        cInfo = self.localCouchMonitor.couchReplicationStatus()
-        couchInfo.append(cInfo)
+        statuses = self.localCouchMonitor.couchReplicationStatus()
+        for cInfo in statuses:
+            if cInfo not in couchInfo:
+                couchInfo.append(cInfo)
         return couchInfo
 
     def collectAgentInfo(self):
@@ -233,7 +237,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
 
         for couchInfo in self.checkCouchStatus():
-            if couchInfo['status'] != 'ok':
+            if 'status' in couchInfo and couchInfo['status'] != 'ok':
                 agentInfo['down_components'].append(couchInfo['name'])
                 agentInfo['status'] = couchInfo['status']
                 agentInfo['down_component_detail'].append(couchInfo)

@@ -196,10 +196,19 @@ class AgentStatusPoller(BaseWorkerThread):
         verifies whether all the replication tasks are progressing as expected
         :return: a dictionary with the status for CouchServer
         """
-        couchInfo = {'name': 'CouchServer', 'status': 'ok', 'error_message': ""}
+        couchInfo = []
 
-        cInfo = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
-        couchInfo.update(cInfo)
+        # original way we monitor CouchDB replication
+        statuses = self.localCouchMonitor.checkCouchReplications(self.replicatorDocs)
+        for cInfo in statuses:
+            if cInfo not in couchInfo:
+                couchInfo.append(cInfo)
+
+        # new way to monitor CouchDB replication, done via CouchMonitoring module
+        statuses = self.localCouchMonitor.couchReplicationStatus()
+        for cInfo in statuses:
+            if cInfo not in couchInfo:
+                couchInfo.append(cInfo)
         return couchInfo
 
     def collectAgentInfo(self):
@@ -226,11 +235,12 @@ class AgentStatusPoller(BaseWorkerThread):
         else:
             agentInfo['drain_mode'] = False
 
-        couchInfo = self.checkCouchStatus()
-        if couchInfo['status'] != 'ok':
-            agentInfo['down_components'].append(couchInfo['name'])
-            agentInfo['status'] = couchInfo['status']
-            agentInfo['down_component_detail'].append(couchInfo)
+
+        for couchInfo in self.checkCouchStatus():
+            if 'status' in couchInfo and couchInfo['status'] != 'ok':
+                agentInfo['down_components'].append(couchInfo['name'])
+                agentInfo['status'] = couchInfo['status']
+                agentInfo['down_component_detail'].append(couchInfo)
 
         # Couch process warning
         couchProc = numberCouchProcess()

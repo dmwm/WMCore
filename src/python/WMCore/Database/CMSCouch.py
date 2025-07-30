@@ -25,12 +25,14 @@ import logging
 import re
 import time
 import sys
+from pprint import pformat
 from datetime import datetime
 from http.client import HTTPException
 
 from Utils.IteratorTools import grouper, nestedDictUpdate
 from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.Requests import JSONRequests
+from WMCore.Database.CouchMonitoring import checkStatus
 
 
 def check_name(dbname):
@@ -1274,6 +1276,55 @@ class CouchMonitor(object):
             return resp
         return data.get("docs", resp)
 
+    def couchReplicationStatus(self):
+        """
+        check couchdb replication status with compatible output of checkCouchReplications
+
+        :return: a list of dictionaries with the status of the replications and an
+            error message
+        """
+        output = []
+        sdict = checkStatus(kind='scheduler')
+        rdict = checkStatus(kind='replicator')
+        method = 'scheduler+replicator'
+        # update sdict only with entries from replicator dict which are not present in scheduler
+        for key, val in rdict['current_status'].items():
+            if key not in sdict['current_status']:
+                sdict['current_status'][key] = val
+        stateFailures = ['error', 'failed']
+        for rid, record in sdict['current_status'].items():
+            if record['state'] in stateFailures:
+                status['state'] = 'error'
+                source = sanitizeURL(record['source'])
+                target = sanitizeURL(record['target'])
+                error = record['error']
+                history = pformat(record['history'])
+                msg = f"Replication from {source} to {target} for document {rid} is in a bad state: {error}; "
+                msg += f"History: {history}"
+                status = {'name': 'CouchServer', 'status': 'error', 'error_message': msg, 'method': method}
+                output.append(status)
+
+        # if our replication is fine we should check that it is not in a stale phase
+        activeTasks = self.getActiveTasks()
+        activeTasks = [task for task in activeTasks if task["type"].lower() == "replication"]
+        resp = self.checkReplicationState()
+        for replTask in activeTasks:
+            if self.isReplicationStale(replTask):
+                source = sanitizeURL(replTask['source'])['url']
+                target = sanitizeURL(replTask['target'])['url']
+                msg = f"Replication from {source} to {target} is stale and it's last"
+                msg += f"update time was at: {replTask.get('updated_on')}"
+                resp['status'] = 'error'
+                resp['error_message'] += msg
+                resp['method'] = 'stale phase'
+                resp['name'] = 'CouchServer'
+                output.append(resp)
+        # check if we did not record any replication status, then add the ok status
+        if len(output) == 0:
+            status = {'name': 'CouchServer', 'status': 'ok', 'error_message': ''}
+            output.append(status)
+        return output
+
     def checkCouchReplications(self, replicationsList):
         """
         Check whether the list of expected replications exist in CouchDB
@@ -1281,9 +1332,11 @@ class CouchMonitor(object):
 
         :param replicationsList: a list of dictionary with the replication
             document setup.
-        :return: a dictionary with the status of the replications and an
+        :return: a list of dictionaries with the status of the replications and an
             error message
         """
+        output = []
+        method = 'comparison of replications docs vs active tasks'
         activeTasks = self.getActiveTasks()
         # filter out any task that is not a database replication
         activeTasks = [task for task in activeTasks if task["type"].lower() == "replication"]
@@ -1292,12 +1345,12 @@ class CouchMonitor(object):
             msg = f"Expected to have {len(replicationsList)} replication tasks, "
             msg += f"but only {len(activeTasks)} in CouchDB. "
             msg += f"Current replications are: {activeTasks}"
-            return {'status': 'error', 'error_message': msg}
+            status = {'name': 'CouchServer', 'status': 'error', 'error_message': msg, 'method': method}
+            output.append(status)
 
         resp = self.checkReplicationState()
         if resp['status'] != 'ok':
-            # then there is a problem, return its status
-            return resp
+            output.append(resp)
 
         # finally, check if replications are being updated in a timely fashion
         for replTask in activeTasks:
@@ -1308,7 +1361,15 @@ class CouchMonitor(object):
                 msg += f"update time was at: {replTask.get('updated_on')}"
                 resp['status'] = 'error'
                 resp['error_message'] += msg
-        return resp
+                resp['method'] = method
+                resp['name'] = 'CouchServer'
+                output.append(resp)
+
+        # check if we did not record any replication status, then add the ok status
+        if len(output) == 0:
+            status = {'name': 'CouchServer', 'status': 'ok', 'error_message': ''}
+            output.append(status)
+        return output
 
     def checkReplicationState(self):
         """
@@ -1347,3 +1408,20 @@ class CouchMonitor(object):
             # then it has been recently updated
             return True
         return False
+
+    def isReplicationStale(self, replInfo, niter=10):
+        """
+        Ensure that the replication document is up-to-date as a
+        function of the checkpoint interval.
+
+        :param replInfo: dictionary with the replication information
+        :param niter: number of iteration for checkpoint interval
+        :return: True if replication is working fine, otherwise False
+        """
+        maxUpdateInterval = niter * replInfo['checkpoint_interval'] / 1000
+        lastUpdate = replInfo["updated_on"]
+
+        if lastUpdate + maxUpdateInterval > int(time.time()):
+            # then it has been recently updated and it means replication is not stale
+            return False
+        return True

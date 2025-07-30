@@ -706,15 +706,18 @@ class Rucio(object):
         Update rule information for a given rule id
         :param ruleId: string with the rule id
         :param opts: dictionary, rule id options passed to Rucio
-        :return: boolean status of update call
+        :return: boolean status to represent whether it succeeded or not.
+                 ok status code and RuleNotFound exception are considered as succeeded,
+                 any other Exception case is considered as failed.
         """
-        status = None
+        status = True
         try:
             status = self.cli.update_replication_rule(ruleId, opts)
         except RuleNotFound:
             self.logger.error("Cannot find any information for rule id: %s", ruleId)
         except Exception as ex:
             self.logger.error("Exception updating rule id: %s. Error: %s", ruleId, str(ex))
+            status = False
         return status
 
     def deleteRule(self, ruleId, purgeReplicas=False):

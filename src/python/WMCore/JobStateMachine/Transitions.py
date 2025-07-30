@@ -5,15 +5,12 @@ _Transitions_
 Controls what state transitions are allowed.
 """
 
-from future.utils import viewvalues
-
 
 class Transitions(dict):
     """
     All allowed state transitions in the JSM.
     """
     def __init__(self):
-        self.setdefault('none', ['new'])
         self.setdefault('new', ['created', 'createfailed', 'killed'])
         self.setdefault('created', ['executing', 'submitfailed', 'createfailed', 'killed'])
         self.setdefault('executing', ['complete', 'jobfailed', 'killed'])
@@ -40,7 +37,7 @@ class Transitions(dict):
         states other than cleanout.
         """
         knownstates = set(self.keys())
-        for possiblestates in viewvalues(self):
+        for possiblestates in self.values():
             for i in possiblestates:
                 knownstates.add(i)
         return list(knownstates)

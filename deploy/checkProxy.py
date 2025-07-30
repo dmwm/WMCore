@@ -16,6 +16,7 @@ import socket
 
 
 HOST = socket.gethostname()
+USER = os.getenv('USER')
 
 
 def main(argv):
@@ -40,7 +41,7 @@ def main(argv):
     proxy = os.getenv('X509_USER_PROXY')
     myproxy = False
     verbose = False
-    mail = os.getenv('USER')
+    mail = USER
     sendMail = True
     time = 3
 
@@ -98,10 +99,16 @@ def sendMailNotification(mail, message, proxyInfo='', verbose=False):
     # append proxy info to message
     for line in proxyInfo:
         message += "%s\n" % line
-    # echo %msg | mail -s 'HOST proxy status' MAIL_ADD
-    command = " echo \"%s\" | " % (message)
-    command += "mail -s '%s: Proxy status'" % (HOST)
-    command += " %s" % (mail)
+
+    # retrieve short and domain name to be used in the from-address of the email
+    host_name = HOST.split('.')[0]
+    domain_name = HOST.split('.')[1:]
+    domain_name = '.'.join(domain_name)
+    # echo %msg | mail -s 'HOST proxy status' -r FROM_ADDRESS TO_ADDRESS
+    command = f" echo \"{message}\" | "
+    command += f"mail -s '{HOST}: Proxy status'"
+    command += f" -r {USER}-{host_name}@{domain_name}"
+    command += f" {mail}"
 
     if verbose:
         print("Running email command: {}".format(command))
@@ -122,7 +129,7 @@ def processTimeLeft(sendMail, verbose, proxyInfo, time, mail):
         timeLeft = []
         for line in proxyInfo:
             if line.find(b'timeleft') > -1:
-                dateReg = re.compile(b'\d{1,3}[:/]\d{2}[:/]\d{2}')
+                dateReg = re.compile(rb'\d{1,3}[:/]\d{2}[:/]\d{2}')
                 timeLeft = dateReg.findall(line)[0]
                 timeLeft = timeLeft.split(b':')[0]
                 continue

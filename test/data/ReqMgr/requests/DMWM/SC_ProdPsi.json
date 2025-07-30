@@ -41,8 +41,7 @@
                 "MC harvesting; Automatic EventBased and EventAwareLumiBased splitting; StepChain Disk and Tape rules "
             ],
             "WorkFlowDesc": [
-                "TC MC from scratch without PU; Step1 with 300EpJ instead of 261EpJ; Step2 with 480EpJ; Step3 with 480;",
-                "Step2/3 with EventAwareLumiBased; FirstEvent=10001, FirstLumi=101; Rucio container rule for Disk"
+                "SC MC from scratch; EventBased splitting with 700EpJ; FirstLumi=101; Rucio container rule for Disk"
             ]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
@@ -97,6 +96,7 @@
             "ConfigCacheID": "527f598f9168f0145d17417be583db58",
             "EventStreams": 2,
             "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+            "KeepOutput": false,
             "InputFromOutputModule": "FEVTDEBUGoutput",
             "InputStep": "GenSimFull",
             "Multicore": 8,

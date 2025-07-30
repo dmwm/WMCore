@@ -3,7 +3,6 @@
 DBSErrors represents generic class to handle DBS Go server errors
 """
 
-
 import json
 
 from WMCore.Services.DBS.ProdException import ProdException

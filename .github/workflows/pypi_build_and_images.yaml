@@ -35,11 +35,13 @@ jobs:
                  msoutput, mspileup, msrulecleaner, mstransferor, msmonitor]
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup python 3.8
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8"
+          python-version: '3.12'
 
       # setup ubuntu Linux with packages required for installing locally WM
       # python packages, e.g. we need curl-config for pycurl (it comes from dev
@@ -51,9 +53,10 @@ jobs:
           sudo apt install -y curl libcurl4-openssl-dev
 
       # upgrade pip
-      - name: Upgrade pip3
+      - name: Upgrade pip3 and install build tools
         run: |
           python3 -m pip install --upgrade pip
+          python3 -m pip install setuptools wheel
 
       # create appropriate setup.py for python builds
       - name: Update the setup script template with package name
@@ -73,8 +76,6 @@ jobs:
       # this step will build tarball and whl files for our matrix.target WM package
       - name: Build sdist and bdist_wheel
         run: |
-          echo "install wheel package from pip to build wheels"
-          pip install wheel
           echo "build WMCore sdist and wheels"
           python3 setup.py clean sdist bdist_wheel
 
@@ -98,6 +99,8 @@ jobs:
       # perform CI/CD actions to upload WM packages to PyPi
       - name: Upload package distribution to PyPi
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
   # second job, depends on build_and_publish_services, builds and upload
   # docker images to CERN registry

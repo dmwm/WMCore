@@ -15,6 +15,5 @@ class NewState(MySQLNewState):
     Insert new states into bl_status
     """
 
-
-    sql = """INSERT INTO bl_status (id, name) SELECT bl_status_SEQ.nextval, :name FROM dual
-               WHERE NOT EXISTS (SELECT stat.id FROM bl_status stat WHERE stat.name = :name)"""
+    sql = """INSERT INTO bl_status (name) SELECT :name FROM dual
+             WHERE NOT EXISTS (SELECT 1 FROM bl_status WHERE name = :name)"""

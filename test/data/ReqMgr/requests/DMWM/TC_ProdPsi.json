@@ -34,7 +34,7 @@
         "Comments": {
             "CheckList": ["TaskChain MC from scratch; TaskChain extension; TaskChain with transient Task2 GEN-SIM-DIGI-RAW output;  ",
                           "MC harvesting; Automatic EventBased and EventAwareLumiBased splitting; TaskChain Disk and Tape rules "],
-            "WorkFlowDesc": ["TC MC from scratch without PU; Task1 with 300EpJ instead of 261EpJ; Task2 with 480EpJ; Task3 with 480;",
+            "WorkFlowDesc": ["TC MC from scratch without PU; Task1 with 300EpJ instead of 261EpJ; Task2 with 320EpJ; Task3 with 480;",
                              "Task2/3 with EventAwareLumiBased; FirstEvent=10001, FirstLumi=101; Rucio container rule for Disk"]
         }, 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 

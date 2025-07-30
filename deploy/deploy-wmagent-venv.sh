@@ -16,7 +16,8 @@ help(){
       -b  <wmcore_source_branch>     WMCore source branch [Default: master]
       -t  <wmcore_tag>               WMCore tag to be used for this deployment [Default: None]
       -d  <wmagent_path>             WMAgent virtual environment target path to be used for this deployment [Default: ./WMAgent.venv3]
-      -h <help>                      Provides help to the current script
+      -p  <python_executable>        The path to the python executable to be used, in case we do not want to rely on the OS default.
+      -h  <help>                     Provides help to the current script
 
     # Example: Deploy WMAgent version 2.0.3rc1 from 'test' pypi index:
     #          at destination /data/tmp/WMAgent.venv3/
@@ -79,7 +80,7 @@ pythonCmd=python
 
 ### Searching for the mandatory and optional arguments:
 # export OPTIND=1
-while getopts ":t:r:d:l:i:snvyh" opt; do
+while getopts ":t:r:d:b:i:p:snvyh" opt; do
     case ${opt} in
         d)
             venvPath=$OPTARG
@@ -92,6 +93,8 @@ while getopts ":t:r:d:l:i:snvyh" opt; do
             wmSrcBranch=$OPTARG ;;
         i)
             pipIndex=$OPTARG ;;
+        p)
+            pythonCmd=$OPTARG ;;
         s)
             runFromSource=true ;;
         n)
@@ -516,6 +519,7 @@ wmaInstall() {
     _addWMCoreVenvVar  WMA_INSTALL_DIR $WMA_CURRENT_DIR/install
     _addWMCoreVenvVar  WMA_CONFIG_DIR $WMA_CURRENT_DIR/config
     _addWMCoreVenvVar  WMA_CONFIG_FILE $WMA_CONFIG_DIR/config.py
+    _addWMCoreVenvVar  WMAGENT_CONFIG $WMA_CONFIG_DIR/config.py
     _addWMCoreVenvVar  WMA_LOG_DIR $WMA_CURRENT_DIR/logs
     _addWMCoreVenvVar  WMA_DEPLOY_DIR $venvPath
     _addWMCoreVenvVar  WMA_MANAGE_DIR $WMA_DEPLOY_DIR/bin
@@ -537,10 +541,9 @@ wmaInstall() {
     # Add all deployment needed directories
     cp -rv bin/* $WMA_DEPLOY_DIR/bin/
     cp -rv etc $WMA_DEPLOY_DIR/
-    cp -rv install.sh ${WMA_ROOT_DIR}/install.sh
 
     # Add install script
-    cp -rv  install.sh ${WMA_ROOT_DIR}/install.sh
+    cp -rv install.sh ${WMA_ROOT_DIR}/install.sh
 
     # Add wmagent run script
     cp -rv run.sh ${WMA_ROOT_DIR}/run.sh
@@ -567,9 +570,11 @@ tweakVenv(){
     # # in general hard coded in the Docker image
 
     echo "Copy certificates and WMAgent.secrets file from an old agent"
+    mkdir -p $WMA_CERTS_DIR
     cp -v /data/certs/servicekey.pem  $WMA_CERTS_DIR/
     cp -v /data/certs/servicecert.pem  $WMA_CERTS_DIR/
     # Try to find the WMAgent.secrets file at /data/dockerMount first
+    mkdir -p $WMA_ROOT_DIR/admin/wmagent
     cp -v /data/dockerMount/admin/wmagent/WMAgent.secrets $WMA_ROOT_DIR/admin/wmagent/ ||
         cp -v /data/admin/wmagent/WMAgent.secrets $WMA_ROOT_DIR/admin/wmagent/
     echo "-------------------------------------------------------"

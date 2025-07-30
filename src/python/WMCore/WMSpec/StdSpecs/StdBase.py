@@ -34,6 +34,9 @@ class StdBase(object):
     Base class with helper functions for standard WMSpec file.
     """
 
+    # Default target job length in seconds
+    target_job_length = 12.0 * 3600.0
+
     def __init__(self):
         """
         __init__
@@ -47,6 +50,8 @@ class StdBase(object):
         These parameters can be changed after the workflow has been created by
         the methods in the WMWorkloadHelper class.
         """
+        # just to resolve a pylint E0203 in DataProcessing
+        self.eventsPerJob = None
         argumentDefinition = self.getWorkloadCreateArgs()
         for arg in argumentDefinition:
             setattr(self, argumentDefinition[arg]["attr"], None)
@@ -54,7 +59,6 @@ class StdBase(object):
         # Internal parameters
         self.workloadName = None
         self.config_cache = {}
-
         return
 
     def __call__(self, workloadName, arguments):
@@ -85,11 +89,10 @@ class StdBase(object):
             self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
             self.dbsUrl = self.dbsUrl.rstrip("/")
 
-        return
+        return self.workloadName
 
     # static copy of the skim mapping
     skimMap = {}
-
     @staticmethod
     def calcEvtsPerJobLumi(ePerJob, ePerLumi, tPerEvent, requestedEvents=None):
         """
@@ -106,9 +109,9 @@ class StdBase(object):
         :param ePerLumi: events per lumi
         :param tPerEvent: time per event
         """
-        # if not set, let's calculate an 8h job and set it for you
+        # if not set, let's calculate it based on target_job_length
         if ePerJob is None:
-            ePerJob = int((8.0 * 3600.0) / tPerEvent)
+            ePerJob = int(StdBase.target_job_length / tPerEvent)
         if requestedEvents and ePerJob > requestedEvents:
             ePerJob = requestedEvents
 
@@ -117,7 +120,7 @@ class StdBase(object):
         elif ePerLumi > ePerJob:
             ePerLumi = ePerJob
         else:
-            # then make EventsPerJob multiple of EventsPerLumi and still closer to 8h jobs
+            # then make EventsPerJob multiple of EventsPerLumi and still closer to target_job_length
             multiplier = int(round(ePerJob / ePerLumi))
             # make sure not to have 0 EventsPerJob
             multiplier = max(multiplier, 1)
@@ -223,6 +226,8 @@ class StdBase(object):
                     outputModules[moduleLabel] = {'dataTier': output['dataTier']}
                     if 'primaryDataset' in output:
                         outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
+                    if 'rawSkim' in output:
+                        outputModules[moduleLabel]['rawSkim'] = output['rawSkim']
                     if 'filterName' in output:
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
@@ -467,6 +472,7 @@ class StdBase(object):
                                                                                    self.inputPrimaryDataset),
                                                 configOutput[outputModuleName]['dataTier'],
                                                 configOutput[outputModuleName].get('filterName', None),
+                                                configOutput[outputModuleName].get('rawSkim', None),
                                                 forceMerged=forceMerged, forceUnmerged=forceUnmerged, taskConf=taskConf)
             outputModules[outputModuleName] = outputModule
 
@@ -507,6 +513,7 @@ class StdBase(object):
 
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
+                        rawSkim=None,
                         stepName="cmsRun1", forceMerged=False,
                         forceUnmerged=False, taskConf=None):
         """
@@ -583,6 +590,7 @@ class StdBase(object):
                                         processedDataset=processedDataset,
                                         dataTier=dataTier,
                                         filterName=filterName,
+                                        rawSkim=rawSkim,
                                         lfnBase=unmergedLFN,
                                         mergedLFNBase=mergedLFN,
                                         transient=isTransient)
@@ -590,7 +598,8 @@ class StdBase(object):
         return {"primaryDataset": primaryDataset,
                 "dataTier": dataTier,
                 "processedDataset": processedDataset,
-                "filterName": filterName}
+                "filterName": filterName,
+                "rawSkim": rawSkim}
 
     def addLogCollectTask(self, parentTask, taskName="LogCollect", filesPerJob=500,
                           cmsswVersion=None, scramArch=None):
@@ -1399,8 +1408,8 @@ class StdBase(object):
                 msg = "Request is set with RequiresGPU={}, ".format(schemaData["RequiresGPU"])
                 if not json.loads(schemaData["GPUParams"]):
                     msg += "but GPUParams argument is empty and/or incorrect."
-                    raise WMSpecFactoryException(msg)
+                    raise WMSpecFactoryException(msg) from None
             except KeyError:
                 msg += "but GPUParams argument has not been provided."
-                raise WMSpecFactoryException(msg)
+                raise WMSpecFactoryException(msg) from None
         return True

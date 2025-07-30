@@ -238,14 +238,14 @@ class BuildCommand(build_py):
 
     def compress_assets(self):
         if not self.compress:
-            for dir, files in self.distribution.data_files:
+            for dir, files in self.distribution.package_data.items():
                 for f in files:
                     if f.find("-min.") >= 0:
                         print("removing", f)
                         os.remove(f)
         else:
             rxfileref = re.compile(r"(/[-A-Za-z0-9_]+?)(?:-min)?(\.(html|js|css))")
-            for dir, files in self.distribution.data_files:
+            for dir, files in self.distribution.package_data.items():
                 files = [f for f in files if f.find("-min.") < 0]
                 if not files:
                     continue
@@ -319,15 +319,18 @@ class InstallCommand(install):
             sys.exit(1)
         # Set what actually gets installed
         self.distribution.packages, self.distribution.py_modules = things_to_build(self)
-        self.distribution.data_files = list_static_files(dependencies[self.system])
+        if self.system:
+            self.distribution.package_data[self.system] = list_static_files(dependencies[self.system])
         docroot = "%s/doc/build/html" % get_path_to_wmcore_root()
         for dirpath, _, files in os.walk(docroot):
-            self.distribution.data_files.append(("doc%s" % dirpath[len(docroot):],
-                                                 ["%s/%s" % (dirpath, fname) for fname in files if
-                                                  fname != '.buildinfo']))
+            path = "doc%s" % dirpath[len(docroot):]
+            files = ["%s/%s" % (dirpath, fname) for fname in files if fname != '.buildinfo']
+            self.distribution.package_data[path] += files
         # Mangle data paths if patching.
         if self.patch:
-            self.distribution.data_files = [('x' + dir, files) for dir, files in self.distribution.data_files]
+            for dir, files in self.distribution.package_data.items():
+                path = 'x' + dir
+                self.distribution.package_data[path] = files
 
         print_build_info(self)
 

@@ -577,19 +577,31 @@ class SimpleCondorPlugin(BasePlugin):
             # while we do not support a third option for RequiresGPU, make a binary decision
             if job['requiresGPU'] == "required":
                 ad['My.RequiresGPU'] = "1"
-                ad['request_GPUs'] = "1"
+                ad['request_gpus'] = "1"
             else:
                 ad['My.RequiresGPU'] = "0"
-                ad['request_GPUs'] = "0"
+                ad['request_gpus'] = "0"
             if job.get('gpuRequirements', None):
-                ad['My.GPUMemoryMB'] = str(job['gpuRequirements']['GPUMemoryMB'])
-                cudaCapabilities = ','.join(sorted(job['gpuRequirements']['CUDACapabilities']))
-                ad['My.CUDACapability'] = classad.quote(str(cudaCapabilities))
-                ad['My.CUDARuntime'] = classad.quote(job['gpuRequirements']['CUDARuntime'])
+                ad['My.DESIRED_GPUMemoryMB'] = str(job['gpuRequirements']['GPUMemoryMB'])
+                # CUDACapabilities is a list of strings, with each string matching this regex: r"^\d+.\d$"
+                # E.g.: ["1.0", "10.0", "2.1"]
+                cudaCapabilities = sorted(job['gpuRequirements']['CUDACapabilities'], key=float)
+                
+                ad['My.DESIRED_GPUMinimumCapability'] = classad.quote(str(cudaCapabilities[0]))
+                ad['My.DESIRED_GPUMaximumCapability'] = classad.quote(str(cudaCapabilities[-1]))
+                ad['My.DESIRED_GPURuntime'] = classad.quote(job['gpuRequirements']['CUDARuntime'])
             else:
-                ad['My.GPUMemoryMB'] = undefined
-                ad['My.CUDACapability'] = undefined
-                ad['My.CUDARuntime'] = undefined
+                ad['My.DESIRED_GPUMemoryMB'] = undefined
+                ad['My.DESIRED_GPUMinimumCapability'] = undefined
+                ad['My.DESIRED_GPUMaximumCapability'] = undefined
+                ad['My.DESIRED_GPURuntime'] = undefined
+
+            # Assign GPU related HTCondor macros classads to DESIRED classads above
+            ad['gpus_minimum_memory'] = ad['My.DESIRED_GPUMemoryMB']
+            ad['gpus_minimum_capability'] = ad['My.DESIRED_GPUMinimumCapability']
+            ad['gpus_maximum_capability'] = ad['My.DESIRED_GPUMaximumCapability']
+            ad['gpus_minimum_runtime'] = ad['My.DESIRED_GPURuntime']
+
             # Performance and resource estimates (including JDL magic tweaks)
             origCores = job.get('numberOfCores', 1)
             estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60

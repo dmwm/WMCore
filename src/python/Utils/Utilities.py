@@ -11,6 +11,16 @@ import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
 
+import xml.etree.ElementTree as ET
+
+def extractFromXML(xmlFile, xmlElement):
+    tree = ET.parse(xmlFile)
+    root = tree.getroot()
+    element = root.find(f".//{xmlElement}")
+    if element is not None:
+        return element.get("Value")
+    return None
+
 def lowerCmsHeaders(headers):
     """
     Lower CMS headers in provided header's dict. The WMCore Authentication

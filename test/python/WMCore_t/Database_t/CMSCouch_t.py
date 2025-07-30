@@ -586,21 +586,24 @@ class CouchMonitorTest(unittest.TestCase):
 
     def testCouchReplicationStatus(self):
         """Very basic tests for the 'couchReplicationStatus' method"""
-        resp = self.monitor.couchReplicationStatus()
-        self.assertEqual(resp["status"], "ok")
-        self.assertEqual(resp["error_message"], "")
+        statuses = self.monitor.couchReplicationStatus()
+        for resp in statuses:
+            self.assertEqual(resp["status"], "ok")
+            self.assertEqual(resp["error_message"], "")
 
     def testCheckCouchReplications(self):
         """Very basic tests for the 'checkCouchReplications' method"""
-        resp = self.monitor.checkCouchReplications([])
-        self.assertEqual(resp["status"], "ok")
-        self.assertEqual(resp["error_message"], "")
+        statuses = self.monitor.checkCouchReplications([])
+        for resp in statuses:
+            self.assertEqual(resp["status"], "ok")
+            self.assertEqual(resp["error_message"], "")
 
     def testCheckReplicationState(self):
         """Very basic tests for the 'checkReplicationState' method"""
-        resp = self.monitor.checkReplicationState()
-        self.assertEqual(resp["status"], "ok")
-        self.assertEqual(resp["error_message"], "")
+        statuses = self.monitor.checkReplicationState()
+        for resp in statuses:
+            self.assertEqual(resp["status"], "ok")
+            self.assertEqual(resp["error_message"], "")
 
     def testIsReplicationOK(self):
         """ Very basic test for the 'isReplicationOK' method """

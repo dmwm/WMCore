@@ -600,10 +600,9 @@ class CouchMonitorTest(unittest.TestCase):
 
     def testCheckReplicationState(self):
         """Very basic tests for the 'checkReplicationState' method"""
-        statuses = self.monitor.checkReplicationState()
-        for resp in statuses:
-            self.assertEqual(resp["status"], "ok")
-            self.assertEqual(resp["error_message"], "")
+        resp = self.monitor.checkReplicationState()
+        self.assertEqual(resp["status"], "ok")
+        self.assertEqual(resp["error_message"], "")
 
     def testIsReplicationOK(self):
         """ Very basic test for the 'isReplicationOK' method """

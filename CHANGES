@@ -1,3 +1,14 @@
+2.4.2rc7 to 2.4.2rc8:
+  - couchdb monitoring
+    - reverse unit test check for checkReplicationState function (Valentin Kuznetsov) #12353
+    - adjust unit test for new output (Valentin Kuznetsov) #12353
+    - return all possible replication statuses (success and/or failures) (Valentin Kuznetsov) #12353
+    - New unit tests (Valentin Kuznetsov) #12353
+    - New module for monitoring CouchDB replication (Valentin Kuznetsov) #12353
+  - Replace deleteRule with updateRule with lifetime=0. Following https://github.com/dmwm/CMSRucio/issues/921 (Kenyi Hurtado) #12384
+  - Rename GPU related parameters and split CUDACapability, following https://github.com/dmwm/WMCore/issues/11942#issuecomment-3049044064 (Kenyi Hurtado) #12416
+
+
 2.4.2rc6 to 2.4.2rc7:
   - Fix WMAGENT_CONFIG exports (Todor Ivanov) #12400
   - Remove CreateWMBSBase from unit tests; unit tests for WMInit (Alan Malta Rodrigues) #12341

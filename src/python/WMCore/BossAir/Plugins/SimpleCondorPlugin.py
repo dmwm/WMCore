@@ -162,8 +162,14 @@ class SimpleCondorPlugin(BasePlugin):
 
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
-
-            (sub, jobParams) = self.createSubmitRequest(jobsReady)
+            
+            try:
+                (sub, jobParams) = self.createSubmitRequest(jobsReady)
+            except Exception as ex:
+                logging.error("Failed to create submit request for %d jobs", len(jobsReady))
+                logging.exception(str(ex))
+                logging.error("Moving on the the next batch of jobs and/or cycle....")
+                return successfulJobs, failedJobs
 
             logging.debug("Start: Submitting %d jobs using Condor Python Submit", len(jobParams))
             try:

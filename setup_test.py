@@ -404,10 +404,10 @@ class CoverageCommand(Command):
 
             # attempt to load previously cached coverage information if it exists
             try:
-                cov = coverage.coverage(branch=True, data_file='wmcore-coverage.dat')
+                cov = coverage.Coverage(branch=True, data_file='wmcore-coverage.dat')
                 cov.load()
             except Exception:
-                cov = coverage.coverage(branch=True, )
+                cov = coverage.Coverage(branch=True, )
                 cov.start()
                 #  runUnitTests() Undefined, no idea where this was supposed to come from - EWV
                 cov.stop()

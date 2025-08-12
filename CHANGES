@@ -1,3 +1,8 @@
+2.4.2rc8 to 2.4.2rc9:
+  - Update third party python packages (Kenyi Hurtado) #12424
+  - Fix ReqMgr2 data type validation (Alan Malta Rodrigues) #12423
+
+
 2.4.2rc7 to 2.4.2rc8:
   - couchdb monitoring
     - reverse unit test check for checkReplicationState function (Valentin Kuznetsov) #12353

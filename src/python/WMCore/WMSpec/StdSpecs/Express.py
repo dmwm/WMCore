@@ -228,10 +228,10 @@ class ExpressWorkloadFactory(StdBase):
 
                 if expressOutInfo['dataTier'] in ["DQM", "DQMIO"]:
                     self.addDQMHarvestTask(mergeTask, "Merged",
-                                           maxpss=self.harvestingTaskMemory,
                                            uploadProxy=self.dqmUploadProxy,
                                            periodic_harvest_interval=self.periodicHarvestInterval,
-                                           doLogCollect=True)
+                                           doLogCollect=True,
+                                           maxpss=self.harvestingMemory)
 
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString

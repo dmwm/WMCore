@@ -766,10 +766,10 @@ class StdBase(object):
 
         return
 
-    def addDQMHarvestTask(self, parentTask, parentOutputModuleName, maxpss=3.0*1024, uploadProxy=None,
+    def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy=None,
                           periodic_harvest_interval=0, periodic_harvest_sibling=False,
                           parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun",
-                          cmsswVersion=None, scramArch=None):
+                          cmsswVersion=None, scramArch=None, maxpss=3.0 * 1024):
         """
         _addDQMHarvestTask_
 
@@ -856,12 +856,11 @@ class StdBase(object):
         # if this was a Periodic harvesting add another for EndOfRun
         if periodic_harvest_interval:
             self.addDQMHarvestTask(parentTask=parentTask, parentOutputModuleName=parentOutputModuleName,
-                                   maxpss=maxpss,
                                    uploadProxy=uploadProxy,
                                    periodic_harvest_interval=0, periodic_harvest_sibling=True,
                                    parentStepName=parentStepName, doLogCollect=doLogCollect,
                                    dqmHarvestUnit=dqmHarvestUnit,
-                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch, maxpss=maxpss)
 
         return
 
@@ -1103,7 +1102,7 @@ class StdBase(object):
                      "ProcessingString": {"validate": procstring, "optional": False},
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
-                     "HarvestingMemory": {"default": 3000, "type": int, "validate": lambda x: x > 0},
+                     "HarvestingMemory": {"default": 3000.0, "type": float, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
                      "EventStreams": {"type": int, "default": 0, "validate": lambda x: x >= 0, "null": True},
                      "MergedLFNBase": {"default": "/store/data"},

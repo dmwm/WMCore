@@ -53,7 +53,7 @@ REQUEST = {
     "Scenario": "test_scenario",
     "SpecialDataset": "StreamExpress",
     "StreamName": "Express",
-    "HarvestingTaskMemory": 3000
+    "HarvestingMemory": 3000.0
 }
 
 

@@ -1103,6 +1103,7 @@ class StdBase(object):
                      "ProcessingString": {"validate": procstring, "optional": False},
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
+                     "HarvestingMemory": {"default": 3000, "type": int, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
                      "EventStreams": {"type": int, "default": 0, "validate": lambda x: x >= 0, "null": True},
                      "MergedLFNBase": {"default": "/store/data"},

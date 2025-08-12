@@ -239,9 +239,8 @@ dependencies = {
         'packages': ['WMCore.WMStats+', 'WMCore.Services+', 'WMCore.Wrappers+',
                      'WMCore.ReqMgr.DataStructs+'
                      ],
-        'modules': ['WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
-                    'WMCore.Database.CouchUtils', 'WMCore.ReqMgr.__init__'],
-        'systems': ['wmcbase', 'wmcrest'],
+        'modules': ['WMCore.ReqMgr.__init__'],
+        'systems': ['wmcbase', 'wmcrest', 'wmcdatabase'],
         'statics': ['src/couchapps/WMStats+',
                     'src/couchapps/WMStatsErl+',
                     'src/couchapps/WMStatsErl1+',

@@ -61,7 +61,7 @@ def makeLumiList(lumiDict):
             lumiDict = json.loads(lumiDict)
         ll = LumiList(compactList=lumiDict)
         return ll.getCompactList()
-    except:
+    except Exception:
         raise WMSpecFactoryException("Could not parse LumiList, %s: %s" % (type(lumiDict), lumiDict))
 
 
@@ -91,12 +91,24 @@ def _validateArgument(argument, value, argumentDefinition):
     elif value is None:
         return value
 
+    # is it a built-in type (int, str, bool, etc.) or a custom function
+    expected_type = argumentDefinition["type"]
     try:
-        value = argumentDefinition["type"](value)
-    except Exception:
+        if expected_type == str and not isinstance(value, str):
+            raise TypeError(f"Argument '{argument}' with value {value} is not a string")
+        else:
+            # for other data types (or custom functions), just try to cast it to the expected type
+            value = expected_type(value)
+    except (ValueError, TypeError) as e:
         msg = "Argument '%s' with value %r, has an incorrect data type: " % (argument, value)
-        msg += "%s. It must be %s" % (type(value), argumentDefinition["type"])
-        raise WMSpecFactoryException(msg)
+        msg += "%s. It must be convertible by %s" % (type(value), expected_type.__name__)
+        if str(e):
+            msg += f" (Error: {e})"
+        raise WMSpecFactoryException(msg) from None
+    except Exception as e:
+        msg = f"Generic exception raised during argument validation for argument: {argument} "
+        msg += "with value: %r. Error details: %s" % (value, str(e))
+        raise WMSpecFactoryException(msg) from None
 
     _validateArgFunction(argument, value, argumentDefinition["validate"])
     return value

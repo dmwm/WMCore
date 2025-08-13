@@ -32,7 +32,6 @@ from http.client import HTTPException
 from Utils.IteratorTools import grouper, nestedDictUpdate
 from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.Requests import JSONRequests
-from WMCore.Database.CouchMonitoring import checkStatus
 
 
 def check_name(dbname):
@@ -1283,6 +1282,10 @@ class CouchMonitor(object):
         :return: a list of dictionaries with the status of the replications and an
             error message
         """
+        # Do not import checkStatus at the beginning of the CMSCouch module
+        # to avoid dependecy conflicts in the CMS Sandbox at the WN level
+        from WMCore.Database.CouchMonitoring import checkStatus
+
         output = []
         sdict = checkStatus(kind='scheduler')
         rdict = checkStatus(kind='replicator')

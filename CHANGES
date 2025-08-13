@@ -1,3 +1,7 @@
+2.4.2rc10 to 2.4.2rc11:
+  - Workaround to avoid dependency conflicts (requests package) at WN level while loading error types in WMConfigCache (Kenyi Hurtado) #12426
+
+
 2.4.2rc9 to 2.4.2rc10:
   - Fix WMCore.Database package dependency for reqmon system (Alan Malta Rodrigues) #12425
 

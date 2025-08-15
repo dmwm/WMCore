@@ -1,3 +1,6 @@
+2.4.2rc11 to 2.4.2:
+  - Stable release
+
 2.4.2rc10 to 2.4.2rc11:
   - Workaround to avoid dependency conflicts (requests package) at WN level while loading error types in WMConfigCache (Kenyi Hurtado) #12426
 

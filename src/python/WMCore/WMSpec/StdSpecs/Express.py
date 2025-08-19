@@ -230,7 +230,8 @@ class ExpressWorkloadFactory(StdBase):
                     self.addDQMHarvestTask(mergeTask, "Merged",
                                            uploadProxy=self.dqmUploadProxy,
                                            periodic_harvest_interval=self.periodicHarvestInterval,
-                                           doLogCollect=True)
+                                           doLogCollect=True,
+                                           maxpss=self.harvestingMemory)
 
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
@@ -488,7 +489,6 @@ class ExpressWorkloadFactory(StdBase):
                     "MaxInputSize": {"type": int, "optional": False},
                     "MaxInputFiles": {"type": int, "optional": False},
                     "MaxLatency": {"type": int, "optional": False},
-
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

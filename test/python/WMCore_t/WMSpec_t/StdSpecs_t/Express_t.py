@@ -52,7 +52,8 @@ REQUEST = {
     "ScramArch": "slc6_amd64_gcc530",
     "Scenario": "test_scenario",
     "SpecialDataset": "StreamExpress",
-    "StreamName": "Express"
+    "StreamName": "Express",
+    "HarvestingMemory": 3000.0
 }
 
 

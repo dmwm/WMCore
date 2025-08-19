@@ -657,6 +657,8 @@ class TaskChainWorkloadFactory(StdBase):
             "SizePerEvent": {"type": float, "optional": True, "validate": lambda x: x > 0},
             'PrimaryDataset': {'default': None, 'optional': not generator, 'validate': primdataset,
                                'null': False},
+            "JobExtraMatchRequirements": {"default": "", "type": str,
+                                          "validate": lambda x: len(x) < 10000},
                     }
         baseArgs.update(arguments)
         StdBase.setDefaultArgumentsProperty(baseArgs)

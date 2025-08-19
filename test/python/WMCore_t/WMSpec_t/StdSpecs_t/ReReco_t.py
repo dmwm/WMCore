@@ -4,13 +4,10 @@ _ReReco_t_
 
 Unit tests for the ReReco workflow.
 """
-from __future__ import print_function
-from future.utils import viewitems
-
 import os
 import threading
 import unittest
-
+import json
 from Utils.PythonVersion import PY3
 
 from WMCore.DAOFactory import DAOFactory
@@ -162,7 +159,7 @@ class ReRecoTest(unittest.TestCase):
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = {"RECOoutput": "RECO", "DQMoutput": "DQM"}
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             fset = goldenOutputMod + tier
             mergedOutput = procWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = procWorkflow.outputMap[fset][0]["output_fileset"]
@@ -186,7 +183,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/DataProcessing/DataProcessingMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
@@ -258,7 +255,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                          "Error: Wrong split algo.")
 
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             fset = goldenOutputMod + tier
             unmerged = Fileset(name="/TestWorkload/DataProcessing/unmerged-%s" % fset)
             unmerged.loadData()
@@ -320,7 +317,7 @@ class ReRecoTest(unittest.TestCase):
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = {"SkimA": "RAW-RECO", "SkimB": "USER"}
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             fset = goldenOutputMod + tier
             mergedOutput = skimWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = skimWorkflow.outputMap[fset][0]["output_fileset"]
@@ -348,7 +345,7 @@ class ReRecoTest(unittest.TestCase):
                          "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
@@ -394,7 +391,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(skimSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
 
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             fset = goldenOutputMod + tier
             unmerged = Fileset(
                 name="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-%s" % fset)
@@ -410,7 +407,7 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algo.")
 
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             fset = goldenOutputMod + tier
             unmerged = Fileset(
                 name="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-%s" % fset)
@@ -528,7 +525,7 @@ class ReRecoTest(unittest.TestCase):
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = {"SkimA": "RAW-RECO", "SkimB": "USER"}
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             fset = goldenOutputMod + tier
             mergedOutput = skimWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = skimWorkflow.outputMap[fset][0]["output_fileset"]
@@ -553,7 +550,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/SomeSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod, tier in viewitems(goldenOutputMods):
+        for goldenOutputMod, tier in goldenOutputMods.items():
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/DataProcessing/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
@@ -599,7 +596,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(skimSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
 
-        for skimOutput, tier in viewitems(goldenOutputMods):
+        for skimOutput, tier in goldenOutputMods.items():
             fset = skimOutput + tier
             unmerged = Fileset(name="/TestWorkload/DataProcessing/SomeSkim/unmerged-%s" % fset)
             unmerged.loadData()
@@ -614,7 +611,7 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algo.")
 
-        for skimOutput, tier in viewitems(goldenOutputMods):
+        for skimOutput, tier in goldenOutputMods.items():
             fset = skimOutput + tier
             unmerged = Fileset(name="/TestWorkload/DataProcessing/SomeSkim/unmerged-%s" % fset)
             unmerged.loadData()
@@ -883,7 +880,6 @@ class ReRecoTest(unittest.TestCase):
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
         self.assertItemsEqual(subscriptions, subMaps)
 
-
     def testCampaignName(self):
         """
         Make sure the campaign name has been set in the processing task
@@ -913,7 +909,49 @@ class ReRecoTest(unittest.TestCase):
             taskObj = testWorkload.getTaskByPath(task)
             self.assertEqual(taskObj.getCampaignName(), '')
 
-        return
+    def testReRecoGPU(self):
+        """
+        _testReRecoGPU_
+
+        Verify that ReReco workflows can be created and inserted into WMBS
+        correctly.
+        """
+        skimConfig = self.injectSkimConfig()
+        recoConfig = self.injectReRecoConfig()
+        dataProcArguments = ReRecoWorkloadFactory.getTestArguments()
+        dataProcArguments["ProcessingString"] = "ProcString"
+        dataProcArguments["ConfigCacheID"] = recoConfig
+        dataProcArguments.update({"SkimName1": "SomeSkim",
+                                  "SkimInput1": "RECOoutput",
+                                  "Skim1ConfigCacheID": skimConfig})
+        dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
+        dataProcArguments["CouchDBName"] = "rereco_t"
+        dataProcArguments["EnableHarvesting"] = True
+        dataProcArguments["DQMConfigCacheID"] = self.injectDQMHarvestConfig()
+
+        # GPU settings
+        dataProcArguments["RequiresGPU"] = "required"
+        gpuParams = {"GPUMemoryMB": 12345, "CUDARuntime": "12.2", "CUDACapabilities": ["11.2", "12.2"]}
+        dataProcArguments["GPUParams"] = json.dumps(gpuParams)
+        extraReqs = 'regexp("^NVIDIA L40S$", GPUs_DeviceName)'
+        dataProcArguments["JobExtraMatchRequirements"] = extraReqs
+
+        print(f"Creating workload with arguments: {dataProcArguments}")
+        factory = ReRecoWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", dataProcArguments)
+
+        for task in testWorkload.getAllTasks():
+            print(f"Task name: {task.name()}")
+            print(f"Task type: {task.taskType()}")
+            print(f"Task requires GPU: {task.getRequiresGPU()}")
+            print(f"Task job extra match requirements: {task.getJobExtraMatchRequirements()}")
+            if task.taskType() in ["Processing", "Skim"]:
+                self.assertEqual(task.getRequiresGPU(), "required")
+                self.assertEqual(task.getJobExtraMatchRequirements(), extraReqs)
+            else:
+                self.assertEqual(task.getRequiresGPU(), "forbidden")
+                self.assertEqual(task.getJobExtraMatchRequirements(), "")
+
 
 if __name__ == '__main__':
     unittest.main()

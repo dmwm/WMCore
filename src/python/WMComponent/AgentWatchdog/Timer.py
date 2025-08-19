@@ -50,7 +50,8 @@ class Timer(Thread):
                  expPids=[],
                  expSig=None,
                  path=None,
-                 interval=0):
+                 interval=0,
+                 actionLimit=0):
         """
         __init__
         :param expPids:  The list of expected pids allowed to reset the timer, signals from anybody else would be ignored
@@ -70,6 +71,8 @@ class Timer(Thread):
         self.daemon = True
         self.action = action
         self.actionString = action.__str__()
+        self.actionCounter = 0
+        self.actionLimit = actionLimit
         if self.action:
             # First, make sure the signature of the action defined for this timer matches the arguments provided:
             try:
@@ -132,6 +135,13 @@ class Timer(Thread):
         """
         return {attr: value for attr,value in inspect.getmembers(self) if self._isSerializable(value)}
 
+    def reset(self):
+        """
+        _reset_
+        Resets the timer by delaying its endTime with one timer's interval.
+        """
+        self.endTime = time.time() + self.interval
+
     def _timer(self):
         """
         A simple timer method, which will be used to override the main Thread class run() method.
@@ -150,7 +160,7 @@ class Timer(Thread):
                 if sigInfo.si_pid in self.expPids:
                     # Resetting the timer starting again from the current time
                     logging.info(f"{self.name}, pid: {self.native_id}, Resetting timer")
-                    self.endTime = time.time() + self.interval
+                    self.reset()
                 else:
                     # Continue to wait for signal from the correct origin
                     logging.info(f"{self.name}, pid: {self.native_id}, Continue to wait for signal from the correct origin. Remaining time: {self.remTime}")
@@ -159,6 +169,8 @@ class Timer(Thread):
                 logging.info(f"{self.name}, pid: {self.native_id}, Reached the end of timer. Applying action: {self.action}")
                 try:
                     self.action.func(*self.action.args, **self.action.kwArgs)
+                    self.actionCounter += 1
+                    self.reset()
                 except Exception as ex:
                     currFrame = inspect.currentframe()
                     argsInfo = inspect.getargvalues(currFrame)
@@ -167,4 +179,5 @@ class Timer(Thread):
                     msg += f"With arguments: {argVals}"
                     msg += f"Full exception string: {str(ex)}"
                     raise TimerException(msg) from None
-                break
+                if self.actionCounter >= self.actionLimit:
+                    break

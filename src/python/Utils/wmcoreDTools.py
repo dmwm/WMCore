@@ -8,6 +8,8 @@ import logging
 from collections  import namedtuple
 
 from ptrace.debugger import PtraceProcess, PtraceDebugger
+from ptrace.debugger.process_event import ProcessExit
+from ptrace.debugger.ptrace_signal import ProcessSignal
 from ptrace.func_call import FunctionCallOptions
 from ptrace.error import PtraceError
 from pprint import pformat, pprint

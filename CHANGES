@@ -1,3 +1,7 @@
+2.4.2 to 2.4.3:
+  - Add support to JobExtraMatchRequirements task parameter (Alan Malta Rodrigues) #12417
+
+
 2.4.2rc11 to 2.4.2:
   - Stable release
 

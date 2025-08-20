@@ -51,13 +51,19 @@ class Timer(Thread):
                  expSig=None,
                  path=None,
                  interval=0,
-                 actionLimit=0):
+                 actionLimit=1):
         """
         __init__
-        :param expPids:  The list of expected pids allowed to reset the timer, signals from anybody else would be ignored
-        :param compName: The component name this timer is associated with
-        :param expSig:   The default signal to be expected for resetting the timer (Default: SIGCONT)
-        :param interval: The interval for the timer
+        :param expPids:     The list of expected pids allowed to reset the timer, signals from anybody else would be ignored
+        :param compName:    The component name this timer is associated with
+        :param expSig:      The default signal to be expected for resetting the timer (Default: SIGCONT)
+        :param interval:    The interval for the timer
+        :param path:        The path where the timer's data is to be preserved on disk
+        :param action:      The action to be taken in case a timer gets expired. An instance of WatchdogAction
+        :param actionLimit: The maximum number of times an action would be executed
+                            (hence, the maximum number of times the timer is allowed to expire) before the timer's thread gets destroyed.
+                            Default: 1 - Meaning the timer would be allowed to expire exactly once.
+                            NOTE: The action will be executed  at least once, the moment when the timer gets expired for the first time.
         """
         Thread.__init__(self)
         self.name = name
@@ -141,6 +147,21 @@ class Timer(Thread):
         Resets the timer by delaying its endTime with one timer's interval.
         """
         self.endTime = time.time() + self.interval
+
+    def restart(self, *args, **kwArgs):
+        """
+        _restart_
+        A method allowing a complete reconfiguration and restart of the current timer.
+        :param *: Accepts all keyword parameters allowed at __init__
+                NOTE: This method merges any newly provided kwArgs with the already
+                      existing object parameters. Any non kwArgs are ignored
+        """
+        for arg in inspect.signature(self.__init__).parameters:
+            if arg not in kwArgs:
+                kwArgs[arg] = getattr(self, arg, None)
+        print(kwArgs)
+        self.__init__(**kwArgs)
+        self.start()
 
     def _timer(self):
         """

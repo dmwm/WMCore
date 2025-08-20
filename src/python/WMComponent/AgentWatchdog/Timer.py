@@ -156,11 +156,20 @@ class Timer(Thread):
                 NOTE: This method merges any newly provided kwArgs with the already
                       existing object parameters. Any non kwArgs are ignored
         """
+        # First, check if the timer is still alive and did not yet reach its end of time
+        if self.is_alive():
+            logging.warning(f"You cannot restart a running timer. You should wait until all its action retries get exhausted and the timer's thread is stopped normally.")
+            return
+
+        # Second, reconfigure it with the new  set of parameters  and recreate its thread
+        logging.info(f"Re-configuring timer: {self.name}")
         for arg in inspect.signature(self.__init__).parameters:
             if arg not in kwArgs:
                 kwArgs[arg] = getattr(self, arg, None)
-        print(kwArgs)
         self.__init__(**kwArgs)
+
+        # Finally, rerun it
+        logging.info(f"Restarting timer: {self.name}")
         self.start()
 
     def _timer(self):

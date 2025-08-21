@@ -393,7 +393,7 @@ def forkRestart(config=None, componentsList=None, useWmcoreD=False):
             if isinstance(config, Configuration):
                 configFile = config.getLoadPath()
             else:
-                configFile = confg
+                configFile = config
                 if not os.path.exists(str(configFile)):
                     logging.error(f"ERROR: Could not find configuration path: {configFile}")
                     return 1

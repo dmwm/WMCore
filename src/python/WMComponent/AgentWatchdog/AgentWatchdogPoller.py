@@ -28,7 +28,7 @@ from pprint import pformat
 from Utils.ProcFS import processStatus
 from Utils.Timers import timeFunction
 from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart, isComponentAlive
-from WMComponent.AgentWatchdog.Timer import Timer, _countdown, WatchdogAction
+from WMComponent.AgentWatchdog.Timer import Timer, _countdown, WatchdogAction, TimerException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
 
@@ -92,6 +92,46 @@ class AgentWatchdogPoller(BaseWorkerThread):
                     logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
                     raise
 
+    def restartUpdateAction(self, *args, **kwArgs):
+        """
+        _restartUpdateAction_
+        This is an action wrapper intended to act on both sides:
+        * On the component side: executing forkRestart redirecting all call arguments as received
+        * On the AgentWatchdogPoller side: updating the respective timer's data reflecting the new component status
+        :param *: Accepts all parameters valid for wmcoreDTolls.forkRestart
+        """
+        logging.debug(f"restartUpdateAction: args: {args}")
+        logging.debug(f"restartUpdateAction: kwArgs: {kwArgs}")
+
+        # Check the wrapped method signature
+        # NOTE: Since this is a wrapper accepting arbitrary set of arguments
+        #       if passed to the timer as a callback action, it will bypass the
+        #       action signature check during the timer initialization. Hence the extra check here.
+        #       The diff between those two checks is only in the moment they are performed.
+        #       This one here will be done during the timer's runtime when the action execution is attempted,
+        #       while the former is done during the timer's init time.
+        try:
+            actionSignature = inspect.signature(forkRestart)
+            actionSignature.bind(*args, **kwArgs)
+        except TypeError as ex:
+            msg = f"The timer action wrapper method signature does not match the set of arguments provided. Error: {str(ex)}"
+            raise TimerException(msg) from None
+
+        # Execute fork Restart with the
+        forkRestart(*args, **kwArgs)
+
+        # Give it some time to start:
+        time.sleep(1)
+
+        # Update the respective timers data
+        for compName in kwArgs['componentsList']:
+            compPidTree = None
+            timer = self._findTimerByComp(compName)
+            if timer:
+                compPidTree = getComponentThreads(self.config, compName, quiet=True)
+                if compPidTree:
+                    self.updateTimer(timer, compPidTree)
+
     def _findTimerByPid(self, pid):
         """
         _findTimerByPid_
@@ -126,6 +166,17 @@ class AgentWatchdogPoller(BaseWorkerThread):
         expPids.extend([thr.native_id for thr in threading.enumerate()])
         expPids = list(set(expPids))
         timer.restart(expPids=expPids)
+
+    def updateTimer(self, timer, compPidTree):
+        """
+        _updateTimer_
+        """
+        expPids = compPidTree['RunningThreads']
+        expPids.append(compPidTree['Parent'])
+        expPids.append(self.mainThread.native_id)
+        expPids.extend([thr.native_id for thr in threading.enumerate()])
+        expPids = list(set(expPids))
+        timer.update(expPids=expPids)
 
     def setupTimer(self, compName):
         """
@@ -200,7 +251,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #                                                                             "interval": timerInterval})
 
         # Create the action description to be executed at the end of the timer.
-        action = WatchdogAction(forkRestart, [], {'config': self.config, 'componentsList': [compName]})
+        action = WatchdogAction(self.restartUpdateAction, [], {'config': self.config, 'componentsList': [compName]})
         logging.debug(f"{currThread.name}, pid: {currThread.native_id}, action function: {action}.")
 
         # Here to define the timer's path, where it will be permanently written on disk
@@ -267,8 +318,12 @@ class AgentWatchdogPoller(BaseWorkerThread):
                 # Re-configuring any timers associated with components which changed execution or have been restarted:
                 compPidTree = getComponentThreads(self.config, compName, quiet=True)
                 if compPidTree and compPidTree['Parent'] not in timer.expPids:
-                    logging.info(f"{self.mainThread.name}: Re-configuring timer: {timer}, whose associated component has changed state or have been restarted.")
-                    self.restartTimer(timer, compPidTree)
+                    if timer.is_alive():
+                        logging.info(f"{self.mainThread.name}: Re-configuring timer: {timer}, whose associated component has changed state or have been restarted.")
+                        self.updateTimer(timer, compPidTree)
+                    else:
+                        logging.info(f"{self.mainThread.name}: Restarting expired timer: {timer}, whose associated component has changed state or have been restarted.")
+                        self.restartTimer(timer, compPidTree)
             else:
                 # Retrying to create timers for components present in the watched list
                 # but previously failed during initialization:

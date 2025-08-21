@@ -173,6 +173,18 @@ class Timer(Thread):
         self.start()
         self.write()
 
+    def update(self, *args, **kwArgs):
+        """
+        _update_
+        A method allowing a complete reconfiguration of the current timer.
+        :param *: Accepts all keyword parameters allowed at __init__
+                NOTE: This method merges any newly provided kwArgs with the already
+                      existing object parameters. Any non kwArgs are ignored
+        """
+        for arg in kwArgs:
+            setattr(self, arg, kwArgs[arg])
+        self.write()
+
     def _timer(self):
         """
         A simple timer method, which will be used to override the main Thread class run() method.

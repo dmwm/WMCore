@@ -54,7 +54,6 @@ class AgentWatchdogPoller(BaseWorkerThread):
         self.watchedComponents = self.config.AgentWatchdog.watchedComponents
         self.timers = {}
 
-        # self.mainThread.parent = getComponentThreads(self.config, "AgentWatchdog")['Parent']
         self.mainThread.parents = [ thread['pid'] for thread in processStatus(self.mainThread.native_id)]
         logging.info(f"{self.mainThread.name}: Initialized with parents {self.mainThread.parents}.")
         self.mainThread.enum = [ pid.native_id for pid in threading.enumerate() ]
@@ -92,6 +91,41 @@ class AgentWatchdogPoller(BaseWorkerThread):
                 except Exception as ex:
                     logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
                     raise
+
+    def _findTimerByPid(self, pid):
+        """
+        _findTimerByPid_
+        """
+        correctTimer = None
+        for timer in self.timers.values():
+            # logging.debug(f"timer: {timer}")
+            # logging.debug(f"timer.expPids: {timer.expPids}")
+            if pid in timer.expPids:
+                correctTimer = timer
+                break
+        return correctTimer
+
+    def _findTimerByComp(self, compName):
+        """
+        _findTimerByComp
+        """
+        correctTimer = None
+        for timer in self.timers.values():
+            if timer.compName == compName:
+                correctTimer = timer
+                break
+        return correctTimer
+
+    def restartTimer(self, timer, compPidTree):
+        """
+        _restartTimer_
+        """
+        expPids = compPidTree['RunningThreads']
+        expPids.append(compPidTree['Parent'])
+        expPids.append(self.mainThread.native_id)
+        expPids.extend([thr.native_id for thr in threading.enumerate()])
+        expPids = list(set(expPids))
+        timer.restart(expPids=expPids)
 
     def setupTimer(self, compName):
         """
@@ -216,19 +250,6 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers.")
         logging.debug(f"{self.mainThread.name}: All current threads: {[thr.native_id for thr in  threading.enumerate()]}.")
 
-        # Re-configuring expired timers:
-        for timer in self.timers:
-            if not self.timers[timer].is_alive():
-                logging.info(f"{self.mainThread.name}: Re-configuring expired timer: {timer}.")
-                self.setupTimer(timer)
-
-        # Retrying to create timers for components present in the watched list
-        # but previously failed during initialization:
-        for compName in self.watchedComponents:
-            if compName not in [timer.compName for timer in self.timers.values()]:
-                logging.warning(f"Trying to recreate a previously failed timer for component: {compName}")
-                self.setupTimer(compName)
-
         # Check all components' health:
         # TODO: To move it in a separate thread, not to mess up with the blocking calls
         #       for refreshing the timers data on disk bellow. And here, mess up means delaying,
@@ -239,6 +260,21 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # compAliveThread.start()
         self.checkCompAlive()
 
+        # Refresh timers:
+        for compName in self.watchedComponents:
+            timer = self._findTimerByComp(compName)
+            if timer:
+                # Re-configuring any timers associated with components which changed execution or have been restarted:
+                compPidTree = getComponentThreads(self.config, compName, quiet=True)
+                if compPidTree and compPidTree['Parent'] not in timer.expPids:
+                    logging.info(f"{self.mainThread.name}: Re-configuring timer: {timer}, whose associated component has changed state or have been restarted.")
+                    self.restartTimer(timer, compPidTree)
+            else:
+                # Retrying to create timers for components present in the watched list
+                # but previously failed during initialization:
+                logging.warning(f"Trying to recreate a previously failed timer for component: {compName}")
+                self.setupTimer(compName)
+
         # Refresh all timers' data on disk every 1 second, or when a signal.SIGCONT
         # is received from a particular component.
         while _countdown(endTime):
@@ -248,13 +284,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
                 logging.info(f"{self.mainThread.name} with main pid: {threading.main_thread().native_id}: Received signal: {pformat(sigInfo)}")
 
                 # First, find the correct timer:
-                correctTimer = None
-                for timer in self.timers.values():
-                    # logging.debug(f"timer: {timer}")
-                    # logging.debug(f"timer.expPids: {timer.expPids}")
-                    if sigInfo.si_pid in timer.expPids:
-                        correctTimer = timer
-                        break
+                correctTimer = self._findTimerByPid(sigInfo.si_pid)
 
                 # Second, Refresh timer data:
                 if correctTimer:

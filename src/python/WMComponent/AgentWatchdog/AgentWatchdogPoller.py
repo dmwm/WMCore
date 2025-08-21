@@ -117,13 +117,13 @@ class AgentWatchdogPoller(BaseWorkerThread):
             msg = f"The timer action wrapper method signature does not match the set of arguments provided. Error: {str(ex)}"
             raise TimerException(msg) from None
 
-        # Execute fork Restart with the
+        # Execute fork Restart with the arguments provided to the wrapper
         forkRestart(*args, **kwArgs)
 
-        # Give it some time to start:
+        # Give the component(s) some time to start:
         time.sleep(1)
 
-        # Update the respective timers data
+        # Update the respective timers' data
         for compName in kwArgs['componentsList']:
             compPidTree = None
             timer = self._findTimerByComp(compName)
@@ -163,7 +163,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         expPids = compPidTree['RunningThreads']
         expPids.append(compPidTree['Parent'])
         expPids.append(self.mainThread.native_id)
-        expPids.extend([thr.native_id for thr in threading.enumerate()])
+        # expPids.extend([thr.native_id for thr in threading.enumerate()])
         expPids = list(set(expPids))
         timer.restart(expPids=expPids)
 
@@ -174,7 +174,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         expPids = compPidTree['RunningThreads']
         expPids.append(compPidTree['Parent'])
         expPids.append(self.mainThread.native_id)
-        expPids.extend([thr.native_id for thr in threading.enumerate()])
+        # expPids.extend([thr.native_id for thr in threading.enumerate()])
         expPids = list(set(expPids))
         timer.update(expPids=expPids)
 
@@ -211,7 +211,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #       main thread of AgentWatchdogPoller which is then to redirect this signal to the
         #       correct timer.
         expPids.append(self.mainThread.native_id)
-        expPids.extend([thr.native_id for thr in threading.enumerate()])
+        # expPids.extend([thr.native_id for thr in threading.enumerate()])
         expPids = list(set(expPids))
 
         # Here to find the correct timer's interval
@@ -264,6 +264,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
                                        compName=compName,
                                        expPids=expPids,
                                        action=action,
+                                       actionLimit=3,
                                        path=timerPath,
                                        interval=timerInterval)
 
@@ -296,20 +297,21 @@ class AgentWatchdogPoller(BaseWorkerThread):
         startTime = time.time()
         endTime = startTime + self.pollInterval
 
-        # logging.info(f"{self.mainThread.name} with main pid: {self.mainThread.native_id} and current pid: {currThread.native_id} : Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
-        logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}, main pid: {threading.main_thread().native_id}, list of watched components: {list(self.timers.keys())}")
-        logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers.")
-        logging.debug(f"{self.mainThread.name}: All current threads: {[thr.native_id for thr in  threading.enumerate()]}.")
-
         # Check all components' health:
         # TODO: To move it in a separate thread, not to mess up with the blocking calls
         #       for refreshing the timers data on disk bellow. And here, mess up means delaying,
         #       because the calls to wmcoreD.isComponentAlive have non zero runtime)
         #       The example code bellow does not allow to rebuild the newly restarted
         #       components timer, since the timer lives in the main thread not in the child
-        # compAliveThread = threading.Thread(target=self.checkCompAlive, name="ComponentsWatcher")
-        # compAliveThread.start()
-        self.checkCompAlive()
+        # #compAliveThread = threading.Thread(target=self.checkCompAlive, name="ComponentsWatcher")
+        # #compAliveThread.start()
+
+        # self.checkCompAlive()
+
+        # logging.info(f"{self.mainThread.name} with main pid: {self.mainThread.native_id} and current pid: {currThread.native_id} : Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
+        logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}, main pid: {threading.main_thread().native_id}, list of watched components: {list(self.timers.keys())}")
+        logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers.")
+        logging.debug(f"{self.mainThread.name}: All current threads: {[thr.native_id for thr in  threading.enumerate()]}.")
 
         # Refresh timers:
         for compName in self.watchedComponents:

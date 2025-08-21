@@ -158,18 +158,18 @@ class Timer(Thread):
         """
         # First, check if the timer is still alive and did not yet reach its end of time
         if self.is_alive():
-            logging.warning(f"You cannot restart a running timer. You should wait until all its action retries get exhausted and the timer's thread is stopped normally.")
+            logging.warning(f"{self.name}, pid: {self.native_id}, You cannot restart a running timer. You should wait until all its action retries get exhausted and the timer's thread is stopped normally.")
             return
 
         # Second, reconfigure it with the new  set of parameters  and recreate its thread
-        logging.info(f"Re-configuring timer: {self.name}")
+        logging.info(f"{self.name}, pid: {self.native_id}, Re-configuring timer: {self.name}")
         for arg in inspect.signature(self.__init__).parameters:
             if arg not in kwArgs:
                 kwArgs[arg] = getattr(self, arg, None)
         self.__init__(**kwArgs)
 
         # Finally, rerun it
-        logging.info(f"Restarting timer: {self.name}")
+        logging.info(f"{self.name}, pid: {self.native_id}, Restarting timer: {self.name}")
         self.start()
         self.write()
 
@@ -181,6 +181,7 @@ class Timer(Thread):
                 NOTE: This method merges any newly provided kwArgs with the already
                       existing object parameters. Any non kwArgs are ignored
         """
+        logging.info(f"{self.name}, pid: {self.native_id}, Updating timer: {self.name} ")
         for arg in kwArgs:
             setattr(self, arg, kwArgs[arg])
         self.write()
@@ -204,6 +205,7 @@ class Timer(Thread):
                     # Resetting the timer starting again from the current time
                     logging.info(f"{self.name}, pid: {self.native_id}, Resetting timer")
                     self.reset()
+                    self.write()
                 else:
                     # Continue to wait for signal from the correct origin
                     logging.info(f"{self.name}, pid: {self.native_id}, Continue to wait for signal from the correct origin. Remaining time: {self.remTime}")
@@ -214,6 +216,7 @@ class Timer(Thread):
                     self.action.func(*self.action.args, **self.action.kwArgs)
                     self.actionCounter += 1
                     self.reset()
+                    self.write()
                 except Exception as ex:
                     currFrame = inspect.currentframe()
                     argsInfo = inspect.getargvalues(currFrame)

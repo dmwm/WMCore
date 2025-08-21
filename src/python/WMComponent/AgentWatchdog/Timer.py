@@ -171,6 +171,7 @@ class Timer(Thread):
         # Finally, rerun it
         logging.info(f"Restarting timer: {self.name}")
         self.start()
+        self.write()
 
     def _timer(self):
         """

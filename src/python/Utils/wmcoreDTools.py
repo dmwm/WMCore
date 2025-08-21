@@ -230,12 +230,13 @@ def status(configFile, componentsList=None):
         getComponentThreads(configFile, component)
     return exitCode
 
-def getComponentThreads(configFile, component):
+def getComponentThreads(configFile, component, quiet=False):
     """
     Helper function to check process and its threads for their statuses
 
     :param configFile: Either path to the WMAgent configuration file or a WMCore.Configuration instance
     :param component:  Component name
+    :param quiet:      Bool flag to set quiet mode - no info messages. (Default: False)
     :return: The process tree for the component and prints status of the component process and its threads
 
     :Example: getComponentThreads(wmaConfig, "AgentWatchdog")
@@ -338,7 +339,8 @@ def getComponentThreads(configFile, component):
             status = f"{status}-untracked"
             orphanMsg = f", {len(orphanThreads)} untracked/zombie threads: {orphanThreads}"
     msg = f"Component:{component} {pid} {status} {runningMsg} {lostMsg} {orphanMsg}"
-    logging.info(msg)
+    if not quiet:
+        logging.info(msg)
 
     pidTree['Parent'] = int(pid)
     pidTree['RunningThreads'] = list(runningThreads)

@@ -257,7 +257,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # timerThread = multiprocessing.Process(target=self._timer , args=(), kwargs={"compName": compName,
         #                                                                             "interval": timerInterval})
 
-        # Create the action description to be executed at the end of the timer.
+        # Create the action to be executed at the end of the timer.
+        # NOTE: The format is a named tuple of the form:
+        #       (callbackFunction, [args], {kwArgs})
         action = WatchdogAction(self.restartUpdateAction, [compName], {})
         logging.debug(f"{self.mainThread.name}: action function: {action}.")
 

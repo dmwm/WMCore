@@ -30,7 +30,7 @@ class TimerException(Exception):
     __TimerException__
     Exception raised by the agent related to AgentWatchdog timers.
     """
-    def __init__(self, message, errorNo=None, **data):
+    def __init__(self, message=None, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
         Exception.__init__(self, self.name, message)
 
@@ -83,7 +83,7 @@ class Timer(Thread):
             # First, make sure the signature of the action defined for this timer matches the arguments provided:
             try:
                 actionSignature = inspect.signature(self.action.func)
-                actionSignature.bind(self.action.args, self.action.kwArgs)
+                actionSignature.bind(*self.action.args, **self.action.kwArgs)
             except TypeError as ex:
                 msg = f"{self.name}:  The timer's action method signature does not match the set of arguments provided. Error: {str(ex)}"
                 raise TimerException(msg) from None
@@ -118,6 +118,13 @@ class Timer(Thread):
         """
         return _countdown(self.endTime)
 
+    @property
+    def alive(self):
+        """
+        Returns the current thread status as a property, so that it can be serialized and written to the timer file
+        """
+        return self.is_alive()
+
     @staticmethod
     def _isSerializable(obj):
         """
@@ -141,20 +148,30 @@ class Timer(Thread):
         """
         return {attr: value for attr,value in inspect.getmembers(self) if self._isSerializable(value)}
 
-    def reset(self):
+    def reset(self, timer=True, actionCounter=False):
         """
         _reset_
-        Resets the timer by delaying its endTime with one timer's interval.
+        Resets the timer by delaying its endTime with one timer's interval and zeroing the actionCounter
+        :param timer:         Bool flag to trigger time reset (Default: True)
+        :param actionCounter: Bool flag to trigger actionCounter reset (Default: False)
         """
-        self.endTime = time.time() + self.interval
+        try:
+            if timer:
+                self.endTime = time.time() + self.interval
+            if actionCounter:
+                self.actionCounter = 0
+        except Exception as ex:
+            logging.exception(f"{self.name}, pid: {self.native_id}, ERROR while resetting timer: {self.name}!", stacklevel=3)
+            raise
 
     def restart(self, *args, **kwArgs):
         """
         _restart_
         A method allowing a complete reconfiguration and restart of the current timer.
         :param *: Accepts all keyword parameters allowed at __init__
-                NOTE: This method merges any newly provided kwArgs with the already
-                      existing object parameters. Any non kwArgs are ignored
+
+        NOTE: This method merges any newly provided kwArgs with the already
+              existing object parameters. Any non kwArgs are ignored
         """
         # First, check if the timer is still alive and did not yet reach its end of time
         if self.is_alive():
@@ -178,8 +195,9 @@ class Timer(Thread):
         _update_
         A method allowing a complete reconfiguration of the current timer.
         :param *: Accepts all keyword parameters allowed at __init__
-                NOTE: This method merges any newly provided kwArgs with the already
-                      existing object parameters. Any non kwArgs are ignored
+
+        NOTE: This method merges any newly provided kwArgs with the already
+              existing object parameters. Any non kwArgs are ignored
         """
         logging.info(f"{self.name}, pid: {self.native_id}, Updating timer: {self.name} ")
         for arg in kwArgs:
@@ -204,7 +222,8 @@ class Timer(Thread):
                 if sigInfo.si_pid in self.expPids:
                     # Resetting the timer starting again from the current time
                     logging.info(f"{self.name}, pid: {self.native_id}, Resetting timer")
-                    self.reset()
+                    # reset both time and actionCounter during this reset:
+                    self.reset(timer=True, actionCounter=True)
                     self.write()
                 else:
                     # Continue to wait for signal from the correct origin
@@ -214,8 +233,9 @@ class Timer(Thread):
                 logging.info(f"{self.name}, pid: {self.native_id}, Reached the end of timer. Applying action: {self.action}")
                 try:
                     self.action.func(*self.action.args, **self.action.kwArgs)
+                    # preserve current actionCounter during this reset:
+                    self.reset(timer=True, actionCounter=False)
                     self.actionCounter += 1
-                    self.reset()
                     self.write()
                 except Exception as ex:
                     currFrame = inspect.currentframe()
@@ -227,3 +247,4 @@ class Timer(Thread):
                     raise TimerException(msg) from None
                 if self.actionCounter >= self.actionLimit:
                     break
+        logging.info(f"{self.name}, pid: {self.native_id}, Reached the end of timer logic!!!")

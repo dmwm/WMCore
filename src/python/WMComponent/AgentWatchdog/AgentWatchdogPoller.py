@@ -316,8 +316,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # self.checkCompAlive()
 
         # logging.info(f"{self.mainThread.name} with main pid: {self.mainThread.native_id} and current pid: {currThread.native_id} : Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
-        logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}, main pid from threading module: {threading.main_thread().native_id}, main pid at startup: {self.mainThread.native_id}, list of watched components: {list(self.timers.keys())}")
-        logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers.")
+        logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}.")
+        logging.debug(f"{self.mainThread.name}: Main pid from threading module: {threading.main_thread().native_id}, main pid at startup: {self.mainThread.native_id}, list of watched components: {list(self.timers.keys())}")
+        logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers for components with changed running state.")
         logging.debug(f"{self.mainThread.name}: All current threads: {[thr.native_id for thr in  threading.enumerate()]}.")
 
         # Refresh timers:

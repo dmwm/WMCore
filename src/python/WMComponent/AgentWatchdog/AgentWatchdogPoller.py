@@ -68,7 +68,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         and only the one to whom this signal was intended would react, by recognizing the senders pid
         """
         currThread = threading.currentThread()
-        logging.info(f"{currThread.name}, pid: {currThread.native_id}, sigHandler for sigNum: {sigNum}")
+        logging.info(f"{currThread.name}, pid: {currThread.native_id}, Asynchronous sigHandler for sigNum: {sigNum}")
         return True
 
     def checkCompAlive(self):
@@ -191,14 +191,14 @@ class AgentWatchdogPoller(BaseWorkerThread):
         :return:         Nothing
         """
         currThread = threading.currentThread()
-        logging.info(f"{currThread.name}, pid: {currThread.native_id}, setting up timer for component: {compName}.")
+        logging.info(f"{self.mainThread.name}: setting up timer for component: {compName}.")
 
         # Here to walk the pidTree of the component and set all expected pids
         # which are to be allowed to reset the timer
         compPidTree = {}
         try:
             compPidTree = getComponentThreads(self.config, compName)
-            logging.info(f"{currThread.name}, pid: {currThread.native_id}, Current Process tree for: {compName}: {compPidTree}")
+            logging.info(f"{self.mainThread.name}: Current Process tree for: {compName}: {compPidTree}")
         except Exception as ex:
             logging.error(f"Exception was thrown while rebuilding the the process tree for component: {compName}")
             logging.error(f"The full Error was : {str(ex)}")
@@ -239,7 +239,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # Take the shortest interval:
         shortestInterval = min(compPollIntervals)
         timerInterval = compPollIntervals[shortestInterval]
-        logging.info(f"{currThread.name}, pid: {currThread.native_id}, selecting the shortest polling cycle in the component: {shortestInterval}:{timerInterval} sec.")
+        logging.info(f"{self.mainThread.name}: selecting the shortest polling cycle in the component: {shortestInterval}:{timerInterval} sec.")
 
         # Now lets add some disturbance to the force:
         timerInterval += self.watchdogTimeout
@@ -258,7 +258,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         # Create the action description to be executed at the end of the timer.
         action = WatchdogAction(self.restartUpdateAction, [compName], {})
-        logging.debug(f"{currThread.name}, pid: {currThread.native_id}, action function: {action}.")
+        logging.debug(f"{self.mainThread.name}: action function: {action}.")
 
         # Here to define the timer's path, where it will be permanently written on disk
         compDir = self.config.section_(compName).componentDir
@@ -315,7 +315,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # self.checkCompAlive()
 
         # logging.info(f"{self.mainThread.name} with main pid: {self.mainThread.native_id} and current pid: {currThread.native_id} : Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
-        logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}, main pid: {threading.main_thread().native_id}, list of watched components: {list(self.timers.keys())}")
+        logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}, main pid from threading module: {threading.main_thread().native_id}, main pid at startup: {self.mainThread.native_id}, list of watched components: {list(self.timers.keys())}")
         logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers.")
         logging.debug(f"{self.mainThread.name}: All current threads: {[thr.native_id for thr in  threading.enumerate()]}.")
 
@@ -354,8 +354,6 @@ class AgentWatchdogPoller(BaseWorkerThread):
                     try:
                         logging.info(f"{self.mainThread.name}: Refreshing timer data on disk for: {correctTimer.name}")
                         logging.debug(f"{self.mainThread.name}: Timer expPids: {correctTimer.expPids}")
-                        logging.debug(f"{self.mainThread.name}: sending signal from: {currThread.native_id}")
-                        logging.debug(f"{self.mainThread.name}: sending signal to: {correctTimer.native_id}")
                         correctTimer.write()
                     except ProcessLookupError:
                         logging.warning(f"{self.mainThread.name}: Missing timer: {correctTimer.name}. It will be recreated on the next AgentWatchdogPoller cycle, but the current signal is lost and the timer data was NOT refreshed on disk.")

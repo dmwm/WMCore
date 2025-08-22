@@ -86,6 +86,7 @@ class Timer(Thread):
                 actionSignature.bind(*self.action.args, **self.action.kwArgs)
             except TypeError as ex:
                 msg = f"{self.name}:  The timer's action method signature does not match the set of arguments provided. Error: {str(ex)}"
+                logging.exception(msg)
                 raise TimerException(msg) from None
         else:
             logging.warning(f"{self.name}: This is a timer with no action defined. This timer should be used mostly for debugging purposes.")
@@ -135,10 +136,10 @@ class Timer(Thread):
         """
         try:
             json.dumps(obj)
-            logging.debug(f"{obj} is serializable")
+            # logging.debug(f"{obj} is serializable")
             return True
         except TypeError:
-            logging.debug(f"{obj} is NOT serializable")
+            # logging.debug(f"{obj} is NOT serializable")
             return False
 
     def dictionary_(self):
@@ -161,8 +162,7 @@ class Timer(Thread):
             if actionCounter:
                 self.actionCounter = 0
         except Exception as ex:
-            logging.exception(f"{self.name}, pid: {self.native_id}, ERROR while resetting timer: {self.name}!", stacklevel=3)
-            raise
+            logging.exception(f"{self.name}: pid: {self.native_id}: ERROR while resetting timer: {self.name}!")
 
     def restart(self, *args, **kwArgs):
         """
@@ -173,22 +173,25 @@ class Timer(Thread):
         NOTE: This method merges any newly provided kwArgs with the already
               existing object parameters. Any non kwArgs are ignored
         """
-        # First, check if the timer is still alive and did not yet reach its end of time
-        if self.is_alive():
-            logging.warning(f"{self.name}, pid: {self.native_id}, You cannot restart a running timer. You should wait until all its action retries get exhausted and the timer's thread is stopped normally.")
-            return
+        try:
+            # First, check if the timer is still alive and did not yet reach its end of time
+            if self.is_alive():
+                logging.warning(f"{self.name}: pid: {self.native_id}: You cannot restart a running timer. You should wait until all its action retries get exhausted and the timer's thread is stopped normally.")
+                return
 
-        # Second, reconfigure it with the new  set of parameters  and recreate its thread
-        logging.info(f"{self.name}, pid: {self.native_id}, Re-configuring timer: {self.name}")
-        for arg in inspect.signature(self.__init__).parameters:
-            if arg not in kwArgs:
-                kwArgs[arg] = getattr(self, arg, None)
-        self.__init__(**kwArgs)
+            # Second, reconfigure it with the new  set of parameters  and recreate its thread
+            logging.info(f"{self.name}: pid: {self.native_id}: Re-configuring timer: {self.name}")
+            for arg in inspect.signature(self.__init__).parameters:
+                if arg not in kwArgs:
+                    kwArgs[arg] = getattr(self, arg, None)
+            self.__init__(**kwArgs)
 
-        # Finally, rerun it
-        logging.info(f"{self.name}, pid: {self.native_id}, Restarting timer: {self.name}")
-        self.start()
-        self.write()
+            # Finally, rerun it
+            logging.info(f"{self.name}: pid: {self.native_id}: Restarting timer: {self.name}")
+            self.start()
+            self.write()
+        except Exception as ex:
+            logging.exception(f"{self.name}: pid: {self.native_id}: ERROR while restarting timer: {self.name}!")
 
     def update(self, *args, **kwArgs):
         """
@@ -199,10 +202,13 @@ class Timer(Thread):
         NOTE: This method merges any newly provided kwArgs with the already
               existing object parameters. Any non kwArgs are ignored
         """
-        logging.info(f"{self.name}, pid: {self.native_id}, Updating timer: {self.name} ")
-        for arg in kwArgs:
-            setattr(self, arg, kwArgs[arg])
-        self.write()
+        try:
+            logging.info(f"{self.name}: pid: {self.native_id}: Updating timer: {self.name} ")
+            for arg in kwArgs:
+                setattr(self, arg, kwArgs[arg])
+            self.write()
+        except Exception as ex:
+            logging.exception(f"{self.name}: pid: {self.native_id}: ERROR while writing timer: {self.name}!")
 
     def _timer(self):
         """
@@ -218,19 +224,19 @@ class Timer(Thread):
         while True:
             sigInfo = signal.sigtimedwait([self.expSig], self.remTime)
             if sigInfo:
-                logging.info(f"{self.name}, pid: {self.native_id}, Received signal: {pformat(sigInfo)}")
+                logging.info(f"{self.name}: pid: {self.native_id}: Received signal: {pformat(sigInfo)}")
                 if sigInfo.si_pid in self.expPids:
                     # Resetting the timer starting again from the current time
-                    logging.info(f"{self.name}, pid: {self.native_id}, Resetting timer")
+                    logging.info(f"{self.name}: pid: {self.native_id}: Resetting timer")
                     # reset both time and actionCounter during this reset:
                     self.reset(timer=True, actionCounter=True)
                     self.write()
                 else:
                     # Continue to wait for signal from the correct origin
-                    logging.info(f"{self.name}, pid: {self.native_id}, Continue to wait for signal from the correct origin. Remaining time: {self.remTime}")
+                    logging.info(f"{self.name}: pid: {self.native_id}: Continue to wait for signal from the correct origin. Remaining time: {self.remTime}")
                     continue
             else:
-                logging.info(f"{self.name}, pid: {self.native_id}, Reached the end of timer. Applying action: {self.action}")
+                logging.info(f"{self.name}: pid: {self.native_id}: Reached the end of timer. Applying action: {self.action}")
                 try:
                     self.action.func(*self.action.args, **self.action.kwArgs)
                     # preserve current actionCounter during this reset:
@@ -247,4 +253,4 @@ class Timer(Thread):
                     raise TimerException(msg) from None
                 if self.actionCounter >= self.actionLimit:
                     break
-        logging.info(f"{self.name}, pid: {self.native_id}, Reached the end of timer logic!!!")
+        logging.info(f"{self.name}: pid: {self.native_id}: Reached the end of timer logic!!!")

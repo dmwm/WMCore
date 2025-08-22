@@ -52,6 +52,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         self.watchdogTimeout = self.config.AgentWatchdog.watchdogTimeout
         self.pollInterval = self.config.AgentWatchdog.pollInterval
         self.watchedComponents = self.config.AgentWatchdog.watchedComponents
+        self.actionLimit = self.config.AgentWatchdog.actionLimit
         self.timers = {}
 
         self.mainThread.parents = [ thread['pid'] for thread in processStatus(self.mainThread.native_id)]
@@ -270,7 +271,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
                                        compName=compName,
                                        expPids=expPids,
                                        action=action,
-                                       actionLimit=3,
+                                       actionLimit=self.actionLimit,
                                        path=timerPath,
                                        interval=timerInterval)
 

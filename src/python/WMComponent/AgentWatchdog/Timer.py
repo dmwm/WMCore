@@ -5,6 +5,8 @@ import inspect
 import json
 
 from collections  import namedtuple
+from typing import NamedTuple
+from collections.abc import Callable
 from threading import Thread
 from pprint import pformat
 
@@ -23,7 +25,13 @@ def _countdown(endTime):
         remTime = 0
     return remTime
 
-WatchdogAction = namedtuple('WatchdogAction', ['func', 'args', 'kwArgs'])
+# NOTE: When an instance of the WatchdogAction tuple is to be created, it must be of the form:
+#       action = WatchdogAction(callbackFunction, [args], {kwArgs})
+
+WatchdogAction = NamedTuple('WatchdogAction', [('func', Callable[...,None]),
+                                               ('args',list),
+                                               ('kwArgs', dict)])
+
 
 class TimerException(Exception):
     """
@@ -253,4 +261,5 @@ class Timer(Thread):
                     raise TimerException(msg) from None
                 if self.actionCounter >= self.actionLimit:
                     break
-        logging.info(f"{self.name}: pid: {self.native_id}: Reached the end of timer logic!!!")
+
+        logging.info(f"{self.name}: pid: {self.native_id}: Reached the end of timer logic. The timer thread will end now. You may restart it through: timer.restart() !!!")

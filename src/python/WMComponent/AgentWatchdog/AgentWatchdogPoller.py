@@ -92,45 +92,51 @@ class AgentWatchdogPoller(BaseWorkerThread):
                     logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
                     raise
 
-    def restartUpdateAction(self, *args, **kwArgs):
+    def restartUpdateAction(self, compName):
         """
         _restartUpdateAction_
         This is an action wrapper intended to act on both sides:
-        * On the component side: executing forkRestart redirecting all call arguments as received
-        * On the AgentWatchdogPoller side: updating the respective timer's data reflecting the new component status
+        * On the component side: executing forkRestart
+        * On the AgentWatchdogPoller side: updating the respective timer's data
+          reflecting the new component status
         :param *: Accepts all parameters valid for wmcoreDTolls.forkRestart
         """
-        logging.debug(f"restartUpdateAction: args: {args}")
-        logging.debug(f"restartUpdateAction: kwArgs: {kwArgs}")
+        # TODO: * simplified  signature
+        #       * reset action counter
+        #       * call alert manager
 
         # Check the wrapped method signature
-        # NOTE: Since this is a wrapper accepting arbitrary set of arguments
-        #       if passed to the timer as a callback action, it will bypass the
-        #       action signature check during the timer initialization. Hence the extra check here.
-        #       The diff between those two checks is only in the moment they are performed.
-        #       This one here will be done during the timer's runtime when the action execution is attempted,
-        #       while the former is done during the timer's init time.
-        try:
-            actionSignature = inspect.signature(forkRestart)
-            actionSignature.bind(*args, **kwArgs)
-        except TypeError as ex:
-            msg = f"The timer action wrapper method signature does not match the set of arguments provided. Error: {str(ex)}"
-            raise TimerException(msg) from None
+        # NOTE: If this is a wrapper accepting arbitrary set of arguments like:
+        #       self.restartUpdateAction(self, *args, **kwArgs):
+        #       when passed to the Timer class as a callback action, it will bypass the
+        #       action signature check during the timer initialization. So it will need
+        #       an the extra check here. Something like e.g.:
+        #       try:
+        #            actionSignature = inspect.signature(forkRestart)
+        #            actionSignature.bind(*args, **kwArgs)
+        #       except TypeError as ex:
+        #            msg = f"The timer action wrapper method signature does not match the set of arguments provided. Error: {str(ex)}"
+        #            raise TimerException(msg) from None
+        #       The diff between those two checks (the one at the Timer class and this one)
+        #       is only in the moment they are performed. This one here will be done
+        #       during the timer's runtime when the action execution is attempted,
+        #       while the former is performed during the timer's init time.
 
         # Execute fork Restart with the arguments provided to the wrapper
-        forkRestart(*args, **kwArgs)
+        forkRestart(config=self.config, componentsList=[compName])
 
-        # Give the component(s) some time to start:
+        # Give the component some time to start:
         time.sleep(1)
 
-        # Update the respective timers' data
-        for compName in kwArgs['componentsList']:
-            compPidTree = None
-            timer = self._findTimerByComp(compName)
-            if timer:
-                compPidTree = getComponentThreads(self.config, compName, quiet=True)
-                if compPidTree:
-                    self.updateTimer(timer, compPidTree)
+        # Update the respective timer's data
+        timer = self._findTimerByComp(compName)
+        if timer:
+            compPidTree = getComponentThreads(self.config, compName, quiet=True)
+            if compPidTree:
+                self.updateTimer(timer, compPidTree)
+
+        # call alert manager
+        
 
     def _findTimerByPid(self, pid):
         """
@@ -251,7 +257,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         #                                                                             "interval": timerInterval})
 
         # Create the action description to be executed at the end of the timer.
-        action = WatchdogAction(self.restartUpdateAction, [], {'config': self.config, 'componentsList': [compName]})
+        action = WatchdogAction(self.restartUpdateAction, [compName], {})
         logging.debug(f"{currThread.name}, pid: {currThread.native_id}, action function: {action}.")
 
         # Here to define the timer's path, where it will be permanently written on disk

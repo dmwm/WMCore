@@ -3,6 +3,9 @@
 _AgentWatchdog_
 
 This component is the default watchdog for WMAgent.
+
+A simple watchdog mechanism based on OS signal handling, implemented to help in the monitoring
+of the health of all WMAgent components.
 """
 
 import logging
@@ -10,6 +13,7 @@ import threading
 
 from WMCore.Agent.Harness import Harness
 from WMComponent.AgentWatchdog.AgentWatchdogPoller import AgentWatchdogPoller
+from WMComponent.AgentWatchdog.AgentWatchdogScanner import AgentWatchdogScanner
 
 
 class AgentWatchdog(Harness):
@@ -56,4 +60,11 @@ class AgentWatchdog(Harness):
                                                                              agentWatchdogPollInterval)
             logging.info(f"AgentWatchdog thread PID: {currThread.native_id}")
             logging.info(f"AgentWatchdogPoller thread PID: {agentWatchdogPollerThread.native_id}")
+
+            logging.info("Setting AgentWatchdogPoller poll interval to %s seconds", agentWatchdogPollInterval)
+            agentWatchdogScannerThread = currThread.workerThreadManager.addWorker(AgentWatchdogScanner(self.config),
+                                                                             agentWatchdogPollInterval)
+            logging.info(f"AgentWatchdog thread PID: {currThread.native_id}")
+            logging.info(f"AgentWatchdogPoller thread PID: {agentWatchdogPollerThread.native_id}")
+
         return

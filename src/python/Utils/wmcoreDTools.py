@@ -553,7 +553,7 @@ def isComponentAlive(config, component=None, pid=None, trace=False, traceInterva
     # First create the pidTree and collect information for the examined process:
     if component:
         try:
-            pidTree = getComponentThreads(config, component)
+            pidTree = getComponentThreads(config, component, quiet=True)
         except Exception as ex:
             logging.error(f"Could not rebuild the the process tree for component: {compName}. ERROR: {str(ex)}")
             pidTree = {}

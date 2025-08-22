@@ -1,11 +1,12 @@
 """
 A simple watchdog mechanism based on OS signal handling, implemented to help in the monitoring
-of the health of all WMAgent components by AgentStatusWatcher.
+of the health of all WMAgent components.
 
-This watchdog is to be watching only AgentStatusPoller thread's run time overflow and will
-take care of proper restarts only to this component, while at the same time AgentStatusPoller
-is to be endowed with a mechanism to monitor the health of all other components' process trees
-and take the proper (restart) actions in case of unhealthy component is found.
+This AgentWatchdogPoller thread is to be watching the thread's of all other components
+for run time overflow and will take care of proper restarts of the misbehaved ones.
+While at the same time the AgentWatchdogScanner is to be endowed with a mechanism
+to monitor the health of all other components' process trees and take the proper
+(restart) actions in case of unhealthy component is found.
 
 And we shall call this component with the affectionate nickname: Cerberus ;)
 """
@@ -35,7 +36,7 @@ from WMCore.WMInit import connectToDB
 
 class AgentWatchdogPoller(BaseWorkerThread):
     """
-    A basic watchdog class
+    The basic AgentWatchdogPoller class
     """
     def  __init__(self, config):
         BaseWorkerThread.__init__(self)
@@ -72,26 +73,26 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.info(f"{currThread.name}, pid: {currThread.native_id}, Asynchronous sigHandler for sigNum: {sigNum}")
         return True
 
-    def checkCompAlive(self):
-        """
-        # Iterate through all components and check if they have a healthy process tree:
-        # Restart any of them found to have problems.
-        # NOTE: Exclude AgentWatchdog and itself from this logic, because:
-        #       * AgentWatchdog should never be touched since it monitors all others poling cycles
-        #       * AgentWatchdog is going to spawn threads dynamically and will fail all checks
-        #       * AgentWatchdog cannot restart itself
-        """
-        logging.info(f"Checking all components' threads:")
-        for component in [comp for comp in self.config.listComponents_() if comp != 'AgentWatchdog']:
-            if not isComponentAlive(self.config, component=component):
-                try:
-                    logging.warning(f"Restarting Unhealthy component: {component}")
-                    forkRestart(self.config, componentsList=[component])
-                    # rebuild the timer for this component upon restart
-                    self.setupTimer(component)
-                except Exception as ex:
-                    logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
-                    raise
+    # def checkCompAlive(self):
+    #     """
+    #     # Iterate through all components and check if they have a healthy process tree:
+    #     # Restart any of them found to have problems.
+    #     # NOTE: Exclude AgentWatchdog and itself from this logic, because:
+    #     #       * AgentWatchdog should never be touched since it monitors all others poling cycles
+    #     #       * AgentWatchdog is going to spawn threads dynamically and will fail all checks
+    #     #       * AgentWatchdog cannot restart itself
+    #     """
+    #     logging.info(f"Checking all components' threads:")
+    #     for component in [comp for comp in self.config.listComponents_() if comp != 'AgentWatchdog']:
+    #         if not isComponentAlive(self.config, component=component):
+    #             try:
+    #                 logging.warning(f"Restarting Unhealthy component: {component}")
+    #                 forkRestart(self.config, componentsList=[component])
+    #                 # rebuild the timer for this component upon restart
+    #                 self.setupTimer(component)
+    #             except Exception as ex:
+    #                 logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
+    #                 raise
 
     def restartUpdateAction(self, compName):
         """
@@ -307,17 +308,15 @@ class AgentWatchdogPoller(BaseWorkerThread):
         endTime = startTime + self.pollInterval
 
         # Check all components' health:
-        # TODO: To move it in a separate thread, not to mess up with the blocking calls
+        # DONE: To move it in a separate thread, not to mess up with the blocking calls
         #       for refreshing the timers data on disk bellow. And here, mess up means delaying,
         #       because the calls to wmcoreD.isComponentAlive have non zero runtime)
         #       The example code bellow does not allow to rebuild the newly restarted
         #       components timer, since the timer lives in the main thread not in the child
         # #compAliveThread = threading.Thread(target=self.checkCompAlive, name="ComponentsWatcher")
         # #compAliveThread.start()
-
         # self.checkCompAlive()
 
-        # logging.info(f"{self.mainThread.name} with main pid: {self.mainThread.native_id} and current pid: {currThread.native_id} : Full pidTree: {pformat(psutil.Process(self.mainThread.native_id).threads())}")
         logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}.")
         logging.debug(f"{self.mainThread.name}: Main pid from threading module: {threading.main_thread().native_id}, main pid at startup: {self.mainThread.native_id}, list of watched components: {list(self.timers.keys())}")
         logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers for components with changed running state.")

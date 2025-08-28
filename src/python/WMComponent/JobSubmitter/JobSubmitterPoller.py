@@ -142,7 +142,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # log status of oauth tokens
         _oauth_token_name = getattr(config.JobSubmitter, 'oauthCMSTokenName', "")
-        if _oauth_token_name and _oauth_token_name.lower() != "none":
+        if _oauth_token_name:
             logging.info("[tokens] Jobs will be submitted with tokens") 
             logging.info("[tokens] token available on the wmagent host with sudo at path /var/lib/condor/oauth_credentials/cmst1/%s.use",
                        getattr(self.config.JobSubmitter, "oauthCMSTokenName", ""))

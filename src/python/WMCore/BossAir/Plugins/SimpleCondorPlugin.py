@@ -527,7 +527,7 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
 
             # Allow oauth based token authentication
-            if self.oauthCMSTokenName and self.oauthCMSTokenName.lower() != "none":
+            if self.oauthCMSTokenName:
                 # 2025aug: self.oauthCMSTokenName == cms_wmagent
                 ad['use_oauth_services'] = self.oauthCMSTokenName
 

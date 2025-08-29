@@ -86,7 +86,7 @@ class StdBase(object):
 
         # TODO: this replace can be removed in one year from now, thus March 2022
         if hasattr(self, "dbsUrl"):
-            self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+            #self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
             self.dbsUrl = self.dbsUrl.rstrip("/")
 
         return self.workloadName
@@ -1058,8 +1058,10 @@ class StdBase(object):
                                             "validate": lambda x: x >= 0},
                      "GlobalTagConnect": {"null": True},
                      "LumiList": {"default": {}, "type": makeLumiList},
-                     "DbsUrl": {"default": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader",
+                     "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
                                 "null": True, "validate": checkDBSURL},
+                     #"DbsUrl": {"default": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader",
+                     #           "null": True, "validate": checkDBSURL},
                      "DashboardHost": {"default": "cms-jobmon.cern.ch"},
                      "DashboardPort": {"default": 8884, "type": int,
                                        "validate": lambda x: x > 0},

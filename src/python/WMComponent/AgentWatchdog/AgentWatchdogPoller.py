@@ -32,6 +32,7 @@ from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart, isComp
 from WMComponent.AgentWatchdog.Timer import Timer, _countdown, WatchdogAction, TimerException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
+from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
 
 class AgentWatchdogPoller(BaseWorkerThread):
@@ -62,6 +63,11 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.info(f"{self.mainThread.name}: Initialized with the following threads: {self.mainThread.enum}.")
         self.mainThread.main = threading.main_thread().native_id
         logging.debug(f"{self.mainThread.name}: Initialized with main_thread {self.mainThread.main}.")
+
+        self.alertManagerUrl = self.config.Alert.alertManagerUrl
+        self.alertDestinationMap = self.config.Alert.alertDestinationMap
+        self.alertManager = AlertManagerAPI(self.alertManagerUrl)
+        logging.info(f"{self.mainThread.name}: Setting up an alertManager instance for AgentWatchdogPoller and redirecting alerts to: {self.alertManagerUrl}.")
 
     def sigHandler(self, sigNum, currFrame, **kwargs):
         """
@@ -94,6 +100,33 @@ class AgentWatchdogPoller(BaseWorkerThread):
     #                 logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
     #                 raise
 
+    def sendAlert(self, alertMessage, severity='low'):
+        """
+        A generic method for sending alerts from AgentWatchdogPoller
+        :param alertMesasge: A string with the alert contents
+        :param severity:     Default: 'low'
+        NOTE: The rest of the alertAPI parameters come from the agent configuration at init time
+        """
+        currAgent = getattr(self.config.Agent, 'hostName')
+        alertName = "AgentWatchdogPoller"
+        summary = f"Alert from WMAgent {currAgent}"
+        description = alertMessage
+        service = f"AgentWachdogPoller@{currAgent}"
+        self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogPoller'])
+
+    def alertAction(self, timerName):
+        """
+        A wrapper method to create an alert action for any of the WMAgent Watchdog timers
+        :param timerName: The timer instance as linked at self.timers[<TimerName>]
+        """
+        timer = self.timers[timerName]
+
+        # Call alert manager
+        msg = f"alertAction from: {timer.name}: The component {timer.compName} has been running beyond its estimated runtime with a big margin."
+        msg += f"This might be a signal for a badly performing component thread and might need attention."
+        logging.wrning(msg)
+        self.sendAlert(msg)
+
     def restartUpdateAction(self, compName):
         """
         _restartUpdateAction_
@@ -103,7 +136,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
           reflecting the new component status
         :param *: Accepts all parameters valid for wmcoreDTolls.forkRestart
         """
-        # TODO: * simplified  signature
+        # DONE: * simplified  signature
         #       * reset action counter
         #       * call alert manager
 
@@ -137,8 +170,10 @@ class AgentWatchdogPoller(BaseWorkerThread):
             if compPidTree:
                 self.updateTimer(timer, compPidTree)
 
-        # call alert manager
-        
+        # Call alert manager
+        msg = f"A restartUpdateAction has been performed by {timer.name}."
+        logging.warning(msg)
+        self.sendAlert(msg)
 
     def _findTimerByPid(self, pid):
         """
@@ -150,6 +185,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
             # logging.debug(f"timer.expPids: {timer.expPids}")
             if pid in timer.expPids:
                 correctTimer = timer
+                # NOTE: Once we move to one timer per thread (meaning many timers per compName),
+                #       we should not break here, but rather return the full list of timers
+                #       found to be associated with this component.
                 break
         return correctTimer
 
@@ -161,6 +199,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
         for timer in self.timers.values():
             if timer.compName == compName:
                 correctTimer = timer
+                # NOTE: Once we move to one timer per thread (meaning many timers per compName),
+                #       we should not break here, but rather return the full list of timers
+                #       found to be associated with this component.
                 break
         return correctTimer
 
@@ -261,7 +302,8 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # Create the action to be executed at the end of the timer.
         # NOTE: The format is a named tuple of the form:
         #       (callbackFunction, [args], {kwArgs})
-        action = WatchdogAction(self.restartUpdateAction, [compName], {})
+        # action = WatchdogAction(self.restartUpdateAction, [compName], {})
+        action = WatchdogAction(self.alertAction, [timerName], {})
         logging.debug(f"{self.mainThread.name}: action function: {action}.")
 
         # Here to define the timer's path, where it will be permanently written on disk

@@ -32,6 +32,7 @@ from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart, isComp
 from WMComponent.AgentWatchdog.Timer import Timer, _countdown, WatchdogAction, TimerException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
+from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
 
 class AgentWatchdogScanner(BaseWorkerThread):
@@ -53,6 +54,25 @@ class AgentWatchdogScanner(BaseWorkerThread):
         self.mainThread.main = threading.main_thread().native_id
         logging.debug(f"{self.mainThread.name}: Initialized with main_thread {self.mainThread.main}.")
 
+        self.alertManagerUrl = self.config.Alert.alertManagerUrl
+        self.alertDestinationMap = self.config.Alert.alertDestinationMap
+        self.alertManager = AlertManagerAPI(self.alertManagerUrl)
+        logging.info(f"{self.mainThread.name}: Setting up an alertManager instance for AgentWatchdogScanner and redirecting alerts to: {self.alertManagerUrl}.")
+
+    def sendAlert(self, alertMessage, severity='low'):
+        """
+        A generic method for sending alerts from AgentWatchdogScanner
+        :param alertMesasge: A string with the alert contents
+        :param severity:     Default: 'low'
+        NOTE: The rest of the alertAPI parameters come from the agent configuration at init time
+        """
+        currAgent = getattr(self.config.Agent, 'hostName')
+        alertName = "AgentWatchdogScanner"
+        summary = f"Alert from WMAgent {currAgent}"
+        description = alertMessage
+        service = f"AgentWachdogScanner@{currAgent}"
+        self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogScanner'])
+
     def checkCompAlive(self):
         """
         # Iterate through all components and check if they have a healthy process tree:
@@ -66,11 +86,14 @@ class AgentWatchdogScanner(BaseWorkerThread):
         for component in [comp for comp in self.config.listComponents_() if comp != 'AgentWatchdog']:
             if not isComponentAlive(self.config, component=component):
                 try:
-                    logging.warning(f"{self.mainThread.name}: Restarting Unhealthy component: {component}")
                     forkRestart(self.config, componentsList=[component])
+                    msg = f"Restarted Unhealthy component: {component}"
+                    logging.warning(f"{self.mainThread.name}: {msg}")
+                    self.sendAlert(msg)
                 except Exception as ex:
                     logging.error(f"{self.mainThread.name}: Failed to restart component: {component}. Full ERROR: {str(ex)}")
                     raise
+
     @timeFunction
     def algorithm(self, parameters=None):
         """

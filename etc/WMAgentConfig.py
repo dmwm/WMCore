@@ -309,7 +309,12 @@ config.section_("Alert")
 config.Alert.address = "tcp://127.0.0.1:6557"
 # control channel (internal alert system commands)
 config.Alert.controlAddr = "tcp://127.0.0.1:6559"
-
+# alertManager configuration:
+config.Alert.alertManagerUrl = 'http://cms-monitoring.cern.ch:30093/api/v2/alerts'
+config.Alert.alertDestinationMap = {
+    "alertAgentWatchdogPoller": "alerts-dmwm,alerts-pnr,email-dmwm,email-pnr",
+    "alertAgentWatchdogScanner": "alerts-dmwm,alerts-pnr,email-dmwm,email-pnr"
+}
 
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file

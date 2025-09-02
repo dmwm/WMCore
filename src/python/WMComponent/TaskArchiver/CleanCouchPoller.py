@@ -19,7 +19,7 @@ import time
 import urllib.request
 from contextlib import closing
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import resetWatchdogTimer, componentName
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMComponent.TaskArchiver.DataCache import DataCache
@@ -205,9 +205,9 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.exception(msg)
 
         # Reset its own watchdog timer at the end of the run cycle
-        logging.info(f"Resetting {componentName(self)} watchdog timer.")
-        if resetWatchdogTimer(self.config, componentName(self)):
-            logging.warning(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
     def archiveWorkflows(self, workflows, archiveState):
         updated = 0

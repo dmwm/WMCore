@@ -29,7 +29,7 @@
             "CheckList": "StepChain with Dataset start policy; EventAwareLumiBased splitting hardcoded to 10k EpJ (10 lumis)",
             "WorkFlowDesc": [
                 "SC processing a MINIAODSIM, thus locking all of the input blocks at the same location (with copies=2);",
-                "Request 4GB and 2 cores; Job splitting hardcoded to 10k EpJ (input data with 1k EpL"
+                "Request 4GB and 2 cores; Job splitting hardcoded to 10k EpJ (input data with 1k EpL. Single WQE with full container."
             ]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
@@ -53,7 +53,7 @@
             "slc7_amd64_gcc700"
         ],
         "SizePerEvent": 33.1848,
-        "SubRequestType": "ReDigi",
+        "SubRequestType": "RelVal",
         "Step1": {
             "AcquisitionEra": "RunIISummer20UL17NanoAODv9",
             "CMSSWVersion": "CMSSW_10_6_26",

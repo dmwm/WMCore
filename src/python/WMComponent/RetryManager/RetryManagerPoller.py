@@ -58,7 +58,7 @@ import threading
 import time
 import traceback
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import resetWatchdogTimer, componentName
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine.Transitions import Transitions
@@ -180,9 +180,9 @@ class RetryManagerPoller(BaseWorkerThread):
             raise Exception(msg)
 
         # Reset its own watchdog timer at the end of the run cycle
-        logging.info(f"Resetting {componentName(self)} watchdog timer.")
-        if resetWatchdogTimer(self.config, componentName(self)):
-            logging.warning(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
 
     def processRetries(self, jobs, cooloffType):

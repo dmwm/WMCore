@@ -28,7 +28,7 @@ from pprint import pformat
 
 from Utils.ProcFS import processStatus
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import getComponentThreads, restart, forkRestart, isComponentAlive
+from Utils.wmcoreDTools import getComponentThreads, _getConfigSubsections, restart, forkRestart, isComponentAlive
 from WMComponent.AgentWatchdog.Timer import Timer, _countdown, WatchdogAction, TimerException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
@@ -54,6 +54,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         self.watchdogTimeout = self.config.AgentWatchdog.watchdogTimeout
         self.pollInterval = self.config.AgentWatchdog.pollInterval
         self.watchedComponents = self.config.AgentWatchdog.watchedComponents
+        self.runTimeCorrFactor = self.config.AgentWatchdog.runTimeCorrFactor
         self.actionLimit = self.config.AgentWatchdog.actionLimit
         self.timers = {}
 
@@ -263,80 +264,110 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # expPids.extend([thr.native_id for thr in threading.enumerate()])
         expPids = list(set(expPids))
 
-        # Here to find the correct timer's interval
-        # NOTE: We estimate the timer's interval by finding the pid with the shortest polling cycle and:
-        #       * Merge it with the watchdog timeout, in order to implement some static
-        #         hysteresis in the watchdog logic. In the future instead of the shortest polling cycle
-        #         (which does not reflect how long a component has run, but rather for how long we wait
-        #         between component runs), we should use an estimator based on the runtime distribution
-        #         of the slowest thread in the component.
-        #       * Add some random factor between 1-10% on top of it, in order to avoid periodical
-        #         overlaps between the timer's interval and the component's polling cycle,
-        #         which would cause oscillations (the component being periodically rebooted due
-        #         to lost signals caused by the intervals overlaps explained above)
+
+        # Here to find all possible threads stemming from this component by parsing all config subsections:
+        # NOTE: If we find any configuration sub sections it means this is eventually
+        #       is eventually a multi threaded component and all needed time parameters
+        #       should be searched for in the respective subsection and if not found only then to fall back to the
+        #       upper level component config section.
+
         compConfigSection = self.config.component_(compName)
-        compPollIntervals = {attr: value
-                             for attr,value in inspect.getmembers(compConfigSection)
-                             if re.match(r"^.*[p,P]ollInterval$", attr)}
+        threadConfigSections = _getConfigSubsections(compConfigSection) or {compName: compConfigSection}
 
-        # Take the shortest interval:
-        shortestInterval = min(compPollIntervals)
-        timerInterval = compPollIntervals[shortestInterval]
-        logging.info(f"{self.mainThread.name}: selecting the shortest polling cycle in the component: {shortestInterval}:{timerInterval} sec.")
+        for threadName, threadConfigSection in threadConfigSections.items():
+            # Currently we are assigning the timerName to the actual ThreadName instead of the full componentName
+            timerName = threadName
 
-        # Now lets add some disturbance to the force:
-        timerInterval += self.watchdogTimeout
-        timerInterval *= random.uniform(1.01, 1.1)
+            # Here to find the correct timer's interval
+            # NOTE: We estimate the timer's interval by:
+            #       * Taking the initial runtime estimate from the configuration SubSection for the component's thread/process
+            #       * Multiply it with the common correction factor defined for all threads at the AgentWatchodog configurartion
+            #       * Merge it with the pollInterval from the respective config SubSection or if none is found there
+            #         with the pollInterval for the pid with the longest polling cycle from the component's config Section itself
+            #       * Merge it with the watchdog timeout, in order to implement some static
+            #         hysteresis in the watchdog logic. In the future instead of the shortest polling cycle
+            #         (which does not reflect how long a component has run, but rather for how long we wait
+            #         between component runs), we should use an estimator based on the runtime distribution
+            #         of the slowest thread in the component.
+            #       * Add some random factor between 1-10% on top of it, in order to avoid periodical
+            #         overlaps between the timer's interval and the component's polling cycle,
+            #         which would cause oscillations (the component being periodically rebooted due
+            #         to lost signals caused by the intervals overlaps explained above)
 
-        # Here to spawn the thread for the timer
-        # NOTE: For the time being, it is a must the thread name and the compName to match,
-        #       because later the thread name will be used to identify the timer.
-        #       In the future, if we move to spawning a timer per component's thread, then
-        #       we might end up with multiple timers per component, and those two may differ.
-        timerName = compName
-        # timerThread = threading.Thread(target=self._timer, name=timerName, args=(), kwargs={"compName": compName,
-        #                                                                                     "interval": timerInterval})
-        # timerThread = multiprocessing.Process(target=self._timer , args=(), kwargs={"compName": compName,
-        #                                                                             "interval": timerInterval})
+            # Find the pre-configured runtimeEstimate
+            threadRunTimeEst = getattr(threadConfigSection, 'runTimeEst', None)
+            # Give up no runtime estimate can be found for this thread
+            if not threadRunTimeEst:
+                logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be skipped")
+                continue
 
-        # Create the action to be executed at the end of the timer.
-        # NOTE: The format is a named tuple of the form:
-        #       (callbackFunction, [args], {kwArgs})
-        # action = WatchdogAction(self.restartUpdateAction, [compName], {})
-        action = WatchdogAction(self.alertAction, [timerName], {})
-        logging.debug(f"{self.mainThread.name}: action function: {action}.")
+            # Apply the safety margin:
+            threadRunTimeEst *= self.runTimeCorrFactor
 
-        # Here to define the timer's path, where it will be permanently written on disk
-        compDir = self.config.section_(compName).componentDir
-        compDir = os.path.expandvars(compDir)
-        timerPath = compDir + '/' + 'ComponentTimer'
+            # Find the correct poll interval for this thread
+            threadPollInterval = getattr(threadConfigSection, 'pollInterval', None)
+            if not threadPollInterval:
+                # Take the longest interval:
+                compPollIntervals = {attr: value
+                                     for attr,value in inspect.getmembers(compConfigSection)
+                                     if re.match(r"^.*[p,P]ollInterval$", attr)}
+                try:
+                    maxPollIntervalName = max(compPollIntervals)
+                    threadPollInterval = compPollIntervals[maxPollIntervalName]
+                    logging.info(f"{self.mainThread.name}: Selecting the longest polling interval in the component: {maxPollIntervalName}:{threadPollInterval} sec.")
+                except (ValueError, KeyError) as ex:
+                    threadPollInterval = None
+                    logging.error(f"{self.mainThread.name}: No pollIntervals defined for component: {compName}")
+            # Give up after the final attempt to estimate the pooll interval
+            if not threadPollInterval:
+                logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be scipped")
+                continue
 
-        # Here to add the timer's thread to the timers list in the AgentWatchdog object
-        self.timers[timerName] = Timer(name=timerName,
-                                       compName=compName,
-                                       expPids=expPids,
-                                       action=action,
-                                       actionLimit=self.actionLimit,
-                                       path=timerPath,
-                                       interval=timerInterval)
+            # Set the timerInterval as the sum of the previous two
+            timerInterval = threadRunTimeEst + threadPollInterval
 
-        # Finally start the timer:
-        self.timers[timerName].start()
+            # Now lets add some disturbance to the force:
+            timerInterval += self.watchdogTimeout
+            timerInterval *= random.uniform(1.01, 1.1)
 
-        # Here to preserve the timer on disk, such that its parameters can later be found by the
-        # components itself, and it can be reset on time.
-        # NOTE: This must happen upon timer's startup, because otherwise the timer attributes
-        #       would be incomplete and later the component won't be able to reset it.
-        self.timers[timerName].write()
+            # Create the action to be executed at the end of the timer.
+            # NOTE: The format is a named tuple of the form:
+            #       (callbackFunction, [args], {kwArgs})
+            # action = WatchdogAction(self.restartUpdateAction, [compName], {})
+            action = WatchdogAction(self.alertAction, [timerName], {})
+            logging.debug(f"{self.mainThread.name}: action function: {action}.")
 
-        # NOTE: The so preserved timer would reflect only the state of the timer
-        #       at init time, and won't be updated later until recreated. So any
-        #       dynamic property like endTime, remTime may not reflect the real
-        #       state of the timer as it is currently in memory.
-        # DONE: To implement a mechanism for rewriting the timer's content/state
-        #       upon receiving a signal.SIGCONT. This way the main thread can update
-        #       the contents of its timers on a regular basis(e.g. with a rate depending
-        #       on the AgentWatchDog polling cycle).
+            # Here to define the timer's path, where it will be permanently written on disk
+            compDir = self.config.section_(compName).componentDir
+            compDir = os.path.expandvars(compDir)
+            timerPath = f"{compDir}/Timer-{threadName}"
+
+            # Here to add the timer's thread to the timers list in the AgentWatchdog object
+            self.timers[timerName] = Timer(name=timerName,
+                                           compName=compName,
+                                           expPids=expPids,
+                                           action=action,
+                                           actionLimit=self.actionLimit,
+                                           path=timerPath,
+                                           interval=timerInterval)
+
+            # Finally start the timer:
+            self.timers[timerName].start()
+
+            # Here to preserve the timer on disk, such that its parameters can later be found by the
+            # components itself, and it can be reset on time.
+            # NOTE: This must happen upon timer's startup, because otherwise the timer attributes
+            #       would be incomplete and later the component won't be able to reset it.
+            self.timers[timerName].write()
+
+            # NOTE: The so preserved timer would reflect only the state of the timer
+            #       at init time, and won't be updated later until recreated. So any
+            #       dynamic property like endTime, remTime may not reflect the real
+            #       state of the timer as it is currently in memory.
+            # DONE: To implement a mechanism for rewriting the timer's content/state
+            #       upon receiving a signal.SIGCONT. This way the main thread can update
+            #       the contents of its timers on a regular basis(e.g. with a rate depending
+            #       on the AgentWatchDog polling cycle).
 
 
     @timeFunction

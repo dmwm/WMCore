@@ -4,6 +4,7 @@ import subprocess
 import time
 import json
 import psutil
+import inspect
 import logging
 from collections  import namedtuple
 
@@ -17,7 +18,7 @@ from Utils.Utilities import extractFromXML
 from Utils.ProcFS import processStatus
 from Utils.ProcessStats import processThreadsInfo
 from WMCore.Agent.Daemon.Details import Details
-from WMCore.Configuration import loadConfigurationFile, Configuration
+from WMCore.Configuration import loadConfigurationFile, Configuration, ConfigSection
 from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
 
@@ -33,6 +34,20 @@ def _loadConfig(configFile):
     else:
         config = loadConfigurationFile(configFile)
     return config
+
+def _getConfigSubsections(configSection):
+    """
+    Auxiliary function to return any possible subsection defined in a WMАgent configuration section
+    :param configSection: An instance of WMCore.Configuratin.ConfigSection
+    :return:              A dictionary with all subsections one level down (no recursions are performed)
+                          e.g.
+                          {'AgentStatusPoller': <WMCore.Configuration.ConfigSection at 0x7f6b0a931370>,
+                           'DrainStatusPoller': <WMCore.Configuration.ConfigSection at 0x7f6b0a931220>,
+                           'ResourceControlUpdater': <WMCore.Configuration.ConfigSection at 0x7f6b0a931280>}
+    """
+    return {subSection[0]:subSection[1]
+            for subSection in inspect.getmembers(configSection)
+            if isinstance(subSection[1], ConfigSection)}
 
 def connectionTest(configFile):
     """
@@ -405,25 +420,48 @@ def forkRestart(config=None, componentsList=None, useWmcoreD=False):
         raise
     return res.returncode
 
-def resetWatchdogTimer(configFile, component):
+def resetWatchdogTimer(wmaObj, compName=None, threadName=None):
     """
     _resetWatchdogTimer_
 
-    Resets a given watchdog timer. The timer can be identified by component name or by the timer's PID
+    Resets a given watchdog timer. The timer can be identified by either:
+    * Providing the wmagentConfig file in combination with the component name
+      and the thread/process name of the component thread the timer belongs to
+    or
+    * Providing an instance of a WMAgent thread/process and extracting
+      the component and thread name information from the instance itself.
 
+    The timer should always be found at $WMA_INSTALL_DIR/<compName>/Timer-<ThreadInstance>
+
+    :param wmaObj:         Any instance of WMComponent.*.* thread/process or a wmagent configuration file
     :param configFile:     Either path to the WMAgent configuration file or a WMCore.Configuration instance.
-    :param component:      The name of the component this timer is associated with. This also determines
+    :param compName:       The name of the component this timer is associated with. This also determines
                            the place where the component's timer will be searched for.
+                           (Required param if wmaObj is a wmaConfig file)
+    :param threadName:     The name of the thread/process this timer is associated with. This also determines
+                           the name of the timer.
+                           (Required param if wmaObj is a wmaConfig file)
     :return:               int ExitCode - 0 in case of success, nonzero value otherwise
     """
 
     exitCode = 0
     try:
-        config = _loadConfig(configFile)
+        # First fetch the needed information
+        if isinstance(wmaObj, Configuration):
+            if not compName or not threadName:
+                logging.error(f"You must provide component name and thread/process name in addition to the wmagent configuration file")
+                exitCode = 1
+                return exitCode
+            config = _loadConfig(wmaObj)
+        else:
+            config = _loadConfig(wmaObj.config)
+            compName = componentName(wmaObj)
+            threadName = moduleName(wmaObj)
 
-        compDir = config.section_(component).componentDir
+        # Now find the timer:
+        compDir = config.section_(compName).componentDir
         compDir = os.path.expandvars(compDir)
-        timerPath = compDir + '/' + 'ComponentTimer'
+        timerPath = f"{compDir}/Timer-{threadName}"
         with open(timerPath, 'r') as timerFile:
             timer = json.load(timerFile)
 
@@ -432,11 +470,11 @@ def resetWatchdogTimer(configFile, component):
 
     except AttributeError:
         exitcode = 1
-        logging.error("Failed to find {component} component config section.")
+        logging.error("Failed to find {compName} component config section.")
         logging.error("Aborting")
     except Exception as ex:
         exitCode = 1
-        logging.error(f"Failed to reset {component} component's timer. ERROR: {str(ex)}")
+        logging.error(f"Failed to reset {compName} component's timer. ERROR: {str(ex)}")
     return exitCode
 
 def componentName(obj):
@@ -458,14 +496,25 @@ def componentName(obj):
             return compName
         for compName in obj.config.listComponents_():
             compSection = obj.config.component_(compName)
-            parNamespace = compSection.namespace.split('.', 2)
-            parNamespace.pop()
-            parNamespace = '.'.join(parNamespace)
-            if objNamespace.startswith(parNamespace):
+            compNamespace = compSection.namespace.split('.', 2)
+            compNamespace.pop()
+            compNamespace = '.'.join(compNamespace)
+            if objNamespace.startswith(compNamespace):
                 return compName
+        # If we are here then we have not found the component name
+        logging.error(f"Could not find component name for: {obj}.")
+        return None
     except Exception as ex:
         logging.error(f"Could not find component name for: {obj}. ERROR: {str(ex)}")
-    return compName
+
+def moduleName(obj):
+    """
+    Returns the module name from which the current object is an instance by parsing
+    its namespace.
+    :param obj:  Any instances of WMComponent.*.*
+    :return:     String - the module name.
+    """
+    return obj.__module__.split('.')[-1]
 
 def tracePid(pid, interval=10):
     """

@@ -36,9 +36,9 @@ class AgentStatusWatcher(Harness):
         Sets up the worker thread
         """
         logging.info("AgentStatusWatcher.preInitialization")
-        resourceUpdaterPollInterval = self.config.AgentStatusWatcher.resourceUpdaterPollInterval
-        agentPollInterval = self.config.AgentStatusWatcher.agentPollInterval
-        drainStatusPollInterval = self.config.AgentStatusWatcher.drainStatusPollInterval
+        resourceUpdaterPollInterval = self.config.AgentStatusWatcher.ResourceControlUpdater.pollInterval
+        agentPollInterval = self.config.AgentStatusWatcher.AgentStatusPoller.pollInterval
+        drainStatusPollInterval = self.config.AgentStatusWatcher.ResourceControlUpdater.pollInterval
         myThread = threading.currentThread()
 
         logging.info("Setting AgentStatusPoller poll interval to %s seconds", agentPollInterval)

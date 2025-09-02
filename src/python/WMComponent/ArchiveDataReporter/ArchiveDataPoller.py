@@ -7,7 +7,7 @@ import logging
 import traceback
 from Utils.IteratorTools import grouper
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import resetWatchdogTimer, componentName
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMArchive.DataMap import createArchiverDoc
 from WMCore.Services.WMArchive.WMArchive import WMArchive
@@ -75,6 +75,6 @@ class ArchiveDataPoller(BaseWorkerThread):
             logging.error("Trace back: \n%s", traceback.format_exc())
 
         # Reset its own watchdog timer at the end of the run cycle
-        logging.info(f"Resetting {componentName(self)} watchdog timer.")
-        if resetWatchdogTimer(self.config, componentName(self)):
-            logging.warning(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")

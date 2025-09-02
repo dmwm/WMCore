@@ -10,7 +10,7 @@ import logging
 
 from Utils.IteratorTools import grouper
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import resetWatchdogTimer, componentName
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore.DAOFactory import DAOFactory
@@ -91,8 +91,8 @@ class JobAccountantPoller(BaseWorkerThread):
                 raise JobAccountantPollerException(msg)
 
         # Reset its own watchdog timer at the end of the run cycle
-        logging.info(f"Resetting {componentName(self)} watchdog timer.")
-        if resetWatchdogTimer(self.config, componentName(self)):
-            logging.warning(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
         return

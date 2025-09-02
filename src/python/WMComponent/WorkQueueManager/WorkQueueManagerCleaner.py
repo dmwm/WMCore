@@ -5,8 +5,10 @@ Perform cleanup actions
 import time
 import random
 import threading
+import logging
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.DAOFactory import DAOFactory
@@ -62,5 +64,10 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
             self.queue.killWMBSWorkflows(requestsToKill)
         except Exception as ex:
             self.queue.logger.exception("Error cleaning queue: %s", str(ex))
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
         self.queue.logger.info("Finished updating & cleaning.")

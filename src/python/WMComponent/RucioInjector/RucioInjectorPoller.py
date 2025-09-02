@@ -17,7 +17,7 @@ from pprint import pformat
 
 from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import resetWatchdogTimer, componentName
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.Rucio.Rucio import Rucio, WMRucioException
 from WMCore.Services.Rucio.RucioUtils import RUCIO_VALID_PROJECT, RUCIO_RULES_PRIORITY
@@ -196,9 +196,9 @@ class RucioInjectorPoller(BaseWorkerThread):
             raise RucioInjectorException(msg) from None
 
         # Reset its own watchdog timer at the end of the run cycle
-        logging.info(f"Resetting {componentName(self)} watchdog timer.")
-        if resetWatchdogTimer(self.config, componentName(self)):
-            logging.warning(f"Failed to reset {componentName(self)} watchdog timer. The component might be restarted soon.")
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
         return
 

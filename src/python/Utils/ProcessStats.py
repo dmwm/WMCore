@@ -140,7 +140,7 @@ def processThreadsInfo(pid):
                 thread_status = psutil.Process(thread_id).status()
                 thread_info["status"] = thread_status
             except psutil.NoSuchProcess:
-                thread_info["state"] = psutil.STATUS_ZOMBIE
+                thread_info["status"] = psutil.STATUS_ZOMBIE
 
             # Try getting per-thread CPU usage
             try:

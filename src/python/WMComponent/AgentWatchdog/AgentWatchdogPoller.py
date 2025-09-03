@@ -125,7 +125,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # Call alert manager
         msg = f"alertAction from: {timer.name}: The component {timer.compName} has been running beyond its estimated runtime with a big margin."
         msg += f"This might be a signal for a badly performing component thread and might need attention."
-        logging.wrning(msg)
+        logging.warning(msg)
         self.sendAlert(msg)
 
     def restartUpdateAction(self, compName):
@@ -275,6 +275,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         threadConfigSections = _getConfigSubsections(compConfigSection) or {compName: compConfigSection}
 
         for threadName, threadConfigSection in threadConfigSections.items():
+
             # Currently we are assigning the timerName to the actual ThreadName instead of the full componentName
             timerName = threadName
 
@@ -492,6 +493,13 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         Setup the name of the component to be watched
         """
+        # Wait one full cycle before starting the whole component to allow all others to initialize properly
+        logging.info("Waiting for one cycle to let others initialize properly ... ")
+
+        # time.sleep(self.pollInterval)
+        time.sleep(10)
+        logging.info("Setting up all timers ... ")
+
         for compName in self.watchedComponents:
             self.setWatchedComponent(compName)
         return

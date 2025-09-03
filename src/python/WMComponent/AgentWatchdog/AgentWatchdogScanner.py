@@ -46,6 +46,7 @@ class AgentWatchdogScanner(BaseWorkerThread):
 
         # self.watchedComponents = self.config.AgentWatchdog.watchedComponents
         # self.actionLimit = self.config.AgentWatchdog.actionLimit
+        self.pollInterval = self.config.AgentWatchdog.pollInterval
 
         self.mainThread.parents = [ thread['pid'] for thread in processStatus(self.mainThread.native_id)]
         logging.info(f"{self.mainThread.name}: Initialized with parents {self.mainThread.parents}.")
@@ -93,6 +94,14 @@ class AgentWatchdogScanner(BaseWorkerThread):
                 except Exception as ex:
                     logging.error(f"{self.mainThread.name}: Failed to restart component: {component}. Full ERROR: {str(ex)}")
                     raise
+
+    def setup(self, parameters):
+        # Wait one full cycle before starting the whole component to allow all others to initialize properly
+        logging.info("Waiting for one cycle to let others initialize properly ... ")
+
+        # time.sleep(self.pollInterval)
+        time.sleep(10)
+        logging.info("Start Monitoring the components' threads ... ")
 
     @timeFunction
     def algorithm(self, parameters=None):

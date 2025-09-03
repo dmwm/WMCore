@@ -10,6 +10,7 @@ of the health of all WMAgent components.
 
 import logging
 import threading
+import time
 
 from WMCore.Agent.Harness import Harness
 from WMComponent.AgentWatchdog.AgentWatchdogPoller import AgentWatchdogPoller
@@ -37,6 +38,7 @@ class AgentWatchdog(Harness):
 
         Sets up the worker thread
         """
+
         logging.info("AgentWatchdog.preInitialization")
 
         # Do not wait between runs.

@@ -33,7 +33,7 @@ class AnalyticsDataCollector(Harness):
 
         Sets up the workers threads
         """
-        pollInterval = self.config.AnalyticsDataCollector.pollInterval
+        pollInterval = self.config.AnalyticsDataCollector.AnalyticsPoller.pollInterval
 
         myThread = threading.currentThread()
 

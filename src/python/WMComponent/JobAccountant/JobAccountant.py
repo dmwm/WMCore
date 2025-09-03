@@ -20,6 +20,6 @@ class JobAccountant(Harness):
         return
 
     def preInitialization(self):
-        pollInterval = self.config.JobAccountant.pollInterval
+        pollInterval = self.config.JobAccountant.JobAccountantPoller.pollInterval
         myThread = threading.currentThread()
         myThread.workerThreadManager.addWorker(JobAccountantPoller(self.config), pollInterval)

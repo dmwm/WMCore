@@ -45,14 +45,11 @@ class JobStatusLite(Harness):
 
         # Add event loop to worker manager
         myThread = threading.currentThread()
+        pollInterval = self.config.JobStatusLite.StatusPoller.pollInterval
         logging.info(str(myThread))
 
 
-        logging.info("Setting poll interval to %s seconds" \
-                      %str(self.config.JobStatusLite.pollInterval) )
-        myThread.workerThreadManager.addWorker( \
-                              StatusPoller(self.config), \
-                              self.config.JobStatusLite.pollInterval \
-                            )
+        logging.info("Setting poll interval to %s seconds" %str(pollInterval))
+        myThread.workerThreadManager.addWorker(StatusPoller(self.config), pollInterval)
 
         return

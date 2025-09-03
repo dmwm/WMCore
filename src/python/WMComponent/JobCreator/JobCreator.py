@@ -43,7 +43,7 @@ class JobCreator(Harness):
         # Add event loop to worker manager
         myThread = threading.currentThread()
 
-        pollInterval = self.config.JobCreator.pollInterval
+        pollInterval = self.config.JobCreator.JobCreatorPoller.pollInterval
         logging.info("Setting poll interval to %s seconds", pollInterval)
         myThread.workerThreadManager.addWorker(JobCreatorPoller(self.config), pollInterval)
 

@@ -88,7 +88,8 @@ class DBS3Reader(object):
 
         # instantiate dbs api object
         try:
-            self.dbsURL = url.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+            self.dbsURL = url.replace("cmsweb-prod.cern.ch", "cmsweb.cern.ch")
+            self.dbsURL = url
             self.dbs = DbsApi(self.dbsURL, **contact)
             self.logger = logger or logging.getLogger(self.__class__.__name__)
             self.parallel = parallel

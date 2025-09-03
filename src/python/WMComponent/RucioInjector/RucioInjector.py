@@ -18,7 +18,7 @@ class RucioInjector(Harness):
         Harness.__init__(self, config)
 
     def preInitialization(self):
-        pollInterval = self.config.RucioInjector.pollInterval
+        pollInterval = self.config.RucioInjector.RucioInjectorPoller.pollInterval
         logging.info("Setting poll interval to %s seconds for inject", pollInterval)
 
         myThread = threading.currentThread()

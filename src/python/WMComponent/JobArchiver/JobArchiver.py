@@ -47,7 +47,7 @@ class JobArchiver(Harness):
         # Add event loop to worker manager
         myThread = threading.currentThread()
 
-        pollInterval = self.config.JobArchiver.pollInterval
+        pollInterval = self.config.JobArchiver.JobArchiverPoller.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(JobArchiverPoller(self.config), pollInterval)
 

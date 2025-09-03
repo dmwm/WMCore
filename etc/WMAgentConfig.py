@@ -174,12 +174,13 @@ config.WorkQueueManager.queueParams["rucioAccountPU"] = "wmcore_pileup"
 
 
 config.component_("DBS3Upload")
+config.DBS3Upload.section_('DBSUploadPoller')
+config.DBS3Upload.DBSUploadPoller.pollInterval = 100
+config.DBS3Upload.DBSUploadPoller.runTimeEst = 6000
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
-config.DBS3Upload.runTimeEst = 6000
 config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
-config.DBS3Upload.pollInterval = 100
 # "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
@@ -199,22 +200,24 @@ config.DBSInterface.doGlobalMigration = False
 config.DBSInterface.primaryDatasetType = "mc"
 
 config.component_("JobAccountant")
+config.JobAccountant.section_('JobAccountantPoller')
+config.JobAccountant.JobAccountantPoller.pollInterval = 300
+config.JobAccountant.JobAccountantPoller.runTimeEst = 4320
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
-config.JobAccountant.runTimeEst = 4320
 config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
 config.JobAccountant.logLevel = globalLogLevel
 config.JobAccountant.workerThreads = 1
-config.JobAccountant.pollInterval = 300
 config.JobAccountant.specDir = config.General.workDir + "/JobAccountant/SpecCache"
 
 config.component_("JobCreator")
+config.JobCreator.section_('JobCreatorPoller')
+config.JobCreator.JobCreatorPoller.pollInterval = 120
+config.JobCreator.JobCreatorPoller.runTimeEst = 6000
 config.JobCreator.namespace = "WMComponent.JobCreator.JobCreator"
-config.JobCreator.runTimeEst = 6000
 config.JobCreator.componentDir = config.General.workDir + "/JobCreator"
 config.JobCreator.logLevel = globalLogLevel
 config.JobCreator.maxThreads = 1
 config.JobCreator.UpdateFromResourceControl = True
-config.JobCreator.pollInterval = 120
 # This is now OPTIONAL: It defaults to the componentDir
 # However: In a production instance, this should be run on a high performance
 # disk, and should probably NOT be run on the same disk as the JobArchiver
@@ -227,12 +230,13 @@ config.JobCreator.GlideInRestriction = {"MinWallTimeSecs": 1 * 3600,  # 1h
                                         "MinRequestDiskKB": 1 * 1000 * 1000,  # 1GB
                                         "MaxRequestDiskKB": 20 * 1000 * 1000}  # site limit is ~27GB
 config.component_("JobSubmitter")
+config.JobSubmitter.section_('JobSubmitterPoller')
+config.JobSubmitter.JobSubmitterPoller.pollInterval = 120
+config.JobSubmitter.JobSubmitterPoller.runTimeEst = 360
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
-config.JobSubmitter.runTimeEst = 360
 config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
 config.JobSubmitter.logLevel = globalLogLevel
 config.JobSubmitter.maxThreads = 1
-config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.maxJobsPerPoll = 1000
@@ -245,53 +249,59 @@ config.JobSubmitter.drainGraceTime = 2 * 24 * 60 * 60  # in seconds
 config.JobSubmitter.useOauthToken = False
 
 config.component_("JobTracker")
+config.JobTracker.section_('JobTrackerPoller')
+config.JobTracker.JobTrackerPoller.pollInterval = 60
+config.JobTracker.JobTrackerPoller.runTimeEst = 720
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
-config.JobTracker.runTimeEst = 720
 config.JobTracker.componentDir = config.General.workDir + "/JobTracker"
 config.JobTracker.logLevel = globalLogLevel
-config.JobTracker.pollInterval = 60
 
 config.component_("JobStatusLite")
+config.JobStatusLite.section_('StatusPoller')
+config.JobStatusLite.StatusPoller.runTimeEst = 900
+config.JobStatusLite.StatusPoller.pollInterval = 60
 config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
-config.JobStatusLite.runTimeEst = 900
 config.JobStatusLite.componentDir = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = globalLogLevel
-config.JobStatusLite.pollInterval = 60
 config.JobStatusLite.stateTimeouts = {"Error": 300, "Running": 169200, "Pending": 432000}
 
 config.component_("JobUpdater")
+config.JobUpdater.section_('JobUpdaterPoller')
+config.JobUpdater.JobUpdaterPoller.runTimeEst = 120
+config.JobUpdater.JobUpdaterPoller.pollInterval = 120
 config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
-config.JobUpdater.runTimeEst = 120
 config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
-config.JobUpdater.pollInterval = 120
 
 config.component_("ErrorHandler")
+config.ErrorHandler.section_('ErrorHandlerPoller')
+config.ErrorHandler.ErrorHandlerPoller.pollInterval = 240
+config.ErrorHandler.ErrorHandlerPoller.runTimeEst = 600
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
-config.ErrorHandler.runTimeEst = 600
 config.ErrorHandler.componentDir = config.General.workDir + "/ErrorHandler"
 config.ErrorHandler.logLevel = globalLogLevel
-config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
 config.ErrorHandler.maxFailTime = 120000
 config.ErrorHandler.maxProcessSize = 500
 
 config.component_("RetryManager")
+config.RetryManager.section_('RetryManagerPoller')
+config.RetryManager.RetryManagerPoller.pollInterval = 240
+config.RetryManager.RetryManagerPoller.runTimeEst = 180
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"
-config.RetryManager.runTimeEst = 180
 config.RetryManager.componentDir = config.General.workDir + "/RetryManager"
 config.RetryManager.logLevel = globalLogLevel
-config.RetryManager.pollInterval = 240
 config.RetryManager.plugins = {"default": "SquaredAlgo"}
 config.RetryManager.section_("SquaredAlgo")
 config.RetryManager.SquaredAlgo.section_("default")
 config.RetryManager.SquaredAlgo.default.coolOffTime = retryAlgoParams
 
 config.component_("JobArchiver")
+config.JobArchiver.section_('JobArchiverPoller')
+config.JobArchiver.JobArchiverPoller.runTimeEst = 360
+config.JobArchiver.JobArchiverPoller.pollInterval = 120
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
-config.JobArchiver.runTimeEst = 360
 config.JobArchiver.componentDir = config.General.workDir + "/JobArchiver"
-config.JobArchiver.pollInterval = 120
 config.JobArchiver.logLevel = globalLogLevel
 config.JobArchiver.numberOfJobsToCluster = 1000
 config.JobArchiver.numberOfJobsToArchive = 10000
@@ -302,14 +312,12 @@ config.JobArchiver.numberOfJobsToArchive = 10000
 
 config.component_("TaskArchiver")
 config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
-config.TaskArchiver.pollInterval = 240
-config.TaskArchiver.cleanCouchInterval = 1200
 config.TaskArchiver.section_('TaskArchiverPoller')
 config.TaskArchiver.TaskArchiverPoller.runTimeEst = 600
-config.TaskArchiver.TaskArchiverPoller.pollInterval = config.TaskArchiver.pollInterval
+config.TaskArchiver.TaskArchiverPoller.pollInterval = 240
 config.TaskArchiver.section_('CleanCouchPoller')
 config.TaskArchiver.CleanCouchPoller.runTimeEst = 6000
-config.TaskArchiver.CleanCouchPoller.pollInterval = config.TaskArchiver.cleanCouchInterval
+config.TaskArchiver.CleanCouchPoller.pollInterval = 1200
 config.TaskArchiver.componentDir = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = globalLogLevel
 config.TaskArchiver.timeOut = workflowArchiveTimeout
@@ -360,11 +368,12 @@ config.EmailAlert.fromAddr = "noreply@cern.ch"
 config.EmailAlert.smtpServer = "localhost"
 
 config.component_("AnalyticsDataCollector")
+config.AnalyticsDataCollector.section_('AnalyticsPoller')
+config.AnalyticsDataCollector.AnalyticsPoller.pollInterval = 600
+config.AnalyticsDataCollector.AnalyticsPoller.runTimeEst = 60
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
-config.AnalyticsDataCollector.runTimeEst = 60
 config.AnalyticsDataCollector.componentDir = config.General.workDir + "/AnalyticsDataCollector"
 config.AnalyticsDataCollector.logLevel = globalLogLevel
-config.AnalyticsDataCollector.pollInterval = 600
 config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,
                                                          config.JobStateMachine.couchDBName)
 config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl,
@@ -377,10 +386,11 @@ config.AnalyticsDataCollector.couchProcessThreshold = 50
 config.AnalyticsDataCollector.pluginName = None
 
 config.component_("ArchiveDataReporter")
+config.ArchiveDataReporter.section_('ArchiveDataPoller')
+config.ArchiveDataReporter.ArchiveDataPoller.pollInterval = 300
+config.ArchiveDataReporter.ArchiveDataPoller.runTimeEst = 360
 config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
-config.ArchiveDataReporter.runTimeEst = 360
 config.ArchiveDataReporter.componentDir = config.General.workDir + "/ArchiveDataReporter"
-config.ArchiveDataReporter.pollInterval = 300
 config.ArchiveDataReporter.WMArchiveURL = None
 config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000  # number of documents needed to be polled each time
 config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upload each time in bulk to WMArchive
@@ -417,11 +427,12 @@ config.AgentStatusWatcher.passAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.topicAMQ = "OVERWRITE_BY_SECRETS"
 
 config.component_("RucioInjector")
+config.RucioInjector.section_('RucioInjectorPoller')
+config.RucioInjector.RucioInjectorPoller.pollInterval = 300
+config.RucioInjector.RucioInjectorPoller.runTimeEst = 1200
 config.RucioInjector.namespace = "WMComponent.RucioInjector.RucioInjector"
-config.RucioInjector.runTimeEst = 1200
 config.RucioInjector.componentDir = config.General.workDir + "/RucioInjector"
 config.RucioInjector.logLevel = globalLogLevel
-config.RucioInjector.pollInterval = 300
 config.RucioInjector.pollIntervalRules = 43200
 config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True

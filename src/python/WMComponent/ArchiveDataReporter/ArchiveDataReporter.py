@@ -32,7 +32,7 @@ class ArchiveDataReporter(Harness):
         Sets up the worker thread
         """
         logging.info("ArhciveDataReporter.preInitialization")
-        pollInterval = self.config.ArchiveDataReporter.pollInterval
+        pollInterval = self.config.ArchiveDataReporter.ArchiveDataPoller.pollInterval
         myThread = threading.currentThread()
 
         if not self.config.ArchiveDataReporter.WMArchiveURL:

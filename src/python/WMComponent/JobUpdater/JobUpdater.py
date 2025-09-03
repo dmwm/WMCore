@@ -41,7 +41,7 @@ class JobUpdater(Harness):
 
         myThread = threading.currentThread()
 
-        pollInterval = self.config.JobUpdater.pollInterval
+        pollInterval = self.config.JobUpdater.JobUpdaterPoller.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(JobUpdaterPoller(self.config), pollInterval)
 

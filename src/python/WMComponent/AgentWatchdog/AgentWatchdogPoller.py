@@ -266,15 +266,20 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
 
         # Here to find all possible threads stemming from this component by parsing all config subsections:
-        # NOTE: If we find any configuration sub sections it means this is eventually
-        #       is eventually a multi threaded component and all needed time parameters
-        #       should be searched for in the respective subsection and if not found only then to fall back to the
-        #       upper level component config section.
+        # NOTE: We expect to have a separate sub sections per every thread defining at least its time parameters.
+        #       They should be searched for in the respective subsection first and if not found only then to
+        #       fall back to the upper level component config section.
 
         compConfigSection = self.config.component_(compName)
         threadConfigSections = _getConfigSubsections(compConfigSection) or {compName: compConfigSection}
 
         for threadName, threadConfigSection in threadConfigSections.items():
+
+            # Skip config sections which are not related to any thread:
+            # NOTE: `RetryManager` is a single threaded component with an additional configuration
+            #        section related to its own internal logic
+            if threadName == 'SquaredAlgo':
+                continue
 
             # Currently we are assigning the timerName to the actual ThreadName instead of the full componentName
             timerName = threadName

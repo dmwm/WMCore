@@ -251,6 +251,7 @@ class Timer(Thread):
                     self.reset(timer=True, actionCounter=False)
                     self.actionCounter += 1
                     self.write()
+                    logging.info(f"{self.name}: pid: {self.native_id}: Current actionCounter: {self.actionCounter}")
                 except Exception as ex:
                     currFrame = inspect.currentframe()
                     argsInfo = inspect.getargvalues(currFrame)
@@ -258,8 +259,10 @@ class Timer(Thread):
                     msg = f"Failure while applying {self.name} timer's action: {self.action.func.__name__} "
                     msg += f"With arguments: {argVals}"
                     msg += f"Full exception string: {str(ex)}"
+                    logging.exception(msg)
                     raise TimerException(msg) from None
                 if self.actionCounter >= self.actionLimit:
                     break
 
+        logging.info(f"{self.name}: pid: {self.native_id}: actionLimit of: {self.actionLimit} action repetitions exhausted!")
         logging.info(f"{self.name}: pid: {self.native_id}: Reached the end of timer logic. The timer thread will end now. You may restart it through: timer.restart() !!!")

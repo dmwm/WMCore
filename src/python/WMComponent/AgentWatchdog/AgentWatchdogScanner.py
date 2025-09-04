@@ -46,7 +46,7 @@ class AgentWatchdogScanner(BaseWorkerThread):
 
         # self.watchedComponents = self.config.AgentWatchdog.watchedComponents
         # self.actionLimit = self.config.AgentWatchdog.actionLimit
-        self.pollInterval = self.config.AgentWatchdog.pollInterval
+        self.pollInterval = self.config.AgentWatchdog.AgentWachdogScanner.pollInterval
 
         self.mainThread.parents = [ thread['pid'] for thread in processStatus(self.mainThread.native_id)]
         logging.info(f"{self.mainThread.name}: Initialized with parents {self.mainThread.parents}.")

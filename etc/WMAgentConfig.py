@@ -466,11 +466,14 @@ config.WorkflowUpdater.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.msPileupUrl = "OVER_WRITE_BY_SECRETS"
 
 config.component_("AgentWatchdog")
+config.AgentWatchdog.section_('AgentWachdogPoller')
+config.AgentWatchdog.AgentWachdogPoller.pollInterval = 20
+config.AgentWatchdog.section_('AgentWachdogScanner')
+config.AgentWatchdog.AgentWachdogScanner.pollInterval = 2 * 60
 config.AgentWatchdog.namespace = "WMComponent.AgentWatchdog.AgentWatchdog"
 config.AgentWatchdog.componentDir = config.General.workDir + "/AgentWatchdog"
 config.AgentWatchdog.logLevel = globalLogLevel
 config.AgentWatchdog.actionLimit = 3
-config.AgentWatchdog.pollInterval = 1 * 1 * 60  # every 1 min.
 # This next timeout is to be added on top of the watched component's polling cycle
 # in order to create some minimal hysteresis in the watchdog timers' logic
 config.AgentWatchdog.watchdogTimeout = 1 * 1 * 60  # 60 sec.

@@ -73,7 +73,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         self.watchedPid = None
         self.watchdogTimeout = self.config.AgentWatchdog.watchdogTimeout
-        self.pollInterval = self.config.AgentWatchdog.pollInterval
+        self.pollInterval = self.config.AgentWatchdog.AgentWatchdogPoller.pollInterval
         self.watchedComponents = self.config.AgentWatchdog.watchedComponents
         self.runTimeCorrFactor = self.config.AgentWatchdog.runTimeCorrFactor
         self.actionLimit = self.config.AgentWatchdog.actionLimit
@@ -421,13 +421,13 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
             # Retrying to create timers for components present in the watched list
             # but previously failed during initialization:
+            logging.info(f"Trying to recreate all previously failed timers for component: {compName}")
             configuredThreads = getThreadConfigSections(self.config, compName)
             for threadName, threadConfigSection in configuredThreads.items():
                 # Adding the WorkQueueManagerReqMgrPoller exception for local WorkQueue yet again
                 if threadName == 'WorkQueueManagerReqMgrPoller' and self.config.WorkQueueManager.level == 'LocalQueue':
                     continue
                 if threadName not in [timer.name for timer in timers]:
-                    logging.warning(f"Trying to recreate all previously failed timers for component: {compName}")
                     self.setupTimer(compName, threadConfigSection, timerName=threadName)
                     self.timers[threadName].start()
                     self.timers[threadName].write()

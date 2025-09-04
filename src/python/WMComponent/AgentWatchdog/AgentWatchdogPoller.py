@@ -8,6 +8,27 @@ While at the same time the AgentWatchdogScanner is to be endowed with a mechanis
 to monitor the health of all other components' process trees and take the proper
 (restart) actions in case of unhealthy component is found.
 
+
+Here bellow follows the timeline of the interaction between a component's thread and a timer:
+
+Timer duration = pollInt + runTimeEst*corrFactor + extraTimeout
+
+          t --->
+
+          ...---|--- One polling cycle -----|-One polling cycle-|------- One polling cycle ----------|---...
+                |                           |                   |                                    |
+Thread:   ...---o-------------------o-------o-----------o-------o----------------------------o-------o---...
+                |--------var--------| const |----var----| const |-------------var------------| const |---...
+                |       runtime     |pollInt|  runtime  |pollInt|      runtime               |pollInt|
+                                    |                   |                                    |
+                                    |tResetEvent        |                                    |
+                                    |                   |tResetEvent                         |
+Timer:          o------ timer ------|.........o         |                                    |tResetEvent (probably lost due to timer expiration)
+                                    o------ timer ------|..........o                         |
+                                                        o--------- timer -----------o
+                                                                                    |
+                                                                                    |actionEvent
+
 And we shall call this component with the affectionate nickname: Cerberus ;)
 """
 

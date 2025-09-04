@@ -410,9 +410,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # #compAliveThread.start()
         # self.checkCompAlive()
 
-        logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}.")
+        logging.debug(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}.")
         logging.debug(f"{self.mainThread.name}: Main pid from threading module: {threading.main_thread().native_id}, main pid at startup: {self.mainThread.native_id}, list of watched components: {list(self.timers.keys())}")
-        logging.info(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers for components with changed running state.")
+        logging.debug(f"{self.mainThread.name}: Checking and Re-configuring previously expired timers for components with changed running state.")
         logging.debug(f"{self.mainThread.name}: All current threads: {[thr.native_id for thr in  threading.enumerate()]}.")
 
         # Refresh timers:
@@ -421,7 +421,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
             # Retrying to create timers for components present in the watched list
             # but previously failed during initialization:
-            logging.info(f"Trying to recreate all previously failed timers for component: {compName}")
+            logging.debug(f"Trying to recreate all previously failed timers for component: {compName}")
             configuredThreads = getThreadConfigSections(self.config, compName)
             for threadName, threadConfigSection in configuredThreads.items():
                 # Adding the WorkQueueManagerReqMgrPoller exception for local WorkQueue yet again
@@ -473,7 +473,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
                 for timer in self.timers.values():
                     timer.write()
 
-        logging.info(f"{self.mainThread.name}: Reached the end of its polling cycle.")
+        logging.debug(f"{self.mainThread.name}: Reached the end of its polling cycle.")
 
 
         # NOTE: This whole logic bellow is for the case where we use signal redirection from the main AgentWatchdog thread

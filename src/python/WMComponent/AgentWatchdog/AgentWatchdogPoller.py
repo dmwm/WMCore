@@ -217,6 +217,8 @@ class AgentWatchdogPoller(BaseWorkerThread):
         """
         timerName = timerName or threadConfigSection.getInternalName()
 
+        logging.info(f"Creating timer: {timerName}")
+
         # Here to walk the pidTree of the component and set all expected pids
         # which are to be allowed to reset the timer
         compPidTree = {}
@@ -337,6 +339,13 @@ class AgentWatchdogPoller(BaseWorkerThread):
         for threadName, threadConfigSection in getThreadConfigSections(self.config, compName).items():
 
             # Here to setup the individual timer and add it to the timers list in the AgentWatchdog object
+
+            # Adding an exception only for WorkQueueManagerReqMgrPoller, since its activation at the component
+            # depends on an additional config parameter marking if the queue is Local or Global:
+            if threadName == 'WorkQueueManagerReqMgrPoller' and self.config.WorkQueueManager.level == 'LocalQueue':
+                logging.info(f"Skip creation of timer: {threadName} for a Local WorkQueue.")
+                continue
+
             # NOTE: Currently we are assigning the timerName to the actual threadName instead of compName
             #       in contrast to what it was when we were creating a single timer per component
             self.setupTimer(compName, threadConfigSection, timerName=threadName)
@@ -393,9 +402,12 @@ class AgentWatchdogPoller(BaseWorkerThread):
             # but previously failed during initialization:
             configuredThreads = getThreadConfigSections(self.config, compName)
             for threadName, threadConfigSection in configuredThreads.items():
+                # Adding the WorkQueueManagerReqMgrPoller exception for local WorkQueue yet again
+                if threadName == 'WorkQueueManagerReqMgrPoller' and self.config.WorkQueueManager.level == 'LocalQueue':
+                    continue
                 if threadName not in [timer.name for timer in timers]:
                     logging.warning(f"Trying to recreate all previously failed timers for component: {compName}")
-                    self.setupTimer(compName, threadConfigSection, timerName=ThreadName)
+                    self.setupTimer(compName, threadConfigSection, timerName=threadName)
                     self.timers[threadName].start()
                     self.timers[threadName].write()
 

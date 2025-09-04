@@ -135,12 +135,13 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.pollInterval = 180  # 3 min
 config.WorkQueueManager.inboxDatabase = 'workqueue_inbox'
 config.WorkQueueManager.pollInterval = 180
+config.WorkQueueManager.dataLocationInterval = 1 * 60 * 60
 config.WorkQueueManager.section_('WorkQueueManagerCleaner')
 config.WorkQueueManager.WorkQueueManagerCleaner.runTimeEst = 900
 config.WorkQueueManager.WorkQueueManagerCleaner.pollInterval = config.WorkQueueManager.pollInterval
 config.WorkQueueManager.section_('WorkQueueManagerLocationPoller')
 config.WorkQueueManager.WorkQueueManagerLocationPoller.runTimeEst = 120
-config.WorkQueueManager.WorkQueueManagerLocationPoller.pollInterval = config.WorkQueueManager.pollInterval
+config.WorkQueueManager.WorkQueueManagerLocationPoller.pollInterval = config.WorkQueueManager.dataLocationInterval
 config.WorkQueueManager.section_('WorkQueueManagerReqMgrPoller')
 config.WorkQueueManager.WorkQueueManagerReqMgrPoller.runTimeEst = 240
 config.WorkQueueManager.WorkQueueManagerReqMgrPoller.pollInterval = config.WorkQueueManager.pollInterval

@@ -64,7 +64,6 @@ class JobAccountantPoller(BaseWorkerThread):
 
         if len(completeJobs) == 0:
             logging.debug("No work to do; exiting")
-            return
 
         for jobsSlice in grouper(completeJobs, self.accountantWorkSize):
             try:

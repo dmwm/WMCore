@@ -45,9 +45,31 @@ def _getConfigSubsections(configSection):
                            'DrainStatusPoller': <WMCore.Configuration.ConfigSection at 0x7f6b0a931220>,
                            'ResourceControlUpdater': <WMCore.Configuration.ConfigSection at 0x7f6b0a931280>}
     """
-    return {subSection[0]:subSection[1]
-            for subSection in inspect.getmembers(configSection)
+    return {subSection[0]:subSection[1] for subSection in inspect.getmembers(configSection)
             if isinstance(subSection[1], ConfigSection)}
+
+def getThreadConfigSections(config, compName):
+    """
+    Auxiliary function to find all threads configured to be spawned by a component
+    by parsing all config subsections related to this component and filtering any non thread related subsection.
+    :param config:   WMAgent configuration path or instance
+    :param compName: The component name to be searched for
+    :return:         A dictionary with all subsections one level down (no recursions are performed)
+                     e.g.
+                     {'AgentStatusPoller': <WMCore.Configuration.ConfigSection at 0x7f6b0a931370>,
+                      'DrainStatusPoller': <WMCore.Configuration.ConfigSection at 0x7f6b0a931220>,
+                      'ResourceControlUpdater': <WMCore.Configuration.ConfigSection at 0x7f6b0a931280>}
+    # NOTE: We expect to have a separate sub sections per every thread defining at least its time parameters.
+    #       They should be searched for in the respective subsection first and if not found only then to
+    #       fall back to the upper level component config section.
+
+    """
+    config = _loadConfig(config)
+    compConfigSection = getattr(config, compName, None)
+    compSubSections = _getConfigSubsections(compConfigSection)
+
+    return {subSectionName: subSection for subSectionName, subSection in compSubSections.items()
+            if getattr(subSection, 'pollInterval', None) or getattr(subSection, 'runTimeEst', None)}
 
 def connectionTest(configFile):
     """
@@ -470,11 +492,11 @@ def resetWatchdogTimer(wmaObj, compName=None, threadName=None):
 
     except AttributeError:
         exitcode = 1
-        logging.error("Failed to find {compName} component config section.")
+        logging.error("Failed to load {compName} component config section.")
         logging.error("Aborting")
     except Exception as ex:
         exitCode = 1
-        logging.error(f"Failed to reset {compName} component's timer. ERROR: {str(ex)}")
+        logging.error(f"Failed to reset timer: {threadName} of component: {compName}. ERROR: {str(ex)}")
     return exitCode
 
 def componentName(obj):

@@ -28,7 +28,7 @@ from pprint import pformat
 
 from Utils.ProcFS import processStatus
 from Utils.Timers import timeFunction
-from Utils.wmcoreDTools import getComponentThreads, _getConfigSubsections, restart, forkRestart, isComponentAlive
+from Utils.wmcoreDTools import getComponentThreads, _getConfigSubsections, restart, forkRestart, isComponentAlive, getThreadConfigSections
 from WMComponent.AgentWatchdog.Timer import Timer, _countdown, WatchdogAction, TimerException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMInit import connectToDB
@@ -79,27 +79,6 @@ class AgentWatchdogPoller(BaseWorkerThread):
         currThread = threading.currentThread()
         logging.info(f"{currThread.name}, pid: {currThread.native_id}, Asynchronous sigHandler for sigNum: {sigNum}")
         return True
-
-    # def checkCompAlive(self):
-    #     """
-    #     # Iterate through all components and check if they have a healthy process tree:
-    #     # Restart any of them found to have problems.
-    #     # NOTE: Exclude AgentWatchdog and itself from this logic, because:
-    #     #       * AgentWatchdog should never be touched since it monitors all others poling cycles
-    #     #       * AgentWatchdog is going to spawn threads dynamically and will fail all checks
-    #     #       * AgentWatchdog cannot restart itself
-    #     """
-    #     logging.info(f"Checking all components' threads:")
-    #     for component in [comp for comp in self.config.listComponents_() if comp != 'AgentWatchdog']:
-    #         if not isComponentAlive(self.config, component=component):
-    #             try:
-    #                 logging.warning(f"Restarting Unhealthy component: {component}")
-    #                 forkRestart(self.config, componentsList=[component])
-    #                 # rebuild the timer for this component upon restart
-    #                 self.setupTimer(component)
-    #             except Exception as ex:
-    #                 logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
-    #                 raise
 
     def sendAlert(self, alertMessage, severity='low'):
         """
@@ -165,7 +144,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         time.sleep(1)
 
         # Update the respective timer's data
-        timer = self._findTimerByComp(compName)
+        timer = self._findTimersByComp(compName)
         if timer:
             compPidTree = getComponentThreads(self.config, compName, quiet=True)
             if compPidTree:
@@ -176,35 +155,33 @@ class AgentWatchdogPoller(BaseWorkerThread):
         logging.warning(msg)
         self.sendAlert(msg)
 
-    def _findTimerByPid(self, pid):
+    def _findTimersByPid(self, pid):
         """
-        _findTimerByPid_
+        _findTimersByPid_
         """
-        correctTimer = None
+        correctTimers = []
         for timer in self.timers.values():
             # logging.debug(f"timer: {timer}")
             # logging.debug(f"timer.expPids: {timer.expPids}")
             if pid in timer.expPids:
-                correctTimer = timer
+                correctTimers.append(timer)
                 # NOTE: Once we move to one timer per thread (meaning many timers per compName),
                 #       we should not break here, but rather return the full list of timers
                 #       found to be associated with this component.
-                break
-        return correctTimer
+        return correctTimers
 
-    def _findTimerByComp(self, compName):
+    def _findTimersByComp(self, compName):
         """
-        _findTimerByComp
+        _findTimersByComp
         """
-        correctTimer = None
+        correctTimers = []
         for timer in self.timers.values():
             if timer.compName == compName:
-                correctTimer = timer
+                correctTimers.append(timer)
                 # NOTE: Once we move to one timer per thread (meaning many timers per compName),
                 #       we should not break here, but rather return the full list of timers
                 #       found to be associated with this component.
-                break
-        return correctTimer
+        return correctTimers
 
     def restartTimer(self, timer, compPidTree):
         """
@@ -228,14 +205,17 @@ class AgentWatchdogPoller(BaseWorkerThread):
         expPids = list(set(expPids))
         timer.update(expPids=expPids)
 
-    def setupTimer(self, compName):
+    def setupTimer(self, compName, threadConfigSection, timerName=None):
         """
-        We spawn a separate thread for every timer.
-        :param compName: The component name this timer  is associated with.
-        :return:         Nothing
+        Crates a timer from a given thread configuration section and associates it with
+        the respective component.
+        :param compName:            The component name.
+        :param threadConfigSection: The configuration section of the thread for which this timer is about to be created
+        :param timerName:           The threadName for this timer. If missing, it will be named after
+                                    the threadConfigSection itself. (Default: None)
+        :return:                    A Watchdog.Timer instance
         """
-        currThread = threading.currentThread()
-        logging.info(f"{self.mainThread.name}: setting up timer for component: {compName}.")
+        timerName = timerName or threadConfigSection.getInternalName()
 
         # Here to walk the pidTree of the component and set all expected pids
         # which are to be allowed to reset the timer
@@ -264,107 +244,111 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # expPids.extend([thr.native_id for thr in threading.enumerate()])
         expPids = list(set(expPids))
 
+        # Here to find the correct timer's interval
+        # NOTE: We estimate the timer's interval by:
+        #       * Taking the initial runtime estimate from the configuration SubSection for the component's thread/process
+        #       * Multiply it with the common correction factor defined for all threads at the AgentWatchodog configurartion
+        #       * Merge it with the pollInterval from the respective config SubSection or if none is found there
+        #         with the pollInterval for the pid with the longest polling cycle from the component's config Section itself
+        #       * Merge it with the watchdog timeout, in order to implement some static
+        #         hysteresis in the watchdog logic. In the future instead of the shortest polling cycle
+        #         (which does not reflect how long a component has run, but rather for how long we wait
+        #         between component runs), we should use an estimator based on the runtime distribution
+        #         of the slowest thread in the component.
+        #       * Add some random factor between 1-10% on top of it, in order to avoid periodical
+        #         overlaps between the timer's interval and the component's polling cycle,
+        #         which would cause oscillations (the component being periodically rebooted due
+        #         to lost signals caused by the intervals overlaps explained above)
 
-        # Here to find all possible threads stemming from this component by parsing all config subsections:
-        # NOTE: We expect to have a separate sub sections per every thread defining at least its time parameters.
-        #       They should be searched for in the respective subsection first and if not found only then to
-        #       fall back to the upper level component config section.
+        # Find the pre-configured runtimeEstimate
+        threadRunTimeEst = getattr(threadConfigSection, 'runTimeEst', None)
+        # Give up. No runtime estimate can be found for this thread
+        if not threadRunTimeEst:
+            logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be skipped")
+            return
 
-        compConfigSection = self.config.component_(compName)
-        threadConfigSections = _getConfigSubsections(compConfigSection) or {compName: compConfigSection}
+        # Apply the safety margin:
+        threadRunTimeEst *= self.runTimeCorrFactor
 
-        for threadName, threadConfigSection in threadConfigSections.items():
+        # Find the correct poll interval for this thread
+        # TODO: To find the compConfigSection this threadConfigSection to
+        threadPollInterval = getattr(threadConfigSection, 'pollInterval', None)
+        if not threadPollInterval:
+            # Take the longest interval:
+            compPollIntervals = {attr: value
+                                 for attr,value in inspect.getmembers(compConfigSection)
+                                 if re.match(r"^.*[p,P]ollInterval$", attr)}
+            try:
+                maxPollIntervalName = max(compPollIntervals)
+                threadPollInterval = compPollIntervals[maxPollIntervalName]
+                logging.info(f"{self.mainThread.name}: Selecting the longest polling interval in the component: {maxPollIntervalName}:{threadPollInterval} sec.")
+            except (ValueError, KeyError) as ex:
+                threadPollInterval = None
+                logging.error(f"{self.mainThread.name}: No pollIntervals defined for component: {compName}")
+        # Give up after the final attempt to estimate the pooll interval
+        if not threadPollInterval:
+            logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be scipped")
+            return
 
-            # Skip config sections which are not related to any thread:
-            # NOTE: `RetryManager` is a single threaded component with an additional configuration
-            #        section related to its own internal logic
-            if threadName == 'SquaredAlgo':
-                continue
+        # Set the timerInterval as the sum of the previous two
+        timerInterval = threadRunTimeEst + threadPollInterval
 
-            # Currently we are assigning the timerName to the actual ThreadName instead of the full componentName
-            timerName = threadName
+        # Now lets add some disturbance to the force:
+        timerInterval += self.watchdogTimeout
+        timerInterval *= random.uniform(1.01, 1.1)
 
-            # Here to find the correct timer's interval
-            # NOTE: We estimate the timer's interval by:
-            #       * Taking the initial runtime estimate from the configuration SubSection for the component's thread/process
-            #       * Multiply it with the common correction factor defined for all threads at the AgentWatchodog configurartion
-            #       * Merge it with the pollInterval from the respective config SubSection or if none is found there
-            #         with the pollInterval for the pid with the longest polling cycle from the component's config Section itself
-            #       * Merge it with the watchdog timeout, in order to implement some static
-            #         hysteresis in the watchdog logic. In the future instead of the shortest polling cycle
-            #         (which does not reflect how long a component has run, but rather for how long we wait
-            #         between component runs), we should use an estimator based on the runtime distribution
-            #         of the slowest thread in the component.
-            #       * Add some random factor between 1-10% on top of it, in order to avoid periodical
-            #         overlaps between the timer's interval and the component's polling cycle,
-            #         which would cause oscillations (the component being periodically rebooted due
-            #         to lost signals caused by the intervals overlaps explained above)
+        # Create the action to be executed at the end of the timer.
+        # NOTE: The format is a named tuple of the form:
+        #       (callbackFunction, [args], {kwArgs})
+        # action = WatchdogAction(self.restartUpdateAction, [compName], {})
+        action = WatchdogAction(self.alertAction, [timerName], {})
+        logging.debug(f"{self.mainThread.name}: action function: {action}.")
 
-            # Find the pre-configured runtimeEstimate
-            threadRunTimeEst = getattr(threadConfigSection, 'runTimeEst', None)
-            # Give up no runtime estimate can be found for this thread
-            if not threadRunTimeEst:
-                logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be skipped")
-                continue
+        # Here to define the timer's path, where it will be permanently written on disk
+        compDir = self.config.section_(compName).componentDir
+        compDir = os.path.expandvars(compDir)
+        timerPath = f"{compDir}/Timer-{timerName}"
 
-            # Apply the safety margin:
-            threadRunTimeEst *= self.runTimeCorrFactor
+        timerObj = None
+        try:
+            timerObj = Timer(name=timerName,
+                             compName=compName,
+                             expPids=expPids,
+                             action=action,
+                             actionLimit=self.actionLimit,
+                             path=timerPath,
+                             interval=timerInterval)
+        except Exception as ex:
+            logging.error(f"{self.mainThread.name}: Failed to create timer: {timerName} for component {compName} due to ERROR: {str(ex)}")
 
-            # Find the correct poll interval for this thread
-            threadPollInterval = getattr(threadConfigSection, 'pollInterval', None)
-            if not threadPollInterval:
-                # Take the longest interval:
-                compPollIntervals = {attr: value
-                                     for attr,value in inspect.getmembers(compConfigSection)
-                                     if re.match(r"^.*[p,P]ollInterval$", attr)}
-                try:
-                    maxPollIntervalName = max(compPollIntervals)
-                    threadPollInterval = compPollIntervals[maxPollIntervalName]
-                    logging.info(f"{self.mainThread.name}: Selecting the longest polling interval in the component: {maxPollIntervalName}:{threadPollInterval} sec.")
-                except (ValueError, KeyError) as ex:
-                    threadPollInterval = None
-                    logging.error(f"{self.mainThread.name}: No pollIntervals defined for component: {compName}")
-            # Give up after the final attempt to estimate the pooll interval
-            if not threadPollInterval:
-                logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be scipped")
-                continue
+        if timerObj:
+            self.timers[timerName] = timerObj
 
-            # Set the timerInterval as the sum of the previous two
-            timerInterval = threadRunTimeEst + threadPollInterval
+    def setupCompTimers(self, compName):
+        """
+        Creates a timer per thread/process for all component's threads/processes.
+        We spawn a separate thread for every timer.
+        :param compName: The component name.
+        :return:         Nothing
+        """
+        currThread = threading.currentThread()
+        logging.info(f"{self.mainThread.name}: setting up timers for component: {compName}.")
 
-            # Now lets add some disturbance to the force:
-            timerInterval += self.watchdogTimeout
-            timerInterval *= random.uniform(1.01, 1.1)
+        for threadName, threadConfigSection in getThreadConfigSections(self.config, compName).items():
 
-            # Create the action to be executed at the end of the timer.
-            # NOTE: The format is a named tuple of the form:
-            #       (callbackFunction, [args], {kwArgs})
-            # action = WatchdogAction(self.restartUpdateAction, [compName], {})
-            action = WatchdogAction(self.alertAction, [timerName], {})
-            logging.debug(f"{self.mainThread.name}: action function: {action}.")
+            # Here to setup the individual timer and add it to the timers list in the AgentWatchdog object
+            # NOTE: Currently we are assigning the timerName to the actual threadName instead of compName
+            #       in contrast to what it was when we were creating a single timer per component
+            self.setupTimer(compName, threadConfigSection, timerName=threadName)
 
-            # Here to define the timer's path, where it will be permanently written on disk
-            compDir = self.config.section_(compName).componentDir
-            compDir = os.path.expandvars(compDir)
-            timerPath = f"{compDir}/Timer-{threadName}"
-
-            # Here to add the timer's thread to the timers list in the AgentWatchdog object
-            self.timers[timerName] = Timer(name=timerName,
-                                           compName=compName,
-                                           expPids=expPids,
-                                           action=action,
-                                           actionLimit=self.actionLimit,
-                                           path=timerPath,
-                                           interval=timerInterval)
-
-            # Finally start the timer:
-            self.timers[timerName].start()
+            # Finally start the timers:
+            self.timers[threadName].start()
 
             # Here to preserve the timer on disk, such that its parameters can later be found by the
             # components itself, and it can be reset on time.
             # NOTE: This must happen upon timer's startup, because otherwise the timer attributes
             #       would be incomplete and later the component won't be able to reset it.
-            self.timers[timerName].write()
+            self.timers[threadName].write()
 
             # NOTE: The so preserved timer would reflect only the state of the timer
             #       at init time, and won't be updated later until recreated. So any
@@ -403,9 +387,20 @@ class AgentWatchdogPoller(BaseWorkerThread):
 
         # Refresh timers:
         for compName in self.watchedComponents:
-            timer = self._findTimerByComp(compName)
-            if timer:
-                # Re-configuring any timers associated with components which changed execution or have been restarted:
+            timers = self._findTimersByComp(compName)
+
+            # Retrying to create timers for components present in the watched list
+            # but previously failed during initialization:
+            configuredThreads = getThreadConfigSections(self.config, compName)
+            for threadName, threadConfigSection in configuredThreads.items():
+                if threadName not in [timer.name for timer in timers]:
+                    logging.warning(f"Trying to recreate all previously failed timers for component: {compName}")
+                    self.setupTimer(compName, threadConfigSection, timerName=ThreadName)
+                    self.timers[threadName].start()
+                    self.timers[threadName].write()
+
+            # Re-configuring any timers associated with components which changed execution or have been restarted:
+            for timer in timers:
                 compPidTree = getComponentThreads(self.config, compName, quiet=True)
                 if compPidTree and compPidTree['Parent'] not in timer.expPids:
                     if timer.is_alive():
@@ -414,11 +409,6 @@ class AgentWatchdogPoller(BaseWorkerThread):
                     else:
                         logging.info(f"{self.mainThread.name}: Restarting expired timer: {timer}, whose associated component has changed state or have been restarted.")
                         self.restartTimer(timer, compPidTree)
-            else:
-                # Retrying to create timers for components present in the watched list
-                # but previously failed during initialization:
-                logging.warning(f"Trying to recreate a previously failed timer for component: {compName}")
-                self.setupTimer(compName)
 
         # Refresh all timers' data on disk every 1 second, or when a signal.SIGCONT
         # is received from a particular component.
@@ -429,20 +419,22 @@ class AgentWatchdogPoller(BaseWorkerThread):
                 logging.info(f"{self.mainThread.name} with main pid: {threading.main_thread().native_id}: Received signal: {pformat(sigInfo)}")
 
                 # First, find the correct timer:
-                correctTimer = self._findTimerByPid(sigInfo.si_pid)
+                timers = self._findTimersByPid(sigInfo.si_pid)
 
-                # Second, Refresh timer data:
-                if correctTimer:
-                    try:
-                        logging.info(f"{self.mainThread.name}: Refreshing timer data on disk for: {correctTimer.name}")
-                        logging.debug(f"{self.mainThread.name}: Timer expPids: {correctTimer.expPids}")
-                        correctTimer.write()
-                    except ProcessLookupError:
-                        logging.warning(f"{self.mainThread.name}: Missing timer: {correctTimer.name}. It will be recreated on the next AgentWatchdogPoller cycle, but the current signal is lost and the timer data was NOT refreshed on disk.")
-                else:
+                if not timers:
                     # Ignore signals from unknown origin:
                     logging.info(f"{self.mainThread.name}: The sender's pid: {sigInfo.si_pid} was not recognized. Ignoring the signal.")
                     continue
+
+                # Second, Refresh timer data:
+                for timer in timers:
+                    try:
+                        logging.info(f"{self.mainThread.name}: Refreshing timer data on disk for: {timer.name}")
+                        logging.debug(f"{self.mainThread.name}: Timer expPids: {timer.expPids}")
+                        timer.write()
+                    except ProcessLookupError:
+                        logging.warning(f"{self.mainThread.name}: Missing or expired timer: {timer.name}. It will be recreated on the next AgentWatchdogPoller cycle, but the current signal is lost and the timer data was NOT refreshed on disk.")
+
             else:
                 logging.debug(f"{self.mainThread.name}: Refreshing all timers' data on disk.")
                 for timer in self.timers.values():
@@ -523,4 +515,4 @@ class AgentWatchdogPoller(BaseWorkerThread):
         :param compName: the component name to be watched (Default: AgentStatusWatcher')
         """
         logging.info(f"Start watching {compName}")
-        self.setupTimer(compName)
+        self.setupCompTimers(compName)

@@ -289,13 +289,20 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
             wflowSpecs = self.listActiveWflows.execute()
             if not wflowSpecs:
                 logging.info("Agent has no active workflows at the moment")
+                # Reset its own watchdog timer at the end of the run cycle
+                logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+                resetWatchdogTimer(self)
                 return
 
             # figure out workflows that have pileup
             puWflows = self.findWflowsWithPileup(wflowSpecs)
             if not puWflows:
                 logging.info("Agent has no active workflows with pileup at the moment")
+                # Reset its own watchdog timer at the end of the run cycle
+                logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+                resetWatchdogTimer(self)
                 return
+
             # resolve unique active pileup dataset names
             uniqueActivePU = set(flattenList([item['pileup'] for item in puWflows]))
 

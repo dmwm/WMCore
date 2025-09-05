@@ -9,6 +9,7 @@ import logging
 import traceback
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
@@ -124,6 +125,11 @@ class ResourceControlUpdater(BaseWorkerThread):
             self.checkSlotsChanges(sitesRC, sitesSSB)
         except Exception as ex:
             logging.exception("Error occurred, will retry later. Details: %s", str(ex))
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
         logging.info("Resource control cycle finished updating site state and thresholds.")
 

@@ -43,7 +43,7 @@ class DBS3Upload(Harness):
         # Add event loop to worker manager
         myThread = threading.currentThread()
 
-        pollInterval = self.config.DBS3Upload.pollInterval
+        pollInterval = self.config.DBS3Upload.DBSUploadPoller.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(DBSUploadPoller(self.config), pollInterval)
 

@@ -36,11 +36,11 @@ class TaskArchiver(Harness):
         # Add event loop to worker manager
         myThread = threading.currentThread()
 
-        pollInterval = self.config.TaskArchiver.pollInterval
+        pollInterval = self.config.TaskArchiver.TaskArchiverPoller.pollInterval
         logging.info("Setting task archiver poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(TaskArchiverPoller(self.config), pollInterval)
 
-        couchInterval = self.config.TaskArchiver.cleanCouchInterval
+        couchInterval = self.config.TaskArchiver.CleanCouchPoller.pollInterval
         logging.info("Setting poll interval for cleanup old couch doc to %s seconds" % couchInterval)
         myThread.workerThreadManager.addWorker(CleanCouchPoller(self.config),
                                                couchInterval)

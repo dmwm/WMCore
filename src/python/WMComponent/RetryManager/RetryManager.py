@@ -36,6 +36,6 @@ class RetryManager(Harness):
 
         # Add event loop to worker manager
         myThread = threading.currentThread()
-        pollInterval = self.config.RetryManager.pollInterval
+        pollInterval = self.config.RetryManager.RetryManagerPoller.pollInterval
         logging.info("Setting poll interval to %s seconds", pollInterval)
         myThread.workerThreadManager.addWorker(RetryManagerPoller(self.config), pollInterval)

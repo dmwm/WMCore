@@ -132,10 +132,28 @@ config.DashboardReporter.dashboardPort = 8884
 
 config.component_('WorkQueueManager')
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
+config.WorkQueueManager.pollInterval = 180  # 3 min
+config.WorkQueueManager.inboxDatabase = 'workqueue_inbox'
+config.WorkQueueManager.pollInterval = 180
+config.WorkQueueManager.dataLocationInterval = 1 * 60 * 60
+config.WorkQueueManager.section_('WorkQueueManagerCleaner')
+config.WorkQueueManager.WorkQueueManagerCleaner.runTimeEst = 900
+config.WorkQueueManager.WorkQueueManagerCleaner.pollInterval = config.WorkQueueManager.pollInterval
+config.WorkQueueManager.section_('WorkQueueManagerLocationPoller')
+config.WorkQueueManager.WorkQueueManagerLocationPoller.runTimeEst = 120
+config.WorkQueueManager.WorkQueueManagerLocationPoller.pollInterval = config.WorkQueueManager.dataLocationInterval
+config.WorkQueueManager.section_('WorkQueueManagerReqMgrPoller')
+config.WorkQueueManager.WorkQueueManagerReqMgrPoller.runTimeEst = 240
+config.WorkQueueManager.WorkQueueManagerReqMgrPoller.pollInterval = config.WorkQueueManager.pollInterval
+config.WorkQueueManager.section_('WorkQueueManagerWMBSFileFeeder')
+config.WorkQueueManager.WorkQueueManagerWMBSFileFeeder.runTimeEst = 900
+config.WorkQueueManager.WorkQueueManagerWMBSFileFeeder.pollInterval = config.WorkQueueManager.pollInterval
+config.WorkQueueManager.section_('WorkQueueManagerWorkPoller')
+config.WorkQueueManager.WorkQueueManagerWorkPoller.runTimeEst = 3600
+config.WorkQueueManager.WorkQueueManagerWorkPoller.pollInterval = config.WorkQueueManager.pollInterval
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = globalLogLevel
-config.WorkQueueManager.pollInterval = 180  # 3 min
 config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
@@ -157,11 +175,13 @@ config.WorkQueueManager.queueParams["rucioAccountPU"] = "wmcore_pileup"
 
 
 config.component_("DBS3Upload")
+config.DBS3Upload.section_('DBSUploadPoller')
+config.DBS3Upload.DBSUploadPoller.pollInterval = 100
+config.DBS3Upload.DBSUploadPoller.runTimeEst = 6000
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
 config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
-config.DBS3Upload.pollInterval = 100
 # "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
@@ -181,20 +201,24 @@ config.DBSInterface.doGlobalMigration = False
 config.DBSInterface.primaryDatasetType = "mc"
 
 config.component_("JobAccountant")
+config.JobAccountant.section_('JobAccountantPoller')
+config.JobAccountant.JobAccountantPoller.pollInterval = 300
+config.JobAccountant.JobAccountantPoller.runTimeEst = 4320
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
 config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
 config.JobAccountant.logLevel = globalLogLevel
 config.JobAccountant.workerThreads = 1
-config.JobAccountant.pollInterval = 300
 config.JobAccountant.specDir = config.General.workDir + "/JobAccountant/SpecCache"
 
 config.component_("JobCreator")
+config.JobCreator.section_('JobCreatorPoller')
+config.JobCreator.JobCreatorPoller.pollInterval = 120
+config.JobCreator.JobCreatorPoller.runTimeEst = 6000
 config.JobCreator.namespace = "WMComponent.JobCreator.JobCreator"
 config.JobCreator.componentDir = config.General.workDir + "/JobCreator"
 config.JobCreator.logLevel = globalLogLevel
 config.JobCreator.maxThreads = 1
 config.JobCreator.UpdateFromResourceControl = True
-config.JobCreator.pollInterval = 120
 # This is now OPTIONAL: It defaults to the componentDir
 # However: In a production instance, this should be run on a high performance
 # disk, and should probably NOT be run on the same disk as the JobArchiver
@@ -207,11 +231,13 @@ config.JobCreator.GlideInRestriction = {"MinWallTimeSecs": 1 * 3600,  # 1h
                                         "MinRequestDiskKB": 1 * 1000 * 1000,  # 1GB
                                         "MaxRequestDiskKB": 20 * 1000 * 1000}  # site limit is ~27GB
 config.component_("JobSubmitter")
+config.JobSubmitter.section_('JobSubmitterPoller')
+config.JobSubmitter.JobSubmitterPoller.pollInterval = 120
+config.JobSubmitter.JobSubmitterPoller.runTimeEst = 360
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
 config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
 config.JobSubmitter.logLevel = globalLogLevel
 config.JobSubmitter.maxThreads = 1
-config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.maxJobsPerPoll = 1000
@@ -224,47 +250,59 @@ config.JobSubmitter.drainGraceTime = 2 * 24 * 60 * 60  # in seconds
 config.JobSubmitter.useOauthToken = False
 
 config.component_("JobTracker")
+config.JobTracker.section_('JobTrackerPoller')
+config.JobTracker.JobTrackerPoller.pollInterval = 60
+config.JobTracker.JobTrackerPoller.runTimeEst = 720
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
 config.JobTracker.componentDir = config.General.workDir + "/JobTracker"
 config.JobTracker.logLevel = globalLogLevel
-config.JobTracker.pollInterval = 60
 
 config.component_("JobStatusLite")
+config.JobStatusLite.section_('StatusPoller')
+config.JobStatusLite.StatusPoller.runTimeEst = 900
+config.JobStatusLite.StatusPoller.pollInterval = 60
 config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = globalLogLevel
-config.JobStatusLite.pollInterval = 60
 config.JobStatusLite.stateTimeouts = {"Error": 300, "Running": 169200, "Pending": 432000}
 
 config.component_("JobUpdater")
+config.JobUpdater.section_('JobUpdaterPoller')
+config.JobUpdater.JobUpdaterPoller.runTimeEst = 120
+config.JobUpdater.JobUpdaterPoller.pollInterval = 120
 config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
 config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
-config.JobUpdater.pollInterval = 120
 
 config.component_("ErrorHandler")
+config.ErrorHandler.section_('ErrorHandlerPoller')
+config.ErrorHandler.ErrorHandlerPoller.pollInterval = 240
+config.ErrorHandler.ErrorHandlerPoller.runTimeEst = 600
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
 config.ErrorHandler.componentDir = config.General.workDir + "/ErrorHandler"
 config.ErrorHandler.logLevel = globalLogLevel
-config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
 config.ErrorHandler.maxFailTime = 120000
 config.ErrorHandler.maxProcessSize = 500
 
 config.component_("RetryManager")
+config.RetryManager.section_('RetryManagerPoller')
+config.RetryManager.RetryManagerPoller.pollInterval = 240
+config.RetryManager.RetryManagerPoller.runTimeEst = 180
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"
 config.RetryManager.componentDir = config.General.workDir + "/RetryManager"
 config.RetryManager.logLevel = globalLogLevel
-config.RetryManager.pollInterval = 240
 config.RetryManager.plugins = {"default": "SquaredAlgo"}
 config.RetryManager.section_("SquaredAlgo")
 config.RetryManager.SquaredAlgo.section_("default")
 config.RetryManager.SquaredAlgo.default.coolOffTime = retryAlgoParams
 
 config.component_("JobArchiver")
+config.JobArchiver.section_('JobArchiverPoller')
+config.JobArchiver.JobArchiverPoller.runTimeEst = 360
+config.JobArchiver.JobArchiverPoller.pollInterval = 120
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir = config.General.workDir + "/JobArchiver"
-config.JobArchiver.pollInterval = 120
 config.JobArchiver.logLevel = globalLogLevel
 config.JobArchiver.numberOfJobsToCluster = 1000
 config.JobArchiver.numberOfJobsToArchive = 10000
@@ -275,9 +313,14 @@ config.JobArchiver.numberOfJobsToArchive = 10000
 
 config.component_("TaskArchiver")
 config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
+config.TaskArchiver.section_('TaskArchiverPoller')
+config.TaskArchiver.TaskArchiverPoller.runTimeEst = 600
+config.TaskArchiver.TaskArchiverPoller.pollInterval = 240
+config.TaskArchiver.section_('CleanCouchPoller')
+config.TaskArchiver.CleanCouchPoller.runTimeEst = 6000
+config.TaskArchiver.CleanCouchPoller.pollInterval = 1200
 config.TaskArchiver.componentDir = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = globalLogLevel
-config.TaskArchiver.pollInterval = 240
 config.TaskArchiver.timeOut = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True
 config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
@@ -309,7 +352,12 @@ config.section_("Alert")
 config.Alert.address = "tcp://127.0.0.1:6557"
 # control channel (internal alert system commands)
 config.Alert.controlAddr = "tcp://127.0.0.1:6559"
-
+# alertManager configuration:
+config.Alert.alertManagerUrl = 'http://cms-monitoring.cern.ch:30093/api/v2/alerts'
+config.Alert.alertDestinationMap = {
+    "alertAgentWatchdogPoller": "alerts-dmwm,alerts-pnr,email-dmwm,email-pnr",
+    "alertAgentWatchdogScanner": "alerts-dmwm,alerts-pnr,email-dmwm,email-pnr"
+}
 
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file
@@ -321,10 +369,12 @@ config.EmailAlert.fromAddr = "noreply@cern.ch"
 config.EmailAlert.smtpServer = "localhost"
 
 config.component_("AnalyticsDataCollector")
+config.AnalyticsDataCollector.section_('AnalyticsPoller')
+config.AnalyticsDataCollector.AnalyticsPoller.pollInterval = 600
+config.AnalyticsDataCollector.AnalyticsPoller.runTimeEst = 60
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
 config.AnalyticsDataCollector.componentDir = config.General.workDir + "/AnalyticsDataCollector"
 config.AnalyticsDataCollector.logLevel = globalLogLevel
-config.AnalyticsDataCollector.pollInterval = 600
 config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,
                                                          config.JobStateMachine.couchDBName)
 config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl,
@@ -337,9 +387,11 @@ config.AnalyticsDataCollector.couchProcessThreshold = 50
 config.AnalyticsDataCollector.pluginName = None
 
 config.component_("ArchiveDataReporter")
+config.ArchiveDataReporter.section_('ArchiveDataPoller')
+config.ArchiveDataReporter.ArchiveDataPoller.pollInterval = 300
+config.ArchiveDataReporter.ArchiveDataPoller.runTimeEst = 360
 config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
 config.ArchiveDataReporter.componentDir = config.General.workDir + "/ArchiveDataReporter"
-config.ArchiveDataReporter.pollInterval = 300
 config.ArchiveDataReporter.WMArchiveURL = None
 config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000  # number of documents needed to be polled each time
 config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upload each time in bulk to WMArchive
@@ -347,9 +399,17 @@ config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upl
 # AgentStatusWatcher has to be the last one in the config to avoid false alarms during startup
 config.component_("AgentStatusWatcher")
 config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatusWatcher"
+config.AgentStatusWatcher.section_('AgentStatusPoller')
+config.AgentStatusWatcher.AgentStatusPoller.runTimeEst = 60
+config.AgentStatusWatcher.AgentStatusPoller.pollInterval = 300
+config.AgentStatusWatcher.section_('DrainStatusPoller')
+config.AgentStatusWatcher.DrainStatusPoller.runTimeEst = 60
+config.AgentStatusWatcher.DrainStatusPoller.pollInterval = 3600
+config.AgentStatusWatcher.section_('ResourceControlUpdater')
+config.AgentStatusWatcher.ResourceControlUpdater.runTimeEst = 120
+config.AgentStatusWatcher.ResourceControlUpdater.pollInterval = 900
 config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
 config.AgentStatusWatcher.logLevel = globalLogLevel
-config.AgentStatusWatcher.resourceUpdaterPollInterval = 900  # [second]
 config.AgentStatusWatcher.grafanaURL = "https://monit-grafana.cern.ch"
 config.AgentStatusWatcher.grafanaToken = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.grafanaSSB = 9475  # monit-grafana API number for Site Status Board
@@ -361,8 +421,6 @@ config.AgentStatusWatcher.t1SitesCores = 30  # [percent] Only used for tier0 age
 config.AgentStatusWatcher.forceSiteDown = []  # List of sites to be forced to Down status
 config.AgentStatusWatcher.onlySSB = False  # Set thresholds for sites only in SSB (Force all other to zero/down)
 config.AgentStatusWatcher.enabled = True  # switch to enable or not this component
-config.AgentStatusWatcher.agentPollInterval = 300
-config.AgentStatusWatcher.drainStatusPollInterval = 3600
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
 config.AgentStatusWatcher.enableAMQ = False
 config.AgentStatusWatcher.userAMQ = "OVERWRITE_BY_SECRETS"
@@ -370,10 +428,12 @@ config.AgentStatusWatcher.passAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.topicAMQ = "OVERWRITE_BY_SECRETS"
 
 config.component_("RucioInjector")
+config.RucioInjector.section_('RucioInjectorPoller')
+config.RucioInjector.RucioInjectorPoller.pollInterval = 300
+config.RucioInjector.RucioInjectorPoller.runTimeEst = 1200
 config.RucioInjector.namespace = "WMComponent.RucioInjector.RucioInjector"
 config.RucioInjector.componentDir = config.General.workDir + "/RucioInjector"
 config.RucioInjector.logLevel = globalLogLevel
-config.RucioInjector.pollInterval = 300
 config.RucioInjector.pollIntervalRules = 43200
 config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
@@ -392,9 +452,49 @@ config.WorkflowUpdater.namespace = "WMComponent.WorkflowUpdater.WorkflowUpdater"
 config.WorkflowUpdater.componentDir = config.General.workDir + "/WorkflowUpdater"
 config.WorkflowUpdater.logLevel = globalLogLevel
 config.WorkflowUpdater.pollInterval = 8 * 60 * 60  # every 8 hours
+config.WorkflowUpdater.section_('WorkflowUpdaterPoller')
+config.WorkflowUpdater.WorkflowUpdaterPoller.runTimeEst = 600
+config.WorkflowUpdater.WorkflowUpdaterPoller.pollInterval = config.WorkflowUpdater.pollInterval
+config.WorkflowUpdater.section_('SiteListPoller')
+config.WorkflowUpdater.SiteListPoller.runTimeEst = 60
+config.WorkflowUpdater.SiteListPoller.pollInterval = config.WorkflowUpdater.pollInterval
 config.WorkflowUpdater.dbsUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.wmstatsUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.rucioAccount = "wmcore_pileup"
 config.WorkflowUpdater.rucioUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkflowUpdater.msPileupUrl = "OVER_WRITE_BY_SECRETS"
+
+config.component_("AgentWatchdog")
+config.AgentWatchdog.section_('AgentWachdogPoller')
+config.AgentWatchdog.AgentWachdogPoller.pollInterval = 20
+config.AgentWatchdog.section_('AgentWachdogScanner')
+config.AgentWatchdog.AgentWachdogScanner.pollInterval = 2 * 60
+config.AgentWatchdog.namespace = "WMComponent.AgentWatchdog.AgentWatchdog"
+config.AgentWatchdog.componentDir = config.General.workDir + "/AgentWatchdog"
+config.AgentWatchdog.logLevel = globalLogLevel
+config.AgentWatchdog.actionLimit = 3
+# This next timeout is to be added on top of the watched component's polling cycle
+# in order to create some minimal hysteresis in the watchdog timers' logic
+config.AgentWatchdog.watchdogTimeout = 1 * 1 * 60  # 60 sec.
+config.AgentWatchdog.runTimeCorrFactor = 1.5
+# NOTE: In the list bellow we intentionally skip:
+#       * AgentWatchdog - because it cannot watchi tself
+#       * JobStatusLite - because its thread runner class definition lives outside
+#                         the WMComponent.* area (it is WMCore.BossAir.StatusPoller)
+config.AgentWatchdog.watchedComponents = ['AgentStatusWatcher',
+                                          'AnalyticsDataCollector',
+                                          'ArchiveDataReporter',
+                                          'DBS3Upload',
+                                          'ErrorHandler',
+                                          'JobAccountant',
+                                          'JobArchiver',
+                                          'JobCreator',
+                                          'JobSubmitter',
+                                          'JobTracker',
+                                          'JobUpdater',
+                                          'RetryManager',
+                                          'RucioInjector',
+                                          'TaskArchiver',
+                                          'WorkflowUpdater',
+                                          'WorkQueueManager']

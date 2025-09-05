@@ -13,6 +13,7 @@ import threading
 
 from Utils.IteratorTools import grouper
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
@@ -122,6 +123,11 @@ class JobArchiverPoller(BaseWorkerThread):
                     and getattr(myThread.transaction, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise JobArchiverPollerException(msg)
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
         return
 

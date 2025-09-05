@@ -1,3 +1,8 @@
+2.4.3 to 2.4.4rc1:
+  - harvesting task maxpss configured in Express only (Antonio Linares) #12404
+  - New dmwm-base image based on Debian Trixie https://github.com/dmwm/CMSKubernetes/pull/1643
+  - Upgrading MariaDB to version 11.8.2 https://github.com/dmwm/CMSKubernetes/pull/1640
+
 2.4.2 to 2.4.3:
   - Add support to JobExtraMatchRequirements task parameter (Alan Malta Rodrigues) #12417
 

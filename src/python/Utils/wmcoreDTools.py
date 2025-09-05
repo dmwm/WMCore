@@ -487,13 +487,22 @@ def resetWatchdogTimer(wmaObj, compName=None, threadName=None):
         with open(timerPath, 'r') as timerFile:
             timer = json.load(timerFile)
 
-            # Reset the timer by sending it the expected signal.
+            # Reset the timer by sending the expected signal to the timer thread.
             os.kill(timer['native_id'], timer['expSig'])
 
     except AttributeError:
         exitcode = 1
         logging.error("Failed to load {compName} component config section.")
         logging.error("Aborting")
+    except ProcessLookupError as ex:
+        logging.warning(f"The timer thread: {timer['native_id']} is missing. Probably the timer has expired.")
+        logging.warning(f"Trying to fully restart the timer by sending the signal to its parent thread: {timer['parent_id']}")
+        try:
+            # Restart the timer by sending the expected signal to the timer' parent(creator) thread.
+            os.kill(timer['parent_id'], timer['expSig'])
+        except Exception as ex:
+            exitCode = 1
+            logging.error(f"Failed to restart the timer: {threadName} of component: {compName}. ERROR: {str(ex)}")
     except Exception as ex:
         exitCode = 1
         logging.error(f"Failed to reset timer: {threadName} of component: {compName}. ERROR: {str(ex)}")

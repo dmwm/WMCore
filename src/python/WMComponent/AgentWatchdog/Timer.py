@@ -3,6 +3,7 @@ import logging
 import time
 import inspect
 import json
+import threading
 
 from collections  import namedtuple
 from typing import NamedTuple
@@ -99,6 +100,9 @@ class Timer(Thread):
         else:
             logging.warning(f"{self.name}: This is a timer with no action defined. This timer should be used mostly for debugging purposes.")
 
+        # This MUST be overwritten at runtime by the thread/process creating the timer
+        self.creator_id = None
+
     def run(self):
         """
         _run_
@@ -118,6 +122,15 @@ class Timer(Thread):
                 json.dump(self.dictionary_(), timerFile , indent=4)
         except Exception as ex:
             logging.error(f"{self.name}: Failed to write timer data on disk. Timer path: {self.path}. ERROR: {str(ex)}")
+
+    # NOTE: The bellow code for fetching the parent_id may produce wrong results for WMAgent components,
+    #       because we do os.fork() when creating our component daemons. This means that if self.creator_id
+    #       has not been set at runtime by the thread/process which created this timer the method here
+    #       will try to return the native_id of the process which has started the python interpreter,
+    #       but at the moment when main_thread() is called, this process is long gone.
+    @property
+    def parent_id(self):
+        return self.creator_id or threading.main_thread().native_id
 
     @property
     def remTime(self):
@@ -265,4 +278,4 @@ class Timer(Thread):
                     break
 
         logging.info(f"{self.name}: pid: {self.native_id}: actionLimit of: {self.actionLimit} action repetitions exhausted!")
-        logging.info(f"{self.name}: pid: {self.native_id}: Reached the end of timer logic. The timer thread will end now. You may restart it through: timer.restart() !!!")
+        logging.info(f"{self.name}: pid: {self.native_id}: Reached the end of timer logic. The timer thread will end now. You can restart it through: timer.restart() !!!")

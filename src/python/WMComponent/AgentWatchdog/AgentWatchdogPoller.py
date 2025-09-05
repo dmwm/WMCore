@@ -21,13 +21,14 @@ Thread:   ...---o-------------------o-------o-----------o-------o---------------
                 |--------var--------| const |----var----| const |-------------var------------| const |---...
                 |       runtime     |pollInt|  runtime  |pollInt|      runtime               |pollInt|
                                     |                   |                                    |
-                                    |tResetEvent        |                                    |
-                                    |                   |tResetEvent                         |
-Timer:          o------ timer ------|.........o         |                                    |tResetEvent (probably lost due to timer expiration)
-                                    o------ timer ------|..........o                         |
+                                    |(tResetEvent)      |                           ^        |(tRESTARTEvent)
+                                    |                   |(tResetEvent)              |        |
+Timer:          o------ timer ------|.........o         |                           |        o------ timer ----------------o
+                                    V                   |                           |
+                                    o------ timer ------|..........o                |(actionEvent)
+                                                        V                           |
                                                         o--------- timer -----------o
-                                                                                    |
-                                                                                    |actionEvent
+
 
 And we shall call this component with the affectionate nickname: Cerberus ;)
 """
@@ -253,7 +254,8 @@ class AgentWatchdogPoller(BaseWorkerThread):
         if not compPidTree:
             logging.error(f"Could not rebuild the the process tree for component: {compName}")
             logging.error(f"Giving up on timer creation for component: {compName}")
-            return
+            return None
+
         expPids = compPidTree['RunningThreads']
         expPids.append(compPidTree['Parent'])
 
@@ -288,7 +290,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         # Give up. No runtime estimate can be found for this thread
         if not threadRunTimeEst:
             logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be skipped")
-            return
+            return None
 
         # Apply the safety margin:
         threadRunTimeEst *= self.runTimeCorrFactor
@@ -308,10 +310,11 @@ class AgentWatchdogPoller(BaseWorkerThread):
             except (ValueError, KeyError) as ex:
                 threadPollInterval = None
                 logging.error(f"{self.mainThread.name}: No pollIntervals defined for component: {compName}")
+
         # Give up after the final attempt to estimate the pooll interval
         if not threadPollInterval:
             logging.error(f"{self.mainThread.name}: Failed to estimate the pollInterval for the timer: {timerName}. This one will be scipped")
-            return
+            return None
 
         # Set the timerInterval as the sum of the previous two
         timerInterval = threadRunTimeEst + threadPollInterval
@@ -332,20 +335,25 @@ class AgentWatchdogPoller(BaseWorkerThread):
         compDir = os.path.expandvars(compDir)
         timerPath = f"{compDir}/Timer-{timerName}"
 
-        timerObj = None
         try:
-            timerObj = Timer(name=timerName,
+            timer = Timer(name=timerName,
                              compName=compName,
                              expPids=expPids,
                              action=action,
                              actionLimit=self.actionLimit,
                              path=timerPath,
                              interval=timerInterval)
+            # Preserve the creator's PID inside the timer
+            # NOTE: This is a MUST, because otherwise if the timer expires the component
+            #       won't know to whom to send the signal for properly restarting it
+            timer.creator_id = threading.current_thread().native_id
+
         except Exception as ex:
             logging.error(f"{self.mainThread.name}: Failed to create timer: {timerName} for component {compName} due to ERROR: {str(ex)}")
+            return None
 
-        if timerObj:
-            self.timers[timerName] = timerObj
+        self.timers[timerName] = timer
+        return timer
 
     def setupCompTimers(self, compName):
         """
@@ -364,12 +372,13 @@ class AgentWatchdogPoller(BaseWorkerThread):
             # Adding an exception only for WorkQueueManagerReqMgrPoller, since its activation at the component
             # depends on an additional config parameter marking if the queue is Local or Global:
             if threadName == 'WorkQueueManagerReqMgrPoller' and self.config.WorkQueueManager.level == 'LocalQueue':
-                logging.info(f"Skip creation of timer: {threadName} for a Local WorkQueue.")
+                logging.warning(f"Skip creation of timer: {threadName} for a Local WorkQueue.")
                 continue
 
             # NOTE: Currently we are assigning the timerName to the actual threadName instead of compName
             #       in contrast to what it was when we were creating a single timer per component
-            self.setupTimer(compName, threadConfigSection, timerName=threadName)
+            if not self.setupTimer(compName, threadConfigSection, timerName=threadName):
+                continue
 
             # Finally start the timers:
             self.timers[threadName].start()
@@ -428,9 +437,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
                 if threadName == 'WorkQueueManagerReqMgrPoller' and self.config.WorkQueueManager.level == 'LocalQueue':
                     continue
                 if threadName not in [timer.name for timer in timers]:
-                    self.setupTimer(compName, threadConfigSection, timerName=threadName)
-                    self.timers[threadName].start()
-                    self.timers[threadName].write()
+                    if self.setupTimer(compName, threadConfigSection, timerName=threadName):
+                        self.timers[threadName].start()
+                        self.timers[threadName].write()
 
             # Re-configuring any timers associated with components which changed execution or have been restarted:
             for timer in timers:
@@ -443,30 +452,45 @@ class AgentWatchdogPoller(BaseWorkerThread):
                         logging.info(f"{self.mainThread.name}: Restarting expired timer: {timer}, whose associated component has changed state or have been restarted.")
                         self.restartTimer(timer, compPidTree)
 
-        # Refresh all timers' data on disk every 1 second, or when a signal.SIGCONT
-        # is received from a particular component.
+        # Refresh all timers' data on disk every 1 second. And restart expired timers
+        # if a signal at the main thread has been received.
+        # NOTE: When a signal.SIGCONT is received at the AgentWatchdogPooller's thread from a
+        #       particular component's thread it means an overflowing thread has tried to resets its timer
+        #       but failed because the timer has already expired. In such case we should consider the thread
+        #       good to be watched again, since it did manage to complete its polling cycle and has made
+        #       an attempt to reset the timer. In this situation we are about to find the timer per PID
+        #       and just restart it.
         while _countdown(endTime):
             sigInfo = signal.sigtimedwait([self.expectedSignal], 1)
             if sigInfo:
-                # Refreshing a particular timer data on disk depending on the sender's PID:
+                # Restarting a particular timer depending on the sender's PID:
                 logging.info(f"{self.mainThread.name} with main pid: {threading.main_thread().native_id}: Received signal: {pformat(sigInfo)}")
 
-                # First, find the correct timer:
-                timers = self._findTimersByPid(sigInfo.si_pid)
+                # First, find the correct timers:
+                # NOTE: The condition are:
+                #       * The sender's PID has to belong to a recognizable component's timer - This check
+                #         would return more than a single timer for a multi-threaded component
+                #       * Out of all such found timers filter only those which has already expired
+                # TODO: To narrow the set of expPids per component such that we can have one and only one
+                #       PID which should be allowed to reset the timer - this would avoid false positives.
+                #       But this would require to implement a call to `pthread_setname_np` method from the `pthread`
+                #       C library through ctype in order to preserve the thread's name at the OS in the proc fiel system.
+                #       and later fetched through `psutils`
+                timers = [timer for timer in self._findTimersByPid(sigInfo.si_pid) if not timer.alive]
 
                 if not timers:
                     # Ignore signals from unknown origin:
-                    logging.info(f"{self.mainThread.name}: The sender's pid: {sigInfo.si_pid} was not recognized. Ignoring the signal.")
+                    logging.warning(f"{self.mainThread.name}: The sender's pid: {sigInfo.si_pid} was not recognized or NO expired timers could be associate with it.")
+                    logging.warning(f"{self.mainThread.name}: Ignoring the signal.")
                     continue
 
                 # Second, Refresh timer data:
                 for timer in timers:
                     try:
-                        logging.info(f"{self.mainThread.name}: Refreshing timer data on disk for: {timer.name}")
-                        logging.debug(f"{self.mainThread.name}: Timer expPids: {timer.expPids}")
-                        timer.write()
-                    except ProcessLookupError:
-                        logging.warning(f"{self.mainThread.name}: Missing or expired timer: {timer.name}. It will be recreated on the next AgentWatchdogPoller cycle, but the current signal is lost and the timer data was NOT refreshed on disk.")
+                        logging.info(f"{self.mainThread.name}: Restarting timer: {timer.name}")
+                        self.restartTimer(timer, getComponentThreads(self.config, timer.compName, quiet=True))
+                    except Exception:
+                        logging.warning(f"{self.mainThread.name}: Could not restart {timer.name}. The current signal is lost.")
 
             else:
                 logging.debug(f"{self.mainThread.name}: Refreshing all timers' data on disk.")
@@ -525,9 +549,9 @@ class AgentWatchdogPoller(BaseWorkerThread):
         """
         # Wait one full cycle before starting the whole component to allow all others to initialize properly
         logging.info("Waiting for one cycle to let others initialize properly ... ")
-
         # time.sleep(self.pollInterval)
         time.sleep(10)
+
         logging.info("Setting up all timers ... ")
 
         for compName in self.watchedComponents:

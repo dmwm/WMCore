@@ -42,8 +42,8 @@ class AgentWatchdog(Harness):
         logging.info("AgentWatchdog.preInitialization")
 
         # Do not wait between runs.
-        # NOTE: The configured pooling interval will actually be used as a wait time inside
-        #       the main thread to drive the cyclic process for regular refresh of all timers.
+        # NOTE: For AgentWatchdogPoller, the configured pooling interval will actually be used as a wait
+        #       time inside the main thread to drive the cyclic process for regular refresh of all timers.
         #       The result will be, that we will be executing every time for exactly the amount
         #       of time configured as polling cycle in the component config and wait for 0 seconds
         #       between re-execution. In contrast to how all other WMAgent components behave,
@@ -53,19 +53,20 @@ class AgentWatchdog(Harness):
         #       If we were to follow the order established for the other components, the value here should
         #       have been:
         #       agentWatchdogPollInterval = self.config.AgentWatchdog.pollInterval
-        agentWatchdogPollInterval = 0
+        agentWatchdogPollerInterval = 0
+        agentWatchdogScannerInterval = self.config.AgentWatchdog.AgentWachdogScanner.pollInterval
         currThread = threading.currentThread()
 
         if not hasattr(self.config, "Tier0Feeder"):
-            logging.info("Setting AgentWatchdogPoller poll interval to %s seconds", agentWatchdogPollInterval)
+            logging.info("Setting AgentWatchdogPoller poll interval to %s seconds", agentWatchdogPollerInterval)
             agentWatchdogPollerThread = currThread.workerThreadManager.addWorker(AgentWatchdogPoller(self.config),
-                                                                             agentWatchdogPollInterval)
+                                                                             agentWatchdogPollerInterval)
             logging.info(f"AgentWatchdog thread PID: {currThread.native_id}")
             logging.info(f"AgentWatchdogPoller thread PID: {agentWatchdogPollerThread.native_id}")
 
-            logging.info("Setting AgentWatchdogPoller poll interval to %s seconds", agentWatchdogPollInterval)
+            logging.info("Setting AgentWatchdogScanner poll interval to %s seconds", agentWatchdogScannerInterval)
             agentWatchdogScannerThread = currThread.workerThreadManager.addWorker(AgentWatchdogScanner(self.config),
-                                                                             agentWatchdogPollInterval)
+                                                                             agentWatchdogScannerInterval)
             logging.info(f"AgentWatchdog thread PID: {currThread.native_id}")
             logging.info(f"AgentWatchdogPoller thread PID: {agentWatchdogPollerThread.native_id}")
 

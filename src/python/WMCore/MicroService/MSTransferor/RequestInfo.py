@@ -139,14 +139,14 @@ class RequestInfo(MSCore):
         """
         workflows = []
         for record in reqRecords:
-            if record.get("SubRequestType") in ['RelVal', 'HIRelVal']:
+            if isNanoWorkflow(record):
+                wflow = NanoWorkflow(record['RequestName'], record, logger=self.logger)
+            elif record.get("SubRequestType") in ['RelVal', 'HIRelVal']:
                 wflow = RelValWorkflow(record['RequestName'], record, logger=self.logger)
             elif record.get("RequestType") == "DQMHarvest":
                 wflow = DQMHarvestWorkflow(record['RequestName'], record, logger=self.logger)
             elif record.get("OpenRunningTimeout", 0) > self.openRunning:
                 wflow = GrowingWorkflow(record['RequestName'], record, logger=self.logger)
-            elif isNanoWorkflow(record):
-                wflow = NanoWorkflow(record['RequestName'], record, logger=self.logger)
             else:
                 wflow = Workflow(record['RequestName'], record, logger=self.logger)
 

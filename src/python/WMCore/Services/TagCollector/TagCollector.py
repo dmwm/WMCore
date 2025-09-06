@@ -6,6 +6,8 @@ from Utils.Utilities import decodeBytesToUnicode
 standard_library.install_aliases()
 
 import logging
+import cgi
+
 from urllib.parse import urlparse
 
 from collections import defaultdict
@@ -39,6 +41,81 @@ class TagCollector(Service):
         super(TagCollector, self).__init__(configDict)
         self['logger'].debug("Initializing TagCollector with url: %s", self['endpoint'])
 
+    def parseReleasesXML(outputFile='/tmp/ReleasesXML'):
+
+        form = cgi.FieldStorage()
+
+        production = "type=Production;"
+        if ("anytype" in form) and form["anytype"].value=="1":
+            production=""
+
+        announced="state=Announced;"
+        if ("deprel" in form) and form["deprel"].value=="1":
+            announced="state=Deprecated;"
+        
+        anyarch=False
+        if ("anyarch" in form) and form["anyarch"].value=="1":
+            anyarch=True
+
+        architecture=""
+        if "architecture" in form:
+            architecture="architecture="+form["architecture"].value+";"
+
+        releasesFilename = "/cvmfs/cms.cern.ch/releases.map"
+        releasesFile = open(releasesFilename, "r")
+
+        archs = {}
+        rels  = []
+        for line in releasesFile:
+            if (not anyarch) and ('prodarch=1;' not in line): 
+                continue
+        
+            if production   and production   not in line: 
+                continue
+        
+            if announced    and announced    not in line: 
+                continue
+        
+            if architecture and architecture not in line: 
+                continue
+  
+            data = {}
+            for item in line.split(";"):
+                if "=" not in item: 
+                    continue 
+                k,v = item.split("=")
+                data[k]= v
+
+
+
+            if ("architecture" in data) and ("label" in data) and ("type" in data) and ("state" in data):
+                if (not anyarch) and (data["label"] in rels): 
+                    continue
+    
+                rels.append(data["label"])
+                arch = data["architecture"]
+                if arch not in archs: 
+                    archs[arch]=[]
+
+                extraTag = ""
+                if "default_micro_arch" in data:
+                    extraTag = " default_micro_arch=\"%s\"" % data["default_micro_arch"]
+
+                data["extra_tag"]=extraTag
+                archs[arch].append("""<project label="%(label)s" type="%(type)s" state="%(state)s"%(extra_tag)s/>""" % data)
+    
+            releasesFile.close()
+
+            with open(outputFile, "w", encoding="utf-8") as f:
+                f.write("<projects>\n")
+                for arch in archs:
+                    f.write('  <architecture name="%s">\n' % arch)
+                    for rel in archs[arch]:
+                        f.write("    %s\n" % rel)
+                    f.write("  </architecture>\n")
+                f.write("</projects>\n")
+
+
     def _getResult(self, callname="", clearCache=False,
                    args=None, verb="GET", encoder=None, decoder=None,
                    contentType=None):
@@ -50,23 +127,15 @@ class TagCollector(Service):
 
         TODO: Probably want to move this up into Service
         """
-        if not args:
-            args = self.tcArgs
-
-        cFile = '%s_%s'% (self.cFileUrlPath, callname.replace("/", "_"))
-        # If no callname or url path, the base host is getting queried
-        if cFile == '_':
-            cFile = 'baseRequest'
-
-        if clearCache:
-            self.clearCache(cFile, args, verb)
-
-        # Note cFile is just the base name pattern, args 
-        # are also considered for the end filename in the method below
-        f = self.refreshCache(cFile, callname, args, encoder=encoder, decoder=decodeBytesToUnicode,
-                              verb=verb, contentType=contentType)
-        result = f.read()
-        f.close()
+        
+        try:
+            self.parseReleasesXML()
+            f = '/tmp/ReleasesXML'
+            result = f.read()
+            f.close()
+        except:
+            logging.exception(f'Something went wrong parsing /cvmfs/cms.cern.ch/releases.map into XML format')
+            raise
 
         # overhead from REST model which returns results as strings or None
         # therefore they can be encoded by JSON to None, etc.

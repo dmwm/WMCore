@@ -469,7 +469,7 @@ config.component_("AgentWatchdog")
 config.AgentWatchdog.section_('AgentWachdogPoller')
 config.AgentWatchdog.AgentWachdogPoller.pollInterval = 20
 config.AgentWatchdog.section_('AgentWachdogScanner')
-config.AgentWatchdog.AgentWachdogScanner.pollInterval = 2 * 60
+config.AgentWatchdog.AgentWachdogScanner.pollInterval = 60 * 60
 config.AgentWatchdog.namespace = "WMComponent.AgentWatchdog.AgentWatchdog"
 config.AgentWatchdog.componentDir = config.General.workDir + "/AgentWatchdog"
 config.AgentWatchdog.logLevel = globalLogLevel

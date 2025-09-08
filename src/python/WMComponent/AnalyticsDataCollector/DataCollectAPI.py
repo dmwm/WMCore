@@ -189,7 +189,7 @@ class LocalCouchDBData(object):
         return data
 
 
-# @emulatorHook
+@emulatorHook
 class WMAgentDBData(object):
     def __init__(self, summaryLevel, dbi, logger):
         self.summaryLevel = summaryLevel

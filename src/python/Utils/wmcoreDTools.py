@@ -360,6 +360,12 @@ def getComponentThreads(configFile, component, quiet=False):
     orphanThreads = currThreads - startupThreads
     lostThreads = startupThreads - currThreads
 
+    # Adding an exception for AgentWatchdog when it comes to building the sets of threads
+    if component == 'AgentWatchdog':
+        runningThreads = currThreads
+        orphanThreads = set()
+        LostThreads = set()
+
     # Output result
     msg=""
     runningMsg=""

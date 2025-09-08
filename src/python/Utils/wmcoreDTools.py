@@ -203,7 +203,7 @@ def shutdown(configFile, componentsList=None, doLogCleanup=False, doDirCleanup=F
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):
-            logging.warning("Cannot find Daemon.xml for component:", component)
+            logging.warning("Cannot find Daemon.xml for component: %s", component)
             logging.warning("Unable to shut it down")
         else:
             daemon = Details(daemonXml)

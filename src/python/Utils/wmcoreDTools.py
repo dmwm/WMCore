@@ -298,12 +298,18 @@ def getComponentThreads(configFile, component, quiet=False):
     # check if component daemon exists
     daemonXml = os.path.join(compDir, "Daemon.xml")
     if not os.path.exists(daemonXml):
-        logging.error("Component:%s Not Running" % component)
+        logging.error("Cannot find Daemon.xml. Component:%s Not Running." % component)
         return pidTree
-    pid = extractFromXML(daemonXml, "ProcessID")
+    daemon = Details(daemonXml)
+    pid = daemon['ProcessID']
+    if not daemon.isAlive():
+        msg = f"Component {component}, with process id {pid} is not running"
+        msg += ", but Daemon.xml file was present. This might become a serious problem!"
+        logging.warning(msg)
+        return pidTree
 
     # NOTE: We should check for os.path.exists(jsonFile) here.
-    #       Letting the system to throw an exception in this situation actually
+    #       Letting the system throw an exception in this situation actually
     #       breaks other calls e.g. isComonentAlive. Because threads.json file is created at
     #       startup time few steps upon the Daemon.xml file creation. Having one of
     #       the files created and not the other means either:
@@ -332,13 +338,6 @@ def getComponentThreads(configFile, component, quiet=False):
         elif entry["type"] == "thread":
             threadPids.append(int(entry["pid"]))
 
-    # Check if process is running
-    processRunning = psutil.pid_exists(int(pid))
-    if not processRunning:
-        msg = f"Component:{component} with PID={pid} is no longer available on OS"
-        logging.error(msg)
-        return pidTree
-
     # Check if initial threads are running.
     # NOTE: The list threadPids is fetched from the threads.json file
     #       as it has been constructed at Daemon startup time. Any threads spawn later during
@@ -366,7 +365,7 @@ def getComponentThreads(configFile, component, quiet=False):
     runningMsg=""
     orphanMsg=""
     lostMsg=""
-    status = "running" if processRunning else "not-running"
+    status = "running" if daemon.isAlive() else "not-running"
     if status == "running":
         runningMsg = f"with {len(runningThreads)} running threads: {runningThreads}"
         if len(lostThreads) > 0:

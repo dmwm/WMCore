@@ -11,6 +11,8 @@ import json
 import logging
 
 import WMCore
+from Utils.wmcoreDTools import getComponentThreads, isComponentAlive
+from Utils.ProcFS import processStatus
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
@@ -20,7 +22,7 @@ from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emulatorHook
 
 
-def threadsDetails(component, pid, downProcessThreads):
+def downThreadsDetails(component, pid, downProcessThreads, state='Bad Threads'):
     """
     Helper function to provide information about down component in dictionary
     data-format used by agentInfo
@@ -37,14 +39,14 @@ def threadsDetails(component, pid, downProcessThreads):
             "name": component,
             "pid": pid,
             "worker_name": None,
-            "state": "Lost threads",
+            "state": state,
             "last_updated": int(time.time()),
             "update_threshold": None,
             "poll_interval": None,
             "cycle_time": 0.0,
             "outcome": None,
             "last_error": None,
-            "error_message": f"Lost threads: {downProcessThreads}"
+            "error_message": f"Bad threads: {downProcessThreads}"
           }
     return data
 
@@ -187,7 +189,7 @@ class LocalCouchDBData(object):
         return data
 
 
-@emulatorHook
+# @emulatorHook
 class WMAgentDBData(object):
     def __init__(self, summaryLevel, dbi, logger):
         self.summaryLevel = summaryLevel
@@ -276,52 +278,38 @@ class WMAgentDBData(object):
         agentInfo = self.getHeartbeatWarning()
 
         components = config.listComponents_() + config.listWebapps_()
+        logging.warning(f"DEBUG: components: {components}")
         # check the component status
         agentComponents = {}
         for component in components:
-            compDir = config.section_(component).componentDir
-            compDir = os.path.expandvars(compDir)
-            daemonXml = os.path.join(compDir, "Daemon.xml")
+            badComponentThreads = []
             downFlag = False
-            downProcessThreads = []
-            daemon = {}
-            if not os.path.exists(daemonXml):
+            # NOTE: Here we have two ways for checking if the component is alive:
+            #       * Faster, which only checks if the component threads are present
+            #         as they have been created at startup:
+            #         compPidTree = getComponentThreads(config, component, quiet=True)
+            #         if not compPidTree or compPidTree['OrphanThreads'] or  compPidTree['LostThreads']:
+            #             downFlag = True
+            #       * Slower, but also checks each thread's current state at the OS level (again through psutils)
+            #         if not isComponentAlive(config, component, trace=False):
+            #             downFlag = True
+            #       For the time being we chose the first option:
+            compPidTree = getComponentThreads(config, component, quiet=True)
+            if not compPidTree or compPidTree['OrphanThreads'] or  compPidTree['LostThreads']:
                 downFlag = True
-            else:
-                daemon = Details(daemonXml)
-                if not daemon.isAlive():
-                    downFlag = True
-                # add individual component thread status
-                compName = compDir.split('/')[-1]
-                compProcessStatus = daemon.processStatus()
-                agentComponents.update({compName: compProcessStatus})
-                # check if number of component threads is equal to initial set
-                cpath = os.path.join(compDir, "threads.json")
-                if os.path.exists(cpath):
-                    origThreads = []
-                    with open(cpath, 'r', encoding='utf-8') as istream:
-                        origThreads = json.load(istream)
-                    if len(origThreads) != len(compProcessStatus):
-                        downFlag = True
-                        for proc in origThreads:
-                            if proc not in compProcessStatus:
-                                downProcessThreads.append(proc)
-                # check if all component process' threads are alive, otherwise set down flag
-                # the alive process should be either in sleeping or running states
-                # 'S (sleeping) and 'R (running)' are states used by proc FS
-                # 'sleeping' and 'running' are states used by psutils
-                validStatuses = ["S (sleeping)", "R (running)", 'sleeping', 'running']
-                for proc in compProcessStatus:
-                    if proc.get('status', None) not in validStatuses:
-                        downFlag = True
-                        downProcessThreads.append(proc)
+
+            if compPidTree:
+                agentComponents.update({component: processStatus(compPidTree['Parent'])})
+
+            badComponentThreads = list(set(compPidTree['LostThreads']) | set(compPidTree['OrphanThreads']))
             if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
                 agentInfo['down_components'].append(component)
-                if len(downProcessThreads) > 0:
-                    pid = daemon.get('ProcessID', f'PID is not available in {daemonXml}')
+                if badComponentThreads:
                     agentInfo['down_component_detail'].append(
-                            threadsDetails(component, pid, downProcessThreads))
+                        downThreadsDetails(component,
+                                       compPidTree['Parent'],
+                                       compPidTree))
                 else:
                     agentInfo['down_component_detail'].append(component)
 

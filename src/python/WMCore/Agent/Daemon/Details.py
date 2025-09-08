@@ -82,11 +82,14 @@ class Details(dict):
 
         Is the process still running?
         """
-        try:
-            daemonProc = psutil.Process(self['ProcessID'])
-            return daemonProc.is_running()
-        except Exception as ex:
-            print(str(ex))
+        if psutil.pid_exists(self['ProcessID']):
+            try:
+                daemonProc = psutil.Process(self['ProcessID'])
+                return daemonProc.is_running()
+            except Exception as ex:
+                print(str(ex))
+                return False
+        else:
             return False
 
     def processStatus(self):

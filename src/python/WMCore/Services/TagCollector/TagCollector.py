@@ -101,9 +101,7 @@ class TagCollector(Service):
             f.write("</projects>\n")
 
 
-    def _getResult(self, callname="", clearCache=False,
-                   args=None, verb="GET", encoder=None, decoder=None,
-                   contentType=None):
+    def _getResult(self, decoder=None):
         """
         _getResult_
 

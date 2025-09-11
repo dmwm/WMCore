@@ -11,7 +11,7 @@ from past.builtins import basestring
 import logging
 try:
     # This module has dependency with python binding for condor package (condor)
-    import htcondor
+    import htcondor2 as htcondor
 except ImportError:
     pass
 

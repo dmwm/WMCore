@@ -9,8 +9,8 @@ import os.path
 import re
 import threading
 import time
-import classad
-import htcondor
+import classad2 as classad
+import htcondor2 as htcondor
 
 from Utils import FileTools
 from Utils.IteratorTools import grouper

@@ -1,4 +1,5 @@
 import os
+import sys
 import signal
 import subprocess
 import time
@@ -364,7 +365,7 @@ def getComponentThreads(configFile, component, quiet=False):
     if component == 'AgentWatchdog':
         runningThreads = currThreads
         orphanThreads = set()
-        LostThreads = set()
+        lostThreads = set()
 
     # Output result
     msg=""
@@ -440,7 +441,7 @@ def forkRestart(config=None, componentsList=None, useWmcoreD=False):
                     logging.error(f"ERROR: Could not find configuration path: {configFile}")
                     return 1
             cmd = f"from Utils.wmcoreDTools import restart; restart('{configFile}', {componentsList})"
-            res = subprocess.run(['python', '-c', cmd], capture_output=True, check=True)
+            res = subprocess.run([sys.executable, '-c', cmd], capture_output=True, check=True)
     except subprocess.CalledProcessError as ex:
         logging.error(f"ERROR: The called subprocess returned an error: {ex.returncode}")
         logging.error(f"ERROR: Full subprocess Output: {ex.output}")

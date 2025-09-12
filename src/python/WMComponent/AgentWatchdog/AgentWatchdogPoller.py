@@ -11,7 +11,7 @@ to monitor the health of all other components' process trees and take the proper
 
 Here bellow follows the timeline of the interaction between a component's thread and a timer:
 
-Timer duration = pollInt + runTimeEst*corrFactor + extraTimeout
+Timer duration = pollInt + runTimeEst*corrFactor + extraTimeout + random add on between 0-10%
 
           t --->
 
@@ -33,7 +33,6 @@ Timer:          o------ timer ------|.........o         |                       
 And we shall call this component with the affectionate nickname: Cerberus ;)
 """
 
-import multiprocessing
 import threading
 import os
 import signal
@@ -66,7 +65,6 @@ class AgentWatchdogPoller(BaseWorkerThread):
         self.config = config
         self.mainThread = threading.currentThread()
         self.mainThread.setName('Cerberus')
-        self.mainProcess = multiprocessing.current_process()
 
         # Register the expected signal handler:
         self.expectedSignal = signal.SIGCONT

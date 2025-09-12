@@ -97,9 +97,8 @@ class AgentWatchdogScanner(BaseWorkerThread):
 
     def setup(self, parameters):
         # Wait one full cycle before starting the whole component to allow all others to initialize properly
-        logging.info("Waiting for one cycle to let others initialize properly ... ")
+        logging.info("Waiting for 10s to let others initialize properly ... ")
 
-        # time.sleep(self.pollInterval)
         time.sleep(10)
         logging.info("Start Monitoring the components' threads ... ")
 

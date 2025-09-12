@@ -4,8 +4,10 @@ pullWork poller
 """
 import random
 import time
+import logging
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
@@ -59,3 +61,8 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
             self.queue.logger.info("Acquired %s units of work for WMBS file creation", len(previousWorkList))
         except Exception as ex:
             self.queue.logger.error("Error in wmbs inject loop: %s" % str(ex))
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")

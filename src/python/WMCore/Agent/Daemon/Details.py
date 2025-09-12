@@ -16,6 +16,8 @@ import os
 import subprocess
 import shutil
 import time
+import psutil
+
 # FIXME: needs to be replaced with persistent backend.
 from xml.dom.minidom import parse
 
@@ -80,12 +82,15 @@ class Details(dict):
 
         Is the process still running?
         """
-        # Reference: ps -T -p 1946167 -o euser,pid,ppid,lwp,nlwp,stat,start
-        # it prints the user, process and its threads, number of threads, etc
-        dummyse, dummyso, rc = run('ps -p %s' % self['ProcessID'])
-        if rc != 0:
+        if psutil.pid_exists(self['ProcessID']):
+            try:
+                daemonProc = psutil.Process(self['ProcessID'])
+                return daemonProc.is_running()
+            except Exception as ex:
+                print(str(ex))
+                return False
+        else:
             return False
-        return True
 
     def processStatus(self):
         """

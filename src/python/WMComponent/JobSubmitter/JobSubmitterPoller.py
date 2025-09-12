@@ -20,6 +20,7 @@ from collections import defaultdict, Counter
 import pickle
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
@@ -841,6 +842,11 @@ class JobSubmitterPoller(BaseWorkerThread):
             if getattr(myThread, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise JobSubmitterPollerException(msg)
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
         return
 

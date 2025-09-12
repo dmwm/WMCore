@@ -381,6 +381,7 @@ class Configuration(object):
         self._internal_components = []
         self._internal_webapps = []
         self._internal_sections = []
+        self._internal_loadPath = None
         Configuration._instance = self
 
     def __add__(self, otherConfig):
@@ -426,6 +427,12 @@ class Configuration(object):
     @staticmethod
     def getInstance():
         return getattr(Configuration, "_instance", None)
+
+    def _setLoadPath(self, loadPath):
+        self._internal_loadPath = loadPath
+
+    def getLoadPath(self):
+        return self._internal_loadPath
 
     def listComponents_(self):
         """
@@ -611,6 +618,7 @@ def loadConfigurationFile(filename):
 
     for attr in listvalues(modRef.__dict__):
         if isinstance(attr, Configuration):
+            attr._setLoadPath(modSpecs.loader.path)
             return attr
 
     # //

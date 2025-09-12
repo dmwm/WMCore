@@ -10,6 +10,7 @@ import logging
 
 from Utils.IteratorTools import grouper
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore.DAOFactory import DAOFactory
@@ -63,7 +64,6 @@ class JobAccountantPoller(BaseWorkerThread):
 
         if len(completeJobs) == 0:
             logging.debug("No work to do; exiting")
-            return
 
         for jobsSlice in grouper(completeJobs, self.accountantWorkSize):
             try:
@@ -88,5 +88,10 @@ class JobAccountantPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.exception(msg)
                 raise JobAccountantPollerException(msg)
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
 
         return

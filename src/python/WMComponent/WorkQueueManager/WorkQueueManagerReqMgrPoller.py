@@ -8,7 +8,9 @@ __all__ = []
 
 import time
 import random
+import logging
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
 
@@ -47,3 +49,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             return self.reqMgr(self.wq)
         except Exception as ex:
             self.queue.logger.error("Error in ReqMgr loop: %s" % str(ex))
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")

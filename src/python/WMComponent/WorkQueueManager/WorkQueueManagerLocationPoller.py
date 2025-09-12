@@ -7,7 +7,10 @@ __all__ = []
 
 import time
 import random
+import logging
+
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
@@ -43,3 +46,8 @@ class WorkQueueManagerLocationPoller(BaseWorkerThread):
             self.queue.updateLocationInfo()
         except Exception as ex:
             self.queue.logger.error("Error updating locations: %s" % str(ex))
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")

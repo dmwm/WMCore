@@ -6,6 +6,7 @@ import logging
 import time
 
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.WMFactory import WMFactory
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
@@ -155,4 +156,7 @@ class AnalyticsPoller(BaseWorkerThread):
             except:
                 logging.error("upload Agent Info to central couch failed")
 
-
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")

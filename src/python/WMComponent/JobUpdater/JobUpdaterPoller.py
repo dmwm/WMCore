@@ -12,6 +12,7 @@ Created on Apr 16, 2013
 import logging
 import threading
 from Utils.Timers import timeFunction
+from Utils.wmcoreDTools import resetWatchdogTimer, moduleName
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -108,6 +109,12 @@ class JobUpdaterPoller(BaseWorkerThread):
                 msg = "Caught unexpected exception in JobUpdater: %s\n" % errorStr
                 logging.exception(msg)
                 raise JobUpdaterException(msg)
+
+        # Reset its own watchdog timer at the end of the run cycle
+        logging.info(f"Resetting {moduleName(self)} watchdog timer.")
+        if resetWatchdogTimer(self):
+            logging.warning(f"Failed to reset {moduleName(self)} watchdog timer. The component might be restarted soon.")
+
 
     def getWorkflowPrio(self, wflowName):
         """

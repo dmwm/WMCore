@@ -81,7 +81,7 @@ class AlertManagerAPI(object):
         annotations["hostname"] = self.hostname
         annotations["summary"] = normalize_spaces(summary)
         annotations["description"] = normalize_spaces(description)
-        alert["annotations"] = normalize_spaces(annotations)
+        alert["annotations"] = annotations
 
         # In python3 we won't need the LocalTimezone class
         # Will change to d = datetime.now().astimezone() + timedelta(seconds=endSecs)

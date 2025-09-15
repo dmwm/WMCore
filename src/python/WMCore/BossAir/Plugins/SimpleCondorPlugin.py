@@ -587,9 +587,9 @@ class SimpleCondorPlugin(BasePlugin):
                 # E.g.: ["1.0", "10.0", "2.1"]
                 cudaCapabilities = sorted(job['gpuRequirements']['CUDACapabilities'], key=float)
                 
-                ad['My.DESIRED_GPUMinimumCapability'] = classad.quote(str(cudaCapabilities[0]))
-                ad['My.DESIRED_GPUMaximumCapability'] = classad.quote(str(cudaCapabilities[-1]))
-                ad['My.DESIRED_GPURuntime'] = classad.quote(job['gpuRequirements']['CUDARuntime'])
+                ad['My.DESIRED_GPUMinimumCapability'] = str(cudaCapabilities[0])
+                ad['My.DESIRED_GPUMaximumCapability'] = str(cudaCapabilities[-1])
+                ad['My.DESIRED_GPURuntime'] = str(job['gpuRequirements']['CUDARuntime'])
             else:
                 ad['My.DESIRED_GPUMemoryMB'] = undefined
                 ad['My.DESIRED_GPUMinimumCapability'] = undefined

@@ -703,7 +703,7 @@ def primaryDatasetType(candidate):
 
 
 def subRequestType(candidate):
-    subTypes = ["MC", "ReDigi", "Pilot", "RelVal", "HIRelVal", "ReReco", ""]
+    subTypes = ["MC", "ReDigi", "Extension", "Pilot", "RelVal", "HIRelVal", "ReReco", ""]
     if candidate in subTypes:
         return True
     # to sync with the check() exception when it doesn't match

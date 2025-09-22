@@ -49,16 +49,16 @@ class AgentWatchdogScanner(BaseWorkerThread):
         self.pollInterval = self.config.AgentWatchdog.AgentWachdogScanner.pollInterval
 
         self.mainThread.parents = [ thread['pid'] for thread in processStatus(self.mainThread.native_id)]
-        logging.info(f"{self.mainThread.name}: Initialized with parents {self.mainThread.parents}.")
+        logging.info(f"Initialized with parents {self.mainThread.parents}.")
         self.mainThread.enum = [ pid.native_id for pid in threading.enumerate() ]
-        logging.info(f"{self.mainThread.name}: Initialized with the following threads: {self.mainThread.enum}.")
+        logging.info(f"Initialized with the following threads: {self.mainThread.enum}.")
         self.mainThread.main = threading.main_thread().native_id
-        logging.debug(f"{self.mainThread.name}: Initialized with main_thread {self.mainThread.main}.")
+        logging.debug(f"Initialized with main_thread {self.mainThread.main}.")
 
         self.alertManagerUrl = self.config.Alert.alertManagerUrl
         self.alertDestinationMap = self.config.Alert.alertDestinationMap
         self.alertManager = AlertManagerAPI(self.alertManagerUrl)
-        logging.info(f"{self.mainThread.name}: Setting up an alertManager instance for AgentWatchdogScanner and redirecting alerts to: {self.alertManagerUrl}.")
+        logging.info(f"Setting up an alertManager instance for AgentWatchdogScanner and redirecting alerts to: {self.alertManagerUrl}.")
 
     def sendAlert(self, alertMessage, severity='low'):
         """
@@ -83,16 +83,16 @@ class AgentWatchdogScanner(BaseWorkerThread):
         #       * AgentWatchdog is going to spawn threads dynamically and will fail all checks
         #       * AgentWatchdog cannot restart itself
         """
-        logging.info(f"{self.mainThread.name}: Checking all components' threads.")
+        logging.info(f"Checking all components' threads.")
         for component in [comp for comp in self.config.listComponents_() if comp != 'AgentWatchdog']:
             if not isComponentAlive(self.config, component=component):
                 try:
                     forkRestart(self.config, componentsList=[component])
                     msg = f"Restarted Unhealthy component: {component}"
-                    logging.warning(f"{self.mainThread.name}: {msg}")
+                    logging.warning(f"{msg}")
                     self.sendAlert(msg)
                 except Exception as ex:
-                    logging.error(f"{self.mainThread.name}: Failed to restart component: {component}. Full ERROR: {str(ex)}")
+                    logging.error(f"Failed to restart component: {component}. Full ERROR: {str(ex)}")
                     raise
 
     def setup(self, parameters):
@@ -110,7 +110,7 @@ class AgentWatchdogScanner(BaseWorkerThread):
         # TODO: To implement logic with limited number of restarts, similar to AgentWatchdogPoller
         try:
             currThread = threading.currentThread()
-            logging.info(f"{self.mainThread.name}: Polling cycle started with current pid: {currThread.native_id}.")
+            logging.info(f"Polling cycle started with current pid: {currThread.native_id}.")
             self.checkCompAlive()
         except Exception as ex:
-            logging.exception(f"{self.mainThread.name}: Exception occurred while executing the AgentWatchdogScanner logic.")
+            logging.exception(f"Exception occurred while executing the AgentWatchdogScanner logic.")

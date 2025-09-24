@@ -1,3 +1,95 @@
+2.4.4rc1 to 2.4.4rc2:
+  - Reverting the ptrace removing changes and fixing the typo in requirements.txt (Todor Ivanov) #12382
+  - Temporary removing ptrace dependency to try to fix check Jenkins failures (Todor Ivanov) #12382
+  - Cleaning up mainthread.name from log messages (Todor Ivanov) #12382
+  - Cleanup (Todor Ivanov) #12382
+  - Find sys.executable dinamically inside forkRestart && Typo (Todor Ivanov) #12382
+  - Revert the @emulator deocorator related change for DataCollectorAPI (Todor Ivanov) #12382
+  - Decrease the scan interval for AgentWatchdogScanner to once per hour. (Todor Ivanov) #12382
+  - Adding an exception for AgentWatchdog when it comes to building the sets of running threads (Todor Ivanov) #12382
+  - Fix N/A status in WMStats for components with bad threads (Todor Ivanov) #12382
+  - Fix type in shutdown function message causing string format error (Todor Ivanov) #12382
+  - Implement the logic for restarting the timers for any still alive but previously dalayed threads considering the new setup of timer per thread. (Todor Ivanov) #12382
+  - Reduce AgentWatchdogPoller main cycle logging verbosity (Todor Ivanov) #12382
+  - Split AgentWatchdogPoller and AgentWatchdogScanner polling cycles (Todor Ivanov) #12382
+  - Add ASCII graph to the AgentWatchdogPoller docstring (Todor Ivanov) #12382
+  - Skip creation of WorkQueueManagerReqMgrPoller timer for local WorkQueue (Todor Ivanov) #12382
+  - Fix bug caused by missing dataLocataionInterval config parameter (Todor Ivanov) #12382
+  - Adjust AgentWAtchdogPoller algorithm to the new timer per thread logic && Fix bugs for comp eraly component exits (Todor Ivanov) #12382
+  - Set configsection per thread && Fix bad timers names (Todor Ivanov) #12382
+  - Fix alert action execution bug && Improve timer logging and redirect exception logging as well && Delay AgentWatchdog threads startup (Todor Ivanov) #12382
+  - Moving from timer per component to timer per thread && Setting default timer action as alert instead of forkRestart (Todor Ivanov) #12382
+  - Fix wrong thread_info key in ProcessStatus exception (Todor Ivanov) #12382
+  - Fix AlertManagerAPI bug (Todor Ivanov) #12382
+  - Add alert functionality && switch AgentWatchdogPoller's timers action from forkrestart to alert (Todor Ivanov) #12382
+  - Add the AgentWatchdogScanner.py file (Todor Ivanov) #12382
+  - Create the AgentWatchdogScanner Class and Thread (Todor Ivanov) #12382
+  - Add type hints to WatchdogAction (Todor Ivanov) #12382
+  - Fix log messages (Todor Ivanov) #12382
+  - Make actionLimit configurable (Todor Ivanov) #12382
+  - Wrap the timer modification methods in try: except: blocks to avoid loosing timer threads and exception logging && Improve logging messages details (Todor Ivanov) #12382
+  - Simplify the restartUpdateAction signature to avoid bypassing the timer callback signature checks at init time && Add timer and actionCounter reset capabilities && Reset only timer value when action is applied and both timer and actionCounter when signal is recieved to avoid limited timer lifetime (Todor Ivanov) #12382
+  - Reduce expPids lists && Update timers on every action && Improve logging (Todor Ivanov) #12382
+  - Add restartUpdateAction wrapper && Fix a previously not noticed bug in forkRestart && In mainthread - update timer if it s still alive restatrt it if dead (Todor Ivanov) #12382
+  - Set the acltionlimit mechanism in motion && Add Timer restart logic for components which has changed running states (Todor Ivanov) #12382
+  - Add protection active timers to timer.restart() in order to avoid threads duplications in the background (Todor Ivanov) #12382
+  - Add an internal Timer.restart method for full reconfiguration and restart (Todor Ivanov) #12382
+  - Add timer's actionConuter and actionLimit to control how many times an action can be applied before the timer gets destroyed (Todor Ivanov) #12382
+  - Fix missing imports for ptrace.process exception handlers (Todor Ivanov) #12382
+  - Fix ProcessTracers arguments (Todor Ivanov) #12382
+  - Add the functionality for building basics ptrace based tests to wmcoreDTools.isComponentAlive (Todor Ivanov) #12382
+  - Add wmcoreDTools.shutdown optional params to the docstring && Print one forgotten error mesage (Todor Ivanov) #12382
+  - Add a helper _loadConfig function to wmcoreDTools (Todor Ivanov) #12382
+  - Add a serialaisable actionString as timer attribute (Todor Ivanov) #12382
+  - Add missing self.config atributes in service instance which are missing them (Todor Ivanov) #12382
+  - Add python-ptrace to requirements.txt (Todor Ivanov) #12382
+  - Add all components threads checks in the main algorithm (Todor Ivanov) #12382
+  - Turn reset failure info message to warnings for all components (Todor Ivanov) #12382
+  - Add proper logic for finding the component name based on comparision of the current object namespace and all config sections namespaces. (Todor Ivanov) #12382
+  - Add proper exception handling when calling getComponentThreads (Todor Ivanov) #12382
+  - Move wmcoreD and wmcoeDTools from printouts to proper logging (Todor Ivanov) #12382
+  - Enable AgentWatchdog for all components and threads (Todor Ivanov) #12382
+  - Add mechanism to find the shortest pollOinterval among all component's threads (Todor Ivanov) #12382
+  - Implementing a mechanism for regular refresh of timers data on disk (Todor Ivanov) #12382
+  - Fully enable the watchdog mechanism for ErrorHandler && Remove a minor bug with a missing process on reruns of AgentWatchdog polling cycle (Todor Ivanov) #12382
+  - Finish implementation of resetWatchdogTimer && move it unde Utils.wmcoreDTools (Todor Ivanov) #12382
+  - Preserve timers on disk (Todor Ivanov) #12382
+  - Make Timer class as agnostic as possible && Prepare for future timer's data communication between components' threads (Todor Ivanov) #12382
+  - Move Watchdog timers as a sepaate class && inherit from Thread (Todor Ivanov) #12382
+  - Rename resetTimer method to sigHandler (Todor Ivanov) #12382
+  - Adding an extremely important comment line (Todor Ivanov) #12382
+  - Fix main thread algorithm logic to avoid endless runs && Properly set polling cycles to fit the AgentWatchdog needs (Todor Ivanov) #12382
+  - Add random factor to timers' intervals && Set default watchdog polling cycle to 1 min && Improve comments (Todor Ivanov) #
+  - Move the main algorithm for AgentWathchdogPoller to be a blocking indefinite cycle && Implement the propoer signal redirecting from the main thread to the timers (Todor Ivanov) #
+  - Add basic re-configure timers login in the main agorith && Improve printouts (Todor Ivanov) #
+  - Add protection for recieving signals for expired timers (Todor Ivanov) #
+  - Developing the timers threads && Adding the basic signal handling mechanisms (Todor Ivanov) #
+  - Separating AgentWtchdog as an independent component (Todor Ivanov) #
+  - Add useWmcoreD flag to forkRestart && Add loadPath set and get methods to the Configuration class. (Todor Ivanov) #
+  - Build robust calls to restart actions for AgentWatchdog (Todor Ivanov) #
+  - Fix thread count logic in wmcoreDtools printout logic (Todor Ivanov) #
+  - Fix startup logic and threads.json creation && Add proper parsing of threads.json to getComponentThreads. (Todor Ivanov) #
+  - Avoid bash actions for fetching daemon status (Todor Ivanov) #
+  - Add support for both config path and config objects && Fix connectionTest signature && fix old docstrings (Todor Ivanov) #
+  - Adding the first lines for AgnetWatchdog thread as part of AgentStatusWatcher component (Todor Ivanov) #
+  - Rename checkComponentThreads to getComponentThreads (Todor Ivanov) #
+  - Update pid and thread Info data structures && Add trace flag for the isComponentAlive calls (Todor Ivanov) #
+  - Add option to check components by PIDS also (Todor Ivanov) #
+  - Fix isComponentAlive docstring (Todor Ivanov) #
+  - Fix orphan vs. lost threads logic (Todor Ivanov) #
+  - Start building the construction for thread health checks (Todor Ivanov) #
+  - Catch up with master changes && Add base isComponentAlive function signature (Todor Ivanov) #
+  - Avoid sys.exit from inside functions (Todor Ivanov) #
+  - Return full pidTree from wmcoreDTolls.status (Todor Ivanov) #
+  - Rename checkProcessThreads && ruturn orphanThreads as well (Todor Ivanov) #
+  - Return list of running threads from checkProcessThreads (Todor Ivanov) #
+  - Split wmcoreD in functional and actuator parts. (Todor Ivanov) #
+  - add Extension as SubRequestType (vlimant) #
+  - Unquote gpu related classads to be compatible with new requirements format: (Kenyi Hurtado) #
+  - Test: turn SC_Nano template into a RelVal sub-request (Alan Malta Rodrigues) #
+  - Make NanoAOD input data chunk policy consistent for RelVal workflows (Alan Malta Rodrigues) #
+
+
 2.4.3 to 2.4.4rc1:
   - harvesting task maxpss configured in Express only (Antonio Linares) #12404
   - New dmwm-base image based on Debian Trixie https://github.com/dmwm/CMSKubernetes/pull/1643

@@ -30,6 +30,7 @@ RUCIO_AUTH=https://cms-rucio-auth.cern.ch
 TEAMNAME=
 AGENT_NUMBER=
 MSPILEUP_URL=https://cmsweb.cern.ch/ms-pileup/data/pileup
+OAUTH_CMS_TOKEN_NAME=cms_wmagent
 RESOURCE_OPP1=([name]=T3_US_NERSC [run]=3000 [pend]=2000 [state]=normal)
 RESOURCE_OPP2=([name]=T3_US_OSG [run]=3000 [pend]=2000 [state]=normal)
 RESOURCE_OPP3=([name]=T3_US_PSC [run]=3000 [pend]=2000 [state]=normal)

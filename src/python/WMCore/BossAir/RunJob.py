@@ -68,6 +68,7 @@ class RunJob(dict):
         self.setdefault('activity', None)
         self.setdefault('requiresGPU', 'forbidden')
         self.setdefault('gpuRequirements', None)
+        self.setdefault('jobExtraMatchRequirements', '')
         self.setdefault('campaignName', None)
         self.setdefault('requestType', None)
         self.setdefault('physicsTaskType', None)

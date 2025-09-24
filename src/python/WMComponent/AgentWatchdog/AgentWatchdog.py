@@ -54,7 +54,7 @@ class AgentWatchdog(Harness):
         #       have been:
         #       agentWatchdogPollInterval = self.config.AgentWatchdog.pollInterval
         agentWatchdogPollerInterval = 0
-        agentWatchdogScannerInterval = self.config.AgentWatchdog.AgentWachdogScanner.pollInterval
+        agentWatchdogScannerInterval = self.config.AgentWatchdog.AgentWatchdogScanner.pollInterval
         currThread = threading.currentThread()
 
         if not hasattr(self.config, "Tier0Feeder"):

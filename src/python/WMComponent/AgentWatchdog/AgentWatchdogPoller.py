@@ -111,7 +111,7 @@ class AgentWatchdogPoller(BaseWorkerThread):
         alertName = "AgentWatchdogPoller"
         summary = f"Alert from WMAgent {currAgent}"
         description = alertMessage
-        service = f"AgentWachdogPoller@{currAgent}"
+        service = f"AgentWatchdogPoller@{currAgent}"
         self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogPoller'])
 
     def alertAction(self, timerName):

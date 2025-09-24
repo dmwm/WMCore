@@ -46,7 +46,7 @@ class AgentWatchdogScanner(BaseWorkerThread):
 
         # self.watchedComponents = self.config.AgentWatchdog.watchedComponents
         # self.actionLimit = self.config.AgentWatchdog.actionLimit
-        self.pollInterval = self.config.AgentWatchdog.AgentWachdogScanner.pollInterval
+        self.pollInterval = self.config.AgentWatchdog.AgentWatchdogScanner.pollInterval
 
         self.mainThread.parents = [ thread['pid'] for thread in processStatus(self.mainThread.native_id)]
         logging.info(f"Initialized with parents {self.mainThread.parents}.")
@@ -71,7 +71,7 @@ class AgentWatchdogScanner(BaseWorkerThread):
         alertName = "AgentWatchdogScanner"
         summary = f"Alert from WMAgent {currAgent}"
         description = alertMessage
-        service = f"AgentWachdogScanner@{currAgent}"
+        service = f"AgentWatchdogScanner@{currAgent}"
         self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogScanner'])
 
     def checkCompAlive(self):

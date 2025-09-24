@@ -1,3 +1,5 @@
+import errno
+import importlib.util
 import os
 import sys
 import signal
@@ -9,11 +11,22 @@ import inspect
 import logging
 from collections  import namedtuple
 
-# from ptrace.debugger import PtraceProcess, PtraceDebugger
-# from ptrace.debugger.process_event import ProcessExit
-# from ptrace.debugger.ptrace_signal import ProcessSignal
-# from ptrace.func_call import FunctionCallOptions
-# from ptrace.error import PtraceError
+_PTRACE_DEBUGGER_SPEC = importlib.util.find_spec("ptrace.debugger")
+if _PTRACE_DEBUGGER_SPEC:
+    from ptrace.debugger import PtraceProcess, PtraceDebugger
+    from ptrace.debugger.process_event import ProcessExit
+    from ptrace.debugger.ptrace_signal import ProcessSignal
+    from ptrace.func_call import FunctionCallOptions
+    from ptrace.error import PtraceError
+    _PTRACE_SUPPORT = True
+else:
+    PtraceProcess = None
+    PtraceDebugger = None
+    ProcessExit = None
+    ProcessSignal = None
+    FunctionCallOptions = None
+    PtraceError = None
+    _PTRACE_SUPPORT = False
 from pprint import pformat, pprint
 from Utils.Utilities import extractFromXML
 from Utils.ProcFS import processStatus
@@ -553,53 +566,77 @@ def moduleName(obj):
     """
     return obj.__module__.split('.')[-1]
 
-# def tracePid(pid, interval=10):
-#     """
-#     A helper function designed to build ptrace based tests per process
-#     :param pid:      The process id to be traced
-#     :param interval: The interval in seconds for which the process  will be traced. (Default: 10sec.)
-#     :return:         Trace string|buffer|result (to be decided)
-#     """
-#     exitcode = 0
-#     debugger = PtraceDebugger()
-#     try:
-#         # Initially try to attach the process as a non traced one
-#         logging.info(f"Attempting to trace {pid} as unattached process")
-#         process = debugger.addProcess(pid, is_attached=False)
-#     except PtraceError:
-#         # in case of an error make an attempt to attach it as already traced one (supposing
-#         # a previous execution of the current function could not finish and release it.
-#         logging.info(f"Tracing {pid} as already attached process")
-#         process = debugger.addProcess(pid, is_attached=True)
 
-#     # Now start sampling:
-#     logging.info("Start system calls sampling.")
+def tracePid(pid, interval=10):
+    """
+    A helper function designed to build ptrace based tests per process
+    :param pid:      The process id to be traced
+    :param interval: The interval in seconds for which the process will be traced. (Default: 10sec.)
+    :return:         0 in case of success, non-zero value otherwise
+    """
+    if not _PTRACE_SUPPORT:
+        logging.warning(
+            "ptrace debugger support is not available; skipping trace request for PID %s.",
+            pid
+        )
+        return 1
 
-#     process.syscall_options = FunctionCallOptions()
-#     endTime = time.time() + interval
-#     while time.time() < endTime:
-#         process.syscall()
-#         try:
-#             event = process.debugger.waitSyscall()
-#         except ProcessExit as event:
-#             if event.exitcode is not None:
-#                 exitcode = event.exitcode
-#             continue
-#         except ProcessSignal as event:
-#             event.display()
-#             event.process.syscall(event.signum)
-#             exitcode = 128  + event.signum
-#             continue
+    exitcode = 0
+    debugger = PtraceDebugger()
+    process = None
 
-#         state = process.syscall_state
-#         syscall = state.event(process.syscall_options)
-#         if syscall and syscall.result is not None:
-#             logging.info(syscall.format())
+    def _attach_process():
+        """Attach the debugger to the provided pid, trying both unattached and attached modes."""
+        logging.info("Attempting to trace %s as unattached process", pid)
+        try:
+            return debugger.addProcess(pid, is_attached=False)
+        except PtraceError as ex:
+            if getattr(ex, "errno", None) in (errno.EPERM, errno.EACCES):
+                raise
+            logging.info("Tracing %s as already attached process", pid)
+            return debugger.addProcess(pid, is_attached=True)
 
-#     # Detach all tracers before returning:
-#     logging.info(f"Detaching from PID:{pid}")
-#     process.detach()
-#     return exitcode
+    try:
+        process = _attach_process()
+    except (PtraceError, OSError) as ex:
+        logging.warning("Failed to attach ptrace debugger to PID %s: %s", pid, ex)
+        return 1
+
+    logging.info("Start system calls sampling.")
+    process.syscall_options = FunctionCallOptions()
+    endTime = time.time() + interval
+
+    while time.time() < endTime:
+        try:
+            process.syscall()
+            try:
+                event = process.debugger.waitSyscall()
+            except ProcessExit as event:
+                if event.exitcode is not None:
+                    exitcode = event.exitcode
+                continue
+            except ProcessSignal as event:
+                event.display()
+                event.process.syscall(event.signum)
+                exitcode = 128 + event.signum
+                continue
+
+            state = process.syscall_state
+            syscall = state.event(process.syscall_options)
+            if syscall and syscall.result is not None:
+                logging.info(syscall.format())
+        except PtraceError as ex:
+            logging.warning("ptrace sampling for PID %s failed: %s", pid, ex)
+            exitcode = 1
+            break
+
+    try:
+        logging.info("Detaching from PID:%s", pid)
+        process.detach()
+    except (PtraceError, OSError) as ex:
+        logging.warning("Failed to detach ptrace debugger from PID %s: %s", pid, ex)
+
+    return exitcode
 
 ProcessTracer = namedtuple('ProcessTracer', ['traceFunc', 'args', 'kwArgs'])
 
@@ -684,24 +721,27 @@ def isComponentAlive(config, component=None, pid=None, trace=False, traceInterva
     for threadInfo in pidInfo['threads']:
         checkList.append(threadInfo['is_running'] and threadInfo['status'] is not psutil.STATUS_ZOMBIE)
 
-    # # Build strace like tests if it was chosen to
-    # # Setup the debugger and tracer process objects for every thread from the pidTree
-    # if trace:
-    #     tracers = {}
-    #     for threadId in pidTree['RunningThreads']:
-    #         logging.info(f"Creating process tracer for PID: {threadId}")
-    #         tracers[threadId] = ProcessTracer(tracePid, [threadId], {'interval': traceInterval})
+    # Build strace like tests if it was chosen to and ptrace support is available
+    if trace and not _PTRACE_SUPPORT:
+        logging.warning(
+            "ptrace debugger support is not available; skipping ptrace based checks for PID %s.",
+            pidTree.get('Parent')
+        )
+        trace = False
 
-    #     # Now start designing all the tests per each thread in order to cover the three possible problematic
-    #     # states as explained in the function docstring.
-    #     logging.info("Start ptrace based tests")
-    #     for threadId, tracer in tracers.items():
-    #         # As a start, run a basic strace just for proof of concept:
-    #         traceResult = tracer.traceFunc(*tracer.args, **tracer.kwArgs)
-    #         if traceResult == 0:
-    #             checkList.append(True)
-    #         else:
-    #             checkList.append(False)
+    if trace:
+        tracers = {}
+        for threadId in pidTree['RunningThreads']:
+            logging.info(f"Creating process tracer for PID: {threadId}")
+            tracers[threadId] = ProcessTracer(tracePid, [threadId], {'interval': traceInterval})
+
+        # Now start designing all the tests per each thread in order to cover the three possible problematic
+        # states as explained in the function docstring.
+        logging.info("Start ptrace based tests")
+        for threadId, tracer in tracers.items():
+            # As a start, run a basic strace just for proof of concept:
+            traceResult = tracer.traceFunc(*tracer.args, **tracer.kwArgs)
+            checkList.append(traceResult == 0)
 
     return all(checkList)
     # return tracers

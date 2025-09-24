@@ -408,6 +408,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                        'allowOpportunistic': loadedJob.get('allowOpportunistic', False),
                        'requiresGPU': loadedJob.get('requiresGPU', "forbidden"),
                        'gpuRequirements': loadedJob.get('gpuRequirements', None),
+                       'jobExtraMatchRequirements': loadedJob.get('jobExtraMatchRequirements', ""),
                        'campaignName': loadedJob.get('campaignName', None),
                        'requestType': loadedJob['requestType'],
                        'physicsTaskType': loadedJob.get('physicsTaskType', None)

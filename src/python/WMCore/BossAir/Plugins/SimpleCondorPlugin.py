@@ -515,14 +515,10 @@ class SimpleCondorPlugin(BasePlugin):
             ad['Arguments'] = "%s %i %s" % (os.path.basename(job['sandbox']), job['id'], job["retry_count"])
             ad['transfer_output_files'] = "Report.%i.pkl,wmagentJob.log" % job["retry_count"]
 
-            # Dictionary keys need to be consistent across all jobs within the same 
-            # clusterId when working with queue_with_itemdata()
-            # Initialize 'Requirements' to an empty string for all jobs.
-            # See issue: https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=7715 
-            ad['Requirements'] = ''
+            jobRequirements = []
             # Do not define custom Requirements for Volunteer resources
-            if self.reqStr is not None:
-                ad['Requirements'] = self.reqStr
+            if self.reqStr:
+                jobRequirements.append(self.reqStr)
 
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
 
@@ -595,6 +591,9 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.DESIRED_GPUMinimumCapability'] = undefined
                 ad['My.DESIRED_GPUMaximumCapability'] = undefined
                 ad['My.DESIRED_GPURuntime'] = undefined
+            if job.get('jobExtraMatchRequirements'):
+                ad['My.DESIRED_ExtraMatchRequirements'] = job['jobExtraMatchRequirements']
+                jobRequirements.append(job['jobExtraMatchRequirements'])
 
             # Assign GPU related HTCondor macros classads to DESIRED classads above
             ad['gpus_minimum_memory'] = ad['My.DESIRED_GPUMemoryMB']
@@ -657,10 +656,10 @@ class SimpleCondorPlugin(BasePlugin):
             requiredArchs = self.scramArchtoRequiredArch(job.get('scramArch'))
             if not requiredArchs:  # only Cleanup jobs should not have ScramArch defined
                 ad['My.REQUIRED_ARCH'] = undefined
-                ad['Requirements'] = '(TARGET.Arch =!= REQUIRED_ARCH)'
+                jobRequirements.append("(TARGET.Arch =!= REQUIRED_ARCH)")
             else:
                 ad['My.REQUIRED_ARCH'] = classad.quote(str(requiredArchs))
-                ad['Requirements'] = 'stringListMember(TARGET.Arch, REQUIRED_ARCH)'
+                jobRequirements.append("stringListMember(TARGET.Arch, REQUIRED_ARCH)")
 
             # Inject a microarchitecture classad. If x86_64 not on arch list, return 0
             if 'X86_64' not in requiredArchs.split(","):
@@ -668,6 +667,9 @@ class SimpleCondorPlugin(BasePlugin):
             else:
                 minMicroArch = self.tc.getGreaterMicroarchVersionNumber(cmsswVersions, rel_microarchs=rel_microarchs)
                 ad['My.REQUIRED_MINIMUM_MICROARCH'] = str(minMicroArch) 
+
+            # Now AND all the new job requirements together - else default to empty string
+            ad['Requirements'] = " && ".join(jobRequirements)
 
             jobParameters.append(ad)
              

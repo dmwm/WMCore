@@ -15,7 +15,17 @@ import unittest
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner, MSRuleCleanerArchivalSkip
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
 from WMCore.Services.Rucio import Rucio
+from rucio.common.exception import RuleNotFound
 
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
+from WMCore.WorkQueue.WorkQueue import globalQueue
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
+
+
+from WMCore.WMSpec.StdSpecs.ReReco  import ReRecoWorkloadFactory
 
 def getTestFile(partialPath):
     """
@@ -25,8 +35,8 @@ def getTestFile(partialPath):
     return os.path.join(normPath, partialPath)
 
 
-# class MSRuleCleanerTest(EmulatedUnitTestCase):
-class MSRuleCleanerTest(unittest.TestCase):
+class MSRuleCleanerTest(EmulatedUnitTestCase):
+#class MSRuleCleanerTest(unittest.TestCase):
     "Unit test for MSruleCleaner module"
 
     def setUp(self):
@@ -63,12 +73,39 @@ class MSRuleCleanerTest(unittest.TestCase):
                                 "creds": self.creds}
 
         self.reqStatus = ['announced', 'aborted-completed', 'rejected']
+        
+        self.specGenerator = WMSpecGenerator("WMSpecs")
+        self.schema = []
+        self.couchApps = ["WorkQueue"]
+        self.testInit = TestInitCouchApp('WorkQueueServiceTest')
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules=self.schema,
+                                useDefault=False)
+        self.testInit.setupCouch('workqueue_t', *self.couchApps)
+        self.testInit.setupCouch('workqueue_t_inbox', *self.couchApps)
+        self.testInit.setupCouch('local_workqueue_t', *self.couchApps)
+        self.testInit.setupCouch('local_workqueue_t_inbox', *self.couchApps)
+        self.testInit.generateWorkDir()
+
+        self.msConfig.update({'QueueURL':self.testInit.couchUrl})
+        print("msConfig: ", json.dumps(self.msConfig, indent=2))
+        
+        
         self.msRuleCleaner = MSRuleCleaner(self.msConfig)
         self.msRuleCleaner.resetCounters()
         self.msRuleCleaner.rucio = Rucio.Rucio(self.msConfig['rucioAccount'],
                                                hostUrl=self.rucioConfigDict['rucio_host'],
                                                authUrl=self.rucioConfigDict['auth_host'],
                                                configDict=self.rucioConfigDict)
+        
+        
+
+        self.queueParams = {}
+        self.queueParams['log_reporter'] = "Services_WorkQueue_Unittest"
+        self.queueParams['rucioAccount'] = "wma_test"
+        self.queueParams['rucioAuthUrl'] = "http://cms-rucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cms-rucio-auth-int.cern.ch"
 
         self.taskChainFile = getTestFile('data/ReqMgr/requests/Static/TaskChainRequestDump.json')
         self.stepChainFile = getTestFile('data/ReqMgr/requests/Static/StepChainRequestDump.json')
@@ -181,6 +218,7 @@ class MSRuleCleanerTest(unittest.TestCase):
     def testPipelineMSTrBlock(self):
         # Test plineAgentCont
         wflow = MSRuleCleanerWflow(self.taskChainReq)
+        print(wflow)
         self.msRuleCleaner.plineMSTrBlock.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineMSTrBlock': True},
                          'ForceArchive': False,
@@ -222,7 +260,98 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'TransferTape': False,
                          'TapeRulesStatus': [],
                          'StatusAdvanceExpiredMsg': ""}
+        
         self.assertDictEqual(wflow, expectedWflow)
+     
+    def testPipelineMSTrBlockGlobalQueue(self):
+        
+        #turn of tests of pipelineMSTrBlockGlobalQueue
+        self.skipTest("Skipping testPipelineMSTrBlockGlobalQueue. This is placeholder for future test of pipelineMSTrBlockGlobalQueue if needed")
+
+        #Get workflow description. ReRecoWorkloadFactory.getTestArguments() is used in createReRecoSpec below, 
+        #so the workflow description here and the one used in creating workqueue is the same
+        specName = "RerecoSpec"
+        inputdataset = {"InputDataset": "/JetHT/Run2012C-v1/RAW"}
+        workflowDescription = ReRecoWorkloadFactory.getTestArguments()
+        workflowDescription['RequestName'] = specName
+        workflowDescription['InputDataset'] = inputdataset["InputDataset"]
+        
+        wflow = MSRuleCleanerWflow(workflowDescription)
+        
+        #Create ReRecoSpec as stored in GlobalQueue       
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
+                                                      assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]},InputDataset=inputdataset["InputDataset"])
+        #Make GlobalQueue
+        globalQ = globalQueue(DbName='workqueue_t',
+                              QueueURL=self.testInit.couchUrl,
+                              UnittestFlag=True, **self.queueParams)
+        globalQ.queueWork(specUrl, specName, "teamA")
+        
+        #Let try to modify the element in GlobalQueue to have PercentComplete and PercentSuccess set to 100
+        wqService = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
+        #Use this instead of wqService.getWQElementsByWorkflow(workflowName) to have the element'id'
+        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                 {'startkey': [specName], 'endkey': [specName, {}],
+                                  'reduce': False})
+        
+        print("Elements in GlobalQueue:")
+        elements = data.get('rows', [])
+        print(json.dumps(elements, indent=2))
+            
+        #let update the PercentComplete and PercentSuccess of the first elements
+        element_id = [elements[0]['id']]  # Get the first element's ID
+        print("Updating element:", element_id)
+        wqService.updateElements(*element_id, PercentComplete=100, PercentSuccess=100)
+        # Re-fetch the elements to see the update
+        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                 {'startkey': [specName], 'endkey': [specName, {}],
+                                  'reduce': False})
+        elements = data.get('rows', [])
+        #elements=wqService.getWQElementsByWorkflow(specName)
+        print("Updated Elements in GlobalQueue:")
+        for e in elements:
+            print(e["id"], e['value']['Status'], e['value']["PercentComplete"], e['value']["PercentSuccess"])
+            #print(e["id"], e['Status'], e["PercentComplete"], e["PercentSuccess"])
+        
+        #now let try to create Rucio rule for the block
+        #create a rule and inject it in wma_test account
+        blockNames = list(elements[0]['value']['Inputs'].keys())  # Get the block name from the first element
+        rule_id = self.msRuleCleaner.rucio.createReplicationRule(
+            names=blockNames[0],
+            rseExpression="T2_US_Nebraska",
+            copies=1,
+            grouping="DATASET",
+            lifetime=360,
+            account="wma_test",
+            ask_approval=False,
+            activity="Production Input",
+            comment="WMCore test block rule creation"
+        )
+
+        print("Created Rucio rule with ID:", rule_id)
+        rule_info = self.msRuleCleaner.rucio.getRule(rule_id[0])
+        print(rule_info)
+        
+        self.msRuleCleaner.plineMSTrBlockGlobalQueue.run(wflow)
+        print("Workflow after plineMSTrBlockGlobalQueue:")
+        print(json.dumps(wflow, indent=2))
+        
+        #now make sure the rule is cleaned
+        try:
+            rule_info = self.msRuleCleaner.rucio.getRule(rule_id[0])
+            #print("Rule exists:", json.dumps(rule_info, indent=2))
+            #now delete it
+            self.msRuleCleaner.rucio.deleteRule(rule_id[0])
+            print("Deleted Rucio rule with ID:", rule_id)
+        except RuleNotFound:
+            print("Rule not found.")
+        except Exception as e:
+            print("Error checking rule:", e)
+
+        print("Cleanup status: ", wflow['CleanupStatus']['plineMSTrBlockGlobalQueue'])
+        print("Rules to clean: ", wflow['RulesToClean']['plineMSTrBlockGlobalQueue'], rule_id)
+        assert((wflow['CleanupStatus']['plineMSTrBlockGlobalQueue'] is True))
+        assert((wflow['RulesToClean']['plineMSTrBlockGlobalQueue'] == rule_id))
 
     def testPipelineMSTrCont(self):
         # Test plineAgentCont

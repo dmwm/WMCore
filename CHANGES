@@ -1,3 +1,7 @@
+2.4.4rc4 to 2.4.4rc5:
+  - Fix failed calls of AgentStatusPoller.collectAgentInfo() for down components (Todor Ivanov) #12448
+
+
 2.4.4rc3 to 2.4.4rc4:
   - Fixing all AgentWatchdog config section related typos (Todor Ivanov) #12445
 

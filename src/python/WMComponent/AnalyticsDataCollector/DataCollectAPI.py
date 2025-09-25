@@ -301,15 +301,15 @@ class WMAgentDBData(object):
             if compPidTree:
                 agentComponents.update({component: processStatus(compPidTree['Parent'])})
 
-            badComponentThreads = list(set(compPidTree['LostThreads']) | set(compPidTree['OrphanThreads']))
+            badComponentThreads = list(set(compPidTree.get('LostThreads',[])) | set(compPidTree.get('OrphanThreads',[])))
             if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
                 agentInfo['down_components'].append(component)
                 if badComponentThreads:
                     agentInfo['down_component_detail'].append(
                         downThreadsDetails(component,
-                                       compPidTree['Parent'],
-                                       compPidTree))
+                                           compPidTree.get('Parent', None),
+                                           compPidTree))
                 else:
                     agentInfo['down_component_detail'].append(component)
 

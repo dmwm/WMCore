@@ -177,6 +177,7 @@ class JobUpdaterPoller(BaseWorkerThread):
                     # if there are jobs in wmbs executing state, update their prio in condor
                     if self.executingJobsDAO.execute(workflow) > 0:
                         logging.info("Updating condor jobs priority for request: %s", workflow)
+                        # TODO: verify if we should wrap this in a try/except for the  CondorScheddException as well?
                         self.bossAir.updateJobInformation(workflow,
                                                           requestPriority=priorityCache[workflow])
                     workflowsToUpdateWMBS[workflow] = priorityCache[workflow]

@@ -596,6 +596,7 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.DESIRED_GPUMaximumCapability'] = undefined
                 ad['My.DESIRED_GPURuntime'] = undefined
             if not job.get('jobExtraMatchRequirements'):
+                ad['My.DESIRED_ExtraMatchRequirements'] = job['jobExtraMatchRequirements']
                 if ad['Requirements']:
                     ad['Requirements'] = f"{ad['Requirements']} && {job['jobExtraMatchRequirements']}"
                 else:

@@ -145,6 +145,7 @@ def saveJob(job, thisJobNumber, **kwargs):
     job['allowOpportunistic'] = kwargs['allowOpportunistic']
     job['requiresGPU'] = kwargs['requiresGPU']
     job['gpuRequirements'] = kwargs['gpuRequirements']
+    job['jobExtraMatchRequirements'] = kwargs['jobExtraMatchRequirements']
     job['requestType'] = kwargs['requestType']
     job['physicsTaskType'] = kwargs['physicsTaskType']
     job['campaignName'] = kwargs['campaignName']
@@ -542,6 +543,7 @@ class JobCreatorPoller(BaseWorkerThread):
                                'numberOfCores': wmTask.getNumberOfCores(),
                                'requiresGPU': wmTask.getRequiresGPU(),
                                'gpuRequirements': wmTask.getGPURequirements(),
+                               'jobExtraMatchRequirements': wmTask.getJobExtraMatchRequirements(),
                                'inputDataset': wmTask.getInputDatasetPath(),
                                'inputPileup': wmTask.getInputPileupDatasets(),
                                'swVersion': wmTask.getSwVersion(allSteps=True),

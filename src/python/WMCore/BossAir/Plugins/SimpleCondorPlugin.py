@@ -595,6 +595,12 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.DESIRED_GPUMinimumCapability'] = undefined
                 ad['My.DESIRED_GPUMaximumCapability'] = undefined
                 ad['My.DESIRED_GPURuntime'] = undefined
+            if job.get('jobExtraMatchRequirements'):
+                ad['My.DESIRED_ExtraMatchRequirements'] = job['jobExtraMatchRequirements']
+                if ad['Requirements']:
+                    ad['Requirements'] = f"{ad['Requirements']} && {job['jobExtraMatchRequirements']}"
+                else:
+                    ad['Requirements'] = job['jobExtraMatchRequirements']
 
             # Assign GPU related HTCondor macros classads to DESIRED classads above
             ad['gpus_minimum_memory'] = ad['My.DESIRED_GPUMemoryMB']
@@ -657,7 +663,7 @@ class SimpleCondorPlugin(BasePlugin):
             requiredArchs = self.scramArchtoRequiredArch(job.get('scramArch'))
             if not requiredArchs:  # only Cleanup jobs should not have ScramArch defined
                 ad['My.REQUIRED_ARCH'] = undefined
-                ad['Requirements'] = '(TARGET.Arch =!= REQUIRED_ARCH)'
+                ad['Requirements'] = '(TARGET.Arch =!= REQUIRED_ARCH)'  # should we AND this expression?
             else:
                 ad['My.REQUIRED_ARCH'] = classad.quote(str(requiredArchs))
                 ad['Requirements'] = 'stringListMember(TARGET.Arch, REQUIRED_ARCH)'

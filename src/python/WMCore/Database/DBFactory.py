@@ -1,6 +1,12 @@
 
 from builtins import object
 import threading
+import sys
+import oracledb
+oracledb.version = "8.3.0"
+sys.modules["cx_Oracle"] = oracledb
+oracledb.init_oracle_client()
+
 
 from sqlalchemy import create_engine
 from sqlalchemy import __version__ as sqlalchemy_version

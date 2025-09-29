@@ -5,9 +5,10 @@ _Execute_
 Run the stage out commands in a nice non-blocking way
 
 """
+import logging
 from __future__ import print_function
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 
 from Utils.PythonVersion import PY3
 from WMCore.Storage.StageOutError import StageOutError
@@ -28,8 +29,12 @@ def runCommand(command):
     else:
         child = Popen(command, shell=True, bufsize=1, stdin=PIPE, close_fds=True)
 
-    child.communicate()
-    retCode = child.returncode
+    try:
+        child.communicate()
+        retCode = child.returncode
+    except TimeoutExpired:
+        child.kill()
+        raise Exception("Subprocess timed out")
 
     return retCode
 
@@ -50,8 +55,12 @@ def runCommandWithOutput(command):
     else:
         child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
-    sout, serr = child.communicate()
-    retCode = child.returncode
+    try:
+        sout, serr = child.communicate()
+        retCode = child.returncode
+    except TimeoutExpired:
+        child.kill()
+        raise Exception("Subprocess timed out")
     
     # If child is terminated by signal, err will be negative value. (Unix only)
     sigStr = "Terminated by signal %s\n" % -retCode if retCode < 0 else ""

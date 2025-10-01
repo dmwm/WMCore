@@ -30,8 +30,8 @@
         "CMSSWVersion": "CMSSW_15_0_0_pre3",
         "Campaign": "Campaign-OVERRIDE-ME",
         "Comments": {
-            "CheckList": "",
-            "WorkFlowDesc": ""
+            "CheckList": "TC with required GPU in all 3 steps and extra matchmaking requirements; 1 cores and 3GB top level, but tasks use 8 cores/16GB",
+            "WorkFlowDesc": "TC with required GPU; TC with extra GPU requirements; 8 cores and 16GB RAM per task"
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache",
@@ -67,6 +67,7 @@
             "EventsPerLumi": 100,
             "GPUParams": "{\"CUDACapabilities\": [\"6.0\", \"6.1\", \"6.2\", \"7.0\", \"7.2\", \"7.5\", \"8.0\", \"8.6\", \"8.7\", \"8.9\", \"9.0\", \"10.0\"], \"CUDARuntime\": \"12.0\", \"GPUMemoryMB\": 8000}",
             "GlobalTag": "142X_mcRun3_2025_realistic_v5",
+            "JobExtraMatchRequirements": "regexp(\"GenSimFull\", WMAgent_SubTaskName)",
             "KeepOutput": true,
             "Memory": 16000,
             "Multicore": 8,
@@ -89,6 +90,7 @@
             "EventStreams": 1,
             "GPUParams": "{\"CUDACapabilities\": [\"6.0\", \"6.1\", \"6.2\", \"7.0\", \"7.2\", \"7.5\", \"8.0\", \"8.6\", \"8.7\", \"8.9\", \"9.0\", \"10.0\"], \"CUDARuntime\": \"12.0\", \"GPUMemoryMB\": 8000}",
             "GlobalTag": "142X_mcRun3_2025_realistic_v5",
+            "JobExtraMatchRequirements": "regexp(\"Digi\", WMAgent_SubTaskName)",
             "InputFromOutputModule": "FEVTDEBUGoutput",
             "InputTask": "GenSimFull",
             "KeepOutput": true,
@@ -111,6 +113,7 @@
             "EventStreams": 1,
             "GPUParams": "{\"CUDACapabilities\": [\"6.0\", \"6.1\", \"6.2\", \"7.0\", \"7.2\", \"7.5\", \"8.0\", \"8.6\", \"8.7\", \"8.9\", \"9.0\", \"10.0\"], \"CUDARuntime\": \"12.0\", \"GPUMemoryMB\": 8000}",
             "GlobalTag": "142X_mcRun3_2025_realistic_v5",
+            "JobExtraMatchRequirements": "regexp(\"Reco\", WMAgent_SubTaskName)",
             "InputFromOutputModule": "FEVTDEBUGHLToutput",
             "InputTask": "Digi_Patatrack_PixelOnlyAlpaka_Validation_2025",
             "KeepOutput": true,

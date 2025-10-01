@@ -30,8 +30,8 @@
         "CMSSWVersion": "CMSSW_15_0_0_pre3",
         "Campaign": "Campaign-OVERRIDE-ME",
         "Comments": {
-            "CheckList": "SC with required GPU in all 3 steps; 2 cores top level, but steps asking for 8; 8GB RAM",
-            "WorkFlowDesc": "SC with required GPU; 8 cores and 8GB RAM per step"
+            "CheckList": "SC with required GPU in all 3 steps and extra GPU match requirements; 2 cores top level, but steps asking for 8; 8GB RAM",
+            "WorkFlowDesc": "SC with required GPU and extra match-making; 8 cores and 8GB RAM per step"
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache",
@@ -44,6 +44,7 @@
         "GPUParams": "null",
         "GlobalTag": "142X_mcRun3_2025_realistic_v5",
         "IncludeParents": false,
+        "JobExtraMatchRequirements": "regexp(\"^NVIDIA L40S$\", GPUs_DeviceName)",
         "Memory": 8000,
         "Multicore": 2,
         "PrepID": "TEST-CMSSW_15_0_0_pre3__Run3_AMD_GPUValidation_SpecialRV_CNAF-TTbar_14TeV-00001",
@@ -71,7 +72,7 @@
             "Multicore": 8,
             "PrimaryDataset": "RelValTTbar_14TeV",
             "ProcessingString": "Step1_WMCore_TEST",
-            "RequestNumEvents": 9000,
+            "RequestNumEvents": 1000,
             "RequiresGPU": "required",
             "ScramArch": [
                 "el8_amd64_gcc12"

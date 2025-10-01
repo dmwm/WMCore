@@ -48,3 +48,19 @@ class ExecuteTest(unittest.TestCase):
         self.assertEqual((1, 'stdout: \nstderr: a\n'), runCommandWithOutput("%s %s -exit a" % (self.python_runtime, self.base)))
         self.assertEqual((0, 'stdout: a\n\nstderr: '), runCommandWithOutput("%s %s -text a" % (self.python_runtime, self.base)))
 
+    def testRunCommandWithOutput_timeout(self):
+        """
+        Test that runCommandWithOutput properly handles timeouts by killing child processes
+        and returning appropriate output with timeout message.
+        """
+        long_running_cmd = "sleep 5 && echo done"
+        # Test with a 1 second timeout - should trigger timeout
+        exit_code, output = runCommandWithOutput(long_running_cmd, timeout=1)
+
+        # Verify the timeout was handled
+        self.assertIn("Command reached timeout of 1 seconds", output)
+        self.assertIn("and child process was killed", output)
+        self.assertIn("Terminated by signal", output)
+
+        # The exit code should be negative (indicating termination by signal) 9 is SIGKILL
+        self.assertEqual(exit_code, -9)

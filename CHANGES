@@ -1,3 +1,8 @@
+2.4.4rc5 to 2.4.4rc6:
+  - Update GPU templates with extra match-making requirements (Alan Malta Rodrigues) #12447
+  - Add support to user-provided match requirements at job creation/execution (Alan Malta Rodrigues) #12447
+
+
 2.4.4rc4 to 2.4.4rc5:
   - Fix failed calls of AgentStatusPoller.collectAgentInfo() for down components (Todor Ivanov) #12448
 

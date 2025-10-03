@@ -7,7 +7,7 @@ Run the stage out commands in a nice non-blocking way
 """
 from __future__ import print_function
 
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 
 from Utils.PythonVersion import PY3
 from WMCore.Storage.StageOutError import StageOutError
@@ -33,28 +33,30 @@ def runCommand(command):
 
     return retCode
 
-def runCommandWithOutput(command):
+def runCommandWithOutput(command, timeout=None):
     """
-    _runCommandWithOutput_
-
     Run the command without deadlocking stdout and stderr,
     echo all output to sys.stdout and sys.stderr
+    :param command: string with the command to execute
+    :param timeout: the timeout in seconds
 
     Returns the exitCode and the a string containing std out & error
-
     """
     # capture stdout and stderr from command
-    if PY3:
-        # python2 pylint complains about `encoding` argument
-        child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True, encoding='utf8')
-    else:
-        child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True, encoding='utf8')
 
-    sout, serr = child.communicate()
+    sigStr = ""
+    try:
+        sout, serr = child.communicate(timeout=timeout)
+    except TimeoutExpired:
+        child.kill()  # send SIGKILL to the child process
+        sout, serr = child.communicate()
+        sigStr = f"Command reached timeout of {timeout} seconds "
+        sigStr += "and child process was killed.\n"
+
     retCode = child.returncode
-    
     # If child is terminated by signal, err will be negative value. (Unix only)
-    sigStr = "Terminated by signal %s\n" % -retCode if retCode < 0 else ""
+    sigStr += "Terminated by signal %s\n" % -retCode if retCode < 0 else ""
     output = "%sstdout: %s\nstderr: %s" % (sigStr, sout, serr)
     return retCode, output
 

@@ -45,7 +45,7 @@ class StageOutImplTest(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             self.StageOutImpl.executeCommand("command")
             self.assertTrue('ErrorCode : 60311' in context.exception)
-        mock_runCommand.assert_called_with("command")
+        mock_runCommand.assert_called_with("command", timeout=10800)
 
     @mock.patch('WMCore.Storage.StageOutImpl.runCommandWithOutput')
     def testExecuteCommand_exitCode(self, mock_runCommand):
@@ -53,13 +53,13 @@ class StageOutImplTest(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             self.StageOutImpl.executeCommand("command")
             self.assertTrue('ErrorCode : 1' in context.exception)
-        mock_runCommand.assert_called_with("command")
+        mock_runCommand.assert_called_with("command", timeout=10800)
 
     @mock.patch('WMCore.Storage.StageOutImpl.runCommandWithOutput')
     def testExecuteCommand_valid(self, mock_runCommand):
         mock_runCommand.return_value = 0, "Test Success"
         self.StageOutImpl.executeCommand("command")
-        mock_runCommand.assert_called_with("command")
+        mock_runCommand.assert_called_with("command", timeout=10800)
 
     @mock.patch('WMCore.Storage.StageOutImpl.os.path')
     def testCreateRemoveFileCommand_isFile(self, mock_path):
@@ -179,3 +179,4 @@ class StageOutImplTest(unittest.TestCase):
             os.environ["BEARER_TOKEN_FILE"] = temp_file_path
             self.assertTrue(self.StageOutImpl.isBearerTokenFileSet())
         del os.environ["BEARER_TOKEN_FILE"]
+

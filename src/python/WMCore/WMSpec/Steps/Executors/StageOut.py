@@ -10,10 +10,8 @@ from __future__ import print_function
 import logging
 import os
 import os.path
-import signal
 import sys
 
-from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Lexicon import lfn     as lfnRegEx
 from WMCore.Lexicon import userLfn as userLfnRegEx
@@ -63,10 +61,6 @@ class StageOut(Executor):
         # propagete upstream cmsRun outcome such that we can decide whether to
         # stage files out or not
         self.failedPreviousStep = overrides.get('previousCmsRunFailure', False)
-
-        # Set wait to two hours per retry
-        # this alarm leaves a subprocess behing that may cause trouble, see #6273
-        waitTime = overrides.get('waitTime', 7200 * self.step.retryCount)
 
         logging.info("StageOut override is: %s ", self.step)
 
@@ -192,8 +186,6 @@ class StageOut(Executor):
                                    'StageOutCommand': None,
                                    'Checksums': getattr(fileName, 'checksums', None)}
 
-                signal.signal(signal.SIGALRM, alarmHandler)
-                signal.alarm(waitTime)
                 try:
                     manager(fileForTransfer)
                     # Afterwards, the file should have updated info.
@@ -201,20 +193,11 @@ class StageOut(Executor):
                     fileName.StageOutCommand = fileForTransfer['StageOutCommand']
                     fileName.location = fileForTransfer['PNN']
                     fileName.OutputPFN = fileForTransfer['PFN']
-                except Alarm:
-                    msg = "Indefinite hang during stageOut of logArchive"
-                    logging.error(msg)
-                    manager.cleanSuccessfulStageOuts()
-                    stepReport.addError(self.stepName, 60403, "StageOutTimeout", msg)
-                    # well, if it fails for one file, it fails for the whole job...
-                    break
                 except Exception as ex:
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60307, "StageOutFailure", str(ex))
                     stepReport.persist(reportLocation)
                     raise
-
-                signal.alarm(0)
 
             # Am DONE with report. Persist it
             stepReport.persist(reportLocation)

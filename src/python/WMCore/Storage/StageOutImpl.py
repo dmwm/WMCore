@@ -36,6 +36,7 @@ class StageOutImpl:
     def __init__(self, stagein=False):
         self.numRetries = 3
         self.retryPause = 600
+        self.timeout = 3600 * self.numRetries
         self.stageIn = stagein
         self.debuggingTemplate =  "#!/bin/bash\n"
         self.debuggingTemplate += """
@@ -121,14 +122,13 @@ class StageOutImpl:
 
     def executeCommand(self, command):
         """
-        _execute_
-
         Execute the command provided, throw a StageOutError if it exits
         non zero
-
+        :param command: string with the command to execute
         """
         try:
-            exitCode, output = runCommandWithOutput(command)
+            logging.info("Executing command with timeout: %s seconds", self.timeout)
+            exitCode, output = runCommandWithOutput(command, timeout=self.timeout)
             msg = "Command exited with status: {}\nOutput message: {}".format(exitCode, output)
             logging.info(msg)
         except Exception as ex:

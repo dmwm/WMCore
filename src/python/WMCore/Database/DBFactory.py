@@ -1,8 +1,11 @@
-
+#pylint: disable=W0102
 from builtins import object
 import threading
 import sys
 import oracledb
+
+# NOTE: We need to ensure SQLAlchemy would be able to find the oracledb python libraries.
+#       Further details at: https://cjones-oracle.medium.com/using-python-oracledb-1-0-with-sqlalchemy-pandas-django-and-flask-5d84e910cb19
 oracledb.version = "8.3.0"
 sys.modules["cx_Oracle"] = oracledb
 oracledb.init_oracle_client()
@@ -11,7 +14,6 @@ oracledb.init_oracle_client()
 from sqlalchemy import create_engine
 from sqlalchemy import __version__ as sqlalchemy_version
 from WMCore.Database.Dialects import MySQLDialect
-from WMCore.Database.Dialects import OracleDialect
 
 class DBFactory(object):
 
@@ -30,18 +32,17 @@ class DBFactory(object):
         if dburl:
             self.dburl = dburl
         else:
-            #This will be deprecated.
-            """
-            Need to make the dburl here. Possible formats are:
+            # NOTE: This will be deprecated.
+            #
+            #       Need to make the dburl here. Possible formats are:
 
-            mysql://host/database
-            mysql://username@host/database
-            mysql://username:password@host:port/database
+            #       mysql://host/database
+            #       mysql://username@host/database
+            #       mysql://username:password@host:port/database
 
-            oracle://username:password@tnsName
-            oracle://username:password@host:port/sidname
+            #       oracle://username:password@tnsName
+            #       oracle://username:password@host:port/sidname
 
-            """
             hostjoin = ''
             if 'dialect' in options:
                 self.dburl = '%s://' % options['dialect']

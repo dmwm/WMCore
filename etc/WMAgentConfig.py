@@ -467,8 +467,10 @@ config.WorkflowUpdater.msPileupUrl = "OVER_WRITE_BY_SECRETS"
 
 config.component_("AgentWatchdog")
 config.AgentWatchdog.section_('AgentWatchdogPoller')
+config.AgentWatchdog.AgentWatchdogPoller.enabled = True
 config.AgentWatchdog.AgentWatchdogPoller.pollInterval = 20
 config.AgentWatchdog.section_('AgentWatchdogScanner')
+config.AgentWatchdog.AgentWatchdogScanner.enabled = True
 config.AgentWatchdog.AgentWatchdogScanner.pollInterval = 60 * 60
 config.AgentWatchdog.namespace = "WMComponent.AgentWatchdog.AgentWatchdog"
 config.AgentWatchdog.componentDir = config.General.workDir + "/AgentWatchdog"

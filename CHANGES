@@ -1,3 +1,11 @@
+2.4.4rc6 to 2.4.4rc7:
+  - Add --skip-ssl to all mariadb executable functions at manage-common.sh CMSKubernetes#1666
+  - Update oracle Dockerfile to use go:1.25 running on dev13 (trixie) CMSKubernetes#1667
+  - Update Oracle instantclient to 23.9 CMSKubernetes#1668
+  - WMAgent: Remove restartComponent cronjob CMSKubernetes#1671
+  - Upgrade Oracle client for wmagent CMSKubernetes#1670   
+
+
 2.4.4rc5 to 2.4.4rc6:
   - Update GPU templates with extra match-making requirements (Alan Malta Rodrigues) #12447
   - Add support to user-provided match requirements at job creation/execution (Alan Malta Rodrigues) #12447

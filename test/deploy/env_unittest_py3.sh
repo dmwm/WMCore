@@ -33,11 +33,14 @@ ln -s $TEST_SRC/javascript/ $ORG_SRC_OTHER
 ln -s $TEST_SRC/template/ $ORG_SRC_OTHER
 
 export WMAGENT_SECRETS_LOCATION=$ADMIN_DIR/WMAgent_unittest.secrets
-export X509_HOST_CERT=$CERT_DIR/servicecert.pem
-export X509_HOST_KEY=$CERT_DIR/servicekey.pem
-export X509_USER_CERT=$CERT_DIR/servicecert.pem
-export X509_USER_KEY=$CERT_DIR/servicekey.pem
-
+#export X509_HOST_CERT=$CERT_DIR/servicecert.pem
+#export X509_HOST_KEY=$CERT_DIR/servicekey.pem
+#export X509_USER_CERT=$CERT_DIR/servicecert.pem
+#export X509_USER_KEY=$CERT_DIR/servicekey.pem
+export X509_HOST_CERT=$CERT_DIR/usercert.pem
+export X509_HOST_KEY=$CERT_DIR/userkey_nopwd.pem
+export X509_USER_CERT=$CERT_DIR/usercert.pem
+export X509_USER_KEY=$CERT_DIR/userkey_nopwd.pem
 export install=$INSTALL_DIR/current/install/wmagentpy3
 export config=$INSTALL_DIR/current/config/wmagentpy3
 export manage=$config/manage

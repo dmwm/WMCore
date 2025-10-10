@@ -10,7 +10,6 @@ of the health of all WMAgent components.
 
 import logging
 import threading
-import time
 
 from WMCore.Agent.Harness import Harness
 from WMComponent.AgentWatchdog.AgentWatchdogPoller import AgentWatchdogPoller
@@ -55,20 +54,20 @@ class AgentWatchdog(Harness):
         #       agentWatchdogPollInterval = self.config.AgentWatchdog.pollInterval
         agentWatchdogPollerInterval = 0
         agentWatchdogScannerInterval = self.config.AgentWatchdog.AgentWatchdogScanner.pollInterval
-        currThread = threading.currentThread()
+        currThread = threading.current_thread()
 
         if getattr(self.config.AgentWatchdog.AgentWatchdogPoller, 'enabled', False):
             logging.info("Setting AgentWatchdogPoller poll interval to %s seconds", agentWatchdogPollerInterval)
             agentWatchdogPollerThread = currThread.workerThreadManager.addWorker(AgentWatchdogPoller(self.config),
                                                                              agentWatchdogPollerInterval)
-            logging.info(f"AgentWatchdog thread PID: {currThread.native_id}")
-            logging.info(f"AgentWatchdogPoller thread PID: {agentWatchdogPollerThread.native_id}")
+            logging.info("AgentWatchdog thread PID: %s", currThread.native_id)
+            logging.info("AgentWatchdogPoller thread PID: %s", agentWatchdogPollerThread.native_id)
 
         if getattr(self.config.AgentWatchdog.AgentWatchdogScanner, 'enabled', False):
             logging.info("Setting AgentWatchdogScanner poll interval to %s seconds", agentWatchdogScannerInterval)
             agentWatchdogScannerThread = currThread.workerThreadManager.addWorker(AgentWatchdogScanner(self.config),
                                                                              agentWatchdogScannerInterval)
-            logging.info(f"AgentWatchdog thread PID: {currThread.native_id}")
-            logging.info(f"AgentWatchdogScanner thread PID: {agentWatchdogScannerThread.native_id}")
+            logging.info("AgentWatchdog thread PID: %s", currThread.native_id)
+            logging.info("AgentWatchdogScanner thread PID: %s", agentWatchdogScannerThread.native_id)
 
         return

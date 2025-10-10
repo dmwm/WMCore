@@ -35,7 +35,7 @@ from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
 from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
-
+from WMCore.BossAir.Plugins.SimpleCondorPlugin import CondorScheddUnavailable
 
 def jobSubmitCondition(jobStats):
     for jobInfo in jobStats:
@@ -756,7 +756,25 @@ class JobSubmitterPoller(BaseWorkerThread):
         myThread.transaction.begin()
 
         # Run the actual underlying submit code using bossAir
-        successList, failList = self.bossAir.submit(jobs=jobList)
+        try:
+            successList, failList = self.bossAir.submit(jobs=jobList)
+        
+        except CondorScheddUnavailable as ex:
+            msg = "Condor Schedd is unavailable: %s" % str(ex)
+            logging.error(msg)
+            myThread.logdbClient.post("JobSubmitter_submitWork", msg, "error")
+            # dont raise WMException, just return
+            logging.warning("JobSubmitter didn't submit any jobs due to condor schedd being unavailable.")
+            # TODO: verify if we shoule rollback the transaction or not?
+            myThread.transaction.rollback()
+            return
+ 
+        except Exception as ex:
+            msg = "Error submitting jobs: %s" % str(ex)
+            logging.error(msg)
+            myThread.logdbClient.post("JobSubmitter_submitWork", msg, "error")
+            raise WMException(msg) from ex
+
         logging.info("Jobs that succeeded/failed submission: %d/%d.", len(successList), len(failList))
 
         # Propagate states in the WMBS database

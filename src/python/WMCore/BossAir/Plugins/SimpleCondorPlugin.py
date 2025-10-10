@@ -21,6 +21,7 @@ from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
 from WMCore.Services.TagCollector.TagCollector import TagCollector
+from WMCore.WMException import WMException
 
 def activityToType(jobActivity):
     """
@@ -41,6 +42,22 @@ def activityToType(jobActivity):
                    "test": "test"}
     return activityMap.get(jobActivity, "unknown")
 
+
+class CondorScheddUnavailable(WMException):
+    """
+    _CondorScheddUnavailable_
+
+    Exception raised when we fail to create a condor schedd object
+    """
+
+    def __init__(self, msg):
+        """
+        _CondorScheddUnavailable_
+
+        Create a new exception
+        """
+        WMException.__init__(self, msg)
+        
 
 class SimpleCondorPlugin(BasePlugin):
     """
@@ -144,6 +161,21 @@ class SimpleCondorPlugin(BasePlugin):
         self.useCMSToken = getattr(config.JobSubmitter, 'useOauthToken', False)
 
         return
+    
+    def getScheddObject(self):
+        """
+        __getScheddObject_
+
+        Return a Schedd object for the current condor schedd
+        """
+        try:
+            schedd = htcondor.Schedd()
+        except RuntimeError as ex:
+            msg = "Failed to create a condor schedd object: %s" % str(ex)
+            raise CondorScheddUnavailable(msg)
+
+        return schedd
+        
 
     def submit(self, jobs, info=None):
         """
@@ -158,7 +190,7 @@ class SimpleCondorPlugin(BasePlugin):
             # Then was have nothing to do
             return successfulJobs, failedJobs
 
-        schedd = htcondor.Schedd()
+        schedd = self.getScheddObject()
 
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
@@ -208,7 +240,7 @@ class SimpleCondorPlugin(BasePlugin):
         # get info about all active and recent jobs
         logging.debug("SimpleCondorPlugin is going to track %s jobs", len(jobs))
 
-        schedd = htcondor.Schedd()
+        schedd = self.getScheddObject()
 
         logging.debug("Start: Retrieving classAds using Condor Python query")
         try:
@@ -369,7 +401,8 @@ class SimpleCondorPlugin(BasePlugin):
         Parameters:    excludeSite = False when moving to Normal
                        excludeSite = True when moving to Down, Draining or Aborted
         """
-        sd = htcondor.Schedd()
+
+        sd = self.getScheddObject()
         jobIdToKill = []
         jobtokill = []
         origSiteLists = set()
@@ -436,8 +469,8 @@ class SimpleCondorPlugin(BasePlugin):
         Kill can happen for schedd running on localhost... TBC.
         """
         logging.info("Killing %i jobs from the queue", len(jobs))
-
-        schedd = htcondor.Schedd()
+        
+        schedd = self.getScheddObject()
         gridIds = [job['gridid'] for job in jobs]
         try:
             schedd.act(htcondor.JobAction.Remove, gridIds)
@@ -455,8 +488,8 @@ class SimpleCondorPlugin(BasePlugin):
         Kill all the jobs belonging to a specific workflow.
         """
         logging.info("Going to remove all the jobs for workflow %s", workflow)
-
-        schedd = htcondor.Schedd()
+        
+        schedd = self.getScheddObject()
 
         try:
             schedd.act(htcondor.JobAction.Remove, "WMAgent_RequestName == %s" % classad.quote(str(workflow)))
@@ -478,7 +511,8 @@ class SimpleCondorPlugin(BasePlugin):
         Since the default priority is very high, we only need to adjust new priorities
         for processing/production task types (which have a task priority of 0)
         """
-        schedd = htcondor.Schedd()
+        
+        schedd = self.getScheddObject()
 
         if 'requestPriority' in kwargs:
             newPriority = int(kwargs['requestPriority'])

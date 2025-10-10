@@ -21,6 +21,7 @@ from WMCore.WMException                    import WMException
 from WMCore.WMExceptions                   import WM_JOB_ERROR_CODES
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.BossAir.BossAirAPI             import BossAirAPI
+from WMCore.BossAir.Plugins.SimpleCondorPlugin import CondorScheddUnavailable
 
 class StatusPollerException(WMException):
     """
@@ -68,6 +69,14 @@ class StatusPoller(BaseWorkerThread):
         try:
             logging.info("Running job status poller algorithm...")
             self.checkStatus()
+        
+        except CondorScheddUnavailable as ex:
+            msg = "Condor Schedd is unavailable: %s" % str(ex)
+            logging.error(msg)
+            if getattr(myThread, 'transaction', None):
+                myThread.transaction.rollbackForError()
+            logging.info("JobStatusLite failed to run, will retry in next cycle")
+        
         except WMException as ex:
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
@@ -90,8 +99,14 @@ class StatusPoller(BaseWorkerThread):
         and then check for jobs that have timed out.
         """
 
+        try:
+            runningJobs = self.bossAir.track()
+        except Exception as ex:
+            msg = "Error in BossAir track call: %s" % str(ex)
+            logging.error(msg)
+            runningJobs = []
+            raise WMException(msg)from ex
 
-        runningJobs = self.bossAir.track()
 
         if len(runningJobs) < 1:
             # Then we have no jobs

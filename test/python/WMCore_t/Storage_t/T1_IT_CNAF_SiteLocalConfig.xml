@@ -1,0 +1,50 @@
+<site-local-config>
+<site name="T1_IT_CNAF">
+   <event-data>
+     <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/local/PhEDEx/storage.xml?protocol=file"/>
+     <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/local/PhEDEx/storage.xml?protocol=xrootd"/>
+   </event-data>
+    <data-access>
+        <catalog volume="CNAF_GPFS" protocol="file"/>
+        <catalog volume="Eurasian_Federation" protocol="XRootD"/>
+    </data-access>
+   <source-config>
+     <statistics-destination name="cms-udpmon-collector.cern.ch:9331" />
+   </source-config>
+   <local-stage-out>
+     <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/local/PhEDEx/storage.xml?protocol=davs"/>
+     <se-name value="storm-fe-cms.cr.cnaf.infn.it"/>
+     <phedex-node value="T1_IT_CNAF_Disk"/>
+     <command value="gfal2"/>
+     <option value="-v "/>
+   </local-stage-out>
+    <fallback-stage-out>
+     <se-name value="t2-srm-02.lnl.infn.it"/>
+     <phedex-node value="T2_IT_Legnaro"/>
+     <lfn-prefix value="davs://t2-xrdcms.lnl.infn.it:2880/pnfs/lnl.infn.it/data/cms"/>
+     <command value="gfal2"/>
+   </fallback-stage-out>
+    <stage-out>
+    <method volume="CNAF_GPFS" protocol="file"/>
+    <method volume="CNAF_GPFS" protocol="WebDAV" option="-v"/>
+		<method site="T2_IT_Legnaro" volume="Legnaro_dCache" protocol="WebDAV"/>
+	</stage-out>
+    <calib-data>
+      <frontier-connect>
+       <load balance="proxies"/>
+        <proxy url="http://squid-lhc-01.cr.cnaf.infn.it:3128"/>
+        <proxy url="http://squid-lhc-02.cr.cnaf.infn.it:3128"/>
+        <proxy url="http://squid-lhc-03.cr.cnaf.infn.it:3128"/>
+        <proxy url="http://squid-lhc-04.cr.cnaf.infn.it:3128"/>
+        <proxy url="http://squid-lhc-05.cr.cnaf.infn.it:3128"/>
+        <proxy url="http://squid-lhc-06.cr.cnaf.infn.it:3128"/>
+        <backupproxy url="http://cmsbpfrontier.cern.ch:3128"/>
+        <backupproxy url="http://cmsbproxy.fnal.gov:3128"/>
+        <server url="http://cmsfrontier.cern.ch:8000/FrontierInt"/>
+        <server url="http://cmsfrontier1.cern.ch:8000/FrontierInt"/>
+        <server url="http://cmsfrontier2.cern.ch:8000/FrontierInt"/>
+        <server url="http://cmsfrontier3.cern.ch:8000/FrontierInt"/>
+      </frontier-connect>
+    </calib-data>
+</site>
+</site-local-config>

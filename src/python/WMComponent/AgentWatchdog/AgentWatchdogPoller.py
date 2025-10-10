@@ -112,7 +112,10 @@ class AgentWatchdogPoller(BaseWorkerThread):
         summary = f"Alert from WMAgent {currAgent}"
         description = alertMessage
         service = f"AgentWatchdogPoller@{currAgent}"
-        self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogPoller'])
+        try:
+            self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogPoller'])
+        except Exception as ex:
+            logging.error(f"Could not send alert. Error type:{type(ex)}: {ex.args}")
 
     def alertAction(self, timerName):
         """

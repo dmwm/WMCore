@@ -72,7 +72,10 @@ class AgentWatchdogScanner(BaseWorkerThread):
         summary = f"Alert from WMAgent {currAgent}"
         description = alertMessage
         service = f"AgentWatchdogScanner@{currAgent}"
-        self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogScanner'])
+        try:
+            self.alertManager.sendAlert(alertName, severity, summary, description, service, tag=self.alertDestinationMap['alertAgentWatchdogScanner'])
+        except Exception as ex:
+            logging.error(f"Could not send alert. Error type:{type(ex)}: {ex.args}")
 
     def checkCompAlive(self):
         """

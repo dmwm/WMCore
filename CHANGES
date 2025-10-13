@@ -1,3 +1,9 @@
+2.4.4rc7 to 2.4.4:
+  - Cleanup and correct history of 2.4.4rc1 (Alan Malta Rodrigues) #
+  - Stop polluting AgentWatchdog Components when failing to connect to alert manager (Todor Ivanov) #12456
+  - WMAgent: Make AgentWatchdog configurable && Fix a wrong printout message (Todor Ivanov) #12456
+
+
 2.4.4rc6 to 2.4.4rc7:
   - Add --skip-ssl to all mariadb executable functions at manage-common.sh CMSKubernetes#1666
   - Update oracle Dockerfile to use go:1.25 running on dev13 (trixie) CMSKubernetes#1667

@@ -1,3 +1,10 @@
+2.4.4 to 2.4.5rc1:
+  - Real minor updates to JSON workflow templates (Alan Malta Rodrigues) #12457
+  - Revisit timeout alarm during StageOut, ensuring child process is terminated (Alan Malta Rodrigues) #12453
+  - Enable python-oracledb ThickMode + sqlalchemy 1.4 (Todor Ivanov) #12451
+  - Rely on TagCollector caching in JobSubmitter (Alan Malta Rodrigues) #12449
+
+
 2.4.4rc7 to 2.4.4:
   - Cleanup and correct history of 2.4.4rc1 (Alan Malta Rodrigues) #
   - Stop polluting AgentWatchdog Components when failing to connect to alert manager (Todor Ivanov) #12456

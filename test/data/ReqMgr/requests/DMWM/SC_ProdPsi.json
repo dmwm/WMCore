@@ -37,11 +37,11 @@
         "Campaign": "Campaign-OVERRIDE-ME",
         "Comments": {
             "CheckList": [
-                "StepChain MC from scratch; StepChain extension; StepChain with transient Step2 GEN-SIM-DIGI-RAW output;  ",
-                "MC harvesting; Automatic EventBased and EventAwareLumiBased splitting; StepChain Disk and Tape rules "
+                "StepChain MC from scratch; StepChain MC extension; StepChain with transient Step2 GEN-SIM-DIGI-RAW output;  ",
+                "StepChain MC harvesting; Automatic EventBased splitting; StepChain Disk and Tape rules "
             ],
             "WorkFlowDesc": [
-                "SC MC from scratch; EventBased splitting with 700EpJ; FirstLumi=101; Rucio container rule for Disk"
+                "SC MC from scratch; EventBased splitting with 1100EpJ; FirstLumi=101; Rucio container rule for Disk"
             ]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",

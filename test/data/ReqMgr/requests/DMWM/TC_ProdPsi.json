@@ -32,10 +32,10 @@
         "CMSSWVersion": "CMSSW_12_0_0", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
-            "CheckList": ["TaskChain MC from scratch; TaskChain extension; TaskChain with transient Task2 GEN-SIM-DIGI-RAW output;  ",
-                          "MC harvesting; Automatic EventBased and EventAwareLumiBased splitting; TaskChain Disk and Tape rules "],
-            "WorkFlowDesc": ["TC MC from scratch without PU; Task1 with 300EpJ instead of 261EpJ; Task2 with 320EpJ; Task3 with 480;",
-                             "Task2/3 with EventAwareLumiBased; FirstEvent=10001, FirstLumi=101; Rucio container rule for Disk"]
+            "CheckList": ["TaskChain MC from scratch; TaskChain MC extension; TaskChain with transient Task2 GEN-SIM-DIGI-RAW output; SubRequestType=Extension ",
+                          "TaskChain MC harvesting; Automatic EventBased and EventAwareLumiBased splitting; TaskChain Disk and Tape rules "],
+            "WorkFlowDesc": ["TC MC from scratch without PU; Task1 with 400EpJ instead of 380EpJ; Task2 with 480EpJ; Task3 with 720;",
+                             "Task2/3 with EventAwareLumiBased; FirstEvent=10001, FirstLumi=101; Rucio container rule for Disk; SubRequestType=Extension"]
         }, 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
@@ -61,7 +61,7 @@
             "slc7_amd64_gcc900"
         ], 
         "SizePerEvent": 1, 
-        "SubRequestType": "RelVal", 
+        "SubRequestType": "Extension", 
         "Task1": {
             "AcquisitionEra": "CMSSW_12_0_0", 
             "CMSSWVersion": "CMSSW_12_0_0", 

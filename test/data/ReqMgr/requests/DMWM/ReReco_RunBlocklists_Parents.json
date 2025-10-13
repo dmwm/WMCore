@@ -29,7 +29,7 @@
             "CheckList": ["ReReco workflow; ReReco with IncludeParents; ReReco with run whitelist;",
                           "ReReco with block whitelist; ReReco multicore; ReReco with TrustSitelists enabled"],
             "WorkFlowDesc": ["ReReco MINIAOD with 3 blocks whitelisted; but only 2 blocks processed out of 4 runs whitelisted;",
-                             "Including 4 AOD parent blocks; Running with 2 cores and 3GB of memory"]
+                             "Including 4 AOD parent blocks; Running with 2 cores and 4GB of memory"]
         },
         "ConfigCacheID": "544d8059f5f200f8959e2e4fab11a94e",
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",

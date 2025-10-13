@@ -22,6 +22,7 @@ from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
 from WMCore.Services.TagCollector.TagCollector import TagCollector
 
+
 def activityToType(jobActivity):
     """
     Function to map a workflow activity to a generic CMS job type.
@@ -138,7 +139,7 @@ class SimpleCondorPlugin(BasePlugin):
         # These are added now by the condor client
         #self.x509userproxysubject = proxy.getSubject()
         #self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
-        
+
         self.tc = TagCollector()
 
         self.useCMSToken = getattr(config.JobSubmitter, 'useOauthToken', False)
@@ -163,7 +164,7 @@ class SimpleCondorPlugin(BasePlugin):
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
 
-            (sub, jobParams) = self.createSubmitRequest(jobsReady)
+            (sub, jobParams) = self.createSubmitRequest(jobsReady, cmsswMicroArchs=info)
 
             logging.debug("Start: Submitting %d jobs using Condor Python Submit", len(jobParams))
             try:
@@ -494,17 +495,17 @@ class SimpleCondorPlugin(BasePlugin):
         return
 
 
-    def getJobParameters(self, jobList):
+    def getJobParameters(self, jobList, cmsswMicroArchs=None):
         """
         _getJobParameters_
+        :param jobList: list of jobs to submit
+        :param cmsswMicroArchs: dictionary of CMSSW micro-architectures
 
         Return a list of dictionaries with submit parameters per job.
         """
 
         undefined = 'UNDEFINED'
         jobParameters = []
-        # fetch an up-to-date list of CMSSW micro-architectures
-        rel_microarchs = self.tc.defaultMicroArchVersionNumberByRelease()
 
         for job in jobList:
             ad = {}
@@ -665,7 +666,7 @@ class SimpleCondorPlugin(BasePlugin):
             if 'X86_64' not in requiredArchs.split(","):
                 ad['My.REQUIRED_MINIMUM_MICROARCH'] = "0"
             else:
-                minMicroArch = self.tc.getGreaterMicroarchVersionNumber(cmsswVersions, rel_microarchs=rel_microarchs)
+                minMicroArch = self.tc.getGreaterMicroarchVersionNumber(cmsswVersions, rel_microarchs=cmsswMicroArchs)
                 ad['My.REQUIRED_MINIMUM_MICROARCH'] = str(minMicroArch) 
 
             # Now AND all the new job requirements together - else default to empty string
@@ -676,12 +677,13 @@ class SimpleCondorPlugin(BasePlugin):
         return jobParameters
 
 
-    def createSubmitRequest(self, jobList):
+    def createSubmitRequest(self, jobList, cmsswMicroArchs=None):
         """
         _createSubmitRequest_
+        :param jobList: list of jobs to submit
+        :param cmsswMicroArchs: dictionary of CMSSW micro-architectures
 
         Return the submit object to pass to htcondor.Submit()
-
         """
 
         sub = htcondor.Submit("""
@@ -712,6 +714,6 @@ class SimpleCondorPlugin(BasePlugin):
         sub['My.CMS_WMTool'] = classad.quote("WMAgent")
         sub['My.CMS_SubmissionTool'] = classad.quote("WMAgent")
 
-        jobParameters = self.getJobParameters(jobList)
+        jobParameters = self.getJobParameters(jobList, cmsswMicroArchs=cmsswMicroArchs)
 
         return sub, jobParameters

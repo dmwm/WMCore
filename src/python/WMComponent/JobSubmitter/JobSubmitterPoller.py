@@ -33,6 +33,7 @@ from WMCore.WMException import WMException
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
+from WMCore.Services.TagCollector.TagCollector import TagCollector
 
 from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
 
@@ -103,6 +104,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.drainSitesSet = set()
         self.abortSites = set()
         self.refreshPollingCount = 0
+
+        # TagCollector for getting the CMSSW micro-architectures
+        tcCacheHours = getattr(self.config.JobSubmitter, 'TagCollectorCacheHours', 3)
+        self.tc = TagCollector(configDict={'cacheduration': tcCacheHours})
 
         try:
             if not getattr(self.config.JobSubmitter, 'submitDir', None):
@@ -744,6 +749,15 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.debug("There are no packages to submit.")
             return
 
+        # Update cache of CMSSW micro-architectures
+        try:
+            cmsswMicroArchs = self.tc.defaultMicroArchVersionNumberByRelease()
+        except Exception as ex:
+            msg = f"Failed to update cache of CMSSW micro-architectures: {str(ex)}. "
+            msg += "Retrying again in the next cycle."
+            logging.error(msg)
+            return
+
         for package in jobsToSubmit:
             jobs = jobsToSubmit.get(package, [])
             for job in jobs:
@@ -756,7 +770,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         myThread.transaction.begin()
 
         # Run the actual underlying submit code using bossAir
-        successList, failList = self.bossAir.submit(jobs=jobList)
+        successList, failList = self.bossAir.submit(jobs=jobList, info=cmsswMicroArchs)
         logging.info("Jobs that succeeded/failed submission: %d/%d.", len(successList), len(failList))
 
         # Propagate states in the WMBS database

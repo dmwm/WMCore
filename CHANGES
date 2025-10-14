@@ -1,3 +1,7 @@
+2.4.5rc2 to 2.4.5rc3:
+  - Migrate from htcondor to htcondor2 (import htcondor2/classad2 as htcondor/classad, for compatibility) Deprecate PyCondorUtils (not used by CRAB anymore). (Kenyi Hurtado) #12438
+
+
 2.4.5rc1 to 2.4.5rc2:
 
 

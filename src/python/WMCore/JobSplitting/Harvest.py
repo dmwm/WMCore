@@ -150,6 +150,7 @@ class Harvest(JobFactory):
             if endOfRun:
                 self.currentJob.addBaggageParameter("runIsComplete", True)
             self.mergeLumiRange(self.currentJob['mask']['runAndLumis'])
+            self.currentJob.addResourceEstimates(memory=self.memoryReq)
         return
 
     def createMultiRunJob(self, locationDict, location, baseName, harvestType, runDict, endOfRun):
@@ -174,6 +175,7 @@ class Harvest(JobFactory):
         if endOfRun:
             self.currentJob.addBaggageParameter("runIsComplete", True)
         self.mergeLumiRange(self.currentJob['mask']['runAndLumis'])
+        self.currentJob.addResourceEstimates(memory=self.memoryReq)
 
         # now calculate the minimum and maximum run number, it has to go to the root name
         minRun = min(self.currentJob['mask']['runAndLumis'].keys())
@@ -216,6 +218,7 @@ class Harvest(JobFactory):
         runWhitelist = set(kwargs.get('runWhitelist', []))
         runBlacklist = set(kwargs.get('runBlacklist', []))
         goodRunList = runWhitelist.difference(runBlacklist)
+        _tpEvt, _spEvt, self.memoryReq = self.getPerformanceParameters(kwargs.get('performance', {}))
 
         daoFactory = DAOFactory(package="WMCore.WMBS",
                                 logger=myThread.logger,

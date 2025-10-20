@@ -1,8 +1,14 @@
+2.4.5rc5 to 2.4.5rc6:
+  - Revert "Migrate from htcondor/classad to htcondor2/classad2" (Alan Malta Rodrigues) #12461
+
+
 2.4.5rc4 to 2.4.5rc5:
+  - WMAgent: Avoid altering files in readonly area (Todor Ivanov) https://github.com/dmwm/CMSKubernetes/pull/1675
 
 
 2.4.5rc3 to 2.4.5rc4:
   - Set Harvest memory requirements in the JobFactory (Alan Malta Rodrigues) #12458
+  - Improve interactive DB sessions formating for Oracle based WMAgents (Todor Ivanov) https://github.com/dmwm/CMSKubernetes/pull/1674
 
 
 2.4.5rc2 to 2.4.5rc3:

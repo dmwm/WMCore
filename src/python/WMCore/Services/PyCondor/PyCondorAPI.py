@@ -11,7 +11,7 @@ from past.builtins import basestring
 import logging
 try:
     # This module has dependency with python binding for condor package (condor)
-    import htcondor2 as htcondor
+    import htcondor
 except ImportError:
     pass
 
@@ -111,7 +111,7 @@ class PyCondorAPI(object):
             scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
             q = self.coll.query(htcondor.AdTypes.Schedd, 'Name == "%s"' % scheddAd['Name'],
                                 projection=['CurbMatchmaking'])[0]
-            isOverloaded = q['CurbMatchmaking'].eval(q)
+            isOverloaded = q['CurbMatchmaking'].eval()
             return isOverloaded
         except Exception:
             # if there is an error, try to recreate the collector instance
@@ -121,7 +121,7 @@ class PyCondorAPI(object):
             scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
             q = self.coll.query(htcondor.AdTypes.Schedd, 'Name == "%s"' % scheddAd['Name'],
                                 projection=['CurbMatchmaking'])[0]
-            isOverloaded = q['CurbMatchmaking'].eval(q)
+            isOverloaded = q['CurbMatchmaking'].eval()
         except Exception as ex:
             msg = "Condor failed to fetch schedd attributes."
             msg += "Error message: %s" % str(ex)

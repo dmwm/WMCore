@@ -1,3 +1,6 @@
+2.4.5rc6 to 2.4.5:
+
+
 2.4.5rc5 to 2.4.5rc6:
   - Revert "Migrate from htcondor/classad to htcondor2/classad2" (Alan Malta Rodrigues) #12461
 

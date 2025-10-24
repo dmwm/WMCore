@@ -177,7 +177,7 @@ config.WorkQueueManager.queueParams["rucioAccountPU"] = "wmcore_pileup"
 config.component_("DBS3Upload")
 config.DBS3Upload.section_('DBSUploadPoller')
 config.DBS3Upload.DBSUploadPoller.pollInterval = 100
-config.DBS3Upload.DBSUploadPoller.runTimeEst = 6000
+config.DBS3Upload.DBSUploadPoller.runTimeEst = 6001
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
 config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel

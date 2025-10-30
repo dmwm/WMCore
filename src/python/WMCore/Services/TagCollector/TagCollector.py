@@ -7,7 +7,7 @@ standard_library.install_aliases()
 
 import logging
 import os
-import cgi
+
 from subprocess import Popen, PIPE
 from urllib.parse import urlparse
 
@@ -46,24 +46,13 @@ class TagCollector(Service):
         self.tmpReleasesXML = "/tmp/ReleasesXML"
 
     def parseCvmfsReleasesXML(self):
-
-        form = cgi.FieldStorage()
-
+        """
+        Parses the ReleasesXML file from the releases.map in cvmfs
+        """
         production = "type=Production;"
-        if ("anytype" in form) and form["anytype"].value=="1":
-            production=""
-
         announced="state=Announced;"
-        if ("deprel" in form) and form["deprel"].value=="1":
-            announced="state=Deprecated;"
-        
         anyarch=False
-        if ("anyarch" in form) and form["anyarch"].value=="1":
-            anyarch=True
-
         architecture=""
-        if "architecture" in form:
-            architecture="architecture="+form["architecture"].value+";"
 
         releasesFile = open(self.cvmfsReleasesMap, "r", encoding="utf-8")
 

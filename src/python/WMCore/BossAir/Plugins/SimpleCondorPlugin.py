@@ -494,6 +494,15 @@ class SimpleCondorPlugin(BasePlugin):
 
         return
 
+    def isJobTokenReady(self, jobCMSSWVersions):
+        """
+        If any of the requested CMSSW versions are not token ready, return False.
+        If a given CMSSW version is not in the map, it is assumed that it is a
+        newer release, hence supporting token.
+        :param jobCMSSWVersions: list of CMSSW versions
+        :return: True if the job is token ready, False otherwise
+        """
+        return all(self.cmssw_token_map.get(cmsswVer, True) for cmsswVer in jobCMSSWVersions)
 
     def getJobParameters(self, jobList, cmsswMicroArchs=None):
         """
@@ -524,8 +533,11 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
 
             # Allow oauth based token authentication
-            if self.useCMSToken:
+            isJobTokenReady = self.isJobTokenReady(job.get('swVersion'))
+            if self.useCMSToken and isJobTokenReady:
                 ad['use_oauth_services'] = "cms"
+            else:
+                ad['use_oauth_services'] = undefined
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))

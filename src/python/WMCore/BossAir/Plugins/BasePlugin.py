@@ -62,8 +62,9 @@ class BasePlugin(object):
         # NOTE: Don't overwrite this.
         # However stateMap should be implemented in child class.
         self.states = list(self.stateMap())
-
-
+        # load a map of CMSSW versions to token readiness
+        with open('cmssw_token_readiness_map.json', 'r') as f:
+            self.cmssw_token_map = json.load(f)
 
     def submit(self, jobs, info=None):
         """

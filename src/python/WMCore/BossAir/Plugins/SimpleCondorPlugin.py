@@ -21,6 +21,7 @@ from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
 from WMCore.Services.TagCollector.TagCollector import TagCollector
+from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported
 
 
 def activityToType(jobActivity):
@@ -498,6 +499,29 @@ class SimpleCondorPlugin(BasePlugin):
 
         return
 
+    def isJobTokenReady(self, jobCMSSWVersions):
+        """
+        Check if all requested CMSSW versions support token-based authentication.
+
+        Performs two checks for each CMSSW version:
+        1. CMSSW version threshold: Version must be >= CMSSW_10_6_47 (MIN_CMSSW_FOR_TOKENS)
+        2. CMSSW version above the minimum version threshold, but still with an XRootD version
+           that does not fully support tokens.
+
+        :param jobCMSSWVersions: List of CMSSW version strings to check
+        :return: True if all CMSSW versions are token ready, False otherwise
+        """
+        MIN_CMSSW_FOR_TOKENS = "CMSSW_10_6_47"
+        # first check: is CMSSW version greater than a minimum version that supports tokens?
+        for cmsswVer in jobCMSSWVersions:
+            if isCMSSWSupported(cmsswVer, MIN_CMSSW_FOR_TOKENS) is False:
+                return False
+    
+        # second check: is CMSSW version in the list of versions that do not support tokens?
+        for cmsswVer in jobCMSSWVersions:
+            if cmsswVer in self.cmssw_no_token_support:
+                return False
+        return True
 
     def getJobParameters(self, jobList, cmsswMicroArchs=None):
         """
@@ -528,8 +552,11 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
 
             # Allow oauth based token authentication
-            if self.useCMSToken:
+            isJobTokenReady = self.isJobTokenReady(job.get('swVersion'))
+            if self.useCMSToken and isJobTokenReady:
                 ad['use_oauth_services'] = "cms"
+            else:
+                ad['use_oauth_services'] = undefined
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))

@@ -6,12 +6,13 @@ from Utils.Utilities import decodeBytesToUnicode
 standard_library.install_aliases()
 
 import logging
-
+from os import path
 from urllib.parse import urlparse
 
 from collections import defaultdict
 from WMCore.Services.Service import Service
 from WMCore.Services.TagCollector.XMLUtils import xml_parser
+
 
 class TagCollector(Service):
     """
@@ -45,17 +46,19 @@ class TagCollector(Service):
 
     def parseCvmfsReleasesXML(self, releasesMap, releasesXML):
         """
+        _parseCvmfsReleasesXML_
+        
         Parses the ReleasesXML file from the releases.map in cvmfs
         """
         production = "type=Production;"
-        announced="state=Announced;"
-        anyarch=False
-        architecture=""
-        archs = {}
-        rels = []
+        announced = "state=Announced;"
+        anyarch = False
+        architecture = ""
 
         with open(releasesMap, "r", encoding="utf-8") as releasesFile:
+            archs = {}
             for line in releasesFile:
+                rels = []
                 if not anyarch and 'prodarch=1;' not in line:
                     continue
 
@@ -93,7 +96,7 @@ class TagCollector(Service):
                     archs[arch].append(
                         """<project label="%(label)s" type="%(type)s" state="%(state)s"%(extra_tag)s/>"""
                         % data
-                    )
+                        )
 
         with open(releasesXML, "w", encoding="utf-8") as xml:
             xml.write("<projects>\n")
@@ -117,11 +120,12 @@ class TagCollector(Service):
 
         TODO: Probably want to move this up into Service
         """
+
         try:
             if not args:
                 args = self.tcArgs
 
-            cFile = '%s_%s'% (self.cFileUrlPath, callname.replace("/", "_"))
+            cFile = '%s_%s' % (self.cFileUrlPath, callname.replace("/", "_"))
             # If no callname or url path, the base host is getting queried
             if cFile == '_':
                 cFile = 'baseRequest'
@@ -135,20 +139,26 @@ class TagCollector(Service):
                                 verb=verb, contentType=contentType)
             result = f.read()
             f.close()
-        except:
-            logging.error('Something went wrong accessing ReleasesXML from cmssdt, perhaps the service is temporarily down')
-            logging.info('Retrying to access ReleasesXML from cvmfs')
-        
-            try:
-                self.parseCvmfsReleasesXML(releasesMap=self.cvmfsReleasesMap, releasesXML=self.tmpReleasesXML)
-                with open('/tmp/ReleasesXML', 'r', encoding='utf-8') as f:
-                    result = f.read()
-                f.close()
-            except:
-                logging.error('Something went wrong parsing /cvmfs/cms.cern.ch/releases.map into XML format, perhaps cvmfs is not mounted')
-                logging.exception('Unable to access ReleasesXML from cmssdt and cvmfs')
-                raise
 
+        except Exception:
+            logging.error('Something went wrong accessing ReleasesXML from cmssdt, perhaps the service is temporarily down')
+            logging.info('Checking if cvmfs is mounted')
+            cvmfsMounted = path.ismount('/cvmfs')
+            if cvmfsMounted:
+                logging.info('cvmfs is mounted. Retrying to access ReleasesXML from cvmfs')
+                try:
+                    self.parseCvmfsReleasesXML(releasesMap=self.cvmfsReleasesMap, releasesXML=self.tmpReleasesXML)
+                    with open(self.tmpReleasesXML, 'r', encoding='utf-8') as f:
+                        result = f.read()
+                    f.close()
+
+                except Exception:
+                    logging.error('Something went wrong parsing /cvmfs/cms.cern.ch/releases.map into XML format')
+                    logging.exception('Unable to access ReleasesXML from cmssdt and cvmfs')
+                    raise
+            else:
+                logging.info('cvmfs is not mounted, nothing else to do')
+                raise
 
         # overhead from REST model which returns results as strings or None
         # therefore they can be encoded by JSON to None, etc.
@@ -165,6 +175,7 @@ class TagCollector(Service):
         for row in xml_parser(data, pkey):
             yield row[pkey]
 
+    
     def releases(self, arch=None):
         "Yield CMS releases known in tag collector"
         arr = []

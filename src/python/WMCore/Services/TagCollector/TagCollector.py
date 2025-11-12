@@ -51,11 +51,11 @@ class TagCollector(Service):
         announced="state=Announced;"
         anyarch=False
         architecture=""
-        archs = {}
-        rels = []
 
         with open(releasesMap, "r", encoding="utf-8") as releasesFile:
+            archs = {}
             for line in releasesFile:
+                rels = []
                 if not anyarch and 'prodarch=1;' not in line:
                     continue
 
@@ -117,6 +117,7 @@ class TagCollector(Service):
 
         TODO: Probably want to move this up into Service
         """
+
         try:
             if not args:
                 args = self.tcArgs
@@ -138,10 +139,10 @@ class TagCollector(Service):
         except:
             logging.error('Something went wrong accessing ReleasesXML from cmssdt, perhaps the service is temporarily down')
             logging.info('Retrying to access ReleasesXML from cvmfs')
-        
+
             try:
                 self.parseCvmfsReleasesXML(releasesMap=self.cvmfsReleasesMap, releasesXML=self.tmpReleasesXML)
-                with open('/tmp/ReleasesXML', 'r', encoding='utf-8') as f:
+                with open(self.tmpReleasesXML, 'r', encoding='utf-8') as f:
                     result = f.read()
                 f.close()
             except:
@@ -165,6 +166,7 @@ class TagCollector(Service):
         for row in xml_parser(data, pkey):
             yield row[pkey]
 
+    
     def releases(self, arch=None):
         "Yield CMS releases known in tag collector"
         arr = []
@@ -235,3 +237,74 @@ class TagCollector(Service):
                 microarch = m
 
         return microarch
+
+    def _testGetResultCvmfs(self, testReleasesMap=None, testReleasesXML=None):
+        """
+        _testGetResultCvmfs_
+
+        Test the XML formatted information parsed by parseCvmfsReleasesXML
+        """
+        try:
+            self.parseCvmfsReleasesXML(releasesMap=testReleasesMap, releasesXML=testReleasesXML)
+            with open(testReleasesXML, 'r', encoding='utf-8') as f:
+                result = f.read()
+            f.close()
+        except:
+            logging.error('Something went wrong parsing the test releasesMap into the sample XML file')
+            raise
+
+        return result
+    
+    def testDataCvmfs(self, testReleasesMap=None, testReleasesXML=None):
+        """
+        _testDataCvmfs_
+
+        Test: Fetch data from cvmfs releases.map
+        """
+
+        data = self._testGetResultCvmfs(testReleasesMap=testReleasesMap, testReleasesXML=testReleasesXML)
+        pkey = 'architecture'
+        for row in xml_parser(data, pkey):
+            yield row[pkey]
+
+    def testReleasesCvmfs(self, arch=None, testReleasesMap=None, testReleasesXML=None):
+        """
+        _testReleasesCvmfs_
+
+        Test: Yield CMS releases known in tag collector from cvmfs releases.map
+        """
+        arr = []
+        for row in self.testDataCvmfs(testReleasesMap=testReleasesMap, testReleasesXML=testReleasesXML):
+            if arch:
+                if arch == row['name']:
+                    for item in row['project']:
+                        arr.append(item['label'])
+            else:
+                for item in row['project']:
+                    arr.append(item['label'])
+        return list(set(arr))
+
+    def testArchitecturesCvmfs(self, arch=None, testReleasesMap=None, testReleasesXML=None):
+        """
+        _testArchitecturesCvmfs_
+
+        Test: Yield CMS architectures known in tag collector from cvfms releases.map
+        """
+        arr = []
+        for row in self.testDataCvmfs(testReleasesMap=testReleasesMap, testReleasesXML=testReleasesXML):
+            arr.append(row['name'])
+        return list(set(arr))
+    
+    def test_releases_by_architecture_cvmfs(self, testReleasesMap=None, testReleasesXML=None):
+        """
+        _test_releases_by_architecture_cvmfs_
+
+        Test: returns CMS architectures and realease in dictionary format with cvmfs as main source
+        """
+        arch_dict = defaultdict(list)
+        for row in self.testDataCvmfs(testReleasesMap=testReleasesMap, testReleasesXML=testReleasesXML):
+            releases = set()
+            for item in row['project']:
+                releases.add(item['label'])
+            arch_dict[row['name']].extend(list(releases))
+        return dict(arch_dict)

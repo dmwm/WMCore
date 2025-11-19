@@ -77,8 +77,15 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                                 self.logger.info(msg, block, requestName)
                                 continue
             
-            self.logger.info("%s executed in %.3f secs.", self.__class__.__name__, time() - tStart)
-            return self.msRuleCleaner.cleanRucioRules(rulesToClean)
+            self.logger.info("%s executed in %.3f secs. Found %d global queue elements.", self.__class__.__name__, time() - tStart, len(globalQueueElements))
+            tmp = rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]]
+            ids = ''
+            for rid in tmp:
+                ids += rid + ', '
+                rulesToClean['CleanupStatus']['Current'].append({'RuleID': rid, 'Status': 'Pending'})
+            self.logger.info('Rules to be cleaned: %s', ids)
+            return rulesToClean
+            #return self.msRuleCleaner.cleanRucioRules(rulesToClean)
 
         else:
             print("No elements with status DONE found in GlobalQueue")

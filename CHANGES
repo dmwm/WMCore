@@ -1,3 +1,8 @@
+2.4.5 to 2.4.5.1:
+  - Keep classad dictionary keys fixed to prevent issues in htcondor2. Update to HTCondor 25.0.3 (Kenyi Hurtado) #
+-en 
+
+
 2.4.5rc6 to 2.4.5:
 
 

@@ -29,7 +29,7 @@ import time
 from pprint import pprint, pformat
 from time import gmtime, strftime
 
-import htcondor as condor
+import htcondor2 as condor
 
 from Utils.IteratorTools import flattenList
 from WMCore.Configuration import loadConfigurationFile

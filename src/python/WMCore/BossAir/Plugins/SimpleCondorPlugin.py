@@ -9,8 +9,8 @@ import os.path
 import re
 import threading
 import time
-import classad
-import htcondor
+import classad2 as classad
+import htcondor2 as htcondor
 
 from Utils import FileTools
 from Utils.IteratorTools import grouper
@@ -595,6 +595,8 @@ class SimpleCondorPlugin(BasePlugin):
             if job.get('jobExtraMatchRequirements'):
                 ad['My.DESIRED_ExtraMatchRequirements'] = job['jobExtraMatchRequirements']
                 jobRequirements.append(job['jobExtraMatchRequirements'])
+            else:
+                ad['My.DESIRED_ExtraMatchRequirements'] = undefined
 
             # Assign GPU related HTCondor macros classads to DESIRED classads above
             ad['gpus_minimum_memory'] = ad['My.DESIRED_GPUMemoryMB']

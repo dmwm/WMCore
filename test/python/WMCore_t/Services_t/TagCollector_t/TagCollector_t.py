@@ -17,12 +17,16 @@ class TagCollectorTest(unittest.TestCase):
         """
         # using the default production server
         self.tagCollecor = TagCollector()
+        self.testReleasesMap = "/tmp/testReleasesParsing.map"
+        self.testReleasesXML = "/tmp/testReleasesParsingXML"
+        
         return
 
     def testTagCollecorMethods(self):
         """
         _testTagCollecorMethods_
         """
+
         releases = self.tagCollecor.releases()
         architectures = self.tagCollecor.architectures()
         realsese_by_arch = self.tagCollecor.releases_by_architecture()
@@ -41,6 +45,29 @@ class TagCollectorTest(unittest.TestCase):
         self.assertEqual(3, microarch_testCMSSW_12_15)
         self.assertEqual(3, microarch_testCMSSW_15)
         self.assertEqual(0, microarch_testCMSSW_7_12)
+
+        releasesMap = (
+                        "architecture=el8_amd64_gcc12;label=CMSSW_15_0_15_patch3;type=Production;state=Announced;prodarch=1;default_micro_arch=x86-64-v3;\n"
+                        "architecture=el8_amd64_gcc12;label=CMSSW_15_0_15_patch4;type=Production;state=Announced;prodarch=1;default_micro_arch=x86-64-v3;\n"
+                        "architecture=el8_amd64_gcc13;label=CMSSW_16_0_0_pre1_FASTPU;type=Development;state=Announced;prodarch=1;default_micro_arch=x86-64-v3;\n"
+                        "architecture=el9_amd64_gcc12;label=CMSSW_15_0_15_patch3;type=Production;state=Announced;prodarch=1;default_micro_arch=x86-64-v3;\n"
+                        "architecture=el9_amd64_gcc12;label=CMSSW_15_0_15_patch4;type=Production;state=Announced;prodarch=1;default_micro_arch=x86-64-v3;\n"
+                    )
+        
+        with open(self.testReleasesMap, "w", encoding="utf-8") as f:
+            f.write(releasesMap)
+
+        releasesCvmfs = self.tagCollecor.testReleasesCvmfs(testReleasesMap=self.testReleasesMap, testReleasesXML=self.testReleasesXML)
+        architecturesCvmfs = self.tagCollecor.testArchitecturesCvmfs(testReleasesMap=self.testReleasesMap, testReleasesXML=self.testReleasesXML)
+        realsese_by_arch_cvmfs = self.tagCollecor.test_releases_by_architecture_cvmfs(testReleasesMap=self.testReleasesMap, testReleasesXML=self.testReleasesXML)
+
+        self.assertIn('CMSSW_15_0_15_patch3', releasesCvmfs)
+        self.assertIn('CMSSW_15_0_15_patch4', releasesCvmfs)
+        self.assertIn('el8_amd64_gcc12', architecturesCvmfs)
+        self.assertIn('el9_amd64_gcc12', architecturesCvmfs)
+        self.assertEqual(len(architecturesCvmfs), len(realsese_by_arch_cvmfs))
+        self.assertEqual(sorted(self.tagCollecor.testReleasesCvmfs(arch='el8_amd64_gcc12', testReleasesMap=self.testReleasesMap, testReleasesXML=self.testReleasesXML)),
+                         sorted(realsese_by_arch_cvmfs.get('el8_amd64_gcc12')))
 
         return
 

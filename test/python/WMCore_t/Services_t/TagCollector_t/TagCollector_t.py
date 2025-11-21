@@ -17,8 +17,8 @@ class TagCollectorTest(unittest.TestCase):
         """
         # using the default production server
         self.tagCollecor = TagCollector()
-        self.testReleasesMap = "/tmp/testReleases.map"
-        self.testReleasesXML = "/tmp/testReleasesXML"
+        self.testReleasesMap = "/tmp/testReleasesParsing.map"
+        self.testReleasesXML = "/tmp/testReleasesParsingXML"
         
         return
 

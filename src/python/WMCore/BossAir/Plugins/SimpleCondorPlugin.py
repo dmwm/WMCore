@@ -393,36 +393,40 @@ class SimpleCondorPlugin(BasePlugin):
             logging.exception(msg)
             return jobtokill
 
-        with sd.transaction() as dummyTxn:
-            for siteStrings in origSiteLists:
-                desiredList = set([site.strip() for site in siteStrings[0].split(",")])
-                extDesiredList = set([site.strip() for site in siteStrings[1].split(",")])
+        for siteStrings in origSiteLists:
+            desiredList = set([site.strip() for site in siteStrings[0].split(",")])
+            extDesiredList = set([site.strip() for site in siteStrings[1].split(",")])
 
-                if excludeSite and siteName not in desiredList:
-                    continue
-                elif not excludeSite and (siteName in desiredList or siteName not in extDesiredList):
-                    continue
-                elif excludeSite:
-                    desiredList.remove(siteName)
-                    extDesiredList.add(siteName)
-                else:  # well, then include
-                    desiredList.add(siteName)
-                    extDesiredList.remove(siteName)
+            if excludeSite and siteName not in desiredList:
+                continue
+            elif not excludeSite and (siteName in desiredList or siteName not in extDesiredList):
+                continue
+            elif excludeSite:
+                desiredList.remove(siteName)
+                extDesiredList.add(siteName)
+            else:  # well, then include
+                desiredList.add(siteName)
+                extDesiredList.remove(siteName)
 
-                # now put it back in the string format expected by condor
-                desiredListStr = ",".join(desiredList)
-                extDesiredListStr = ",".join(extDesiredList)
+            # now put it back in the string format expected by condor
+            desiredListStr = ",".join(desiredList)
+            extDesiredListStr = ",".join(extDesiredList)
 
-                try:
-                    sd.edit('DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (classad.quote(siteStrings[0]),
-                                                                                 classad.quote(siteStrings[1])),
-                            "DESIRED_Sites", classad.quote(str(desiredListStr)))
-                    sd.edit('DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (classad.quote(siteStrings[0]),
-                                                                                 classad.quote(siteStrings[1])),
-                            "ExtDESIRED_Sites", classad.quote(str(extDesiredListStr)))
-                except RuntimeError as ex:
-                    msg = 'Failed to condor edit job sites. Could be that no jobs were in condor anymore: %s' % str(ex)
-                    logging.warning(msg)
+            try:
+                constraint = 'DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (
+                    classad.quote(siteStrings[0]),
+                    classad.quote(siteStrings[1])
+                )
+                sd.edit(constraint, "ExtDESIRED_Sites", classad.quote(str(extDesiredListStr)))
+                # update constraint with new ExtDESIRED_Sites value
+                constraint = 'DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (
+                    classad.quote(siteStrings[0]),
+                    classad.quote(extDesiredListStr)
+                )
+                sd.edit(constraint, "DESIRED_Sites", classad.quote(str(desiredListStr)))
+            except RuntimeError as ex:
+                msg = 'Failed to condor edit job sites. Could be that no jobs were in condor anymore: %s' % str(ex)
+                logging.warning(msg)
 
         # now update the list of jobs to be killed
         jobtokill = [job for job in jobs if job['id'] in jobIdToKill]
@@ -487,7 +491,7 @@ class SimpleCondorPlugin(BasePlugin):
                 constraint = "WMAgent_RequestName =?= %s" % classad.quote(str(workflow))
                 constraint += " && JobPrio =!= %d" % newPriority
                 constraint += " && stringListMember(CMS_JobType, %s) " % classad.quote(str("Production, Processing"))
-                schedd.edit(constraint, 'JobPrio', classad.Literal(newPriority))
+                schedd.edit(constraint, 'JobPrio', str(newPriority))
             except Exception as ex:
                 logging.error("Failed to update JobPrio for WMAgent_RequestName=%s", str(workflow))
                 logging.exception(ex)

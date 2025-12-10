@@ -1,11 +1,17 @@
 from __future__ import (division, print_function)
 
-from time import time
+import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
 
 from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
+
+def format_timestamp(timestamp_float):
+    """Converts a float timestamp (seconds since epoch) to a readable string."""
+    # This format gives you: "2025-12-09 19:22:15"
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_float))
+
 
 class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
 
@@ -13,7 +19,7 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
 
         super(InputDataRucioRuleCleaner, self).__init__(config)
         self.globalQ = globalQueue(logger=self.logger, **config.queueParams)
-        self.msRuleCleaner = MSRuleCleaner(config, logger=self.logger)  # Initialize MSRuleCleaner
+        self.msRuleCleaner = MSRuleCleaner(config.msRuleCleaner, logger=self.logger)  # Initialize MSRuleCleaner
 
     def setConcurrentTasks(self, config):
         """
@@ -28,7 +34,7 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
         :return:       The result of MSRuleCleaner cleanRucioRules(self, wflow) method, which is True if all rules were deleted successfully, False otherwise.
         """
         
-        tStart = time()
+        tStart = time.time()
         
         #statuses = ['Available', 'Done', 'Acquired', 'Failed', 'Canceled']
         #globalQueueElements=self.globalQ.getWork({'Status':'Done'},siteJobCounts={})
@@ -42,13 +48,14 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
 
         if globalQueueElements:
             #print(f"Found {len(globalQueueElements)} elements in GlobalQueue")
+            current_time = format_timestamp(time.time())
+            self.logger.info(f"{current_time}: Found {len(globalQueueElements)} globalqueue elements.")
             for element in globalQueueElements:
                 
                 requestName = element.get('RequestName')  # Extract the RequestName field
                 percentComplete = element.get('PercentComplete', 0)  # Default to 0 if key is missing
                 percentSuccess = element.get('PercentSuccess', 0)  # Default to 0 if key is missing
 
-                
                 if percentComplete == 100 and percentSuccess == 100:
                                         
                     #'Inputs': {'/MinimumBias/ComissioningHI-v1/RAW#372d624c-089d-11e1-8347-003048caaace':
@@ -57,7 +64,7 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                     # Fetch rules for blocks
                     if blocks:
                         for block in blocks:
-                            print("Adding block ", block, " to RulesToClean")
+                            #print("Adding block ", block, " to RulesToClean")
                             dataCont = block.split('#')[0]  # Extract the container name from the block
                             
                             if dataCont in self.msRuleCleaner.globalLocks:
@@ -66,10 +73,12 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                                 self.logger.info(msg, dataCont, requestName)
                                 continue
                             try:
-                                print('Fetching rules for block:', block, "\n", config.rucioAccount, "\n", self.msRuleCleaner.rucio.listDataRules(block, account=config.rucioAccount))
-                                for rule in self.msRuleCleaner.rucio.listDataRules(block, account=config.rucioAccount):
-                                    msg = "Found %s block-level rule to be deleted for container %s"
-                                    self.logger.info(msg, rule['id'], dataCont)
+                                #print('Fetching rules for block:', block, "\n", config.rucioAccount, "\n", self.msRuleCleaner.rucio.listDataRules(block, account=config.rucioAccount))
+                                for rule in self.msRuleCleaner.rucio.listDataRules(block, account=config.msRuleCleaner['rucioAccount']):
+                                    #msg = "Found %s block-level rule to be deleted for container %s"
+                                    #self.logger.info(msg, rule['id'], dataCont)
+                                    current_time = format_timestamp(time.time())
+                                    self.logger.info(f"{current_time}: Rule {rule['id']} {block} {rule['bytes']} {requestName} to be cleaned")
                                     #cleanRules of MSRuleCleaner expects a list of rule ids and always clean the last one in the list of PlineMarkers
                                     rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]].append(rule['id'])
                             except WMRucioDIDNotFoundException:
@@ -77,18 +86,21 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                                 self.logger.info(msg, block, requestName)
                                 continue
             
-            self.logger.info("%s executed in %.3f secs. Found %d global queue elements.", self.__class__.__name__, time() - tStart, len(globalQueueElements))
-            tmp = rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]]
-            ids = ''
-            for rid in tmp:
-                ids += rid + ', '
-                rulesToClean['CleanupStatus']['Current'].append({'RuleID': rid, 'Status': 'Pending'})
-            self.logger.info('Rules to be cleaned: %s', ids)
-            return rulesToClean
-            #return self.msRuleCleaner.cleanRucioRules(rulesToClean)
+            current_time = format_timestamp(time.time())
+            self.logger.info(f"{current_time}: {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
+            #tmp = rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]]
+            #ids = ''
+            #for rid in tmp:
+            #    ids += rid + ', '
+            #    rulesToClean['CleanupStatus']['Current'].append({'RuleID': rid, 'Status': 'Pending'})
+            #self.logger.info('Rules to be cleaned: %s', ids)
+            #return rulesToClean
+            return self.msRuleCleaner.cleanRucioRules(rulesToClean)
 
         else:
-            print("No elements with status DONE found in GlobalQueue")
-
-        self.logger.info("%s executed in %.3f secs.", self.__class__.__name__, time() - tStart)
+            current_time = format_timestamp(time.time())
+            self.logger.info(f"{current_time}: No elements with status DONE found in GlobalQueue")
+        
+        current_time = format_timestamp(time.time())
+        self.logger.info(f"{current_time}: {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
         return

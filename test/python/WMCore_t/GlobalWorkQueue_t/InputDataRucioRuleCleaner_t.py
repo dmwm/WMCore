@@ -37,7 +37,8 @@ class DictWithAttrs(dict):
 class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
 
     def setUp(self):   
-        self.msConfig = {"verbose": True,
+        self.config = {}
+        self.msRuleCleaner = {"verbose": True,
                          "interval": 1 * 60,
                          "services": ['ruleCleaner'],
                          "rucioAccount": 'wma_test',
@@ -57,10 +58,10 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}
-        self.rucioConfigDict = {"rucio_host": self.msConfig['rucioUrl'],
-                                "auth_host": self.msConfig['rucioAuthUrl'],
+        self.rucioConfigDict = {"rucio_host": self.msRuleCleaner['rucioUrl'],
+                                "auth_host": self.msRuleCleaner['rucioAuthUrl'],
                                 "auth_type": "x509",
-                                "account": self.msConfig['rucioAccount'],
+                                "account": self.msRuleCleaner['rucioAccount'],
                                 "ca_cert": False,
                                 "timeout": 30,
                                 "request_retries": 3,
@@ -81,11 +82,11 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         self.testInit.setupCouch('local_workqueue_t_inbox', *self.couchApps)
         self.testInit.generateWorkDir()
 
-        self.msConfig.update({'QueueURL':self.testInit.couchUrl})
+        self.msRuleCleaner.update({'QueueURL':self.testInit.couchUrl})
            
         self.queueParams = {}
         self.queueParams['log_reporter'] = "Services_WorkQueue_Unittest"
-        self.queueParams['rucioAccount'] = self.msConfig['rucioAccount']
+        self.queueParams['rucioAccount'] = self.msRuleCleaner['rucioAccount']
         self.queueParams['rucioAuthUrl'] = "http://cms-rucio-int.cern.ch"
         self.queueParams['rucioUrl'] = "https://cms-rucio-auth-int.cern.ch"
         self.queueParams['_internal_name'] = 'GlobalWorkQueueTest'
@@ -96,12 +97,14 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         print("X509_USER_KEY:", os.getenv("X509_USER_KEY"))
       
         # Create config object with attributes
-        self.config_obj = DictWithAttrs(self.msConfig)
+        self.config_obj = DictWithAttrs(self.config)
         #additional attributes needed by cherrypy periodic task
         self.config_obj._internal_name = "GlobalWorkQueueTest"
         self.config_obj.log_file = "test.log"
         #additional attributes needed by global workqueue
         self.config_obj.queueParams = self.queueParams
+        #additional attributes needed by MSRuleCleaner
+        self.config_obj.msRuleCleaner = self.msRuleCleaner
         #duration for the periodic task in seconds
         self.config_obj.cleanInputDataRucioRuleDuration = 10
 
@@ -131,9 +134,9 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         cleaner.globalQ = globalQ
 
         #Make MSRuleCleaner
-        msRuleCleaner = MSRuleCleaner(self.config_obj,logger=cleaner.logger)
+        msRuleCleaner = MSRuleCleaner(self.config_obj.msRuleCleaner,logger=cleaner.logger)
         msRuleCleaner.resetCounters()
-        msRuleCleaner.rucio = Rucio.Rucio(self.msConfig['rucioAccount'],
+        msRuleCleaner.rucio = Rucio.Rucio(self.msRuleCleaner['rucioAccount'],
                                                hostUrl=self.rucioConfigDict['rucio_host'],
                                                authUrl=self.rucioConfigDict['auth_host'],
                                                configDict=self.rucioConfigDict)
@@ -200,7 +203,7 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         start_time = time.time()
         while rule_info and not delResult and timeleft < 300:
             #now delete it
-            print('Manually deleting rucio rules: ', blockNames[0], cleaner.msRuleCleaner.rucio.listDataRules(blockNames[0], account=self.msConfig['rucioAccount']))
+            print('Manually deleting rucio rules: ', blockNames[0], cleaner.msRuleCleaner.rucio.listDataRules(blockNames[0], account=self.msRuleCleaner['rucioAccount']))
             delResult = cleaner.msRuleCleaner.rucio.deleteRule(rule_id[0])
             print("Deleted Rucio rule with ID:", rule_id, delResult)
             if delResult: break
@@ -238,9 +241,9 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         cleaner.globalQ = globalQ
 
         #Make MSRuleCleaner
-        msRuleCleaner = MSRuleCleaner(self.config_obj,logger=cleaner.logger)
+        msRuleCleaner = MSRuleCleaner(self.config_obj.msRuleCleaner,logger=cleaner.logger)
         msRuleCleaner.resetCounters()
-        msRuleCleaner.rucio = Rucio.Rucio(self.msConfig['rucioAccount'],
+        msRuleCleaner.rucio = Rucio.Rucio(self.msRuleCleaner['rucioAccount'],
                                                hostUrl=self.rucioConfigDict['rucio_host'],
                                                authUrl=self.rucioConfigDict['auth_host'],
                                                configDict=self.rucioConfigDict)
@@ -326,7 +329,7 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         start_time = time.time()
         while rule_info and not delResult and timeleft < 300:
             #now delete it
-            print('Manually deleting rucio rules: ', blockNames[0], cleaner.msRuleCleaner.rucio.listDataRules(blockNames[0], account=self.msConfig['rucioAccount']))
+            print('Manually deleting rucio rules: ', blockNames[0], cleaner.msRuleCleaner.rucio.listDataRules(blockNames[0], account=self.msRuleCleaner['rucioAccount']))
             delResult = cleaner.msRuleCleaner.rucio.deleteRule(rule_id[0])
             print("Deleted Rucio rule with ID:", rule_id, delResult)
             if delResult: break

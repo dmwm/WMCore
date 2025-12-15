@@ -38,7 +38,7 @@ class PyCondorAPI(object):
         :return: a list of classads representing the matching jobs, or None if failed
         """
         jobs = None  # return None to signalize the query failed
-        queryOpts = htcondor.htcondor.QueryOpts.SummaryOnly
+        queryOpts = htcondor.QueryOpts.SummaryOnly
         try:
             return self.schedd.query(opts=queryOpts)
         except Exception:

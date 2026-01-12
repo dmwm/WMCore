@@ -213,7 +213,7 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         if not delResult and timeleft >= 300:
             print("Failed to delete the rule after 5 minutes, exiting...")
        
-        self.assertTrue(results['CleanupStatus']['Current'])
+        self.assertTrue(results)
        
 
     def testInputDataRucioRuleCleanerWithThreading(self):

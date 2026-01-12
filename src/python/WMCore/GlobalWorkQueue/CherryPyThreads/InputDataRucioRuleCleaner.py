@@ -42,14 +42,14 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
             
         #print("Elements in GlobalQueue cleanRucioRules:")
         #print(json.dumps(globalQueueElements,indent=2))
-
-        #to be able to use cleanRules method of MSRuleCleaner
-        rulesToClean = {'PlineMarkers':['Current'], 'RulesToClean': {'Current': []}, 'CleanupStatus': {'Current': []}} 
+        
+        do_cleaning = False
 
         if globalQueueElements:
             #print(f"Found {len(globalQueueElements)} elements in GlobalQueue")
             current_time = format_timestamp(time.time())
             self.logger.info(f"{current_time}: Found {len(globalQueueElements)} globalqueue elements.")
+
             for element in globalQueueElements:
                 
                 requestName = element.get('RequestName')  # Extract the RequestName field
@@ -57,11 +57,15 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                 percentSuccess = element.get('PercentSuccess', 0)  # Default to 0 if key is missing
 
                 if percentComplete == 100 and percentSuccess == 100:
-                                        
+
+                    #to be able to use cleanRules method of MSRuleCleaner
+                    rulesToClean = {'PlineMarkers':['Current'], 'RulesToClean': {'Current': []}, 'CleanupStatus': {'Current': []}}
+
                     #'Inputs': {'/MinimumBias/ComissioningHI-v1/RAW#372d624c-089d-11e1-8347-003048caaace':
                     blocks = element.get('Inputs')  # Example key for dataset
                                                        
                     # Fetch rules for blocks
+                    cleanedRules_info = {}
                     if blocks:
                         for block in blocks:
                             #print("Adding block ", block, " to RulesToClean")
@@ -74,20 +78,48 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                                 continue
                             try:
                                 #print('Fetching rules for block:', block, "\n", config.rucioAccount, "\n", self.msRuleCleaner.rucio.listDataRules(block, account=config.rucioAccount))
-                                for rule in self.msRuleCleaner.rucio.listDataRules(block, account=config.msRuleCleaner['rucioAccount']):
-                                    #msg = "Found %s block-level rule to be deleted for container %s"
-                                    #self.logger.info(msg, rule['id'], dataCont)
-                                    current_time = format_timestamp(time.time())
-                                    self.logger.info(f"{current_time}: Rule {rule['id']} {block} {rule['bytes']} {requestName} to be cleaned")
-                                    #cleanRules of MSRuleCleaner expects a list of rule ids and always clean the last one in the list of PlineMarkers
-                                    rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]].append(rule['id'])
+                                rules = self.msRuleCleaner.rucio.listDataRules(block, account=config.msRuleCleaner['rucioAccount'])
+                                #found rules for this block. If the rules of this block already cleaned there is no rules found
+                                if rules:
+                                    cleanedRules_info[block] = {}
+                                    #one block can have multiple rules
+                                    cleanedRules_info[block]['id'] = []
+                                    cleanedRules_info[block]['bytes'] = []
+                                    for rule in rules:
+                                        #msg = "Found %s block-level rule to be deleted for container %s"
+                                        #self.logger.info(msg, rule['id'], dataCont)
+                                        #current_time = format_timestamp(time.time())
+                                        #self.logger.info(f"{current_time}: Rule {rule['id']} {block} {rule['bytes']} {requestName} to be cleaned")
+                                        cleanedRules_info[block]['id'].append(rule['id'])
+                                        cleanedRules_info[block]['bytes'].append(rule['bytes'])
+                                        #cleanRules of MSRuleCleaner expects a list of rule ids and always clean the last one in the list of PlineMarkers
+                                        rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]].append(rule['id'])
                             except WMRucioDIDNotFoundException:
                                 msg = "Block: %s not found in Rucio for workflow: %s."
                                 self.logger.info(msg, block, requestName)
                                 continue
+                    
+                    if cleanedRules_info:
+                        current_time = format_timestamp(time.time())
+                        self.logger.info(f"{current_time}: Start cleaning rules for completed element {element.id}")
+                        
+                        do_cleaning = True
+
+                        for block, info in cleanedRules_info.items():
+                            for rule_id, size in zip(info["id"], info["bytes"]):
+                                self.logger.info(f"{current_time} Rule to clean: {rule_id} {block} {size} {requestName}")
+                        
+                        self.msRuleCleaner.cleanRucioRules(rulesToClean)
+                        
+                        current_time = format_timestamp(time.time())
+                        self.logger.info(f"{current_time}: End cleaning rules for completed element {element.id}")
             
-            current_time = format_timestamp(time.time())
-            self.logger.info(f"{current_time}: {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
+            if not do_cleaning:
+                current_time = format_timestamp(time.time())
+                self.logger.info(f"{current_time} No cleaning happened: There are no completed workqueue elements or rules already cleaned")    
+            
+            #current_time = format_timestamp(time.time())
+            #self.logger.info(f"{current_time}: {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
             #tmp = rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]]
             #ids = ''
             #for rid in tmp:
@@ -95,12 +127,12 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
             #    rulesToClean['CleanupStatus']['Current'].append({'RuleID': rid, 'Status': 'Pending'})
             #self.logger.info('Rules to be cleaned: %s', ids)
             #return rulesToClean
-            return self.msRuleCleaner.cleanRucioRules(rulesToClean)
+            #return self.msRuleCleaner.cleanRucioRules(rulesToClean)
 
         else:
             current_time = format_timestamp(time.time())
-            self.logger.info(f"{current_time}: No elements with status DONE found in GlobalQueue")
+            self.logger.info(f"{current_time} No elements found in GlobalQueue")
         
         current_time = format_timestamp(time.time())
-        self.logger.info(f"{current_time}: {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
-        return
+        self.logger.info(f"{current_time} {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
+        return do_cleaning

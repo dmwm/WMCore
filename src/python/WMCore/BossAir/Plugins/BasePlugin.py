@@ -4,7 +4,8 @@ _BasePlugin_
 
 Base class for BossAir plugins
 """
-
+import json
+import logging
 from builtins import object, str, bytes
 from future.utils import viewvalues
 
@@ -62,9 +63,16 @@ class BasePlugin(object):
         # NOTE: Don't overwrite this.
         # However stateMap should be implemented in child class.
         self.states = list(self.stateMap())
-        # load a map of CMSSW versions to token readiness
-        with open('cmssw_no_token_support.json', 'r') as f:
-            self.cmssw_no_token_support = json.load(f)
+        # load a list of CMSSW versions that cannot support token auth/authz
+        token_file_path = os.path.join(os.path.dirname(__file__), 'cmssw_no_token_support.json')
+        try:
+            with open(token_file_path, 'r') as f:
+                self.cmssw_no_token_support = json.load(f)
+        except FileNotFoundError:
+            logging.error("JSON file %s not found. Proceeding without it.", token_file_path)
+            self.cmssw_no_token_support = []
+        except Exception as e:
+            raise BossAirPluginException("Error loading %s file: %s" % (token_file_path, e))
 
     def submit(self, jobs, info=None):
         """

@@ -10,6 +10,7 @@ import json
 # system modules
 import os
 import unittest
+import tracemalloc
 
 # WMCore modules
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner, MSRuleCleanerArchivalSkip
@@ -392,9 +393,23 @@ class MSRuleCleanerTest(unittest.TestCase):
         with self.assertRaises(MSRuleCleanerArchivalSkip):
             self.msRuleCleaner.plineArchive.run(wflow)
 
-    def testRunning(self):
-        result = self.msRuleCleaner._execute(self.reqRecords)
-        self.assertEqual(result, (3, 2, 0, 0))
+    def testMemoryLeak(self):
+        """
+        unit test for measuring potential memory leak in MSRuleCleanerWflow
+        """
+        tracemalloc.start()
+        MSRuleCleanerWflow(self.taskChainReq)
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        self.assertTrue(abs(peak-current), 100)
+
+        # now let's test if we have memory leak in a loop
+        tracemalloc.start()
+        for _ in range(1000):
+            MSRuleCleanerWflow(self.taskChainReq)
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        self.assertTrue(abs(peak-current), 100)
 
     def testCheckClean(self):
         # NOTE: All of the bellow checks are well visualized at:

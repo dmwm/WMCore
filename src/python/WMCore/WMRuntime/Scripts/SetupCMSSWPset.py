@@ -17,7 +17,7 @@ from PSetTweaks.WMTweak import makeJobTweak, makeOutputTweak, makeTaskTweak, res
 from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
-from WMCore.WMRuntime.Tools.Scram import Scram
+from WMCore.WMRuntime.Tools.Scram import Scram, isCMSSWSupported
 
 
 def factory(module, name):
@@ -577,6 +577,26 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
+    def handleScitagConfig(self):
+        """
+        _handleScitagConfig_
+
+        Enable ScitagConfig service with productionCase flag for CMSSW releases
+        that support it (>= CMSSW_16_0_0). This enables the "Production Input"
+        scitag flow label for network packet labeling.
+        """
+        cmsswVersion = self.getCmsswVersion()
+        if not isCMSSWSupported(cmsswVersion, "CMSSW_16_0_0"):
+            return
+
+        self.logger.info("Enabling ScitagConfig with productionCase for CMSSW version: %s", cmsswVersion)
+        tweak = PSetTweak()
+        tweak.addParameter("process.ScitagConfig",
+                           "customTypeCms.Service('ScitagConfig', productionCase=cms.untracked.bool(True))")
+        self.applyPsetTweak(tweak, skipIfSet=True)
+
+        return
+
     def handleEnforceGUIDInFileName(self, secondaryInput=None):
         """
         _handleEnforceGUIDInFileName_
@@ -713,6 +733,7 @@ class SetupCMSSWPset(ScriptInterface):
             raise RuntimeError(msg)
 
         self.handleCondorStatusService()
+        self.handleScitagConfig()
         self.fixupProcess()
 
         # In case of CRAB3, the number of threads in the PSet should not be overridden

@@ -591,9 +591,12 @@ class SetupCMSSWPset(ScriptInterface):
 
         self.logger.info("Enabling ScitagConfig with productionCase for CMSSW version: %s", cmsswVersion)
         tweak = PSetTweak()
-        tweak.addParameter("process.ScitagConfig",
-                           "customTypeCms.Service('ScitagConfig', productionCase=cms.untracked.bool(True))")
+        tweak.addParameter("process.ScitagConfig", "customTypeCms.Service('ScitagConfig')")
         self.applyPsetTweak(tweak, skipIfSet=True)
+
+        tweak = PSetTweak()
+        tweak.addParameter("process.ScitagConfig.productionCase", "customTypeCms.untracked.bool(True)")
+        self.applyPsetTweak(tweak)
 
         return
 

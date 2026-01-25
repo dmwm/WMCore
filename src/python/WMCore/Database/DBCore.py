@@ -37,6 +37,10 @@ class DBInterface(WMObject):
         self.engine = engine
         self.maxBindsPerQuery = 500
 
+    def _generateCursor(self, sql, binds):
+        for bind in binds:
+            yield self.engine.execute(sql, bind)
+
     def buildbinds(self, sequence, thename, therest=[{}]):
         """
         Build a list of binds. Can be used recursively, e.g.:
@@ -95,9 +99,10 @@ class DBInterface(WMObject):
             Trying to select many
             """
             if returnCursor:
-                result = []
-                for bind in b:
-                    result.append(connection.execute(s, bind))
+                if b:
+                    return self._generateCursor(s, b)
+                else:
+                    return []
             else:
                 result = ResultSet()
                 for bind in b:
@@ -128,6 +133,7 @@ class DBInterface(WMObject):
 
         """
         connection = None
+        closeConnection = True
         try:
             if not conn:
                 connection = self.connection()
@@ -155,9 +161,13 @@ class DBInterface(WMObject):
                 #Run single SQL statement for a list of binds - use execute_many()
                 if not transaction:
                     trans = connection.begin()
-                for subBinds in grouper(binds, self.maxBindsPerQuery):
-                    result.extend(self.executemanybinds(sqlstmt[0], subBinds,
-                                                        connection=connection, returnCursor=returnCursor))
+                if sqlstmt[0].lower().endswith('select', 0, 6) and returnCursor:
+                    return self.executemanybinds(sqlstmt[0], binds, connection=connection,
+                                                 returnCursor=returnCursor)
+                else:
+                    for subBinds in grouper(binds, self.maxBindsPerQuery):
+                        result.extend(self.executemanybinds(sqlstmt[0], subBinds,
+                                            connection=connection, returnCursor=returnCursor))
 
                 if not transaction:
                     trans.commit()

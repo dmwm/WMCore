@@ -12,6 +12,9 @@ from future.utils import viewitems
 import logging
 import os
 import sys
+import pickle
+import json
+import time
 from io import BytesIO
 from functools import reduce
 from gzip import GzipFile
@@ -21,6 +24,7 @@ from mimetypes import guess_type
 try:
     # python2
     import urllib2
+
     HTTPError = urllib2.HTTPError
     OpenerDirector = urllib2.OpenerDirector
     Request = urllib2.Request
@@ -28,6 +32,7 @@ try:
 except:
     # python3
     import urllib.request
+
     HTTPError = urllib.error.HTTPError
     OpenerDirector = urllib.request.OpenerDirector
     Request = urllib.request.Request
@@ -40,15 +45,30 @@ from WMCore.FwkJobReport.Report import Report
 from WMCore.Services.HTTPS.HTTPSAuthHandler import HTTPSAuthHandler
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
+from WMCore.Storage.DeleteMgr import DeleteMgr, DeleteMgrError
+from WMCore.Storage.FileManager import DeleteMgr as NewDeleteMgr
+import WMCore.Storage.StageOutMgr as StageOutMgr
 
 class DQMUpload(Executor):
     """
     _DQMUpload_
 
     Execute a DQMUpload Step
+    We support and execute two DQM Upload methods:
+    1) Old method: Upload ROOT files to old DQM gui (visDQMUpload)
+    2) New method: Upload ROOT files to EOS and register file in new DQM gui
 
+    Refer to the GH issue below for more information  and details:
+    https://github.com/dmwm/WMCore/issues/10287
     """
+
+    def __init__(self):
+        super(DQMUpload, self).__init__()
+        self.retryDelay = 300
+        self.retryCount = 3
+        self.registerLFNBase = '/store/group/dqmgui'
+        self.registerEOSPrefix = '/eos/cms'
 
     def pre(self, emulator=None):
         """
@@ -110,9 +130,11 @@ class DQMUpload(Executor):
             for analysisFile in analysisFiles:
                 # only deal with DQM files
                 if analysisFile.FileClass == "DQM":
-                    # uploading file to the server
+                    # uploading file to the server (old visDQMUpload method)
                     self.httpPost(os.path.join(stepLocation,
                                                os.path.basename(analysisFile.fileName)))
+                    # Upload to EOS and register (new method)
+                    self.uploadToEOSAndRegister(step, stepLocation, analysisFile)
 
             # Am DONE with report
             # Persist it
@@ -261,35 +283,291 @@ class DQMUpload(Executor):
         Perform a file upload to the dqm server using HTTPS auth with the
         service proxy provided
         """
-        ident = "WMAgent python/%d.%d.%d" % sys.version_info[:3]
-        uploadProxy = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
-        logging.info("Using proxy file: %s", uploadProxy)
-        logging.info("Using CA certificate path: %s", os.environ.get('X509_CERT_DIR'))
-
         msg = "HTTP POST upload arguments:\n"
         for arg in args:
             msg += "  ==> %s: %s\n" % (arg, args[arg])
         logging.info(msg)
 
-        handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
-        opener = OpenerDirector()
-        opener.add_handler(handler)
-
         # setup the request object
         url = decodeBytesToUnicode(url) if PY3 else encodeUnicodeToBytes(url)
         datareq = Request(url + '/data/put')
-        datareq.add_header('Accept-encoding', 'gzip')
-        datareq.add_header('User-agent', ident)
         self.marshall(args, {'file': filename}, datareq)
-
-        if 'https://' in url:
-            result = opener.open(datareq)
-        else:
-            opener.add_handler(ProxyHandler({}))
-            result = opener.open(datareq)
-
+        result = self._getHttpsOpener(datareq)
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':
             data = GzipFile(fileobj=BytesIO(data)).read()
 
         return (result.headers, data)
+
+    def getRegisterURL(self):
+        """
+        Get the URL for the register site is derived from the step.upload.URL using the following mapping:
+        https://github.com/dmwm/WMCore/issues/10287#issuecomment-1105344078
+        {"https://cmsweb.cern.ch/dqm/offline": "https://cmsweb.cern.ch/dqm/offline-new/api/v1/register",
+         "https://cmsweb.cern.ch/dqm/relval": "https://cmsweb.cern.ch/dqm/relval-new/api/v1/register",
+         "https://cmsweb.cern.ch/dqm/dev": "https://cmsweb.cern.ch/dqm/dev-new/api/v1/register"}
+        :return: str, with register URL
+        """
+        registerURL = "%s-new/api/v1/register" % self.step.upload.URL
+
+        return registerURL
+
+    def _uploadToEOS(self, stepLocation, analysisFile):
+        """
+        Upload  an analysis file to EOS
+
+        :param stepLocation: Path location for step
+        :param analysisFile: analysisFile from WMCore step report
+        :return: bool, with upload status
+        """
+        overrides = {}
+        if hasattr(self.step, 'override'):
+            overrides = self.step.override.dictionary_()
+        eosStageOutParams = {}
+        eosStageOutParams['command'] = overrides.get('command', "xrdcp")
+        eosStageOutParams['option'] = overrides.get('option', "--wma-disablewriterecovery")
+        eosStageOutParams['phedex-node'] = overrides.get('eos-phedex-node', "T2_CH_CERN")
+        eosStageOutParams['lfn-prefix'] = overrides.get('eos-lfn-prefix',
+                                                        "root://eoscms.cern.ch/%s" % self.registerEOSPrefix)
+
+        # Switch between old and newstageOut manager.
+        # Use old by default
+        useNewStageOutCode = False
+        if 'newStageOut' in overrides and overrides.get('newStageOut'):
+            useNewStageOutCode = True
+
+        if not useNewStageOutCode:
+            # old style
+            eosmanager = StageOutMgr.StageOutMgr(**eosStageOutParams)
+            eosmanager.numberOfRetries = self.retryCount
+            eosmanager.retryPauseTime = self.retryDelay
+        else:
+            # new style
+            logging.info("DQMUpload is using new StageOut code for EOS Copy")
+            eosmanager = WMCore.Storage.FileManager.StageOutMgr(
+                retryPauseTime=self.retryDelay,
+                numberOfRetries=self.retryCount,
+                **eosStageOutParams)
+
+        eosFileInfo = {'LFN': self.getAnalysisFileLFN(analysisFile),
+                       'PFN': os.path.join(stepLocation,
+                                           os.path.basename(analysisFile.fileName)),
+                       'PNN': None,  # Assigned in StageOutMgr
+                       'GUID': None  # Assigned in StageOutMgr
+                       }
+
+        msg = "Writing DQM root files to CERN EOS with retries: %s and retry pause: %s"
+        logging.info(msg, eosmanager.numberOfRetries, eosmanager.retryPauseTime)
+        try:
+            eosmanager(eosFileInfo)
+        except Alarm:
+            msg = "Indefinite hangout while staging out to EOS"
+            logging.error(msg)
+            raise WMExecutionFailure(70317, "DQMUploadStageOutTimeout", msg)
+        except Exception as ex:
+            msg = "EOS copy failed, lfn: %s. Error: %s" % (eosFileInfo['LFN'], str(ex))
+            logging.exception(msg)
+            raise WMExecutionFailure(70318, "DQMUploadFailure", msg)
+
+        return eosFileInfo['LFN']
+
+    def getAnalysisFileLFN(self, analysisFile):
+        """
+        Construct an LFN for an analysisFile
+
+        :param analysisFile: analysisFile from WMCore step report
+        :return: str, analysis file LFN
+        """
+        # If lfn start with '/', make it relative to it
+        lfnFile = os.path.relpath(analysisFile.lfn, start='/')
+        lfn = os.path.join(self.registerLFNBase, lfnFile)
+
+        return lfn
+
+    def _getHttpsOpener(self, dataReq):
+        """
+        Get HTTP(s) opener
+        :param: dataReq: urlib Request object
+        :return: opener object
+        """
+        ident = "WMAgent python/%d.%d.%d" % sys.version_info[:3]
+        uploadProxy = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
+        logging.info("Using proxy file: %s", uploadProxy)
+        logging.info("Using CA certificate path: %s", os.environ.get('X509_CERT_DIR'))
+        handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
+        opener = OpenerDirector()
+        opener.add_handler(handler)
+
+        # Add encoding and user agent identity to data request
+        dataReq.add_header('Accept-encoding', 'gzip')
+        dataReq.add_header('User-agent', ident)
+
+        if 'https://' in dataReq.get_full_url():
+            result = opener.open(dataReq)
+        else:
+            opener.add_handler(ProxyHandler({}))
+            result = opener.open(dataReq)
+
+        return result
+
+    def _register(self, registerURL, args):
+        """
+        POST request to register URL
+
+        :param registerURL: str, url for registration
+        :param args: dict, POST arguments
+        :return: result object from opening  the request
+        """
+        msg = "HTTP Register POST arguments: %s\n" % args
+        logging.info(msg)
+
+        # setup the request object
+        url = decodeBytesToUnicode(registerURL)
+        datareq = Request(url)
+        datareq.data = encodeUnicodeToBytes(json.dumps(args))
+        result = self._getHttpsOpener(datareq)
+
+        return result
+
+    def _registerAnalysisFile(self, stepName, analysisFile):
+        """
+        Register a file to new DQM GUi
+        - https://github.com/cms-DQM/dqmgui
+        HTTP request body:
+            [{"dataset": "/a/b/c", "run": "123456", "lumi": "0", "file": "/eos/cms/store/group/comm_dqm/DQMGUI_data/location/file.root", "fileformat": 1}]
+        Set lumis to 0, as this is reproducing current per Run based root files
+        - https://github.com/dmwm/WMCore/issues/10287#issuecomment-1052558061
+        DQM root files produced by Harvesting processing are type 1 (plain ROOT)
+        - https://github.com/cms-DQM/dqmgui#file-formats
+
+        :param stepName: str, Name of the step we are running through
+        :param analysisFile: WMCore.Configuration.ConfigSection, Analysis file in this step from WMCore step report
+        :return:
+        """
+        # Get task description
+        jobBag = self.job.getBaggage()
+        datasetName = self.job.get('inputDataset', None)
+
+        # Get runNumber, depending on the harvesting job mode (byRun vs multiRun)
+        multiRun = getattr(jobBag, "multiRun", False)
+        forceRunNumber = getattr(jobBag, "forceRunNumber", 999999)
+        if multiRun:
+            runNumber = forceRunNumber
+        else:
+            try:
+                runNumber = list(self.job['mask']['runAndLumis'].keys())[0]
+            except Exception as ex:
+                msg = "Error while retrieving run number from job definition:\n %s" % str(ex)
+                raise WMExecutionFailure(70320, "DQMUploadFailure", msg)
+
+        args = {}
+        args['file'] = self.registerEOSPrefix + \
+                       self.getAnalysisFileLFN(analysisFile)
+        args['dataset'] = datasetName
+        args['run'] = runNumber
+        args['lumi'] = 0
+        args['fileformat'] = 1
+
+        msg = "HTTP Upload is about to start:\n"
+        msg += " => URL: %s\n" % self.getRegisterURL()
+        msg += " => Filename: %s\n" % args['file']
+        logging.info(msg)
+
+        for numRetry in range(self.retryCount + 1):
+            try:
+                logException = True
+                result = self._register(self.getRegisterURL(), [args])
+                msg = '  Status code: %s\n' % result.getcode()
+                if result.getcode() >= 400 or result.getcode() is None:
+                    logException = False
+                    raise Exception(msg)
+                else:
+                    msg = 'HTTP POST to register url finished succesfully with response:\n' + msg
+                    logging.info(msg)
+                    break
+            except Exception as ex:
+                if numRetry < self.retryCount:
+                    time.sleep(self.retryDelay)
+                else:
+                    msg = 'HTTP POST to register url failed! Error:\n%s' % str(ex)
+                    if logException:
+                        logging.exception(msg)
+                    else:
+                        logging.error(msg)
+                    raise WMExecutionFailure(70319, "DQMUploadFailure", msg)
+
+        return
+
+    def _deleteFromEOS(self, eosFileLFN):
+        """
+        Delete a file uploaded to EOS.
+        I.e.: If we upload a DQM root file but registration failed for some reason
+
+        :param eosFileLFN: str, LFN file
+        :return:
+        """
+        overrides = {}
+        if hasattr(self.step, 'override'):
+            overrides = self.step.override.dictionary_()
+
+        # Note "xrdcp" here will basically map to the XRDCPImpl storage backend
+        # The actual delete command is set in the backend
+        eosStageOutParams = {}
+        eosStageOutParams['command'] = overrides.get('command', "xrdcp")
+        eosStageOutParams['phedex-node'] = overrides.get('eos-phedex-node', "T2_CH_CERN")
+        eosStageOutParams['lfn-prefix'] = overrides.get('eos-lfn-prefix',
+                                                        "root://eoscms.cern.ch/%s" % self.registerEOSPrefix)
+
+        # Switch between old and new stageOut manager.
+        # Use old by default
+        useNewStageOutCode = False
+        if 'newStageOut' in overrides and overrides.get('newStageOut'):
+            useNewStageOutCode = True
+
+        if not useNewStageOutCode:
+            # old style
+            manager = DeleteMgr(**eosStageOutParams)
+            manager.numberOfRetries = self.retryCount
+            manager.retryPauseTime = self.retryDelay
+        else:
+            # new style
+            logging.info("DQMUpload is using new StageOut code to delete files from EOS")
+            manager = NewDeleteMgr(retryPauseTime=self.retryDelay,
+                                   numberOfRetries=self.retryCount,
+                                   **eosStageOutParams)
+
+        logging.info("Deleting LFN: %s", eosFileLFN)
+        eosFileInfo = {'LFN': eosFileLFN,
+                       'PFN': None,  # PFNs are assigned in the Delete Manager
+                       'PNN': None,  # PNNs are assigned in the Delete Manager
+                       'StageOutCommand': None}
+        try:
+            manager(fileToDelete=eosFileInfo)
+        except Alarm:
+            msg = "Indefinite hang while deleting file from EOS"
+            logging.error(msg)
+            raise WMExecutionFailure(70321, "DQMUploadStageOutTimeout", msg) from None
+        except Exception as ex:
+            msg = "General failure while deleting file. Error: %s" % str(ex)
+            logging.error(msg)
+            raise WMExecutionFailure(70322, "DQMUploadFailure", msg) from None
+
+        return
+
+    def uploadToEOSAndRegister(self, stepName, stepLocation, analysisFile):
+        """
+        Copy DQM Root files to EOS and register files to new DQMGUI
+
+        :param stepName: str, Name of the step we are running through
+        :param stepLocation: str, Path location of the step
+        :param analysisFile: WMCore.Configuration.ConfigSection, Analysis file in this step from WMCore step report
+        :return:
+        """
+        eosFileLFN = self._uploadToEOS(stepLocation, analysisFile)
+        try:
+            self._registerAnalysisFile(stepName, analysisFile)
+        except:
+            # If we fail to register, delete uploaded file
+            self._deleteFromEOS(eosFileLFN)
+            raise
+        return

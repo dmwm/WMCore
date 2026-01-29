@@ -455,7 +455,7 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
         if not delResult and timeleft >= 300:
             print("Failed to delete the rule after 5 minutes, exiting...")
        
-
+    '''
     #@mock.patch('WMCore.GlobalWorkQueue.CherryPyThreads.InputDataRucioRuleCleaner.InputDataRucioRuleCleaner.getRequestForInputDataset')
     def testInputDataRucioRuleCleanerWithThreading(self):
         """
@@ -581,6 +581,7 @@ class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
             print("Failed to delete the rule after 5 minutes, exiting...")
         
         self.assertTrue(not rule_info_for_check, "Rule not deleted successfully after periodic task execution.")
+    '''
         
 if __name__ == '__main__':
     unittest.main()

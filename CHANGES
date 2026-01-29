@@ -1,3 +1,10 @@
+2.4.5.2 to 2.4.5.3:
+  - Update QueryOpts.SummaryOnly call to be compatible with htcondorv2 25.0.3 (Kenyi Hurtado) #12475
+  - Adding unit test (Antonio) #12475
+  - Parse cvmfs releasesMap file into xml file (Antonio) #12475
+-en 
+
+
 2.4.5.1 to 2.4.5.2:
   - Update schedd query to be compliant with new htcondor2. Change order of edits: Update ExtDESIRED_Sites before removing sites from DESIRED_Sites, since htcondor2 edit() no longer provides atomic multi-attribute updates. (Kenyi Hurtado) #
 -en 

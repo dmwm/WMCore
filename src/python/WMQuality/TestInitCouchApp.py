@@ -25,6 +25,7 @@ from WMCore.Database.CMSCouch import CouchServer
 
 from WMQuality.TestInit import TestInit
 
+from WMCore.WMBase import getWMBASE
 
 class CouchAppTestHarness(object):
     """
@@ -111,8 +112,10 @@ class TestInitCouchApp(TestInit):
 
         :param couchapp: couch application to use
         """
-        wmcoreroot = os.path.normpath(os.path.join(self.init.getWMBASE(), '..', '..', '..'))
-        develPath = os.path.join(self.init.getWMBASE(), "src", "couchapps")
+        #wmcoreroot = os.path.normpath(os.path.join(self.init.getWMBASE(), '..', '..', '..'))
+        #develPath = os.path.join(self.init.getWMBASE(), "src", "couchapps")
+        wmcoreroot = os.path.normpath(os.path.join(getWMBASE(), '..', '..', '..'))
+        develPath = os.path.join(getWMBASE(), "src", "couchapps")
         if os.path.exists(os.path.join(develPath, couchapp)):
             return develPath
         elif os.path.exists(os.path.join(wmcoreroot, 'xdata', 'couchapps', couchapp)):

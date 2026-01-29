@@ -1597,6 +1597,28 @@
   "scope": "cms",
   "type": "CONTAINER"
  },
+ "getDID:[('didName', '/JetHT/Run2012C-v1/RAW#001975f4-e9fa-11e1-9597-842b2b4671d8'), ('dynamic', False)]": {
+  "account": "sync_t0_ch_cern_tape",
+  "bytes": 19829448550,
+  "expired_at": null,
+  "length": 1,
+  "monotonic": false,
+  "name": "/JetHT/Run2012C-v1/RAW#001975f4-e9fa-11e1-9597-842b2b4671d8",
+  "open": true,
+  "scope": "cms",
+  "type": "DATASET"
+ },
+ "getDID:[('didName', '/JetHT/Run2012C-v1/RAW#004e510c-07fa-11e2-ad47-842b2b4671d8'), ('dynamic', False)]": {
+   "account": "sync_t0_ch_cern_tape",
+   "bytes": 6879134,
+   "expired_at": null,
+   "length": 1,
+   "monotonic": false,
+   "name": "/JetHT/Run2012C-v1/RAW#004e510c-07fa-11e2-ad47-842b2b4671d8",
+   "open": true,
+   "scope": "cms",
+   "type": "DATASET"
+ },
  "listDataRules:[('account', 'ms-pileup'), ('scope', 'cms')]": [{
   "state": "OK",
   "id": "123",

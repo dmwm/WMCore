@@ -16,28 +16,28 @@ class StageOutImplTest(unittest.TestCase):
     def testSplitPFN_noOpaque(self):
         self.assertEqual(("splitable/test/test1", "test1", "splitable/test/test1", ""),
                          StageOutImpl.splitPFN("splitable/test/test1"))
-        self.assertEqual(('//eoscms//eos/cms/store/', 'eoscms', '//eoscms//eos/cms/store/', ""),
-                         StageOutImpl.splitPFN("//eoscms//eos/cms/store/"))
+        self.assertEqual(('//eoscms.cern.ch//eos/cms/store/', 'eoscms.cern.ch', '//eoscms.cern.ch//eos/cms/store/', ""),
+                         StageOutImpl.splitPFN("//eoscms.cern.ch//eos/cms/store/"))
 
     def testSplitPFN_doubleSlashRoot(self):
-        self.assertEqual(('root', 'eoscms', '/eos/cms/store/', ""),
-                         StageOutImpl.splitPFN("root://eoscms//eos/cms/store/"))
+        self.assertEqual(('root', 'eoscms.cern.ch', '/eos/cms/store/', ""),
+                         StageOutImpl.splitPFN("root://eoscms.cern.ch//eos/cms/store/"))
 
     def testSplitPFN_path(self):
-        self.assertEqual(('root', 'eoscms', 'default', "?"),
-                         StageOutImpl.splitPFN("root://eoscms//eos/cms/store?path=default"))
+        self.assertEqual(('root', 'eoscms.cern.ch', 'default', "?"),
+                         StageOutImpl.splitPFN("root://eoscms.cern.ch//eos/cms/store?path=default"))
 
     def testSplitPFN_pathConnector(self):
-        self.assertEqual(('root', 'eoscms', 'default', "?default2"),
-                         StageOutImpl.splitPFN("root://eoscms//eos/cms/store?path=default&default2"))
+        self.assertEqual(('root', 'eoscms.cern.ch', 'default', "?default2"),
+                         StageOutImpl.splitPFN("root://eoscms.cern.ch//eos/cms/store?path=default&default2"))
 
     def testSplitPFN_path2(self):
-        self.assertEqual(('root', 'eoscms', 'cms', "?cms2ss&path=default"),
-                         StageOutImpl.splitPFN("root://eoscms//eos/cms/store?path=cms&cms2ss&path=default"))
+        self.assertEqual(('root', 'eoscms.cern.ch', 'cms', "?cms2ss&path=default"),
+                         StageOutImpl.splitPFN("root://eoscms.cern.ch//eos/cms/store?path=cms&cms2ss&path=default"))
 
     def testSplitPFN_pathConnector2(self):
-        self.assertEqual(('root', 'eoscms', 'cms', "?path=default&default2"),
-                         StageOutImpl.splitPFN("root://eoscms//eos/cms/store?path=cms&path=default&default2"))
+        self.assertEqual(('root', 'eoscms.cern.ch', 'cms', "?path=default&default2"),
+                         StageOutImpl.splitPFN("root://eoscms.cern.ch//eos/cms/store?path=cms&path=default&default2"))
 
     @mock.patch('WMCore.Storage.StageOutImpl.runCommandWithOutput')
     def testExecuteCommand_stageOutError(self, mock_runCommand):

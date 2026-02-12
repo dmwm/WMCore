@@ -554,8 +554,11 @@ class SimpleCondorPlugin(BasePlugin):
             isJobTokenReady = self.isJobTokenReady(job.get('swVersion'))
             if self.useCMSToken and isJobTokenReady:
                 ad['use_oauth_services'] = "cms"
+                ad['My.x509userproxy'] = ""
             else:
                 ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
+                ad['use_oauth_services'] = ""
+
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))

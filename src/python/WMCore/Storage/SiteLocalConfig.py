@@ -13,7 +13,7 @@ import os
 from builtins import next, str, object
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
-from WMCore.Storage.RucioFileCatalog import rseName
+from WMCore.Storage.RucioFileCatalog import rseName, get_default_cmd
 
 
 def loadSiteLocalConfig():
@@ -73,7 +73,6 @@ class SiteConfigError(Exception):
     Exception class placeholder
 
     """
-    pass
 
 
 class SiteLocalConfig(object):
@@ -138,7 +137,7 @@ class SiteLocalConfig(object):
         except Exception as ex:
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
-            raise SiteConfigError(msg)
+            raise SiteConfigError(msg) from ex
 
         nodeResult = nodeReader(node)
 
@@ -300,14 +299,15 @@ def processStageOut():
 
             localReport = {}
             localReport['storageSite'] = aStorageSite
-            localReport['command'] = subnode.attrs.get('command', None)
-            # use default command='gfal2' when 'command' is not specified
-            if localReport['command'] is None:
-                localReport['command'] = 'gfal2'
+            #Do not support 'command' from site-local-config.xml anymore
+            #get command based on rule PFN or prefix of the protocol for example root://, davs:// file://
+            if aProtocol is None: localReport['command'] = None
+            else: localReport['command'] = get_default_cmd(report["siteName"], subSiteName, aStorageSite, aVolume, aProtocol)
             localReport['option'] = subnode.attrs.get('option', None)
             localReport['volume'] = aVolume
             localReport['protocol'] = aProtocol
             localReport['phedex-node'] = rseName(report["siteName"], subSiteName, aStorageSite, aVolume)
+
             report['stageOuts'].append(localReport)
 
 

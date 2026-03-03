@@ -169,7 +169,7 @@ def updateBlockInfo(jdoc, msPUBlockLoc, dbsUrl, logger):
         for blockName in msPUBlockLoc.keys():
             if blockName not in list(jdoc[puType].keys()):
                 # add block record from MSPileup
-                record = {blockName: {"PhEDExNodeNames": msPUBlockLoc[blockName]}}
+                record = {"PhEDExNodeNames": msPUBlockLoc[blockName]}
                 newDict[blockName] = record
                 # keep track of blocks we need to update with DBS information
                 blocksToUpdate.append(blockName)

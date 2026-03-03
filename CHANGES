@@ -1,3 +1,8 @@
+2.4.5.4 to 2.4.5.5:
+  - Update setuptools version constraint in gh workflow (Muhammad Hassan Ahmed) #12484
+-en 
+
+
 2.4.5.3 to 2.4.5.4:
   - Fix block record creation in updateBlockInfo function to be consistent (hassan11196) #12481
 -en 

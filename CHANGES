@@ -1,3 +1,8 @@
+2.4.5.3 to 2.4.5.4:
+  - Fix block record creation in updateBlockInfo function to be consistent (hassan11196) #12481
+-en 
+
+
 2.4.5.2 to 2.4.5.3:
   - Update QueryOpts.SummaryOnly call to be compatible with htcondorv2 25.0.3 (Kenyi Hurtado) #12475
   - Adding unit test (Antonio) #12475

@@ -56,7 +56,7 @@ jobs:
       - name: Upgrade pip3 and install build tools
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install setuptools wheel
+          python3 -m pip install "setuptools>=45,<82" wheel
 
       # create appropriate setup.py for python builds
       - name: Update the setup script template with package name

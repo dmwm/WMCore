@@ -557,7 +557,7 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.x509userproxy'] = ""
             else:
                 ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
-                ad['use_oauth_services'] = ""
+                ad['use_oauth_services'] = "$(item)"  # HACK: don't reproduce it anywhere else!
 
 
             sites = ','.join(sorted(job.get('possibleSites')))

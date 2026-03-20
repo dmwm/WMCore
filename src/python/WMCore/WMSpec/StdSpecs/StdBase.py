@@ -687,6 +687,7 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
+        primaryDataset = getattr(parentOutputModule, "primaryDataset")
         dataTier = getattr(parentOutputModule, "dataTier")
         mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
@@ -715,8 +716,12 @@ class StdBase(object):
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
                                                          newDQMIO=True)
         elif dataTier in ("NANOAOD", "NANOAODSIM"):
-            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
-                                                         mergeNANO=True)
+            if primaryDataset in ("L1Scouting", "L1ScoutingSelection"):
+                mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
+                                                            mergeL1SCOUTNANO=True)                
+            else:
+                mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
+                                                            mergeNANO=True)
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 

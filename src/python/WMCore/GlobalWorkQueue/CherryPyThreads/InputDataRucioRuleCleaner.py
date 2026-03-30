@@ -1,16 +1,23 @@
 from __future__ import (division, print_function)
 
+import json
 import time
-#import json
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
 
 from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 
-from WMCore.ReqMgr.Web.ReqMgrService import getdata
-#from WMCore.Services.pycurl_manager import RequestHandler
-#from Utils.CertTools import ckey, cert
+from WMCore.Services.pycurl_manager import RequestHandler
+from Utils.CertTools import getKeyCertFromEnv
+
+
+def getdata(url, params, headers=None):
+    "Helper function to get data from the service"
+    ckey, cert = getKeyCertFromEnv()
+    mgr = RequestHandler()
+    res = mgr.getdata(url, params=params, headers=headers, ckey=ckey, cert=cert)
+    return json.loads(res)
 
 def format_timestamp(timestamp_float):
     """Converts a float timestamp (seconds since epoch) to a readable string."""
@@ -162,22 +169,30 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                 self.logger.warning(f"Failed to fetch requests using dataset {dataCont}. Response: {response}")
                 return False  # We do not know what is going on, better not delete the rule
             
-            self.logger.info(f"Response: {response}")
+            #self.logger.info(f"Response: {response}")
 
             requestsUsingData = response["result"][0]
 
-            self.logger.info(f"Requests: {requestsUsingData}")
+            for r, d in requestsUsingData.items():
+                self.logger.info(f"Request using same input data: {r} status={d.get('RequestStatus')} inputDataset={d.get('InputDataset')}")
     
             for request_id,request_data in requestsUsingData.items():
+                self.logger.info(f"Check request: {request_data['RequestName']}")
                 # Skip the current request
                 if request_data['RequestName'] == currentRequestName:
+                    self.logger.info(f"Request {request_data['RequestName']} is the current request. Continuing to next request.")
                     continue
                 
+                #TEMP
+                #if request_data['RequestName'] == 'cmsunified_Run2023D_JetMET1_JMENanoAODv15-Backfill_260304_170855_8502':
+                #    self.logger.info(f"Temporary skipping request: {request_data['RequestName']}")
+                #    continue
+
                 # only consider workflows in good status and not done yet
                 if request_data['RequestStatus'] not in ['new', 'assignment-approved', 'assigned', 'staging', 'acquired', 'staged', 'running-open', 'running-closed']:
                     self.logger.info(f"Request {request_data['RequestName']} is in status {request_data['RequestStatus']}. Continuing to next request.")
                     continue
-    
+                
                 try:
                     # Step 2: Query the global queue for elements of the other request
                     otherRequestElements = self.globalQ.backend.getElements(WorkflowName=request_data['RequestName'])
@@ -254,7 +269,7 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                             
                             # Check if the Rucio rule for this block can be deleted
                             if not self.canDeleteRucioRule(requestName, block, dataCont, config):
-                                self.logger.info(f"Skipping deletion of rules for block {block} as it is still in use.")
+                                self.logger.info(f"Skipping deletion of rules for block {block} of request {requestName} as it is still in use by other requests.")
                                 continue
  
                             ## Check if the dataset is in use by other requests
@@ -305,8 +320,11 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                                         cleanedRules_info[block]['bytes'].append(rule['bytes'])
                                         #cleanRules of MSRuleCleaner expects a list of rule ids and always clean the last one in the list of PlineMarkers
                                         rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]].append(rule['id'])
+                                else: 
+                                    msg = "Rucio rule for block: %s not found for workflow: %s."
+                                    self.logger.info(msg, block, requestName)
                             except WMRucioDIDNotFoundException:
-                                msg = "Block: %s not found in Rucio for workflow: %s."
+                                msg = "Exception when cleaning Rucio rule for block: %s of workflow: %s."
                                 self.logger.info(msg, block, requestName)
                                 continue
                     
@@ -327,7 +345,7 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
             
             if not do_cleaning:
                 current_time = format_timestamp(time.time())
-                self.logger.info(f"{current_time} No cleaning happened: There are no completed workqueue elements or rules already cleaned")    
+                self.logger.info(f"{current_time} No cleaning happened: There are no completed workqueue elements or block is currently used by other requests or rules already cleaned")    
             
             #current_time = format_timestamp(time.time())
             #self.logger.info(f"{current_time}: {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")

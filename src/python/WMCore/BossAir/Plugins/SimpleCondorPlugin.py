@@ -556,8 +556,8 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['use_oauth_services'] = "cms"
                 ad['My.x509userproxy'] = ""
             else:
+                ad['use_oauth_services'] = "$(blank)"
                 ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
-                ad['use_oauth_services'] = "$(item)"  # HACK: don't reproduce it anywhere else!
 
 
             sites = ','.join(sorted(job.get('possibleSites')))
@@ -748,6 +748,10 @@ class SimpleCondorPlugin(BasePlugin):
         # entries required for monitoring
         sub['My.CMS_WMTool'] = classad.quote("WMAgent")
         sub['My.CMS_SubmissionTool'] = classad.quote("WMAgent")
+
+        # Trick for enabling/disabling tokens through JDL/ClassAd Language
+        # Further details: https://github.com/dmwm/WMCore/pull/12463
+        sub['MY.OAuthServicesNeeded'] = "$(item)"   # HACK: don't reproduce it anywhere else!
 
         jobParameters = self.getJobParameters(jobList, cmsswMicroArchs=cmsswMicroArchs)
 

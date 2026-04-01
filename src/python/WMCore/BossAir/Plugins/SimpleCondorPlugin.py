@@ -553,10 +553,10 @@ class SimpleCondorPlugin(BasePlugin):
             # Allow oauth based token authentication
             isJobTokenReady = self.isJobTokenReady(job.get('swVersion'))
             if self.useCMSToken and isJobTokenReady:
-                ad['use_oauth_services'] = "cms"
+                ad['token_override_value'] = "cms"
                 ad['My.x509userproxy'] = ""
             else:
-                ad['use_oauth_services'] = "$(blank)"
+                ad['token_override_value'] = "$(blank)"
                 ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
 
 
@@ -751,7 +751,7 @@ class SimpleCondorPlugin(BasePlugin):
 
         # Trick for enabling/disabling tokens through JDL/ClassAd Language
         # Further details: https://github.com/dmwm/WMCore/pull/12463
-        sub['MY.OAuthServicesNeeded'] = "$(item)"   # HACK: don't reproduce it anywhere else!
+        sub['MY.OAuthServicesNeeded'] = "$(token_override_value)"   # HACK: don't reproduce it anywhere else!
 
         jobParameters = self.getJobParameters(jobList, cmsswMicroArchs=cmsswMicroArchs)
 

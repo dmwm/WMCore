@@ -24,103 +24,81 @@ def format_timestamp(timestamp_float):
     # This format gives you: "2025-12-09 19:22:15"
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp_float))
 
-'''
-def canDeleteRucioRule(self, currentRequestName, block, dataCont, config):
-    """
-    Check if the Rucio rule for the given block can be deleted.
-    :param currentRequest: The name of the current request being processed
-    :param block: The data block to check
-    :param dataCont: The container name extracted from the block
-    :param config: The configuration object
-    :return: True if the rule can be deleted, False otherwise
-    """
-    try:
-        # Step 1: Find the requests that use the same input data
-        #url = 'https://cmsweb.cern.ch/reqmgr2/data/request?outputdataset=%s' % dataset
-        #params = {}
-        #headers = {'Accept': 'application/json'}
-        #https://gitlab.cern.ch/cmsweb-k8s/services_config/-/blob/test/config.test16/workqueue/config.py?ref_type=heads
-        #config.msRuleCleaner['reqmgr2Url'] = "%s/reqmgr2" % BASE_URL
-        #url = config.msRuleCleaner['reqmgr2Url']+'/data/request?inputdataset=%s' % dataCont
-        url = f"{config.msRuleCleaner['reqmgr2Url']}/data/request?inputdataset={dataCont}"
-        params = {}
-        headers = {"Accept": "application/json"}
-        
-        # Use the getdata function to fetch the requests using the current input data
-        response = getdata(url, params, headers)
-        
-        if not response or "result" not in response:
-            self.logger.warning(f"Failed to fetch requests using dataset {dataCont}. Response: {response}")
-            return True  # Assume no requests if the response is invalid
-        
-        requestsUsingData = response["result"]
-        
-        # Step 1a: If there are no requests, return True. No need since this always returns at least the current request
-        #if not requestsUsingData:
-        #    self.logger.info(f"No requests are using dataset {dataCont}. Rule for block {block} can be deleted.")
-        #    return True
-        
-        #self.logger.info(f"Dataset {dataCont} is in use by the following requests: {requestsUsingData}")
-        
-        # Step 2: Find the workqueue elements of those requests
-        foundElements = False  # Track if any workqueue elements are found
-        for request in requestsUsingData:
-            # Skip the current request
-            if request['RequestName'] == currentRequestName:
-                continue
-            
-            # if the workflow is done etc return True. We can delete the rule
-
-            try:
-                # Query the global queue for elements of the other request
-                otherRequestElements = self.globalQ.backend.getElements(WorkflowName=request['RequestName'])
-                
-                # Step 3: If there are no workqueue elements for this request, continue to the next request
-                if not otherRequestElements:
-                    self.logger.info(f"No workqueue elements found for request {request}. The workqueue might not have been created yet.")
-                    continue
-                
-                foundElements = True  # At least one element is found at other request
-                
-                # Step 4: Check the status of these workqueue element that uses the same datablock
-                for otherElement in otherRequestElements:
-                    
-                    if block not in otherElement.get('Inputs'): continue
-                    
-                    percentComplete = otherElement.get('PercentComplete', 0)  # Default to 0 if key is missing
-                    percentSuccess = otherElement.get('PercentSuccess', 0)  # Default to 0 if key is missing
-                    
-                    # Step 5: If any workqueue element is not completed, return False
-                    if percentComplete < 100 or percentSuccess < 100:
-                        self.logger.info(f"Workqueue element {otherElement.get('id')} for request {request['RequestName']} is not yet completed. Rule for block {block} cannot be deleted.")
-                        return False
-
-            except Exception as ex:
-                self.logger.error(f"Error while finding elements for request {request}: {str(ex)}")
-                return False
-        
-        # Step 3 (fixed): If no elements were found for all requests, return False
-        if not foundElements:
-            self.logger.info(f"No workqueue elements found for any of the requests using dataset {dataCont}. Rule for block {block} cannot be deleted.")
-            return False
-        
-        # Step 4: If all workqueue elements are processed, return True
-        self.logger.info(f"All workqueue elements for requests using dataset {dataCont} are completed. Rule for block {block} can be deleted.")
-        return True
-    
-    except Exception as ex:
-        self.logger.error(f"Error while checking if rule for block {block} can be deleted: {str(ex)}")
-        return False
-'''
 
 class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
+    """
+    A periodic CherryPy task that cleans block-level Rucio replication rules for
+    input datasets of completed GlobalWorkQueue elements.
+
+    Overview
+    --------
+    The GlobalWorkQueue holds elements representing units of work, each associated
+    with one or more input data blocks. When a workflow finishes processing a block,
+    its Rucio replication rule (which was created to stage the data to a site) is
+    no longer needed and should be removed to free storage quota.
+
+    This task runs periodically and performs the following steps each cycle:
+
+    1. Fetch Done elements
+       Query CouchDB for GlobalWorkQueue elements with Status='Done' only, avoiding
+       a full table scan of all elements.
+
+    2. Skip already-processed elements
+       An in-memory set (_processedElementIds) tracks elements whose rules were fully
+       cleaned in a previous cycle. These are skipped immediately with an O(1) lookup,
+       avoiding redundant HTTP and CouchDB calls. The set is trimmed each cycle to
+       only IDs still present in the queue, preventing unbounded memory growth.
+
+    3. Filter by completion
+       Only elements with PercentComplete == 100 and PercentSuccess == 100 are
+       considered. Status='Done' alone does not guarantee full success (some jobs
+       may have failed), so this additional check ensures we only clean rules for
+       fully successful elements.
+
+    4. Check whether each block's rule can be deleted (canDeleteRucioRule)
+       A block's Rucio rule must not be deleted if another active workflow is still
+       using the same input data. For each block:
+         a. Query ReqMgr2 for all requests that use the same input container
+            (dataCont = block without the #hash suffix). Results are cached by
+            dataCont in a per-cycle dict (reqmgr2Cache) so that multiple blocks
+            sharing the same container only trigger one HTTP call per cycle.
+         b. For each other active request found, query the GlobalWorkQueue for its
+            elements and check whether the specific block has been fully processed
+            (PercentComplete == 100 and PercentSuccess == 100). If any other request
+            is still processing the block, deletion is deferred to the next cycle.
+
+    5. Collect and delete Rucio rules
+       For blocks cleared in step 4, query Rucio for existing replication rules
+       (listDataRules). Rules already deleted in a previous cycle return an empty
+       list and are silently skipped. Remaining rules are batched into a single
+       cleanRucioRules call per element, which sets their Rucio lifetime to 0
+       (effectively scheduling them for deletion).
+
+    6. Track element completion
+       An element is added to _processedElementIds only when ALL of the following
+       hold for that cycle:
+         - No block was deferred (canDeleteRucioRule returned True for every block)
+         - No unexpected error occurred during rule lookup
+         - All Rucio rule updates reported success (CleanupStatus == True)
+       If any condition fails, the element is re-evaluated next cycle.
+
+    Scalability notes
+    -----------------
+    - getElements(status='Done') uses the elementsByStatus CouchDB index, avoiding
+      a full queue scan.
+    - _processedElementIds eliminates repeat processing of already-cleaned elements
+      across cycles, so the active working set per cycle is bounded to newly Done
+      elements since the last cycle.
+    - reqmgr2Cache reduces ReqMgr2 HTTP calls from O(elements x blocks) to O(unique
+      containers) per cycle.
+    """
 
     def __init__(self, rest, config):
 
         super(InputDataRucioRuleCleaner, self).__init__(config)
         self.globalQ = globalQueue(logger=self.logger, **config.queueParams)
-        self.msRuleCleaner = MSRuleCleaner(config.msRuleCleaner, logger=self.logger)  # Initialize MSRuleCleaner
-        #self.curlMgr = RequestHandler()
+        self.msRuleCleaner = MSRuleCleaner(config.msRuleCleaner, logger=self.logger)
+        self._processedElementIds = set()  # element IDs confirmed with all block rules fully cleaned in this process lifetime
 
     def setConcurrentTasks(self, config):
         """
@@ -129,239 +107,185 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
         self.concurrentTasks = [{'func': self.cleanRucioRules, 'duration': config.cleanInputDataRucioRuleDuration}]
 
     def getRequestForInputDataset(self, inputdataset, reqmgr2Url):
-        # Step 1: Find the requests that use the same input data
-        #url = f"{config.msRuleCleaner['reqmgr2Url']}/data/request?inputdataset={inputdataset}"
         url = f"{reqmgr2Url}/data/request?inputdataset={inputdataset}"
         params = {}
         headers = {"Accept": "application/json"}
         res = None
         try:
-            #res = self.curlMgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
-            #res = json.loads(res)
             res = getdata(url, params, headers)
         except Exception as ex:
             msg = "General exception while fetching requests from ReqMgr2 for inputdataset %s"
             self.logger.exception(msg, inputdataset, str(ex))
-
-        # Use the getdata function to fetch the requests using the current input data
         return res
 
-    def canDeleteRucioRule(self, currentRequestName, block, dataCont, config):
+    def canDeleteRucioRule(self, currentRequestName, block, dataCont, config, reqmgr2Cache=None):
         """
         Check if the Rucio rule for the given block can be deleted.
-        :param currentRequest: The name of the current request being processed
+        :param currentRequestName: The name of the current request being processed
         :param block: The data block to check
         :param dataCont: The container name extracted from the block
         :param config: The configuration object
+        :param reqmgr2Cache: Optional dict caching ReqMgr2 responses by dataCont to avoid redundant HTTP calls
         :return: True if the rule can be deleted, False otherwise
         """
         try:
-            # Step 1: Find the requests that use the same input data
-            #url = f"{config.msRuleCleaner['reqmgr2Url']}/data/request?inputdataset={dataCont}"
-            #params = {}
-            #headers = {"Accept": "application/json"}
-            
-            # Use the getdata function to fetch the requests using the current input data
-            #response = getdata(url, params, headers)
-            response = self.getRequestForInputDataset(dataCont, config.msRuleCleaner['reqmgr2Url'])
-            
+            # Use the cache to avoid repeated HTTP calls for the same container within a cycle.
+            if reqmgr2Cache is not None and dataCont in reqmgr2Cache:
+                response = reqmgr2Cache[dataCont]
+            else:
+                response = self.getRequestForInputDataset(dataCont, config.msRuleCleaner['reqmgr2Url'])
+                if reqmgr2Cache is not None:
+                    reqmgr2Cache[dataCont] = response
+
             if not response or "result" not in response:
                 self.logger.warning(f"Failed to fetch requests using dataset {dataCont}. Response: {response}")
                 return False  # We do not know what is going on, better not delete the rule
-            
-            #self.logger.info(f"Response: {response}")
 
             requestsUsingData = response["result"][0]
 
-            for r, d in requestsUsingData.items():
-                self.logger.info(f"Request using same input data: {r} status={d.get('RequestStatus')} inputDataset={d.get('InputDataset')}")
-    
-            for request_id,request_data in requestsUsingData.items():
-                self.logger.info(f"Check request: {request_data['RequestName']}")
-                # Skip the current request
-                if request_data['RequestName'] == currentRequestName:
-                    self.logger.info(f"Request {request_data['RequestName']} is the current request. Continuing to next request.")
-                    continue
-                
-                #TEMP
-                #if request_data['RequestName'] == 'cmsunified_Run2023D_JetMET1_JMENanoAODv15-Backfill_260304_170855_8502':
-                #    self.logger.info(f"Temporary skipping request: {request_data['RequestName']}")
-                #    continue
+            for request_id, request_data in requestsUsingData.items():
+                self.logger.debug(f"Check request: {request_data['RequestName']}")
 
-                # only consider workflows in good status and not done yet
-                if request_data['RequestStatus'] not in ['new', 'assignment-approved', 'assigned', 'staging', 'acquired', 'staged', 'running-open', 'running-closed']:
-                    self.logger.info(f"Request {request_data['RequestName']} is in status {request_data['RequestStatus']}. Continuing to next request.")
+                if request_data['RequestName'] == currentRequestName:
+                    self.logger.debug(f"Request {request_data['RequestName']} is the current request. Continuing to next request.")
                     continue
-                
+
+                # Only consider workflows in active statuses — skip requests that are already done or cancelled
+                if request_data['RequestStatus'] not in ['new', 'assignment-approved', 'assigned', 'staging', 'acquired', 'staged', 'running-open', 'running-closed']:
+                    self.logger.debug(f"Request {request_data['RequestName']} is in status {request_data['RequestStatus']}. Continuing to next request.")
+                    continue
+
                 try:
-                    # Step 2: Query the global queue for elements of the other request
                     otherRequestElements = self.globalQ.backend.getElements(WorkflowName=request_data['RequestName'])
-                    
+
                     if not otherRequestElements:
                         self.logger.info(f"No workqueue elements found for request {request_id}: {request_data}. The workqueue might not have been created yet.")
-                        return False # We do not know what is going on, better not delete the rule
-                    
-                    # Step 3: Check the status of these workqueue element that uses the same datablock
+                        return False  # We do not know what is going on, better not delete the rule
+
                     for otherElement in otherRequestElements:
-                        
-                        if block not in otherElement.get('Inputs'): continue
-                        
-                        percentComplete = otherElement.get('PercentComplete', 0)  # Default to 0 if key is missing
-                        percentSuccess = otherElement.get('PercentSuccess', 0)  # Default to 0 if key is missing
-                        
+
+                        if block not in otherElement.get('Inputs'):
+                            continue
+
+                        percentComplete = otherElement.get('PercentComplete', 0)
+                        percentSuccess = otherElement.get('PercentSuccess', 0)
+
                         if percentComplete < 100 or percentSuccess < 100:
-                            self.logger.info(f"Rule for block {block} cannot be deleted. Workqueue elements of request {request_data['RequestName']} using the same block have not completed processing ({percentComplete}, {percentSuccess}).")
+                            self.logger.debug(f"Rule for block {block} cannot be deleted. Workqueue elements of request {request_data['RequestName']} using the same block have not completed processing ({percentComplete}, {percentSuccess}).")
                             return False
-                
+
                 except Exception as ex:
                     self.logger.error(f"Error while finding elements for request {request_id}: {request_data} and making consideration on data processing completion: {str(ex)}")
-                    return False #We do not know what is going on, better not delete the rule     
-            
-            return True  
-        
+                    return False  # We do not know what is going on, better not delete the rule
+
+            return True
+
         except Exception as ex:
             self.logger.error(f"Error while checking if rule for block {block} can be deleted: {str(ex)}")
-            return False #We do not know what is going on, better not delete the rule
+            return False  # We do not know what is going on, better not delete the rule
 
     def cleanRucioRules(self, config):
         """
-        Queries global queue and builds the list of blocklevel Rucio rules of finished elements to be deleted. Calls MSRuleCleaner cleanRucioRules(self, wflow) to delete the rules.
-        :config:       The configuration for the task. This uses Rucio account from config to use for querying rules
-        :return:       The result of MSRuleCleaner cleanRucioRules(self, wflow) method, which is True if all rules were deleted successfully, False otherwise.
+        Queries global queue and builds the list of blocklevel Rucio rules of finished elements to be deleted.
+        Calls MSRuleCleaner cleanRucioRules(self, wflow) to delete the rules.
+        :config:  The configuration for the task. This uses Rucio account from config to use for querying rules
+        :return:  True if any cleaning happened this cycle, False otherwise.
         """
-        
+
         tStart = time.time()
-        
-        #statuses = ['Available', 'Done', 'Acquired', 'Failed', 'Canceled']
-        #globalQueueElements=self.globalQ.getWork({'Status':'Done'},siteJobCounts={})
-        globalQueueElements=self.globalQ.backend.getElements()
-            
-        #print("Elements in GlobalQueue cleanRucioRules:")
-        #print(json.dumps(globalQueueElements,indent=2))
-        
+
+        globalQueueElements = self.globalQ.backend.getElements(status='Done')
+
+        # Trim skip-set to only IDs still present in the queue, preventing unbounded growth
+        currentIds = {el.id for el in globalQueueElements}
+        self._processedElementIds &= currentIds
+
+        # Per-cycle cache: dataCont -> ReqMgr2 response, shared across all elements and blocks.
+        # Avoids redundant HTTP calls for blocks sharing the same container within a cycle.
+        reqmgr2Cache = {}
+
         do_cleaning = False
 
         if globalQueueElements:
-            #print(f"Found {len(globalQueueElements)} elements in GlobalQueue")
             current_time = format_timestamp(time.time())
-            self.logger.info(f"{current_time}: Found {len(globalQueueElements)} globalqueue elements.")
+            self.logger.info(f"{current_time}: Found {len(globalQueueElements)} globalqueue elements ({len(self._processedElementIds)} already fully processed, skipping).")
 
             for element in globalQueueElements:
-                
-                requestName = element.get('RequestName')  # Extract the RequestName field
-                percentComplete = element.get('PercentComplete', 0)  # Default to 0 if key is missing
-                percentSuccess = element.get('PercentSuccess', 0)  # Default to 0 if key is missing
+
+                if element.id in self._processedElementIds:
+                    continue
+
+                requestName = element.get('RequestName')
+                percentComplete = element.get('PercentComplete', 0)
+                percentSuccess = element.get('PercentSuccess', 0)
 
                 if percentComplete == 100 and percentSuccess == 100:
 
-                    #to be able to use cleanRules method of MSRuleCleaner
-                    rulesToClean = {'PlineMarkers':['Current'], 'RulesToClean': {'Current': []}, 'CleanupStatus': {'Current': []}}
+                    # Structure required by MSRuleCleaner.cleanRucioRules()
+                    rulesToClean = {'PlineMarkers': ['Current'], 'RulesToClean': {'Current': []}, 'CleanupStatus': {'Current': []}}
 
-                    #'Inputs': {'/MinimumBias/ComissioningHI-v1/RAW#372d624c-089d-11e1-8347-003048caaace':
-                    blocks = element.get('Inputs')  # Example key for dataset
-                                                       
-                    # Fetch rules for blocks
+                    blocks = element.get('Inputs')
+
                     cleanedRules_info = {}
+                    elementFullyProcessed = True  # flipped to False on any deferral, error, or partial Rucio failure
                     if blocks:
                         for block in blocks:
-                            #print("Adding block ", block, " to RulesToClean")
-                            dataCont = block.split('#')[0]  # Extract the container name from the block
-                            
-                            # Check if the Rucio rule for this block can be deleted
-                            if not self.canDeleteRucioRule(requestName, block, dataCont, config):
-                                self.logger.info(f"Skipping deletion of rules for block {block} of request {requestName} as it is still in use by other requests.")
+                            dataCont = block.split('#')[0]  # strip block hash to get the container name
+
+                            if not self.canDeleteRucioRule(requestName, block, dataCont, config, reqmgr2Cache):
+                                elementFullyProcessed = False
                                 continue
- 
-                            ## Check if the dataset is in use by other requests
-                            #try:
-                            #    # Assuming there's an endpoint that provides the requests using the input data
-                            #    url = f"{config.reqmgrUrl}/data/request_by_input"
-                            #    params = {"input": dataCont}
-                            #    headers = {"Accept": "application/json"}
-                            #    
-                            #    # Use the getdata function to fetch the requests using the current input data
-                            #    response = getdata(url, params, headers)
-                            #    
-                            #    # Process the response to extract request names
-                            #    if response and "result" in response:
-                            #        requestsUsingData = response["result"]
-                            #        if requestsUsingData:
-                            #            self.logger.info(f"Dataset {dataCont} is still in use by the following requests: {requestsUsingData}")
-                            #            continue  # Skip cleaning for this dataset
-                            #        else:
-                            #            self.logger.info(f"Dataset {dataCont} is not in use by any other requests.")
-                            #    else:
-                            #        self.logger.warning(f"Failed to fetch requests using dataset {dataCont}. Response: {response}")
-                            #except Exception as ex:
-                            #    self.logger.error(f"Error while checking requests using dataset {dataCont}: {str(ex)}")
-                            #    continue
-                            
-                            #need to self.getGlobalLocks() before using self.msRuleCleaner.globalLocks
-                            #if dataCont in self.msRuleCleaner.globalLocks:
-                            #    msg = "Found dataset: %s in GlobalLocks. NOT considering it for filling the "
-                            #    msg += "RulesToClean list for both container and block level Rules for workflow: %s!"
-                            #    self.logger.info(msg, dataCont, requestName)
-                            #    continue
+
                             try:
-                                #print('Fetching rules for block:', block, "\n", config.rucioAccount, "\n", self.msRuleCleaner.rucio.listDataRules(block, account=config.rucioAccount))
                                 rules = self.msRuleCleaner.rucio.listDataRules(block, account=config.msRuleCleaner['rucioAccount'])
-                                #found rules for this block. If the rules of this block already cleaned there is no rules found
                                 if rules:
-                                    cleanedRules_info[block] = {}
-                                    #one block can have multiple rules
-                                    cleanedRules_info[block]['id'] = []
-                                    cleanedRules_info[block]['bytes'] = []
+                                    # one block can have multiple rules
+                                    cleanedRules_info[block] = {'id': [], 'bytes': []}
                                     for rule in rules:
-                                        #msg = "Found %s block-level rule to be deleted for container %s"
-                                        #self.logger.info(msg, rule['id'], dataCont)
-                                        #current_time = format_timestamp(time.time())
-                                        #self.logger.info(f"{current_time}: Rule {rule['id']} {block} {rule['bytes']} {requestName} to be cleaned")
                                         cleanedRules_info[block]['id'].append(rule['id'])
                                         cleanedRules_info[block]['bytes'].append(rule['bytes'])
-                                        #cleanRules of MSRuleCleaner expects a list of rule ids and always clean the last one in the list of PlineMarkers
+                                        # cleanRucioRules expects rule ids under the last PlineMarker
                                         rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]].append(rule['id'])
-                                else: 
+                                else:
                                     msg = "Rucio rule for block: %s not found for workflow: %s."
-                                    self.logger.info(msg, block, requestName)
+                                    self.logger.debug(msg, block, requestName)
                             except WMRucioDIDNotFoundException:
                                 msg = "Exception when cleaning Rucio rule for block: %s of workflow: %s."
-                                self.logger.info(msg, block, requestName)
+                                self.logger.debug(msg, block, requestName)
                                 continue
-                    
+                            except Exception as ex:
+                                self.logger.error(f"Unexpected error fetching rules for block {block} of workflow {requestName}: {str(ex)}")
+                                elementFullyProcessed = False
+                                continue
+
                     if cleanedRules_info:
                         current_time = format_timestamp(time.time())
                         self.logger.info(f"{current_time}: Start cleaning rules for completed element {element.id}")
-                        
+
                         do_cleaning = True
 
                         for block, info in cleanedRules_info.items():
                             for rule_id, size in zip(info["id"], info["bytes"]):
                                 self.logger.info(f"{current_time} Rule to clean: {rule_id} {block} {size} {requestName}")
-                        
+
                         self.msRuleCleaner.cleanRucioRules(rulesToClean)
-                        
+                        if not rulesToClean['CleanupStatus']['Current']:
+                            elementFullyProcessed = False
+
                         current_time = format_timestamp(time.time())
-                        self.logger.info(f"{current_time}: End cleaning rules for completed element {element.id}")
-            
+                        self.logger.info(f"{current_time}: End cleaning rules for completed element {element.id} (success={elementFullyProcessed})")
+
+                    if elementFullyProcessed:
+                        self._processedElementIds.add(element.id)
+
             if not do_cleaning:
                 current_time = format_timestamp(time.time())
-                self.logger.info(f"{current_time} No cleaning happened: There are no completed workqueue elements or block is currently used by other requests or rules already cleaned")    
-            
-            #current_time = format_timestamp(time.time())
-            #self.logger.info(f"{current_time}: {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
-            #tmp = rulesToClean['RulesToClean'][rulesToClean['PlineMarkers'][-1]]
-            #ids = ''
-            #for rid in tmp:
-            #    ids += rid + ', '
-            #    rulesToClean['CleanupStatus']['Current'].append({'RuleID': rid, 'Status': 'Pending'})
-            #self.logger.info('Rules to be cleaned: %s', ids)
-            #return rulesToClean
-            #return self.msRuleCleaner.cleanRucioRules(rulesToClean)
+                self.logger.debug(f"{current_time} No cleaning happened: There are no completed workqueue elements or block is currently used by other requests or rules already cleaned")
 
         else:
             current_time = format_timestamp(time.time())
-            self.logger.info(f"{current_time} No elements found in GlobalQueue")
-        
+            self.logger.debug(f"{current_time} No elements found in GlobalQueue")
+
         current_time = format_timestamp(time.time())
         self.logger.info(f"{current_time} {self.__class__.__name__} executed in {(time.time() - tStart):.3f} secs.")
         return do_cleaning

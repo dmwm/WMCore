@@ -1,36 +1,23 @@
 from WMCore.GlobalWorkQueue.CherryPyThreads.InputDataRucioRuleCleaner import InputDataRucioRuleCleaner
-
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-
-import cherrypy
-
-# WMCore modules
-from WMCore.Services.Rucio import Rucio
-
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
-from WMCore.ReqMgr.Web.ReqMgrService import getdata
 
 import json
-# system modules
-import os
-import time
-
 import unittest
 
-from urllib.parse import parse_qs, urlparse
-#from unittest.mock import patch
 from mock import mock
+
 
 class DummyREST:
     def __init__(self):
-        self.logger = None  # Optional: add logger if needed
+        self.logger = None
         self.config = None
 
-#MSRuleCleaner requires plain dictionary to be passed as config while CherryPyPeriodic requires attributes, so we create a DictWithAttrs class
+
+# MSRuleCleaner requires a plain dict while CherryPyPeriodicTask requires attribute access
 class DictWithAttrs(dict):
     def __getattr__(self, key):
         try:
@@ -38,550 +25,306 @@ class DictWithAttrs(dict):
         except KeyError as e:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{key}'") from e
 
+
 class InputDataRucioRuleCleanerTest(EmulatedUnitTestCase):
 
-    def setUp(self):   
-        self.config = {}
-        self.msRuleCleaner = {"verbose": True,
-                         "interval": 1 * 60,
-                         "services": ['ruleCleaner'],
-                         "rucioAccount": 'wma_test',
-                         'reqmgr2Url': 'https://cmsweb-testbed.cern.ch/reqmgr2',
-                         'msOutputUrl': 'https://cmsweb-testbed.cern.ch/ms-output',
-                         'reqmgrCacheUrl': 'https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache',
-                         'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',
-                         'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader',
-                         'rucioUrl': 'http://cms-rucio-int.cern.ch',
-                         'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
-                         "wmstatsUrl": "https://cmsweb-testbed.cern.ch/wmstatsserver",
-                         "logDBUrl": "https://cmsweb-testbed.cern.ch/couchdb/wmstats_logdb",
-                         'logDBReporter': 'reqmgr2ms_ruleCleaner',
-                         'archiveDelayHours': 8,
-                         'archiveAlarmHours': 24,
-                         'enableRealMode': True}
-        
-        self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
-                      "client_key": os.getenv("X509_USER_KEY", "Unknown")}
-        self.rucioConfigDict = {"rucio_host": self.msRuleCleaner['rucioUrl'],
-                                "auth_host": self.msRuleCleaner['rucioAuthUrl'],
-                                "auth_type": "x509",
-                                "account": self.msRuleCleaner['rucioAccount'],
-                                "ca_cert": False,
-                                "timeout": 30,
-                                "request_retries": 3,
-                                "creds": self.creds}
+    def setUp(self):
+        # --- Why we mock TagCollector before super().setUp() ---
+        #
+        # EmulatedUnitTestCase.setUp() sets up several patchers, e.g.:
+        #   mock.patch('WMCore.ReqMgr.Tools.cms.CRIC', ...)
+        #   mock.patch('WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio', ...)
+        #
+        # Setting up each patcher causes Python to import the target module for the
+        # first time. Both of the above targets cause cms.py to be imported, and cms.py
+        # has this at module level:
+        #
+        #   TC = TagCollector()   # cms.py line 18
+        #
+        # TagCollector.__init__ tries to load SSL certificates, which fails in a
+        # test environment without real certs.
+        #
+        # By replacing the TagCollector *class* with a MagicMock before super().setUp()
+        # runs, the first import of cms.py instantiates the mock instead of the real
+        # class, so no SSL calls are made.
+        #
+        # --- Why we configure releases/architectures return values ---
+        #
+        # WMSpecGenerator.createReRecoSpec() calls StdBase.getTestArguments(), which
+        # picks a test CMSSWVersion and ScramArch. Those values are then validated:
+        #
+        #   "validate": lambda x: x in releases()   # StdBase.py
+        #
+        # releases() calls TC.releases(), and TC is the MagicMock instance created
+        # above (tagCollectorMock.return_value). Without configuring the return value,
+        # TC.releases() returns a bare MagicMock and 'x' in MagicMock() evaluates to
+        # False, failing validation.
+        #
+        # We use _AnyContains — a list subclass whose __contains__ always returns True —
+        # so that any CMSSW version or ScramArch passes validation, regardless of what
+        # getTestArguments() returns. This avoids brittle hardcoding that would break
+        # if StdBase.getTestArguments() is updated to use a newer release.
+        #
+        # Mock hierarchy:
+        #   tagCollectorMock              — the mocked class
+        #   tagCollectorMock()            — instantiating it → tagCollectorMock.return_value
+        #   TC = TagCollector()           → TC = tagCollectorMock.return_value
+        #   TC.releases()                 → tagCollectorMock.return_value.releases.return_value
+        class _AnyContains(list):
+            def __contains__(self, item):
+                return True
 
-                
+        from unittest.mock import MagicMock
+        tagCollectorMock = MagicMock()
+        tagCollectorMock.return_value.releases.return_value = _AnyContains()
+        tagCollectorMock.return_value.architectures.return_value = _AnyContains()
+        tagCollectorPatcher = mock.patch(
+            'WMCore.Services.TagCollector.TagCollector.TagCollector', new=tagCollectorMock)
+        tagCollectorPatcher.start()
+        self.addCleanup(tagCollectorPatcher.stop)
+
+        super(InputDataRucioRuleCleanerTest, self).setUp()
+
+        from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
+
+        self.msRuleCleanerConfig = {
+            "verbose": True,
+            "interval": 1 * 60,
+            "services": ['ruleCleaner'],
+            "rucioAccount": 'wma_test',
+            'reqmgr2Url': 'https://cmsweb-testbed.cern.ch/reqmgr2',
+            'msOutputUrl': 'https://cmsweb-testbed.cern.ch/ms-output',
+            'reqmgrCacheUrl': 'https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache',
+            'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',
+            'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader',
+            'rucioUrl': 'http://cms-rucio-int.cern.ch',
+            'rucioAuthUrl': 'https://cms-rucio-auth-int.cern.ch',
+            "wmstatsUrl": "https://cmsweb-testbed.cern.ch/wmstatsserver",
+            "logDBUrl": "https://cmsweb-testbed.cern.ch/couchdb/wmstats_logdb",
+            'logDBReporter': 'reqmgr2ms_ruleCleaner',
+            'archiveDelayHours': 8,
+            'archiveAlarmHours': 24,
+            'enableRealMode': True,
+        }
+
         self.specGenerator = WMSpecGenerator("WMSpecs")
-        self.schema = []
-        self.couchApps = ["WorkQueue"]
         self.testInit = TestInitCouchApp('WorkQueueServiceTest')
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules=self.schema,
-                                useDefault=False)
-        self.testInit.setupCouch('workqueue_t', *self.couchApps)
-        self.testInit.setupCouch('workqueue_t_inbox', *self.couchApps)
-        self.testInit.setupCouch('local_workqueue_t', *self.couchApps)
-        self.testInit.setupCouch('local_workqueue_t_inbox', *self.couchApps)
+        self.testInit.setSchema(customModules=[], useDefault=False)
+        for dbName in ('workqueue_t', 'workqueue_t_inbox', 'local_workqueue_t', 'local_workqueue_t_inbox'):
+            self.testInit.setupCouch(dbName, "WorkQueue")
         self.testInit.generateWorkDir()
 
-        self.msRuleCleaner.update({'QueueURL':self.testInit.couchUrl})
-           
-        self.queueParams = {}
-        self.queueParams['log_reporter'] = "Services_WorkQueue_Unittest"
-        self.queueParams['rucioAccount'] = self.msRuleCleaner['rucioAccount']
-        self.queueParams['rucioAuthUrl'] = "http://cms-rucio-int.cern.ch"
-        self.queueParams['rucioUrl'] = "https://cms-rucio-auth-int.cern.ch"
-        self.queueParams['_internal_name'] = 'GlobalWorkQueueTest'
-        self.queueParams['log_file'] = 'test.log'
+        self.msRuleCleanerConfig['QueueURL'] = self.testInit.couchUrl
 
-                
-        print("X509_USER_CERT:", os.getenv("X509_USER_CERT"))
-        print("X509_USER_KEY:", os.getenv("X509_USER_KEY"))
-      
-        # Create config object with attributes
-        self.config_obj = DictWithAttrs(self.config)
-        #additional attributes needed by cherrypy periodic task
+        self.queueParams = {
+            'log_reporter': "Services_WorkQueue_Unittest",
+            'rucioAccount': self.msRuleCleanerConfig['rucioAccount'],
+            'rucioAuthUrl': "http://cms-rucio-int.cern.ch",
+            'rucioUrl': "https://cms-rucio-auth-int.cern.ch",
+            '_internal_name': 'GlobalWorkQueueTest',
+            'log_file': 'test.log',
+        }
+
+        self.config_obj = DictWithAttrs()
         self.config_obj._internal_name = "GlobalWorkQueueTest"
         self.config_obj.log_file = "test.log"
-        #additional attributes needed by global workqueue
         self.config_obj.queueParams = self.queueParams
-        #additional attributes needed by MSRuleCleaner
-        self.config_obj.msRuleCleaner = self.msRuleCleaner
-        #duration for the periodic task in seconds
+        self.config_obj.msRuleCleaner = self.msRuleCleanerConfig
         self.config_obj.cleanInputDataRucioRuleDuration = 10
 
-        super(InputDataRucioRuleCleanerTest, self).setUp()
-    
+    def _makeCleaner(self):
+        """Create an InputDataRucioRuleCleaner with a fresh GlobalQueue and MockRucioApi."""
+        from WMQuality.Emulators.RucioClient.MockRucioApi import MockRucioApi
+        cleaner = InputDataRucioRuleCleaner(rest=DummyREST(), config=self.config_obj)
+        cleaner.globalQ = globalQueue(DbName='workqueue_t',
+                                      QueueURL=self.testInit.couchUrl,
+                                      UnittestFlag=True,
+                                      logger=cleaner.logger,
+                                      **self.queueParams)
+        msRuleCleaner = MSRuleCleaner(self.config_obj.msRuleCleaner, logger=cleaner.logger)
+        msRuleCleaner.resetCounters()
+        msRuleCleaner.rucio = MockRucioApi(self.msRuleCleanerConfig['rucioAccount'])
+        cleaner.msRuleCleaner = msRuleCleaner
+        return cleaner
+
+    def _getWorkflowElements(self, wqService, workflowName):
+        """Return raw CouchDB view rows for the given workflow."""
+        return wqService.db.loadView(
+            'WorkQueue', 'elementsDetailByWorkflowAndStatus',
+            {'startkey': [workflowName], 'endkey': [workflowName, {}], 'reduce': False}
+        )['rows']
 
     @mock.patch('WMCore.GlobalWorkQueue.CherryPyThreads.InputDataRucioRuleCleaner.InputDataRucioRuleCleaner.getRequestForInputDataset')
     def testInputDataRucioRuleCleaner(self, mock_getRequestForInputDataset):
         """
-        Test the InputDataRucioRuleCleaner task
+        Single-workflow happy path:
+          - Done element at <100% is skipped.
+          - Done element at 100%/100% with a Rucio rule gets the rule cleaned.
+          - The element is added to the skip-set and skipped on the next cycle.
         """
-        #Get workflow description. ReRecoWorkloadFactory.getTestArguments() is used in createReRecoSpec below, 
-        #so the workflow description here and the one used in creating workqueue is the same
         specName = "RerecoSpec"
-        inputdataset = {"InputDataset": "/JetHT/Run2012C-v1/RAW"}
-                
-        #Create ReRecoSpec as stored in GlobalQueue       
-        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
-                                                      assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]},InputDataset=inputdataset["InputDataset"])          
-        
-        #cleaner = InputDataRucioRuleCleaner(rest=self.mockRest, config=self.config_obj)
-        cleaner = InputDataRucioRuleCleaner(rest=DummyREST(), config=self.config_obj)
-        
-        #Make GlobalQueue
-        globalQ = globalQueue(DbName='workqueue_t',
-                              QueueURL=self.testInit.couchUrl,
-                              UnittestFlag=True, logger=cleaner.logger, **self.queueParams)
-        globalQ.queueWork(specUrl, specName, "teamA")
-        cleaner.globalQ = globalQ
+        inputDataset = "/JetHT/Run2012C-v1/RAW"
 
-        #Make MSRuleCleaner
-        msRuleCleaner = MSRuleCleaner(self.config_obj.msRuleCleaner,logger=cleaner.logger)
-        msRuleCleaner.resetCounters()
-        msRuleCleaner.rucio = Rucio.Rucio(self.msRuleCleaner['rucioAccount'],
-                                               hostUrl=self.rucioConfigDict['rucio_host'],
-                                               authUrl=self.rucioConfigDict['auth_host'],
-                                               configDict=self.rucioConfigDict)
-        
-        cleaner.msRuleCleaner = msRuleCleaner        
-        
-        #Let try to modify the element in GlobalQueue to have PercentComplete and PercentSuccess set to 100
+        specUrl = self.specGenerator.createReRecoSpec(
+            specName, "file",
+            assignKwargs={'SiteWhitelist': ["T2_XX_SiteA"]},
+            InputDataset=inputDataset)
+
+        cleaner = self._makeCleaner()
+        cleaner.globalQ.queueWork(specUrl, specName, "teamA")
+
         wqService = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
-        #Use this instead of wqService.getWQElementsByWorkflow(workflowName) to have the element'id'
-        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName], 'endkey': [specName, {}],
-                                  'reduce': False})
-        
-        print("Elements in GlobalQueue:")
-        elements = data.get('rows', [])
-        print(json.dumps(elements, indent=2))
-        
-        #let update the PercentComplete and PercentSuccess and Status='Done' of the first elements
-        element_id = [elements[0]['id']]  # Get the first element's ID
-        print("Updating element:", element_id)
-        wqService.updateElements(*element_id, PercentComplete=100, PercentSuccess=100, Status='Done')
-        
-        #create a rule and inject it in wma_test account
-        blockNames = list(elements[0]['value']['Inputs'].keys())  # Get the block name from the first element
-        print("Block Name:", blockNames[0])
-        
-        #need to create rule here otherwise we do not know which element was updated since the element order changes each time re-fetching (of course we can use the element_id)
+        rows = self._getWorkflowElements(wqService, specName)
+        element_id = rows[0]['id']
+        blockName = list(rows[0]['value']['Inputs'].keys())[0]
+        print("Elements in GlobalQueue:", json.dumps(rows, indent=2))
+
+        # Mock returns only the current request — canDeleteRucioRule skips self and allows deletion
+        mock_getRequestForInputDataset.return_value = {
+            "result": [{specName: {"RequestName": specName, "RequestStatus": "running-open"}}]
+        }
+
+        # Done element at 50%/50% must be skipped
+        wqService.updateElements(element_id, PercentComplete=50, PercentSuccess=50, Status='Done')
+        self.assertFalse(cleaner.cleanRucioRules(self.config_obj),
+                         "Should not clean rules for a Done element with less than 100% completion")
+
+        # Now fully complete — create a mock Rucio rule to be cleaned
+        wqService.updateElements(element_id, PercentComplete=100, PercentSuccess=100, Status='Done')
         rule_id = cleaner.msRuleCleaner.rucio.createReplicationRule(
-            names=blockNames[0],
+            names=blockName,
             rseExpression="T2_US_Nebraska",
             copies=1,
-            grouping="DATASET",
-            lifetime=360,
-            account="wma_test",
-            ask_approval=False,
-            activity="Production Input",
-            comment="WMCore test block rule creation"
-        )
-
+            account=self.msRuleCleanerConfig['rucioAccount'],
+        )[0]
         print("Created Rucio rule with ID:", rule_id)
-        rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        print(rule_info)
+        print("Rule info:", cleaner.msRuleCleaner.rucio.getRule(rule_id))
 
-        # Re-fetch the elements to see the update
-        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName], 'endkey': [specName, {}],
-                                  'reduce': False})
-        #element order changes each time, so we need to re-fetch the elements
-        elements = data.get('rows', [])
-        #elements=wqService.getWQElementsByWorkflow(specName)
+        rows = self._getWorkflowElements(wqService, specName)
         print("Updated Elements in GlobalQueue:")
-        for e in elements:
+        for e in rows:
             print(e["id"], e['value']['Status'], e['value']["PercentComplete"], e['value']["PercentSuccess"])
-            #print(e["id"], e['Status'], e["PercentComplete"], e["PercentSuccess"])
-              
-        
-        # Define a variable to hold the dynamic RequestName and RequestStatus
-        self.dynamicRequestName = specName
-        self.dynamicRequestStatus = "running-open"  # Default value
-        self.ReferenceInputDatasets = ["/JetHT/Run2012C-v1/RAW"]
-        
-        def mock_getRequestForInputDataset_side_effect(inputdataset, reqmgr2Url):
-            if inputdataset in self.ReferenceInputDatasets: #only respond to the input data set that is used by a request
-                # Simulate retrieving the workflow details
-                return {
-                    "result": [
-                        {self.dynamicRequestName:{
-                            "RequestName": self.dynamicRequestName,  # Use the dynamic RequestName
-                            "RequestStatus": self.dynamicRequestStatus,  # Use the dynamic RequestStatus
-                           }
-                        }
-                    ]
-                }
-            else:
-                #return {"status": "error", "message": "Invalid request: inputdataset not found"}
-                return {"result": []}
-        
-        # Assign the side effect to the mock object
-        mock_getRequestForInputDataset.side_effect = mock_getRequestForInputDataset_side_effect
 
-        results = cleaner.cleanRucioRules(self.config_obj)
-        print("Results from cleanRucioRules:", json.dumps(results, indent=2))
-        #now make sure the rule is cleaned
-        #keep deleting until success or timeout
-        rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        delResult = False
-        timeleft = 0
-        start_time = time.time()
-        while rule_info and not delResult and timeleft < 300:
-            #now delete it
-            print('Manually deleting rucio rules: ', blockNames[0], cleaner.msRuleCleaner.rucio.listDataRules(blockNames[0], account=self.msRuleCleaner['rucioAccount']))
-            delResult = cleaner.msRuleCleaner.rucio.deleteRule(rule_id[0])
-            print("Deleted Rucio rule with ID:", rule_id, delResult)
-            if delResult: break
-            time.sleep(60)
-            timeleft = time.time() - start_time
-        
-        if not delResult and timeleft >= 300:
-            print("Failed to delete the rule after 5 minutes, exiting...")
-       
-        #self.assertTrue(False)
-        self.assertTrue(results)
+        self.assertTrue(cleaner.cleanRucioRules(self.config_obj),
+                        "cleanRucioRules should return True after cleaning a completed element's rules")
+
+        # Skip-set must be populated and contain only IDs still in the Done queue
+        done_ids = {el.id for el in cleaner.globalQ.backend.getElements(status='Done')}
+        self.assertTrue(len(cleaner._processedElementIds) > 0,
+                        "Skip-set should be non-empty after a successful clean cycle")
+        self.assertTrue(cleaner._processedElementIds.issubset(done_ids),
+                        "All skip-set IDs should still be present in the Done queue")
+
+        # Second cycle: element already in skip-set, nothing to do
+        self.assertFalse(cleaner.cleanRucioRules(self.config_obj),
+                         "Second cycle should return False — element already in skip-set")
+
+        # The cleaner sets rule lifetime to 0 via updateRule (not deleteRule),
+        # so the mock rule still exists in the store
+        self.assertTrue(cleaner.msRuleCleaner.rucio.getRule(rule_id),
+                        "Mock rule should still exist after lifetime-0 update (not physically deleted)")
 
     @mock.patch('WMCore.GlobalWorkQueue.CherryPyThreads.InputDataRucioRuleCleaner.InputDataRucioRuleCleaner.getRequestForInputDataset')
     def testInputDataRucioRuleCleanerTwoWorkflowSameInputdata(self, mock_getRequestForInputDataset):
         """
-        Test the InputDataRucioRuleCleaner task with two workflows using the same input data set
+        Two workflows sharing the same input dataset:
+          Cycle 1: specName1 still running  → rule must NOT be cleaned.
+          Cycle 2: both workflows at 100%   → rule IS cleaned.
+          Cycle 3: specName1 aborted        → rule IS cleaned (aborted is not an active status).
+          Cycle 4: specName1 staging with no WQ elements → rule must NOT be cleaned
+                   (conservative: staging request with no queue yet blocks deletion).
         """
-        #Get workflow description. ReRecoWorkloadFactory.getTestArguments() is used in createReRecoSpec below, 
-        #so the workflow description here and the one used in creating workqueue is the same
         specName = "RerecoSpec"
-        inputdataset = {"InputDataset": "/JetHT/Run2012C-v1/RAW"}
-                
-        #Create ReRecoSpec as stored in GlobalQueue       
-        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
-                                                      assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]},InputDataset=inputdataset["InputDataset"])          
-        
-        #Second workflow using the same input data set
-        specName1 = "RerecoSpec1"       
-        specUrl1 = self.specGenerator.createReRecoSpec(specName1, "file",
-                                                      assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]},InputDataset=inputdataset["InputDataset"])
+        specName1 = "RerecoSpec1"
+        inputDataset = "/JetHT/Run2012C-v1/RAW"
 
-        #cleaner = InputDataRucioRuleCleaner(rest=self.mockRest, config=self.config_obj)
-        cleaner = InputDataRucioRuleCleaner(rest=DummyREST(), config=self.config_obj)
-        
-        #Make GlobalQueue
-        globalQ = globalQueue(DbName='workqueue_t',
-                              QueueURL=self.testInit.couchUrl,
-                              UnittestFlag=True, logger=cleaner.logger, **self.queueParams)
-        globalQ.queueWork(specUrl, specName, "teamA")
-        globalQ.queueWork(specUrl1, specName1, "teamB")
-        
+        specUrl = self.specGenerator.createReRecoSpec(
+            specName, "file",
+            assignKwargs={'SiteWhitelist': ["T2_XX_SiteA"]},
+            InputDataset=inputDataset)
+        specUrl1 = self.specGenerator.createReRecoSpec(
+            specName1, "file",
+            assignKwargs={'SiteWhitelist': ["T2_XX_SiteA"]},
+            InputDataset=inputDataset)
 
-        cleaner.globalQ = globalQ
+        cleaner = self._makeCleaner()
+        cleaner.globalQ.queueWork(specUrl, specName, "teamA")
+        cleaner.globalQ.queueWork(specUrl1, specName1, "teamB")
 
-        #Make MSRuleCleaner
-        msRuleCleaner = MSRuleCleaner(self.config_obj.msRuleCleaner,logger=cleaner.logger)
-        msRuleCleaner.resetCounters()
-        msRuleCleaner.rucio = Rucio.Rucio(self.msRuleCleaner['rucioAccount'],
-                                               hostUrl=self.rucioConfigDict['rucio_host'],
-                                               authUrl=self.rucioConfigDict['auth_host'],
-                                               configDict=self.rucioConfigDict)
-        
-        cleaner.msRuleCleaner = msRuleCleaner        
-        
-        #Let try to modify the element in GlobalQueue to have PercentComplete and PercentSuccess set to 100
         wqService = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
-        #Use this instead of wqService.getWQElementsByWorkflow(workflowName) to have the element'id'
-        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName], 'endkey': [specName, {}],
-                                  'reduce': False})
-        
-        print(f"Elements in GlobalQueue {specName}:")
-        elements = data.get('rows', [])
-        print(json.dumps(elements, indent=2))
-        
-        data1 = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName1], 'endkey': [specName1, {}],
-                                  'reduce': False})
-        
-        print(f"Elements in GlobalQueue {specName1}:")
-        elements1 = data1.get('rows', [])
-        print(json.dumps(elements1, indent=2))
+        rows = self._getWorkflowElements(wqService, specName)
+        rows1 = self._getWorkflowElements(wqService, specName1)
+        print(f"Elements in GlobalQueue {specName}:", json.dumps(rows, indent=2))
+        print(f"Elements in GlobalQueue {specName1}:", json.dumps(rows1, indent=2))
 
-        #let update the PercentComplete and PercentSuccess and Status='Done' of the first elements
-        element_id = [elements[0]['id']]  # Get the first element's ID
-        print("Updating element:", element_id)
-        wqService.updateElements(*element_id, PercentComplete=100, PercentSuccess=100, Status='Done')
-        
-        #create a rule and inject it in wma_test account
-        blockNames = list(elements[0]['value']['Inputs'].keys())  # Get the block name from the first element
-        print("Block Name:", blockNames[0])
-        
-        #need to create rule here otherwise we do not know which element was updated since the element order changes each time re-fetching (of course we can use the element_id)
-        rule_id = cleaner.msRuleCleaner.rucio.createReplicationRule(
-            names=blockNames[0],
-            rseExpression="T2_US_Nebraska",
-            copies=1,
-            grouping="DATASET",
-            lifetime=360,
-            account="wma_test",
-            ask_approval=False,
-            activity="Production Input",
-            comment="WMCore test block rule creation"
-        )
+        element_id = rows[0]['id']
+        blockName = list(rows[0]['value']['Inputs'].keys())[0]
 
-        print("Created Rucio rule with ID:", rule_id)
-        rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        print(rule_info)
-
-        # Re-fetch the elements to see the update
-        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName], 'endkey': [specName, {}],
-                                  'reduce': False})
-        #element order changes each time, so we need to re-fetch the elements
-        elements = data.get('rows', [])
-        #elements=wqService.getWQElementsByWorkflow(specName)
-        print("Updated Elements in GlobalQueue:")
-        for e in elements:
-            print(e["id"], e['value']['Status'], e['value']["PercentComplete"], e['value']["PercentSuccess"])
-            #print(e["id"], e['Status'], e["PercentComplete"], e["PercentSuccess"])
-              
-        
-        # Define variables to hold the dynamic RequestName and RequestStatus
-        self.dynamicRequestName = specName
-        self.dynamicRequestName1 = specName1
-        self.dynamicRequestStatus = "running-open"
-        self.dynamicRequestStatus1 = "running-open"
-        self.ReferenceInputDatasets = ["/JetHT/Run2012C-v1/RAW"]
-        
-        def mock_getRequestForInputDataset_side_effect(inputdataset, reqmgr2Url):
-            if inputdataset in self.ReferenceInputDatasets: #only respond to the input data set that is used by a request
-                # Simulate retrieving the workflow details
-                return {
-                    "result": [
-                        {self.dynamicRequestName:{
-                            "id": 123,
-                            "RequestName": self.dynamicRequestName,  # Use the dynamic RequestName
-                            "RequestStatus": self.dynamicRequestStatus,  # Use the dynamic RequestStatus
-                           },
-                        self.dynamicRequestName1:{
-                            "id": 456,
-                            "RequestName": self.dynamicRequestName1,  # Use the dynamic RequestName
-                            "RequestStatus": self.dynamicRequestStatus1,  # Use the dynamic RequestStatus
-                           }
-                        }
-                    ]
-                }
-            else:
-                #return {"status": "error", "message": "Invalid request: inputdataset not found"}
-                return {"result": []}
-        
-        # Assign the side effect to the mock object
-        mock_getRequestForInputDataset.side_effect = mock_getRequestForInputDataset_side_effect
-        
-        #First test to clean the rule. It should not be successful since the second workflow is still running
-        results = cleaner.cleanRucioRules(self.config_obj)
-        print("Results from cleanRucioRules:", json.dumps(results, indent=2))
-        self.assertTrue(not results)
-        
-        #Second test, change the second workflow element to 100% and try to clean the rule again
-        #now change the percentage of workqueue of the second workflow to 100%
-        #find the id that corresponds to blockname
-        print("Block Name:", blockNames[0])
-        element_id1 = [elements1[0]['id']]  # Get the first element's ID
-        for e in elements1:
-            inputs = list(e['value']['Inputs'].keys())
-            if blockNames == inputs:
-                print("Found matching element in second workflow:", e['id'])
-                element_id1 = [e['id']]
+        # Find the specName1 element that covers the same block as specName's first element
+        element_id1 = rows1[0]['id']
+        for e in rows1:
+            if list(e['value']['Inputs'].keys()) == [blockName]:
+                element_id1 = e['id']
                 break
 
-        print(f"Updating element {element_id1} to (PercentComplete=100, PercentSuccess=100, Status='Done')")
-        wqService.updateElements(*element_id1, PercentComplete=100, PercentSuccess=100, Status='Done')
-        # Re-fetch the elements to see the update
-        data1 = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName1], 'endkey': [specName1, {}],
-                                  'reduce': False})
-        #element order changes each time, so we need to re-fetch the elements
-        elements1 = data1.get('rows', [])
-        print("Updated Elements in GlobalQueue (workflow 1):")
-        for e in elements1:
-            print(e["id"], e['value']['Status'], e['value']["PercentComplete"], e['value']["PercentSuccess"])
-
-        #now try to clean the rule again. It should be successful this time
-        results = cleaner.cleanRucioRules(self.config_obj)
-        print("Results from cleanRucioRules with elements from other workflow complete:", json.dumps(results, indent=2))
-        self.assertTrue(results)
-        
-        #Third test, change the second workflow to aborted and its elements to 0%. It should be able to clean the rule
-        #now change back the percentage of workqueue of the second workflow to 0%
-        print(f"Updating element {element_id1} to (PercentComplete=0, PercentSuccess=0, Status='Done')")
-        wqService.updateElements(*element_id1, PercentComplete=0, PercentSuccess=0, Status='Available')
-        #test the status of other request is aborted
-        self.dynamicRequestStatus1 = "aborted"
-        results = cleaner.cleanRucioRules(self.config_obj)
-        print("Results from cleanRucioRules with other request is aborted:", json.dumps(results, indent=2))
-        self.assertTrue(results) #should be true since other request already aborted
-
-        #Fourth test, now testing workflow in staging status and no workqueue is created. It should not clean the rule
-        globalQ.backend.deleteWQElementsByWorkflow([specName1])
-        data1 = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName1], 'endkey': [specName1, {}],
-                                  'reduce': False})
-        
-        print(f"Elements in GlobalQueue {specName1}:")
-        elements1 = data1.get('rows', [])
-        print(json.dumps(elements1, indent=2))
-        self.dynamicRequestStatus1 = "staging"
-        results = cleaner.cleanRucioRules(self.config_obj)
-        print("Results from cleanRucioRules with other request is staging:", json.dumps(results, indent=2))
-        self.assertTrue(not results) #this should be false since staging request using the same data should not trigger rule deletion
-
-
-        #now make sure the rule is cleaned
-        #keep deleting until success or timeout
-        rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        delResult = False
-        timeleft = 0
-        start_time = time.time()
-        while rule_info and not delResult and timeleft < 300:
-            #now delete it
-            print('Manually deleting rucio rules: ', blockNames[0], cleaner.msRuleCleaner.rucio.listDataRules(blockNames[0], account=self.msRuleCleaner['rucioAccount']))
-            delResult = cleaner.msRuleCleaner.rucio.deleteRule(rule_id[0])
-            print("Deleted Rucio rule with ID:", rule_id, delResult)
-            if delResult: break
-            time.sleep(60)
-            timeleft = time.time() - start_time
-        
-        if not delResult and timeleft >= 300:
-            print("Failed to delete the rule after 5 minutes, exiting...")
-       
-    '''
-    #@mock.patch('WMCore.GlobalWorkQueue.CherryPyThreads.InputDataRucioRuleCleaner.InputDataRucioRuleCleaner.getRequestForInputDataset')
-    def testInputDataRucioRuleCleanerWithThreading(self):
-        """
-        Test the InputDataRucioRuleCleaner task with threading
-        """
-        
-        #cleaner = InputDataRucioRuleCleaner(rest=self.mockRest, config=self.config_obj)
-        cleaner = InputDataRucioRuleCleaner(rest=DummyREST(), config=self.config_obj)
-        
-        #Get workflow description. ReRecoWorkloadFactory.getTestArguments() is used in createReRecoSpec below, 
-        #so the workflow description here and the one used in creating workqueue is the same
-        specName = "RerecoSpec"
-        inputdataset = {"InputDataset": "/JetHT/Run2012C-v1/RAW"}
-                
-        #Create ReRecoSpec as stored in GlobalQueue       
-        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
-                                                      assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]},InputDataset=inputdataset["InputDataset"])
-
-        #Make GlobalQueue
-        globalQ = globalQueue(DbName='workqueue_t',
-                              QueueURL=self.testInit.couchUrl,
-                              UnittestFlag=True, logger=cleaner.logger, **self.queueParams)
-        globalQ.queueWork(specUrl, specName, "teamA")
-        cleaner.globalQ = globalQ
-
-        #Make MSRuleCleaner
-        msRuleCleaner = MSRuleCleaner(self.config_obj.msRuleCleaner,logger=cleaner.logger)
-        msRuleCleaner.resetCounters()
-        msRuleCleaner.rucio = Rucio.Rucio(self.msRuleCleaner['rucioAccount'],
-                                               hostUrl=self.rucioConfigDict['rucio_host'],
-                                               authUrl=self.rucioConfigDict['auth_host'],
-                                               configDict=self.rucioConfigDict)
-        cleaner.msRuleCleaner = msRuleCleaner        
-        
-        # Start CherryPy engine
-        print('CherryPy engine starting...')
-        cherrypy.engine.start()
-        # Give CherryPy a moment to start and modify the element in GlobalQueue after 5 seconds and before the next run of the periodic task
-        time.sleep(5)
-        
-        #Let try to modify the element in GlobalQueue to have PercentComplete and PercentSuccess set to 100
-        wqService = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
-        #Use this instead of wqService.getWQElementsByWorkflow(workflowName) to have the element'id'
-        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName], 'endkey': [specName, {}],
-                                  'reduce': False})
-        
-        print("Elements in GlobalQueue:")
-        elements = data.get('rows', [])
-        print(json.dumps(elements, indent=2))
-        
-        #let update the PercentComplete and PercentSuccess and Status='Done' of the first elements
-        element_id = [elements[0]['id']]  # Get the first element's ID
-        print("Updating element:", element_id)
-        wqService.updateElements(*element_id, PercentComplete=100, PercentSuccess=100, Status='Done')
-        
-        #create a rule and inject it in wma_test account
-        blockNames = list(elements[0]['value']['Inputs'].keys())  # Get the block name from the first element
-                
-        #need to create rule here otherwise we do not know which element was updated since the element order changes each time re-fetching (of course we can use the element_id)
+        # Set specName's element to Done/100%/100% and create a Rucio rule for its block
+        wqService.updateElements(element_id, PercentComplete=100, PercentSuccess=100, Status='Done')
         rule_id = cleaner.msRuleCleaner.rucio.createReplicationRule(
-            names=blockNames[0],
+            names=blockName,
             rseExpression="T2_US_Nebraska",
             copies=1,
-            grouping="DATASET",
-            lifetime=360,
-            account="wma_test",
-            ask_approval=False,
-            activity="Production Input",
-            comment="WMCore test block rule creation"
-        )
-
+            account=self.msRuleCleanerConfig['rucioAccount'],
+        )[0]
         print("Created Rucio rule with ID:", rule_id)
-        rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        print(rule_info)
+        print("Rule info:", cleaner.msRuleCleaner.rucio.getRule(rule_id))
 
-        # Re-fetch the elements to see the update
-        data = wqService.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                 {'startkey': [specName], 'endkey': [specName, {}],
-                                  'reduce': False})
+        # Mutable status dict so each cycle can update statuses without redefining the closure
+        statuses = {specName: "running-open", specName1: "running-open"}
 
-        elements = data.get('rows', [])
-        print("Updated Elements in GlobalQueue:")
-        for e in elements:
+        def side_effect(inputdataset, reqmgr2Url):
+            if inputdataset == inputDataset:
+                return {"result": [{
+                    specName:  {"RequestName": specName,  "RequestStatus": statuses[specName]},
+                    specName1: {"RequestName": specName1, "RequestStatus": statuses[specName1]},
+                }]}
+            return {"result": []}
+
+        mock_getRequestForInputDataset.side_effect = side_effect
+
+        # Cycle 1: specName1 element is still at 0%/0% → block deletion
+        self.assertFalse(cleaner.cleanRucioRules(self.config_obj),
+                         "Rule must not be cleaned while specName1 is still processing the same block")
+
+        # Cycle 2: specName1 element completes → deletion allowed
+        wqService.updateElements(element_id1, PercentComplete=100, PercentSuccess=100, Status='Done')
+        print(f"Updated Elements in GlobalQueue {specName1}:")
+        for e in self._getWorkflowElements(wqService, specName1):
             print(e["id"], e['value']['Status'], e['value']["PercentComplete"], e['value']["PercentSuccess"])
-    
-        time.sleep(20)
-        
-        print('CherryPy engine exiting...')
-        cherrypy.engine.exit()
+        self.assertTrue(cleaner.cleanRucioRules(self.config_obj),
+                        "Rule should be cleaned once both workflows have completed the block")
 
-        #now continuously check the rule status until it is cleaned and exit after 10 minutes
-        rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        timeleft = 0
-        start_time = time.time()
-        while rule_info and timeleft < 600:  # Check for 10 minutes
-            print("Rule still exists:", rule_id[0], rule_info)
-            time.sleep(60)
-            timeleft = time.time() - start_time
-            rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        
-        rule_info_for_check = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        
-        #now make sure the rule should be cleaned (note that the rule may not be cleaned immediately after the periodic task execution (~5 mins), but we just clean it again here)
-        rule_info = cleaner.msRuleCleaner.rucio.getRule(rule_id[0])
-        delResult = False
-        if not rule_info:
-            print("Rule not found.")
-        
-        #keep deleting until success or timeout
-        timeleft = 0
-        start_time = time.time()
-        while rule_info and not delResult and timeleft < 300:
-            #now delete it
-            print('Manually deleting rucio rules: ', blockNames[0], cleaner.msRuleCleaner.rucio.listDataRules(blockNames[0], account=self.msRuleCleaner['rucioAccount']))
-            delResult = cleaner.msRuleCleaner.rucio.deleteRule(rule_id[0])
-            print("Deleted Rucio rule with ID:", rule_id, delResult)
-            if delResult: break
-            time.sleep(60)
-            timeleft = time.time() - start_time
-        
-        if not delResult and timeleft >= 300:
-            print("Failed to delete the rule after 5 minutes, exiting...")
-        
-        self.assertTrue(not rule_info_for_check, "Rule not deleted successfully after periodic task execution.")
-    '''
-        
+        # Cycle 3: specName1 is aborted (inactive) → deletion allowed even though its element
+        # is reset back to incomplete
+        wqService.updateElements(element_id1, PercentComplete=0, PercentSuccess=0, Status='Available')
+        statuses[specName1] = "aborted"
+        cleaner._processedElementIds = set()  # reset so this scenario is evaluated independently
+        self.assertTrue(cleaner.cleanRucioRules(self.config_obj),
+                        "Rule should be cleaned when the other request is aborted")
+
+        # Cycle 4: specName1 is staging (active) but has no WQ elements → conservative block
+        cleaner.globalQ.backend.deleteWQElementsByWorkflow([specName1])
+        statuses[specName1] = "staging"
+        cleaner._processedElementIds = set()  # reset so this scenario is evaluated independently
+        self.assertFalse(cleaner.cleanRucioRules(self.config_obj),
+                         "Rule must not be cleaned when a staging request has no queue elements yet")
+
+        # The cleaner sets rule lifetime to 0 via updateRule (not deleteRule),
+        # so the mock rule still exists in the store
+        self.assertTrue(cleaner.msRuleCleaner.rucio.getRule(rule_id),
+                        "Mock rule should still exist after lifetime-0 update (not physically deleted)")
+
+
 if __name__ == '__main__':
     unittest.main()

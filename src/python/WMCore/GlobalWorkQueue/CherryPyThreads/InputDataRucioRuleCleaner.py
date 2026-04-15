@@ -194,7 +194,8 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
 
         tStart = time.time()
 
-        globalQueueElements = self.globalQ.backend.getElements(status='Done')
+        #globalQueueElements = self.globalQ.backend.getElements(status='Done')
+        globalQueueElements = self.globalQ.backend.getElements()
 
         # Trim skip-set to only IDs still present in the queue, preventing unbounded growth
         currentIds = {el.id for el in globalQueueElements}
@@ -220,6 +221,8 @@ class InputDataRucioRuleCleaner(CherryPyPeriodicTask):
                 percentSuccess = element.get('PercentSuccess', 0)
 
                 if percentComplete == 100 and percentSuccess == 100:
+                    self.logger.info("Element %s workflow=%s status=%s PercentComplete=%s PercentSuccess=%s",
+                                     element.id, requestName, element.get('Status'), percentComplete, percentSuccess)
 
                     # Structure required by MSRuleCleaner.cleanRucioRules()
                     rulesToClean = {'PlineMarkers': ['Current'], 'RulesToClean': {'Current': []}, 'CleanupStatus': {'Current': []}}

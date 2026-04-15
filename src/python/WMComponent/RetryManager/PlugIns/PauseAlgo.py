@@ -52,6 +52,15 @@ class PauseAlgo(RetryAlgoBase):
                     msg += str(ex)
                     logging.warning(msg)
 
+                except Exception as ex:
+                    msg = "Unknown error %s\n" % (reportPath)
+                    msg += str(ex)
+                    logging.warning(msg)
+                    retryByTimeOut = True
+                    pauseCount = 1
+                    logging.info("Started force retry three times")
+
+
         # Here introduces the SquaredAlgo logic :
         baseTimeoutDict = self.getAlgoParam(job['jobType'])
         baseTimeout = baseTimeoutDict.get(cooloffType.lower(), 10)

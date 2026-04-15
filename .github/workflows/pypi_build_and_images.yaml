@@ -52,11 +52,13 @@ jobs:
           sudo apt update
           sudo apt install -y curl libcurl4-openssl-dev
 
-      # upgrade pip
+      # upgrade pip and set setuptools constraint for build isolation
       - name: Upgrade pip3 and install build tools
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install "setuptools>=45,<82" wheel
+          echo 'setuptools<80' > /tmp/constraints.txt
+          echo "PIP_CONSTRAINT=/tmp/constraints.txt" >> "$GITHUB_ENV"
+          python3 -m pip install setuptools wheel
 
       # create appropriate setup.py for python builds
       - name: Update the setup script template with package name

@@ -21,6 +21,7 @@ from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
 from WMCore.Services.TagCollector.TagCollector import TagCollector
+from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported
 
 
 def activityToType(jobActivity):
@@ -498,6 +499,30 @@ class SimpleCondorPlugin(BasePlugin):
 
         return
 
+    def isJobTokenReady(self, jobCMSSWVersions):
+        """
+        Check if all requested CMSSW versions support token-based authentication.
+
+        Performs two checks for each CMSSW version:
+        1. Is CMSSW version in the list of versions with broken XRootD support?
+        2. Is CMSSW version greater than the minimum version threshold:
+            Version must be >= CMSSW_10_6_47 (MIN_CMSSW_FOR_TOKENS)
+
+        :param jobCMSSWVersions: List of CMSSW version strings to check
+        :return: True if all CMSSW versions are token ready, False otherwise
+        """
+        MIN_CMSSW_FOR_TOKENS = "CMSSW_10_6_47"
+        # first check: is CMSSW version in the list of versions that do not support tokens?
+        for cmsswVer in jobCMSSWVersions:
+            if cmsswVer in self.cmssw_no_token_support:
+                return False
+
+        # second check: is CMSSW version greater than a minimum version that supports tokens?
+        for cmsswVer in jobCMSSWVersions:
+            if isCMSSWSupported(cmsswVer, MIN_CMSSW_FOR_TOKENS) is False:
+                return False
+
+        return True
 
     def getJobParameters(self, jobList, cmsswMicroArchs=None):
         """
@@ -525,11 +550,14 @@ class SimpleCondorPlugin(BasePlugin):
             if self.reqStr:
                 jobRequirements.append(self.reqStr)
 
-            ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
-
             # Allow oauth based token authentication
-            if self.useCMSToken:
-                ad['use_oauth_services'] = "cms"
+            isJobTokenReady = self.isJobTokenReady(job.get('swVersion'))
+            if self.useCMSToken and isJobTokenReady:
+                ad['token_override_value'] = "cms"
+                ad['x509_override_value'] = "$(blank)"
+            else:
+                ad['token_override_value'] = "$(blank)"
+                ad['x509_override_value'] = classad.quote(self.x509userproxy)
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))
@@ -719,6 +747,12 @@ class SimpleCondorPlugin(BasePlugin):
         # entries required for monitoring
         sub['My.CMS_WMTool'] = classad.quote("WMAgent")
         sub['My.CMS_SubmissionTool'] = classad.quote("WMAgent")
+
+        # Trick for enabling/disabling tokens through JDL/ClassAd Language
+        # Further details: https://github.com/dmwm/WMCore/pull/12463
+        # HACK: don't reproduce it anywhere else!
+        sub['MY.OAuthServicesNeeded'] = "$(token_override_value)"
+        sub['My.x509userproxy'] = "$(x509_override_value)"
 
         jobParameters = self.getJobParameters(jobList, cmsswMicroArchs=cmsswMicroArchs)
 

@@ -33,6 +33,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         fnalConfigFileName = os.path.join(getTestBase(),
                                           "WMCore_t/Storage_t",
                                           "T1_US_FNAL_SiteLocalConfig.xml")
+        
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
 
         assert mySiteConfig.siteName == "T1_US_FNAL", "Error: Wrong site name."
@@ -66,14 +67,66 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         assert len(goldenProxies) == 0, \
             "Error: Missing proxy servers."
-
+        
+        #test second stage out method with command extraction from rules
         assert mySiteConfig.stageOuts[0]["command"] == "xrdcp", \
             "Error: Wrong stage out command."
         assert mySiteConfig.stageOuts[0]["protocol"] == "XRootD", \
             "Error: Protocol is not correct."
         assert mySiteConfig.stageOuts[0]["option"] == "-p", \
             "Error: option is not correct."
-        # assert False
+        
+        #assert False
+        return
+    
+    def testGetDefaultStageOutCmd(self):
+        """
+        _testGetDefaultStageOutCmd_
+
+        Verify that the default stage out command is returned correctly for given protocol.
+        """
+        os.environ['SITECONFIG_PATH'] = os.path.join(getTestBase(),
+                                                    'WMCore_t/Storage_t',
+                                                    'T1_DE_KIT')
+        configFileName = os.path.join(getTestBase(),
+                                          "WMCore_t/Storage_t",
+                                          "T1_DE_KIT/JobConfig/site-local-config-testStageOut-T1_DE_KIT.xml")
+       
+        mySiteConfig = SiteLocalConfig(configFileName)
+        #test the first stage out method with command extraction from prefix
+        assert mySiteConfig.stageOuts[0]["command"] == "gfal2", \
+            "Error: Wrong stage out command."
+        assert mySiteConfig.stageOuts[0]["protocol"] == "WebDAV", \
+            "Error: Protocol is not correct."
+        #test the second stage out method with command extraction from rules
+        assert mySiteConfig.stageOuts[1]["command"] == "gfal2", \
+            "Error: Wrong stage out command."
+        assert mySiteConfig.stageOuts[1]["protocol"] == "WebDAV", \
+            "Error: Protocol is not correct."
+        #test the third stage out method with no command found, fall to default gfal2
+        assert mySiteConfig.stageOuts[2]["command"] == "gfal2", \
+            "Error: Wrong stage out command."
+        assert mySiteConfig.stageOuts[2]["protocol"] == "xrootd-module", \
+            "Error: Protocol is not correct."
+        #test the fourth stage out method with "prefix": "root://172.26.19.197:1094//root://cmsxrootd-test.gridka.de:1094/"
+        assert mySiteConfig.stageOuts[3]["command"] == "xrdcp", \
+            "Error: Wrong stage out command."
+        assert mySiteConfig.stageOuts[3]["protocol"] == "XRootDHoreKaGridKa", \
+            "Error: Protocol is not correct."
+        
+        os.environ['SITECONFIG_PATH'] = '/cvmfs/cms.cern.ch/SITECONF/T1_IT_CNAF'
+        configFileName = os.path.join(getTestBase(),
+                                          "WMCore_t/Storage_t",
+                                          "T1_IT_CNAF_SiteLocalConfig.xml")
+       
+        mySiteConfig = SiteLocalConfig(configFileName)
+        #test the first stage out method for command 'cp' with protocol 'file'
+        assert mySiteConfig.stageOuts[0]["command"] == "cp", \
+            "Error: Wrong stage out command."
+        assert mySiteConfig.stageOuts[0]["protocol"] == "file", \
+            "Error: Protocol is not correct."
+
+        #assert False
         return
 
     def testLoadingConfigFromOverridenEnvVarriable(self):

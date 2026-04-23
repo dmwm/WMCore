@@ -711,19 +711,21 @@ class StdBase(object):
                                         max_wait_time=self.maxWaitTime,
                                         initial_lfn_counter=lfn_counter)
 
+        primaryDataset = getattr(parentOutputModule, "primaryDataset")
         if dataTier == "DQMIO":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
                                                          newDQMIO=True)
         elif dataTier in ("NANOAOD", "NANOAODSIM"):
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
-                                                         mergeNANO=True)
+                                                     mergeNANO=True,
+                                                     isL1Scouting=(primaryDataset.startswith("L1Scouting")))
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
         mergeTaskStageHelper.setMinMergeSize(0, 0)
 
         self.addOutputModule(mergeTask, "Merged",
-                             primaryDataset=getattr(parentOutputModule, "primaryDataset"),
+                             primaryDataset=primaryDataset,
                              dataTier=getattr(parentOutputModule, "dataTier"),
                              filterName=getattr(parentOutputModule, "filterName"),
                              forceMerged=True, taskConf=taskConf)

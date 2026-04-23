@@ -126,7 +126,7 @@ class AlcaHarvest(Executor):
                     logging.info("==> copy %s", file2copy)
 
                     targetLFN = os.path.join(self.step.condition.lfnbase, file2copy)
-                    targetPFN = "root://eoscms//eos/cms%s" % targetLFN
+                    targetPFN = "root://eoscms.cern.ch//eos/cms%s" % targetLFN
 
                     command = "env XRD_WRITERECOVERY=0 xrdcp -s -f %s %s" % (file2copy, targetPFN)
 

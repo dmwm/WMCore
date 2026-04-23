@@ -1,3 +1,14 @@
+2.4.5.5 to 2.4.5.6:
+  - Bypass NoPendingSlot limit for Merge job type to prevent blocking by pending slot limits (hassan11196) #12489
+  - Use eoscms.cern.ch in testing (LinaresToine) #12489
+  - Fix AlcaHarvest PFN (LinaresToine) #12489
+  - Do not introduce new flag (LinaresToine) #12489
+  - Update pip upgrade step to include setuptools constraint for build isolation (Muhammad Hassan Ahmed) #12489
+  - Use startswith so we have more flexibility on the PDs that use mergeL1SCOUTNANO (LinaresToine) #12489
+  - add mergeL1SCOUTNANOAOD flag for L1 nano output (LinaresToine) #12489
+-en 
+
+
 2.4.5.4 to 2.4.5.5:
   - Update setuptools version constraint in gh workflow (Muhammad Hassan Ahmed) #12484
 -en 

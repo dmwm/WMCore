@@ -639,6 +639,11 @@ class JobSubmitterPoller(BaseWorkerThread):
             totalJobThreshold = totalPendingThreshold + totalRunningSlots
             totalTaskTheshold = taskPendingThreshold + taskRunningSlots
 
+        # Bypass NoPendingSlot limit for job type (Merge)
+        # These jobs should not be blocked by pending slot limits
+        if jobType == 'Merge':
+            totalPendingThreshold = float('inf')
+
         jobStats = [{"Condition": "NoPendingSlot",
                      "Current": totalPendingJobs,
                      "Threshold": totalPendingThreshold},

@@ -1,3 +1,8 @@
+2.4.5.6 to 2.4.5.7:
+  - Update rucio-clients version to 39.4.1 in requirements.txt (Muhammad Hassan Ahmed) #12493
+-en 
+
+
 2.4.5.5 to 2.4.5.6:
   - Bypass NoPendingSlot limit for Merge job type to prevent blocking by pending slot limits (hassan11196) #12489
   - Use eoscms.cern.ch in testing (LinaresToine) #12489

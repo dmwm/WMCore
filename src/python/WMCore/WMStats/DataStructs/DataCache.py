@@ -2,7 +2,29 @@ from builtins import object, str, bytes
 from future.utils import viewitems
 
 import time
-from WMCore.ReqMgr.DataStructs.Request import RequestInfo, protectedLFNs
+from WMCore.ReqMgr.DataStructs.Request import RequestInfo
+from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
+
+
+def protectedLFNs(requestInfo):
+    """
+    Parses a workflow description and provides a list of the
+    final (excluding transient data) output LFNs.
+    :param requestInfo: a dictionary with the workflow description
+    :return: a list of strings for the protected lfns
+    """
+    reqData = RequestInfo(requestInfo)
+    result = []
+    if reqData.andFilterCheck(ACTIVE_STATUS_FILTER):
+        outs = requestInfo.get('OutputDatasets', [])
+        base = requestInfo.get('UnmergedLFNBase', '/store/unmerged')
+        for out in outs:
+            dsn, ps, tier = out.split('/')[1:]
+            acq, rest = ps.split('-', 1)
+            dirPath = '/'.join([base, acq, dsn, tier, rest])
+            result.append(dirPath)
+    return result
+
 
 class DataCache(object):
     # TODO: need to change to  store in  db instead of storing in the memory

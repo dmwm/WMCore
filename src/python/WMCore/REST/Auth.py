@@ -41,11 +41,18 @@ def user_info_from_headers(key, verbose=False):
     # for HMAC validation while processing headers.
     prefix = suffix = ""
     hkeys = sorted(headers.keys())
+    suffixDict = {}
     for hk in hkeys:
+        # hk here represents CMS HTTP header, e.g. cms-authz-user
         hk = hk.lower()
         if hk[0:9] in ("cms-authn", "cms-authz") and hk != "cms-authn-hmac":
             prefix += "h%xv%x" % (len(hk), len(headers[hk]))
+            # old implementation of suffix does not account for proper ordering
             suffix += "%s%s" % (hk, headers[hk])
+            # keep all header key-vaules pair in dict and later sort values
+            suffixDict[hk] = headers[hk]
+            # hkname represents last element of header, e.g.
+            # if HTTP header is cms-authz-user then hkname would be user
             hkname = hk.split('-', 2)[-1]
             if hk.startswith("cms-authn"):
                 val = headers[hk]
@@ -53,11 +60,28 @@ def user_info_from_headers(key, verbose=False):
                     val = str(val) if PY3 else str(val, "utf-8")
                 user[hkname] = val
             if hk.startswith("cms-authz"):
-                user['roles'][hkname] = {'site': set(), 'group': set()}
+                user['roles'][hkname] = {}
                 for r in headers[hk].split():
-                    site_or_group, name = r.split(':')
-                    user['roles'][hkname][site_or_group].add(name)
+                    # r hear represent HTTP header value, e.g. group:admin
+                    cricRoleKey, cricRoleValue = r.split(':')
+                    # check if cric_role_key exists in user's roles, if not create a set
+                    if cricRoleKey not in user['roles'][hkname].keys():
+                        user['roles'][hkname][cricRoleKey] = set()
+                    # add new value to a key set
+                    setValues = set(user['roles'][hkname][cricRoleKey])
+                    setValues.add(cricRoleValue)
+                    user['roles'][hkname][cricRoleKey] = set(sorted(setValues))
 
+    # take into account that groups can come in different order since they
+    # are supplied as dictionary, e.g.
+    # {... {'user': {'group': {'users', 'admin'}}}, ...}
+    # we should always persists the order of groups to properly calculate new checksum
+    skeys = sorted([h for h in suffixDict.keys()])
+    newSuffix = ""
+    for key in skeys:
+        vals = sorted(suffixDict[key].split(' '))
+        newSuffix += "%s%s" % (key, ' '.join(vals))
+    suffix = newSuffix
     # Check HMAC over authn/z headers with server key. If differs, reject.
     msg = prefix + "#" + suffix
     if PY3:
@@ -180,7 +204,6 @@ class RESTAuth(cherrypy.Tool):
 
     def _setup(self):
         """Hook this tool into cherrypy request."""
-        log = cherrypy.log
         hooks = cherrypy.request.hooks
         conf = self._merged_args()
 

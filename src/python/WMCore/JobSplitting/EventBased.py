@@ -216,6 +216,16 @@ class EventBased(JobFactory):
                     # the original and the ACDC workflow
                     # Lumis to recover are not necessarily sequential
                     acdcFile["lumis"] = acdcFile["lumis"][lumisPerJob:]
+                    if not acdcFile["lumis"]:
+                        # ran out of lumis while events remain: the ACDC doc has more
+                        # events than its lumi list can cover (e.g. double-counted events
+                        # from a partial lumi overlap merge). Skip the remainder instead of
+                        # crashing the whole JobCreator poller.
+                        logging.error("ACDC file %s for workflow %s ran out of lumis with "
+                                      "%d events still to run; skipping remaining events.",
+                                      acdcFile['lfn'], self.subscription.workflowName(),
+                                      eventsToRun)
+                        break
                     currentLumi = acdcFile["lumis"][0]
                     self.newJob(name=self.getJobName(length=totalJobs))
                     self.currentJob.addFile(fakeFile)

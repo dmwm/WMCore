@@ -36,6 +36,8 @@ jobs:
         env:
           PYPI_TAG: ${{steps.get-ref.outputs.tag}}
           CERN_REGISTRY: registry.cern.ch
+          # Team-owned Harbor project namespace (replaces the shared cmsweb one)
+          CERN_PROJECT: cmswmcore
         run: |
           echo "Building service: ${SERVICE_NAME}, with tag: ${PYPI_TAG}"
           git clone --filter=blob:none --no-checkout https://github.com/dmwm/CMSKubernetes.git \
@@ -49,6 +51,6 @@ jobs:
           curl -ksLO https://raw.githubusercontent.com/dmwm/WMCore/master/bin/docker.sh
           chmod +x docker.sh
           echo "build new image"
-          ./docker.sh build ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}
+          ./docker.sh build ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY} ${CERN_PROJECT}
           echo "push new image"
-          ./docker.sh push ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY}
+          ./docker.sh push ${SERVICE_NAME} ${PYPI_TAG} ${CERN_REGISTRY} ${CERN_PROJECT}

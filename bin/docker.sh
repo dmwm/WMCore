@@ -2,9 +2,10 @@
 # Author: Valentin Kuznetsov <vkuznet@gmail.com>
 # helper script to handle docker actions
 
-if [ $# -ne 4 ]; then
-     echo "Usage: docker.sh <action> <service> <tag> <registry> "
+if [ $# -lt 4 ] || [ $# -gt 5 ]; then
+     echo "Usage: docker.sh <action> <service> <tag> <registry> [project]"
      echo "Supported actions: build, push"
+     echo "  project: Harbor project namespace, defaults to 'cmsweb'"
      exit 1;
 fi
 
@@ -25,7 +26,10 @@ action=$1
 service=$2
 tag=$3
 registry=$4
-rurl=$registry/cmsweb/$service
+# Harbor project namespace; optional 5th arg, defaults to cmsweb for backward
+# compatibility. WMCore CI now passes the team-owned project (cmswmcore).
+project=${5:-cmsweb}
+rurl=$registry/$project/$service
 
 # check if action is supported
 case "$action" in

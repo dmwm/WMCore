@@ -65,6 +65,8 @@ WMA_CURRENT_OS=rhel$(rpm --eval '%{rhel}')
 SANDBOX=$1
 INDEX=$2
 RETRY_NUM=$3
+# expected token file name
+TOKEN_FILE_PATH=${_CONDOR_CREDS}/cms.use
 
 export JOBSTARTDIR=$PWD
 
@@ -197,10 +199,10 @@ if [ -n "${_CONDOR_CREDS}" ]; then
     echo "Content under _CONDOR_CREDS: ${_CONDOR_CREDS}"
     ls -l ${_CONDOR_CREDS}
     # Now, check specifically for cms token
-    if [ -f "${_CONDOR_CREDS}/cms.use" ]
+    if [ -f "${TOKEN_FILE_PATH}" ]
     then
-        echo "CMS token found, setting BEARER_TOKEN_FILE=${_CONDOR_CREDS}/cms.use"
-        export BEARER_TOKEN_FILE=${_CONDOR_CREDS}/cms.use
+        echo "CMS token found, setting BEARER_TOKEN_FILE=${TOKEN_FILE_PATH}"
+        export BEARER_TOKEN_FILE=${TOKEN_FILE_PATH}
     
         # Show token information
         # This tool requires htgettoken package in the cmssw runtime apptainer image

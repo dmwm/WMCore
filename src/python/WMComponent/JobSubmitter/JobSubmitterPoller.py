@@ -146,6 +146,22 @@ class JobSubmitterPoller(BaseWorkerThread):
             # Tier0 Case - just for the clarity (This private variable shouldn't be used
             self.abortedAndForceCompleteWorkflowCache = None
 
+        # log status of oauth tokens
+        _oauth_token_name = getattr(config.JobSubmitter, 'oauthCMSTokenName', "")
+        if _oauth_token_name:
+            logging.info("[tokens] Jobs will be submitted with tokens") 
+            logging.info("[tokens] token available on the wmagent host with sudo at path /var/lib/condor/oauth_credentials/cmst1/%s.use",
+                       getattr(self.config.JobSubmitter, "oauthCMSTokenName", ""))
+        else:
+            logging.info("[tokens] remote jobs will not contain oauth tokens.")
+            logging.info("""[tokens] enable them: 
+[tokens] - change config.JobSubmitter.authCMSTokenName in /data/dockerMount/srv/wmagent/current/config/config.py
+[tokens] - restart the agent
+[tokens] otherwise, if you can initialize the agent from scratch:
+[tokens] - set OAUTH_CMS_TOKEN_NAME in WMAgent.secrets
+[tokens] - initialize the new agent
+""")
+
         return
 
     def getPackageCollection(self, sandboxDir):

@@ -285,6 +285,11 @@ def modifyConfiguration(config, **args):
         if args.get("mspileup_url", None):
             config.WorkflowUpdater.msPileupUrl = args["mspileup_url"]
 
+    # custom JobSubmitter
+    if hasattr(config, "JobSubmitter"):
+        # tier0 may not start supporting tokens straight away.
+        if args.get("oauth_cms_token_name"):
+            config.JobSubmitter.oauthCMSTokenName = args["oauth_cms_token_name"]
 
     return config
 
@@ -313,7 +318,8 @@ def main(argv=None):
                                          "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "dbs3_reader_url=",
                                          "dqm_url=", "grafana_token=", "requestcouch_url=", "central_logdb_url=",
                                          "wmarchive_url=", "amq_credentials=",
-                                         "rucio_account=", "rucio_host=", "rucio_auth=", "mspileup_url="])
+                                         "rucio_account=", "rucio_host=", "rucio_auth=", "mspileup_url=",
+                                         "oauth_cms_token_name="])
 
         except getopt.error as msg:
             raise Usage(msg)
@@ -337,7 +343,9 @@ def main(argv=None):
                           '--amq_auth_file', '--dbs3_url', '--dbs3_reader_url', '--dqm_url',
                           '--grafana_token', '--requestcouch_url', '--central_logdb_url',
                           '--wmarchive_url', '--amq_credentials',
-                          '--rucio_account', '--rucio_host', '--rucio_auth', '--mspileup_url'):
+                          '--rucio_account', '--rucio_host', '--rucio_auth', '--mspileup_url' ,
+                          '--oauth_cms_token_name'
+                          ):
                 parameters[option[2:]] = value
 
 

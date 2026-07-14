@@ -51,6 +51,7 @@ class MockRucioApi(object):
         self.dataBlocks = DataBlockGenerator()
         self.subRequests = {}
         self.rucioParams = {}
+        self._mockRules = {}  # ruleId -> rule dict, used by getRule/listDataRules/deleteRule
 
     def sitesByBlock(self, block):
         """
@@ -131,13 +132,55 @@ class MockRucioApi(object):
         logging.info("%s attachDID rse=%s, suportDID=%s, portion=%s, scope=%s", cname, rse, superDID, portion, scope)
         return True
 
-    def createReplicationRule(self, portion, rseExpression, scope='cms'):
+    def createReplicationRule(self, names, rseExpression, scope='cms', copies=1, **kwargs):
         """
-        Emulate createReplicationRule Rucio API
+        Emulate createReplicationRule Rucio API — stores the rule in _mockRules and returns a fake rule id list.
+        """
+        import hashlib
+        cname = self.__class__.__name__
+        logging.info("%s createReplicationRule names=%s, rseExpression=%s", cname, names, rseExpression)
+        ruleId = hashlib.md5("{}{}".format(names, rseExpression).encode()).hexdigest()
+        self._mockRules[ruleId] = {
+            'id': ruleId,
+            'name': names,
+            'rse_expression': rseExpression,
+            'scope': scope,
+            'copies': copies,
+            'account': kwargs.get('account', 'mock'),
+            'state': 'OK',
+            'bytes': 0,
+        }
+        return [ruleId]
+
+    def getRule(self, ruleId):
+        """
+        Emulate getRule Rucio API — return a minimal rule dict for an existing mock rule id.
         """
         cname = self.__class__.__name__
-        logging.info("%s createReplicationRule portion=%s, rseExpression=%s", cname, portion, rseExpression)
-        return [rseExpression]
+        logging.info("%s getRule ruleId=%s", cname, ruleId)
+        # Mock rule storage: non-empty dict means the rule exists
+        if ruleId in self._mockRules:
+            return self._mockRules[ruleId]
+        return {}
+
+    def listDataRules(self, name, **kwargs):
+        """
+        Emulate listDataRules Rucio API — return mock rules for the given DID.
+        """
+        cname = self.__class__.__name__
+        logging.info("%s listDataRules name=%s kwargs=%s", cname, name, kwargs)
+        account = kwargs.get('account', None)
+        return [rule for rule in self._mockRules.values()
+                if rule.get('name') == name and (account is None or rule.get('account') == account)]
+
+    def deleteRule(self, ruleId, purgeReplicas=False):
+        """
+        Emulate deleteRule Rucio API — remove the rule from the mock store.
+        """
+        cname = self.__class__.__name__
+        logging.info("%s deleteRule ruleId=%s", cname, ruleId)
+        self._mockRules.pop(ruleId, None)
+        return True
 
     def updateRule(self, rid, opts):
         """

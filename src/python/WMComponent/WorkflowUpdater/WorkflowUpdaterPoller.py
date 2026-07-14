@@ -255,7 +255,8 @@ class WorkflowUpdaterPoller(BaseWorkerThread):
 
         # parse mandatory attributes from the configuration
         self.config = config
-        dbsUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
+        #dbsUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
+        dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
         self.dbsUrl = getattr(config.WorkflowUpdater, "dbsUrl", dbsUrl)
         if not self.dbsUrl:
             self.dbsUrl = dbsUrl

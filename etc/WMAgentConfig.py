@@ -54,7 +54,7 @@ glideInAcctGroupUser = "cmsdataops"
 
 # DBS Information.
 localDBSVersion = "DBS_2_0_8"
-globalDBSUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
+globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
 # Job retry information.  How long it will sit in cool off.

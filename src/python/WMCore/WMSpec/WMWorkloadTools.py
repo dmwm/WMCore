@@ -186,7 +186,7 @@ def validateInputDatasSetAndParentFlag(arguments):
     # TODO: this replace can be removed in one year from now, thus March 2022
     dbsURL = arguments.get("DbsUrl")
     if dbsURL:
-        dbsURL = dbsURL.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+        #dbsURL = dbsURL.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
         dbsURL = dbsURL.rstrip("/")
 
     if includeParents and not inputdataset:

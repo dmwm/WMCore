@@ -39,7 +39,6 @@ class TagCollectorTest(unittest.TestCase):
         except Exception:
             logging.error('Something went wrong parsing the test releasesMap into the sample XML file')
             raise
-
         return result
     
     def data(self, testReleasesMap=None, testReleasesXML=None):
@@ -71,7 +70,7 @@ class TagCollectorTest(unittest.TestCase):
                     arr.append(item['label'])
         return list(set(arr))
 
-    def architectures(self, arch=None, testReleasesMap=None, testReleasesXML=None):
+    def architectures(self, testReleasesMap=None, testReleasesXML=None):
         """
         _architectures_
 
@@ -142,7 +141,6 @@ class TagCollectorTest(unittest.TestCase):
         self.assertEqual(len(architecturesCvmfs), len(realsese_by_arch_cvmfs))
         self.assertEqual(sorted(self.releases(arch='el8_amd64_gcc12', testReleasesMap=self.testReleasesMap, testReleasesXML=self.testReleasesXML)),
                          sorted(realsese_by_arch_cvmfs.get('el8_amd64_gcc12')))
-
         return
 
 if __name__ == '__main__':

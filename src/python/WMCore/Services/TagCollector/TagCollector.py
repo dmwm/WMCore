@@ -6,7 +6,7 @@ from Utils.Utilities import decodeBytesToUnicode
 standard_library.install_aliases()
 
 import logging
-from os import path
+import os
 from urllib.parse import urlparse
 
 from collections import defaultdict
@@ -143,7 +143,7 @@ class TagCollector(Service):
         except Exception:
             logging.error('Something went wrong accessing ReleasesXML from cmssdt, perhaps the service is temporarily down')
             logging.info('Checking if cvmfs is mounted')
-            cvmfsMounted = path.ismount('/cvmfs')
+            cvmfsMounted = os.path.ismount('/cvmfs')
             if cvmfsMounted:
                 logging.info('cvmfs is mounted. Retrying to access ReleasesXML from cvmfs')
                 try:

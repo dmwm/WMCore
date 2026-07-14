@@ -16,7 +16,15 @@ import os
 import re
 
 from builtins import str, range
+from urllib.parse import urlparse
 
+import logging
+
+STAGEOUT_PROTOCOL_MAP = {
+    'root': 'xrdcp',
+    'davs': 'gfal2',
+    'file': 'cp'
+}
 
 class RucioFileCatalog(dict):
     """
@@ -37,7 +45,7 @@ class RucioFileCatalog(dict):
         """
         Add an lfn to pfn mapping to this instance
         :param protocol: name of protocol, for example XRootD
-        :param match: regular expression string to perform path matching 
+        :param match: regular expression string to perform path matching
         :param result: result of the path matching
         :param chain: name of chained protocol
         :param mapping_type: type of path matching
@@ -52,11 +60,14 @@ class RucioFileCatalog(dict):
 
     def _doMatch(self, protocol, path, style, caller):
         """
-        Generalised way of building up the mappings.         
+        Generalised way of building up the mappings.
         :param protocol: the name of a protocol, for example XRootD
         :path: a LFN path, for example /store/abc/xyz.root
         :style: type of conversion. lfn-to-pfn is to convert LFN to PFN and pfn-to-pfn is for PFN to LFN
-        :caller is the method from there this method was called. It's used for resolving chained rules. When a rule is chained, the path translation of protocol defined in "chain" attribute should be applied first before the one specified in this rule. Here is an example. In this storage description, https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json, the rule of protocol WebDAV of volume KIT_MSS is chained to the protocol pnfs of the same volume. The path translation of WebDAV rule must be done by applying the path translation of pnfs rule first before its own path translation is applied.
+        :caller: is the method where this method was called. It's used for resolving chained rules.
+                 When a rule is chained, the path translation of protocol defined in "chain" attribute should be applied first before the one specified in this rule. Here is an example.
+                 In this storage description, https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json, the rule of protocol WebDAV of volume KIT_MSS is chained to the protocol pnfs of the same volume.
+                 The path translation of WebDAV rule must be done by applying the path translation of pnfs rule first before its own path translation is applied.
         """
         for mapping in self[style]:
             if mapping['protocol'] != protocol:
@@ -136,7 +147,7 @@ def storageJsonPath(currentSite, currentSubsite, storageSite):
     # return path override if it is defined and exists
     siteConfigPathOverride = os.getenv('WMAGENT_RUCIO_CATALOG_OVERRIDE', None)
     if siteConfigPathOverride and os.path.exists(siteConfigPathOverride):
-        return siteConfigPathOverride    
+        return siteConfigPathOverride
 
     # get site config
     siteConfigPath = os.getenv('SITECONFIG_PATH', None)
@@ -182,7 +193,7 @@ def readRFC(filename, storageSite, volume, protocol):
     except Exception as ex:
         msg = "Error reading storage description file: %s\n" % filename
         msg += str(ex)
-        raise RuntimeError(msg)
+        raise RuntimeError(msg) from ex
     # now loop over elements, select the one matched with inputs (storageSite, volume, protocol) and fill lfn-to-pfn
     for jsElement in jsElements:
         # check to see if the storageSite and volume matchs with "site" and "volume" in storage.json
@@ -239,9 +250,67 @@ def rseName(currentSite, currentSubsite, storageSite, volume):
     except Exception as ex:
         msg = "RucioFileCatalog.py:rseName() Error reading storage.json: %s\n" % storageJsonName
         msg += str(ex)
-        raise RuntimeError(msg)
+        raise RuntimeError(msg) from ex
     for jsElement in jsElements:
         if jsElement['site'] == storageSite and jsElement['volume'] == volume:
             rse = jsElement['rse']
             break
     return rse
+
+def get_default_cmd(currentSite, currentSubsite, storageSite, volume, protocolName):
+    """
+    Return default command for a protocol, for example:
+    https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L17
+    :currentSite is the site where jobs are executing
+    :currentSubsite is the sub site if jobs are running here
+    :storageSite is the site for storage
+    :volume is the volume name, for example:
+        https://gitlab.cern.ch/SITECONF/T1_DE_KIT/-/blob/master/storage.json?ref_type=heads#L3
+    :protocolName is the 'protocol' in site-local-config.xml under stageOut
+    """
+
+    storageJsonName = storageJsonPath(currentSite, currentSubsite, storageSite)
+    try:
+        with open(storageJsonName, encoding="utf-8") as jsonFile:
+            jsElements = json.load(jsonFile)
+    except Exception as ex:
+        msg = f"Failed to open storage.json: {storageJsonName}\n. Error: {str(ex)}"
+        raise RuntimeError(msg) from ex
+
+    url_scheme = ''
+
+    for entry in jsElements:
+        if entry.get('site') != storageSite or entry.get('volume') != volume:
+            continue
+
+        for proto in entry.get("protocols", []):
+            if proto.get("protocol") != protocolName:
+                continue
+
+            # First try rules
+            rules = proto.get("rules", [])
+            if rules:
+                #rules are just different matching patterns of the same protocol, use the first rule to get command from its pfn is enough
+                pfn = rules[0].get("pfn", "")
+                url_scheme = urlparse(pfn).scheme
+
+            # If no rules try 'prefix'
+            if not url_scheme and "prefix" in proto:
+                url_scheme = urlparse(proto["prefix"]).scheme
+
+            # Map scheme to command
+            cmd = STAGEOUT_PROTOCOL_MAP.get(url_scheme, 'gfal2')
+            if cmd == 'gfal2' and url_scheme not in STAGEOUT_PROTOCOL_MAP:
+                if rules:
+                    logging.log(logging.WARNING, "RucioFileCatalog.get_default_cmd: Can not get the command from rules of protocol %s of %s site and %s volume. Default command gfal2 is used. Rule: %s", protocolName, storageSite, volume, rules[0])
+                else:
+                    logging.log(logging.WARNING, "RucioFileCatalog.get_default_cmd: Can not get the command from prefix of protocol %s of %s site and %s volume. Default command gfal2 is used. Prefix: %s", protocolName, storageSite, volume, proto.get("prefix", None))
+            return cmd
+      
+        # no matched protocol
+        logging.log(logging.ERROR, "RucioFileCatalog.get_default_cmd: No matched %s protocol for %s volume of %s storage site in the storage json %s found", protocolName, volume, storageSite, storageJsonName)
+        return None 
+
+    # no matched storage site or volume
+    logging.log(logging.ERROR, "RucioFileCatalog.get_default_cmd: No matched %s storage site or %s volume in the storage json %s found", storageSite, volume, storageJsonName)
+    return None

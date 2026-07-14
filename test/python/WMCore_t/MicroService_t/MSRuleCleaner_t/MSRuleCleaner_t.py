@@ -129,8 +129,10 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineAgentBlock': []},
                          'TargetStatus': None,
                          'TransferDone': False,
+                         'TransferDisk': False,
                          'TransferTape': False,
                          'TapeRulesStatus': [],
+                         'WmcOutputRulesMap': {},
                          'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
@@ -173,8 +175,10 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineAgentCont': []},
                          'TargetStatus': None,
                          'TransferDone': False,
+                         'TransferDisk': False,
                          'TransferTape': False,
                          'TapeRulesStatus': [],
+                         'WmcOutputRulesMap': {},
                          'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
@@ -219,8 +223,10 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineMSTrBlock': []},
                          'TargetStatus': None,
                          'TransferDone': False,
+                         'TransferDisk': False,
                          'TransferTape': False,
                          'TapeRulesStatus': [],
+                         'WmcOutputRulesMap': {},
                          'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
@@ -265,8 +271,10 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineMSTrCont': []},
                          'TargetStatus': None,
                          'TransferDone': False,
+                         'TransferDisk': False,
                          'TransferTape': False,
                          'TapeRulesStatus': [],
+                         'WmcOutputRulesMap': {},
                          'StatusAdvanceExpiredMsg': ""}
         self.assertDictEqual(wflow, expectedWflow)
 
@@ -323,8 +331,10 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineAgentBlock': [], 'plineAgentCont': []},
                          'TargetStatus': 'normal-archived',
                          'TransferDone': False,
+                         'TransferDisk': False,
                          'TransferTape': False,
                          'TapeRulesStatus': [],
+                         'WmcOutputRulesMap': {},
                          'StatusAdvanceExpiredMsg': "Not properly cleaned workflow: TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891"}
         self.assertDictEqual(wflow, expectedWflow)
 
@@ -378,8 +388,10 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RulesToClean': {'plineAgentBlock': [], 'plineAgentCont': []},
                          'TargetStatus': 'aborted-archived',
                          'TransferDone': False,
+                         'TransferDisk': False,
                          'TransferTape': False,
                          'TapeRulesStatus': [],
+                         'WmcOutputRulesMap': {},
                          'StatusAdvanceExpiredMsg': ("Not properly cleaned workflow: StepChain_Tasks_HG2011_Val_201029_112731_6371"
                                                      " - 'ParentageResolved' flag set to false.\n"
                                                      "Not properly cleaned workflow: StepChain_Tasks_HG2011_Val_201029_112731_6371\n"
@@ -427,6 +439,207 @@ class MSRuleCleanerTest(unittest.TestCase):
         wflowFlags = {'CleanupStatus': {},
                       'PlineMarkers': ['plineAgentBlock', 'plineAgentCont']}
         self.assertFalse(self.msRuleCleaner._checkClean(wflowFlags))
+
+    # -----------------------------------------------------------------------
+    # Tests for cleanOutputBlockRules — block-by-block wma_prod rule expiry
+    # -----------------------------------------------------------------------
+
+    def _makeWflow(self, outputDatasets, wmcOutputRulesMap):
+        """Build a minimal wflow dict for cleanOutputBlockRules tests."""
+        return {
+            'OutputDatasets': outputDatasets,
+            'WmcOutputRulesMap': wmcOutputRulesMap,
+        }
+
+    def _setupRucioMock(self, getOkFilesMap, blocksInContainer, blockFiles, blockRules):
+        """
+        Configure self.msRuleCleaner.rucio mock for cleanOutputBlockRules.
+
+        :param getOkFilesMap: dict {ruleId: set of OK file names}
+        :param blocksInContainer: dict {container: [block names]}
+        :param blockFiles: dict {block: [{'name': filename}, ...]}
+        :param blockRules: dict {block: [{'id': ruleId}, ...]}
+        """
+        self.msRuleCleaner._getOkFilesFromRule = lambda ruleId: getOkFilesMap.get(ruleId, set())
+        self.msRuleCleaner.rucio.getBlocksInContainer.side_effect = \
+            lambda container: blocksInContainer.get(container, [])
+        self.msRuleCleaner.rucio.listContent.side_effect = \
+            lambda block: blockFiles.get(block, [])
+        self.msRuleCleaner.rucio.listDataRules.side_effect = \
+            lambda block, account: blockRules.get(block, [])
+
+    def testCleanOutputBlockRulesAllFilesOk(self):
+        """
+        Block rule is expired when all files are OK in all wmcore_output rules.
+        Scenario: disk rule and tape rule both have file1 + file2 OK.
+        Block contains exactly file1 + file2 → fully covered → updateRule called.
+        """
+        self.msRuleCleaner.msConfig['enableRealMode'] = True
+        container = '/Dataset/Processed/TIER'
+        block = container + '#block1'
+
+        self._setupRucioMock(
+            getOkFilesMap={
+                'disk-rule-1': {'file1', 'file2'},
+                'tape-rule-1': {'file1', 'file2'},
+            },
+            blocksInContainer={container: [block]},
+            blockFiles={block: [{'name': 'file1'}, {'name': 'file2'}]},
+            blockRules={block: [{'id': 'wma-block-rule-1'}]},
+        )
+
+        wflow = self._makeWflow(
+            outputDatasets=[container],
+            wmcOutputRulesMap={container: ['disk-rule-1', 'tape-rule-1']},
+        )
+        self.msRuleCleaner.cleanOutputBlockRules(wflow)
+
+        self.msRuleCleaner.rucio.updateRule.assert_called_once_with(
+            'wma-block-rule-1', {'lifetime': 0}
+        )
+
+    def testCleanOutputBlockRulesPartialBlockOk(self):
+        """
+        Block rule is NOT expired when only some files are OK.
+        Scenario: block has file1 + file2 + file3, but only file1 + file2 are OK.
+        """
+        self.msRuleCleaner.msConfig['enableRealMode'] = True
+        container = '/Dataset/Processed/TIER'
+        block = container + '#block1'
+
+        self._setupRucioMock(
+            getOkFilesMap={'disk-rule-1': {'file1', 'file2'}},
+            blocksInContainer={container: [block]},
+            blockFiles={block: [{'name': 'file1'}, {'name': 'file2'}, {'name': 'file3'}]},
+            blockRules={block: [{'id': 'wma-block-rule-1'}]},
+        )
+
+        wflow = self._makeWflow(
+            outputDatasets=[container],
+            wmcOutputRulesMap={container: ['disk-rule-1']},
+        )
+        self.msRuleCleaner.cleanOutputBlockRules(wflow)
+
+        self.msRuleCleaner.rucio.updateRule.assert_not_called()
+
+    def testCleanOutputBlockRulesNoCommonOkFiles(self):
+        """
+        Nothing is cleaned when the intersection of OK files across rules is empty.
+        Scenario: disk rule has file1 + file2 OK, tape rule has no files OK yet.
+        """
+        self.msRuleCleaner.msConfig['enableRealMode'] = True
+        container = '/Dataset/Processed/TIER'
+        block = container + '#block1'
+
+        self._setupRucioMock(
+            getOkFilesMap={
+                'disk-rule-1': {'file1', 'file2'},
+                'tape-rule-1': set(),          # tape not done yet
+            },
+            blocksInContainer={container: [block]},
+            blockFiles={block: [{'name': 'file1'}, {'name': 'file2'}]},
+            blockRules={block: [{'id': 'wma-block-rule-1'}]},
+        )
+
+        wflow = self._makeWflow(
+            outputDatasets=[container],
+            wmcOutputRulesMap={container: ['disk-rule-1', 'tape-rule-1']},
+        )
+        self.msRuleCleaner.cleanOutputBlockRules(wflow)
+
+        self.msRuleCleaner.rucio.updateRule.assert_not_called()
+
+    def testCleanOutputBlockRulesMultipleBlocks(self):
+        """
+        Only fully-OK blocks are cleaned; partially-OK blocks are skipped.
+        Scenario: block1 fully OK → expired. block2 partial → skipped.
+        """
+        self.msRuleCleaner.msConfig['enableRealMode'] = True
+        container = '/Dataset/Processed/TIER'
+        block1 = container + '#block1'
+        block2 = container + '#block2'
+
+        self._setupRucioMock(
+            getOkFilesMap={'disk-rule-1': {'file1', 'file2', 'file3'}},
+            blocksInContainer={container: [block1, block2]},
+            blockFiles={
+                block1: [{'name': 'file1'}, {'name': 'file2'}],       # fully OK
+                block2: [{'name': 'file2'}, {'name': 'file3'}, {'name': 'file4'}],  # file4 missing
+            },
+            blockRules={
+                block1: [{'id': 'wma-block-rule-1'}],
+                block2: [{'id': 'wma-block-rule-2'}],
+            },
+        )
+
+        wflow = self._makeWflow(
+            outputDatasets=[container],
+            wmcOutputRulesMap={container: ['disk-rule-1']},
+        )
+        self.msRuleCleaner.cleanOutputBlockRules(wflow)
+
+        self.msRuleCleaner.rucio.updateRule.assert_called_once_with(
+            'wma-block-rule-1', {'lifetime': 0}
+        )
+
+    def testCleanOutputBlockRulesDryRun(self):
+        """
+        updateRule is NOT called when enableRealMode=False, even if block is fully OK.
+        """
+        self.msRuleCleaner.msConfig['enableRealMode'] = False
+        container = '/Dataset/Processed/TIER'
+        block = container + '#block1'
+
+        self._setupRucioMock(
+            getOkFilesMap={'disk-rule-1': {'file1', 'file2'}},
+            blocksInContainer={container: [block]},
+            blockFiles={block: [{'name': 'file1'}, {'name': 'file2'}]},
+            blockRules={block: [{'id': 'wma-block-rule-1'}]},
+        )
+
+        wflow = self._makeWflow(
+            outputDatasets=[container],
+            wmcOutputRulesMap={container: ['disk-rule-1']},
+        )
+        self.msRuleCleaner.cleanOutputBlockRules(wflow)
+
+        self.msRuleCleaner.rucio.updateRule.assert_not_called()
+
+    def testCleanOutputBlockRulesContainerNotInRucio(self):
+        """
+        WMRucioDIDNotFoundException is caught gracefully — no crash, no updateRule.
+        """
+        from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
+        self.msRuleCleaner.msConfig['enableRealMode'] = True
+        container = '/Dataset/Processed/TIER'
+
+        self.msRuleCleaner._getOkFilesFromRule = lambda ruleId: {'file1'}
+        self.msRuleCleaner.rucio.getBlocksInContainer.side_effect = \
+            WMRucioDIDNotFoundException("container not found")
+
+        wflow = self._makeWflow(
+            outputDatasets=[container],
+            wmcOutputRulesMap={container: ['disk-rule-1']},
+        )
+        self.msRuleCleaner.cleanOutputBlockRules(wflow)  # must not raise
+
+        self.msRuleCleaner.rucio.updateRule.assert_not_called()
+
+    def testCleanOutputBlockRulesNoRulesForContainer(self):
+        """
+        Container missing from WmcOutputRulesMap is silently skipped.
+        """
+        self.msRuleCleaner.msConfig['enableRealMode'] = True
+        container = '/Dataset/Processed/TIER'
+
+        wflow = self._makeWflow(
+            outputDatasets=[container],
+            wmcOutputRulesMap={},   # no entry for this container
+        )
+        self.msRuleCleaner.cleanOutputBlockRules(wflow)  # must not raise
+
+        self.msRuleCleaner.rucio.getBlocksInContainer.assert_not_called()
+        self.msRuleCleaner.rucio.updateRule.assert_not_called()
 
 
 if __name__ == '__main__':

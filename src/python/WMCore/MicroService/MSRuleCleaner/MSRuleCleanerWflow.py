@@ -181,6 +181,7 @@ class MSRuleCleanerWflow(dict):
                               'plineAgentCont': False,
                               'plineAgentBlock': False},
             "TransferDone": False  # information - returned by the MSOutput REST call.
+            "TransferDisk": False  # information - fetched by Rucio about disk rules completion
             "TransferTape": False  # information - fetched by Rucio about tape rules completion
             "TapeRulesStatus": [('36805b823062415c8ee60300b0e60378', 'OK', '/AToZHToLLTTbar_MA-1900_MH-1200_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16RECO-106X_mcRun2_asymptotic_v13-v2/AODSIM'),
                                 ('5b75fb7503524449b0f304ea0e52f0de', 'STUCK', '/AToZHToLLTTbar_MA-1900_MH-1200_TuneCP5_13TeV-amcatnlo-pythia8/RunIISummer20UL16MiniAODv2-106X_mcRun2_asymptotic_v17-v2/MINIAODSIM')]
@@ -207,6 +208,7 @@ class MSRuleCleanerWflow(dict):
             ('RulesToClean', {}, dict),
             ('CleanupStatus', {}, dict),
             ('TransferDone', False, bool),
+            ('TransferDisk', False, bool),
             ('TransferTape', False, bool),
             ('TapeRulesStatus', [], list),
             ('TargetStatus', None, (bytes, str)),
@@ -220,7 +222,8 @@ class MSRuleCleanerWflow(dict):
             ('IncludeParents', False, bool),
             ('InputDataset', None, (bytes, str)),
             ('ParentDataset', None, (bytes, str)),
-            ('StatusAdvanceExpiredMsg', "", str)]
+            ('StatusAdvanceExpiredMsg', "", str),
+            ('WmcOutputRulesMap', {}, dict)]
 
         # NOTE: ParentageResolved is set by default to True it will be False only if:
         #       - RequestType is StepChain

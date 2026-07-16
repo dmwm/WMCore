@@ -5,7 +5,11 @@
 
 Manages a web server application. Loads configuration and all views, starting
 up an appropriately configured CherryPy instance. Views are loaded dynamically
-and can be turned on/off via configuration file."""
+and can be turned on/off via configuration file.
+
+If LOG-FILE does not contain a date in %Y%m%d format,
+a date will be added before the file extension.
+"""
 
 from __future__ import print_function
 from builtins import object
@@ -13,8 +17,10 @@ from future.utils import viewitems
 from future import standard_library
 standard_library.install_aliases()
 
+from datetime import date
 import errno
 import logging
+from multiprocessing import Queue, Process
 import os
 import os.path
 import re
@@ -35,19 +41,21 @@ from cherrypy import Application
 from cherrypy._cplogging import LogManager
 from cherrypy.lib import profiler
 
-### Tools is needed for CRABServer startup: it sets up the tools attributes
+# Tools is needed for CRABServer startup: it sets up the tools attributes
 import WMCore.REST.Tools
+
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
+from WMCore.WMLogging import getTimeRotatingLogger, log_listener
 from Utils.Utilities import lowerCmsHeaders
 from Utils.PythonVersion import PY2
 
-#: Terminal controls to switch to "OK" status message colour.
+# Terminal controls to switch to "OK" status message colour.
 COLOR_OK = "\033[0;32m"
 
-#: Terminal controls to switch to "warning" status message colour.
+# Terminal controls to switch to "warning" status message colour.
 COLOR_WARN = "\033[0;31m"
 
-#: Terminal controls to restore normal message colour.
+# Terminal controls to restore normal message colour.
 COLOR_NORMAL = "\033[0;39m"
 
 
@@ -101,7 +109,8 @@ class ProfiledApp(Application):
         self.profiler = profiler.ProfileAggregator(path)
 
     def __call__(self, env, handler):
-        def gather(): return Application.__call__(self, env, handler)
+        def gather():
+            return Application.__call__(self, env, handler)
 
         return self.profiler.run(gather)
 
@@ -181,6 +190,7 @@ class RESTMain(object):
         self.silent = False
         self.extensions = {}
         self.views = {}
+        self.logQueue = None
 
     def validate_config(self):
         """Check the server configuration has the required sections."""
@@ -213,10 +223,15 @@ class RESTMain(object):
         if local_base.find(':') == -1:
             local_base = '%s:%d' % (local_base, port)
 
-        # Set default server configuration.
+        # setup the cherrypy access logs to log to a queue
         cherrypy.log = Logger()
+        handler = logging.handlers.QueueHandler(self.logQueue)
+        cherrypy.log.access_file = ""
+        cherrypy.log.error_file = ""
+        cherrypy.log.access_log.addHandler(handler)
+        cherrypy.log.error_log.addHandler(handler)
 
-        cpconfig.update({'tools.add_content_length_if_missing.on': True})
+        # Set default server configuration.
         cpconfig.update({'server.max_request_body_size': 0})
         cpconfig.update({'server.environment': 'production'})
         cpconfig.update({'server.socket_host': '0.0.0.0'})
@@ -234,7 +249,7 @@ class RESTMain(object):
         # as we previously used sys.setcheckinterval
         interval = getattr(self.srvconfig, 'sys_check_interval', 10000)
         # set check interval in seconds for sys.setswitchinterval
-        sys.setswitchinterval(interval/1000)
+        sys.setswitchinterval(interval / 1000)
         self.silent = getattr(self.srvconfig, 'silent', False)
 
         # Apply any override options from app config file.
@@ -324,7 +339,8 @@ class RESTDaemon(RESTMain):
         :arg str statedir: server state directory."""
         RESTMain.__init__(self, config, statedir)
         self.pidfile = "%s/%s.pid" % (self.statedir, self.appname)
-        self.logfile = ["rotatelogs", "%s/%s-%%Y%%m%%d.log" % (self.statedir, self.appname), "86400"]
+        todayStr = date.today().strftime("%Y%m%d")
+        self.logfile = f"{self.statedir}/{self.appname}-{todayStr}.log"
 
     def daemon_pid(self):
         """Check if there is a daemon running, and if so return its pid.
@@ -413,24 +429,6 @@ class RESTDaemon(RESTMain):
         os.chdir(self.statedir)
 
         if daemonize:
-            # Redirect all output to the logging daemon.
-            devnull = open(os.devnull, "w")
-            if isinstance(self.logfile, list):
-                subproc = Popen(self.logfile, stdin=PIPE, stdout=devnull, stderr=devnull,
-                                bufsize=0, close_fds=True, shell=False)
-                logger = subproc.stdin
-            elif isinstance(self.logfile, str):
-                # if a unix pipe is set as the logfile, it must be opened to append to the end of the file
-                # if file/pipe does not exist, create it
-                logger = open(self.logfile, "a")
-            else:
-                raise TypeError("'logfile' must be a string or array")
-            os.dup2(logger.fileno(), sys.stdout.fileno())
-            os.dup2(logger.fileno(), sys.stderr.fileno())
-            os.dup2(devnull.fileno(), sys.stdin.fileno())
-            logger.close()
-            devnull.close()
-
             # First fork. Discard the parent.
             pid = os.fork()
             if pid > 0:
@@ -481,7 +479,8 @@ class RESTDaemon(RESTMain):
             cherrypy.log("WATCHDOG: starting server daemon (pid %d)" % os.getpid())
             while True:
                 serverpid = os.fork()
-                if not serverpid: break
+                if not serverpid:
+                    break
                 signal.signal(signal.SIGINT, signal.SIG_IGN)
                 signal.signal(signal.SIGTERM, signal.SIG_IGN)
                 signal.signal(signal.SIGQUIT, signal.SIG_IGN)
@@ -581,18 +580,15 @@ def main():
         running, pid = server.daemon_pid()
         if running:
             if not opts.quiet:
-                print("%s is %sRUNNING%s, PID %d" \
-                      % (app, COLOR_OK, COLOR_NORMAL, pid))
+                print(f"{app} is {COLOR_OK}RUNNING{COLOR_NORMAL}, PID {pid}")
             sys.exit(0)
         elif pid != None:
             if not opts.quiet:
-                print("%s is %sNOT RUNNING%s, stale PID %d" \
-                      % (app, COLOR_WARN, COLOR_NORMAL, pid))
+                print(f"{app} is {COLOR_WARN}NOT RUNNING{COLOR_NORMAL}, PID {pid}")
             sys.exit(2)
         else:
             if not opts.quiet:
-                print("%s is %sNOT RUNNING%s" \
-                      % (app, COLOR_WARN, COLOR_NORMAL))
+                print(f"{app} is {COLOR_WARN}NOT RUNNING{COLOR_NORMAL}")
             sys.exit(1)
 
     elif opts.kill:
@@ -623,14 +619,17 @@ def main():
                 print("Refusing to start over an already running daemon, pid %d" % pid, file=sys.stderr)
                 sys.exit(1)
 
-        # If we are (re)starting and were given a log file option, convert
-        # the logfile option to a list if it looks like a pipe request, i.e.
-        # starts with "|", such as "|rotatelogs foo/bar-%Y%m%d.log".
         if opts.logfile:
-            if opts.logfile.startswith("|"):
-                server.logfile = re.split(r"\s+", opts.logfile[1:])
-            else:
-                server.logfile = opts.logfile
+            server.logfile = opts.logfile
+
+            # setup the queue for the QueueHandler
+            logQueue = Queue()
+            server.logQueue = logQueue
+
+            listener = Process(target=log_listener,
+                               args=(logQueue, server.logfile))
+
+            logger = getTimeRotatingLogger(None, server.logfile)
 
         # Actually start the daemon now.
         server.start_daemon()

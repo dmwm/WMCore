@@ -216,6 +216,10 @@ class EventBased(JobFactory):
                     # the original and the ACDC workflow
                     # Lumis to recover are not necessarily sequential
                     acdcFile["lumis"] = acdcFile["lumis"][lumisPerJob:]
+                    if not acdcFile["lumis"]:
+                        logging.warning("Ran out of lumis for %s with %d events left, not creating more jobs",
+                                        fakeFile['lfn'], eventsToRun)
+                        break
                     currentLumi = acdcFile["lumis"][0]
                     self.newJob(name=self.getJobName(length=totalJobs))
                     self.currentJob.addFile(fakeFile)
@@ -240,6 +244,13 @@ class EventBased(JobFactory):
                             else:
                                 lumisPerJob -= 1
                         self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob - 1, currentLumi)
+                        # The merged ACDC doc pairs the first_event of an arbitrary failed job
+                        # with the union of all failed lumis, so FirstEvent must be re-derived
+                        # from the lumis this job actually processes: it becomes LHESource
+                        # skipEvents for lheInputFiles workflows and it is re-uploaded to the
+                        # ACDC server on the next failure, compounding on every ACDC round
+                        currentEvent = (currentLumi - 1) * eventsPerLumi + 1
+                        self.currentJob["mask"].setMaxAndSkipEvents(min(eventsToRun, eventsPerJob) - 1, currentEvent)
                     jobTime = eventsPerJob * timePerEvent
                     diskRequired = eventsPerJob * sizePerEvent
                     self.currentJob.addResourceEstimates(jobTime=jobTime,

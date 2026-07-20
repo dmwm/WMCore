@@ -33,7 +33,7 @@ class WMConnectionBase(object):
         check to see if a transaction object has been created.  If none exists,
         create one but leave the transaction closed.
         """
-        myThread = threading.currentThread()
+        myThread = threading.current_thread()
         if logger:
             self.logger = logger
         else:
@@ -63,7 +63,7 @@ class WMConnectionBase(object):
         This won't create the transaction if it doesn't exist, it will just return
         None.
         """
-        myThread = threading.currentThread()
+        myThread = threading.current_thread()
 
         if "transaction" not in dir(myThread):
             return None
@@ -76,7 +76,7 @@ class WMConnectionBase(object):
 
         Begin a database transaction if one does not already exist.
         """
-        myThread = threading.currentThread()
+        myThread = threading.current_thread()
 
         if "transaction" not in dir(myThread):
             myThread.transaction = Transaction(self.dbi)
@@ -94,7 +94,7 @@ class WMConnectionBase(object):
 
         Return True if there is an open transaction, False otherwise.
         """
-        myThread = threading.currentThread()
+        myThread = threading.current_thread()
 
         if "transaction" not in dir(myThread):
             return False
@@ -110,7 +110,7 @@ class WMConnectionBase(object):
         Commit a database transaction that was begun by self.beginTransaction().
         """
         if not existingTransaction:
-            myThread = threading.currentThread()
+            myThread = threading.current_thread()
             myThread.transaction.commit()
 
         return
@@ -147,7 +147,7 @@ class WMConnectionBase(object):
             # responsibility for rolling back is on the transaction starter
             if not existingTransaction:
                 self.logger.error('Exception caught, rolling back transaction')
-                threading.currentThread().transaction.rollback()
+                threading.current_thread().transaction.rollback()
             raise
         else:
             # only commits if transaction started by this invocation
@@ -161,4 +161,4 @@ class WMConnectionBase(object):
     def rollbackTransaction(self, existingTransaction):
         """Rollback transaction if we started it"""
         if not existingTransaction:
-            threading.currentThread().transaction.rollback()
+            threading.current_thread().transaction.rollback()

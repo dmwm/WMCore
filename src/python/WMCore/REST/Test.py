@@ -47,11 +47,25 @@ def fake_authz_headers(hmac_key, method = 'HNLogin',
 
     prefix = suffix = ""
     hkeys = list(headers)
+    suffixDict = {}
     for hk in sorted(hkeys):
         if hk != 'cms-auth-status':
             prefix += "h%xv%x" % (len(hk), len(headers[hk]))
+            # old implementation of suffix does not account for proper ordering
             suffix += "%s%s" % (hk, headers[hk])
+            # keep all header key-vaules pair in dict and later sort values
+            suffixDict[hk] = headers[hk]
 
+    # take into account that groups can come in different order since they
+    # are supplied as dictionary, e.g.
+    # {... {'user': {'group': {'users', 'admin'}}}, ...}
+    # we should always persists the order of groups to properly calculate new checksum
+    skeys = sorted([h for h in suffixDict.keys()])
+    newSuffix = ""
+    for key in skeys:
+        vals = sorted(suffixDict[key].split(' '))
+        newSuffix += "%s%s" % (key, ' '.join(vals))
+    suffix = newSuffix
     msg = prefix + "#" + suffix
     if PY3:
         hmac_key = encodeUnicodeToBytes(hmac_key)

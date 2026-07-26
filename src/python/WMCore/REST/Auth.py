@@ -53,7 +53,7 @@ def user_info_from_headers(key, verbose=False):
                     val = str(val) if PY3 else str(val, "utf-8")
                 user[hkname] = val
             if hk.startswith("cms-authz"):
-                user['roles'][hkname] = {'site': set(), 'group': set()}
+                user['roles'][hkname] = {'site': set(), 'group': set(), 'iam_group': set()}
                 for r in headers[hk].split():
                     site_or_group, name = r.split(':')
                     user['roles'][hkname][site_or_group].add(name)

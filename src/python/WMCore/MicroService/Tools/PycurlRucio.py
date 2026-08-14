@@ -18,7 +18,7 @@ import json
 import logging
 import re
 
-from urllib.parse import quote, unquote
+from urllib.parse import quote, quote_plus, unquote, unquote_plus
 
 from Utils.CertTools import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
@@ -113,13 +113,13 @@ def getPileupContainerSizesRucio(containers, rucioUrl, rucioToken, scope="cms"):
 
     headers = {"X-Rucio-Auth-Token": rucioToken}
 
-    urls = ['{}/dids/{}/{}?dynamic=anything'.format(rucioUrl, scope, cont) for cont in containers]
+    urls = ['{}/dids/{}/{}?dynamic=anything'.format(rucioUrl, scope, quote_plus(cont)) for cont in containers]
     logging.info("Executing %d requests against Rucio for the container size", len(urls))
     data = multi_getdata(urls, ckey(), cert(), headers=headers)
 
     for row in data:
         container = row['url'].split('/dids/{}/'.format(scope))[1]
-        container = container.replace("?dynamic=anything", "")
+        container = unquote_plus(container.replace("?dynamic=anything", ""))
         if row['data'] is None:
             msg = "Failure in getPileupContainerSizesRucio for container {}. Response: {}".format(container, row)
             logging.error(msg)
@@ -249,14 +249,14 @@ def getPileupSubscriptionsRucio(datasets, rucioUrl, rucioToken, scope="cms"):
     for _dset, blocks in viewitems(blocksByDset):
         if blocks:
             for block in blocks:
-                urls.append('{}/replicas/{}/{}/datasets'.format(rucioUrl, scope, quote(block)))
+                urls.append('{}/replicas/{}/{}/datasets'.format(rucioUrl, scope, quote_plus(block)))
 
     # this is going to be bloody expensive in terms of HTTP requests
     logging.info("Executing %d requests against Rucio replicas API for blocks", len(urls))
     data = multi_getdata(urls, ckey(), cert(), headers=headers)
     for row in data:
         block = row['url'].split("/{}/".format(scope))[1]
-        block = unquote(re.sub("/datasets$", "", block, 1))
+        block = unquote_plus(re.sub("/datasets$", "", block, 1))
         container = block.split("#")[0]
         locationByDset.setdefault(container, set())
         if row['data'] is None:
@@ -342,12 +342,12 @@ def getContainerBlocksRucio(containers, rucioUrl, rucioToken, scope="cms"):
         return blocksByDset
 
     headers = {"X-Rucio-Auth-Token": rucioToken}
-    urls = ['{}/dids/{}/{}/dids'.format(rucioUrl, scope, cont) for cont in containers]
+    urls = ['{}/dids/{}/{}/dids'.format(rucioUrl, scope, quote_plus(cont)) for cont in containers]
     logging.info("Executing %d requests against Rucio DIDs API for blocks in containers", len(urls))
     data = multi_getdata(urls, ckey(), cert(), headers=headers)
     for row in data:
         container = row['url'].split("/{}/".format(scope))[1]
-        container = re.sub("/dids$", "", container, 1)
+        container = unquote_plus(re.sub("/dids$", "", container, 1))
         if not row['data']:
             logging.warning("Dataset: %s has no blocks in Rucio", container)
         blocksByDset.setdefault(container, [])
@@ -383,7 +383,7 @@ def getBlockReplicasAndSizeRucio(datasets, rucioUrl, rucioToken, scope="cms"):
     urls = []
     for _dset, blocks in viewitems(blocksByDset):
         for block in blocks:
-            urls.append('{}/replicas/{}/{}/datasets'.format(rucioUrl, scope, quote(block)))
+            urls.append('{}/replicas/{}/{}/datasets'.format(rucioUrl, scope, quote_plus(block)))
 
     # next, query the replicas API for the block location
     # this is going to be bloody expensive in terms of HTTP requests
@@ -391,7 +391,7 @@ def getBlockReplicasAndSizeRucio(datasets, rucioUrl, rucioToken, scope="cms"):
     data = multi_getdata(urls, ckey(), cert(), headers=headers)
     for row in data:
         block = row['url'].split("/{}/".format(scope))[1]
-        block = unquote(re.sub("/datasets$", "", block, 1))
+        block = unquote_plus(re.sub("/datasets$", "", block, 1))
         container = block.split("#")[0]
         dsetBlockSize.setdefault(container, dict())
         if row['data'] is None:

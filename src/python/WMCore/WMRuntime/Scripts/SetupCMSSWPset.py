@@ -495,7 +495,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         if getattr(self.jobBag, "lheInputFiles", False):
             self.logger.info("Enabling 'lazy-download' for lheInputFiles job")
-            self._enableLazyDownload()
+            self._enableLazyDownload(checkLHEWorkflow=True)
 
         return
 
@@ -509,7 +509,7 @@ class SetupCMSSWPset(ScriptInterface):
         self._enableLazyDownload()
         return
 
-    def _enableLazyDownload(self):
+    def _enableLazyDownload(self, checkLHEWorkflow=False):
         """
         _enableLazyDownload_
 
@@ -520,6 +520,8 @@ class SetupCMSSWPset(ScriptInterface):
             procScript,
             os.path.join(self.stepSpace.location, self.configPickle),
             os.path.join(self.stepSpace.location, self.configPickle))
+        if checkLHEWorkflow:
+            cmd += " --check_lhe_workflow"
         self.scramRun(cmd)
 
         return

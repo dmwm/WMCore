@@ -1,3 +1,9 @@
+2.4.5.8 to 2.4.5.9:
+  - update LHE workflow check (Norraphat) #12506
+  - Enhance ACDC job creation logic to handle empty lumis and derive FirstEvent correctly (hassan11196) #12506
+-en 
+
+
 2.4.5.7 to 2.4.5.8:
   - Change the registry to cmswmcore (gkerseva) #12499
 -en 

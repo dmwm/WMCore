@@ -64,8 +64,10 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.pollRules = config.RucioInjector.pollIntervalRules
         self.lastRulesExecTime = 0
         self.createBlockRules = config.RucioInjector.createBlockRules
+        self.createContainerRules = getattr(config.RucioInjector, "createContainerRules", True)
         self.containerDiskRuleParams = config.RucioInjector.containerDiskRuleParams
         self.blockRuleParams = config.RucioInjector.blockRuleParams
+        self.blockDiskRuleRSEExpr = getattr(config.RucioInjector, "blockDiskRuleRSEExpr", None)
         self.containerDiskRuleRSEExpr = config.RucioInjector.containerDiskRuleRSEExpr
         if config.RucioInjector.metaDIDProject not in RUCIO_VALID_PROJECT:
             msg = "Component configured with an invalid 'project' DID: %s"
@@ -118,6 +120,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.getDeletableWorkflows = None
 
         logging.info("Component configured to create block rules: %s", self.createBlockRules)
+        logging.info("Component configured to create container rules: %s", self.createContainerRules)
 
     def setup(self, parameters):
         """
@@ -248,9 +251,20 @@ class RucioInjectorPoller(BaseWorkerThread):
 
     def insertBlockRules(self):
         """
-        Creates a simple replication rule for every single block that
-        is under production in a given site/RSE.
-        Also persist the rule ID in the database.
+        Creates a replication rule for every single block that is under production.
+        For non-T0 agents with blockDiskRuleRSEExpr configured, uses a broader RSE
+        expression with copies=1 to pin the existing origin-T2 replica without
+        replicating to a second site.
+        For T0 agents (or when blockDiskRuleRSEExpr is not set), pins to the specific
+        origin T2 RSE with copies=1.
+        Also persists the rule ID in the database.
+
+        Note: if blockRuleParams copies is set to more than 1, Rucio will replicate
+        the block to additional RSEs matching blockDiskRuleRSEExpr to satisfy the
+        extra copies, creating new block replicas at other sites beyond the origin T2.
+        During the disk or tape transfer phase, MSRuleCleaner expires these block rules
+        block by block as soon as all files in each block are confirmed safe in all
+        wmcore_output rules, rather than waiting for the entire workflow to complete.
         """
         if not self.createBlockRules:
             return
@@ -265,10 +279,17 @@ class RucioInjectorPoller(BaseWorkerThread):
                 logging.warning("Block: %s not yet in Rucio. Retrying later..", item['blockname'])
                 continue
             kwargs = dict(activity="Production Output", account=self.rucioAcct,
-                          grouping="DATASET", comment="WMAgent automatic container rule",
+                          grouping="DATASET", comment="WMAgent automatic block rule",
                           ignore_availability=True, meta=self.metaData)
-            rseName = "%s_Test" % item['pnn'] if self.testRSEs else item['pnn']
-            # DATASET = replicates all files in the same block to the same RSE
+            # Non-T0 agents with blockDiskRuleRSEExpr: use broader expression so Rucio
+            # keeps the existing origin-T2 replica as copy-1 and adds a second copy elsewhere.
+            if not self.isT0agent and self.blockDiskRuleRSEExpr:
+                rseName = self.blockDiskRuleRSEExpr
+                if self.testRSEs:
+                    rseName = rseName.replace("cms_type=real", "cms_type=test")
+            else:
+                rseName = "%s_Test" % item['pnn'] if self.testRSEs else item['pnn']
+            # DATASET grouping: all files in the same block go to the same RSE (per copy)
             kwargs.update(self.blockRuleParams)
             resp = self.rucio.createReplicationRule(item['blockname'],
                                                     rseExpression=rseName, **kwargs)
@@ -479,6 +500,10 @@ class RucioInjectorPoller(BaseWorkerThread):
           * T0 Tape is created as defined, with a special rule activity for Tape
           * T0 Disk is created as defined, with a special rule activity for Disk/Export
         """
+        if not self.isT0agent and not self.createContainerRules:
+            logging.info("Container rule creation disabled for non-T0 agent. Skipping.")
+            return
+
         logging.info("Starting insertContainerRules method")
 
         ruleComment = "WMAgent automatic container rule"

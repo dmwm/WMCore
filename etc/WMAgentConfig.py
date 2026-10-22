@@ -437,10 +437,14 @@ config.RucioInjector.logLevel = globalLogLevel
 config.RucioInjector.pollIntervalRules = 43200
 config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
+config.RucioInjector.createContainerRules = False
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
 config.RucioInjector.metaDIDProject = "Production"
 config.RucioInjector.containerDiskRuleParams = {"weight": "dm_weight", "copies": 2, "grouping": "DATASET"}
-config.RucioInjector.blockRuleParams = {}
+config.RucioInjector.blockRuleParams = {"copies": 1}
+# blockDiskRuleRSEExpr: broader expression used for non-T0 block rules.
+# With copies=1, Rucio pins the existing origin-T2 replica without replicating elsewhere.
+config.RucioInjector.blockDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
 # this RSEExpr below might be updated by wmagent-mod-config script
 config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
 config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"

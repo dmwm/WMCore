@@ -739,6 +739,26 @@ class Rucio(object):
             res = False
         return res
 
+    def listReplicaLocks(self, ruleId):
+        """
+        List all file-level replica locks for a given rule id.
+        Returns one entry per (file, RSE) pair; for copies=N there are N entries
+        per file. Each entry is a dict with at least:
+          'name'  - the file LFN
+          'rse'   - the RSE name
+          'state' - 'OK', 'REPLICATING', or 'STUCK'
+        :param ruleId: string with the rule id
+        :return: a list of lock dictionaries (empty on error)
+        """
+        res = []
+        try:
+            res = list(self.cli.list_replica_locks(ruleId))
+        except RuleNotFound:
+            self.logger.error("listReplicaLocks: rule id %s not found", ruleId)
+        except Exception as ex:
+            self.logger.error("listReplicaLocks: failed for rule id %s. Error: %s", ruleId, str(ex))
+        return res
+
     def evaluateRSEExpression(self, rseExpr, useCache=True, returnTape=True):
         """
         Provided an RSE expression, resolve it and return a flat list of RSEs

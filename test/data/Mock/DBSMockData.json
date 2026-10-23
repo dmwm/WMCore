@@ -13793,6 +13793,11 @@
    "dataset": "/MinimumBias/ComissioningHI-v1/RAW"
   }
  ],
+ "listDatasets:[('dataset', '/JetHT/Run2012C-v1/RAW'), ('dataset_access_type', '*')]": [
+    {
+     "dataset": "/JetHT/Run2012C-v1/RAW"
+    }
+ ],
  "listDatasets:[('dataset', '/MinimumBias/FAKE-Filter-v1/RECO'), ('dataset_access_type', '*')]": [],
  "listDatasets:[('dataset', '/NoBPTX/Run2016F-23Sep2016-v1/DQMIO'), ('dataset_access_type', '*')]": [
   {
@@ -25423,6 +25428,14 @@
    "logical_file_name": "/store/data/ComissioningHI/Cosmics/RECO/PromptReco-v1/000/181/345/CA89E7AF-790D-E111-A2A6-002481E0D958.root",
    "md5": "NOTSET"
   }
+ ],
+ "listBlocks:[('dataset', '/JetHT/Run2012C-v1/RAW'), ('detail', False)]": [
+    {
+     "block_name": "/JetHT/Run2012C-v1/RAW#001975f4-e9fa-11e1-9597-842b2b4671d8"
+    },
+    {
+     "block_name": "/JetHT/Run2012C-v1/RAW#004e510c-07fa-11e2-ad47-842b2b4671d8"
+    }
  ],
  "listFileArray:[('dataset', '/Cosmics/ComissioningHI-v1/RAW'), ('detail', False), ('validFileOnly', 1)]": [
   {
@@ -545727,6 +545740,30 @@
    "num_file": 11,
    "num_lumi": 51879
   }
+ ],
+ "listFileSummaries:[('block_name', '/JetHT/Run2012C-v1/RAW#001975f4-e9fa-11e1-9597-842b2b4671d8'), ('validFileOnly', 1)]": [
+    {
+     "file_size": 19829448550,
+     "max_ldate": 1321139371,
+     "median_cdate": 1321135779,
+     "median_ldate": 1321139371,
+     "num_block": 1,
+     "num_event": 14558,
+     "num_file": 5,
+     "num_lumi": 22
+    }
+ ],
+ "listFileSummaries:[('block_name', '/JetHT/Run2012C-v1/RAW#004e510c-07fa-11e2-ad47-842b2b4671d8'), ('validFileOnly', 1)]": [
+    {
+     "file_size": 6879134,
+     "max_ldate": 1321139371,
+     "median_cdate": 1321135779,
+     "median_ldate": 1321139371,
+     "num_block": 1,
+     "num_event": 14558,
+     "num_file": 1,
+     "num_lumi": 4
+    }
  ],
  "listFiles:[('block_name', '/Cosmics/ComissioningHI-PromptReco-v1/RECO#7020873e-0dcd-11e1-9b6c-003048caaace')]": [
   {

@@ -88,13 +88,19 @@ class DBS3Reader(object):
 
         # instantiate dbs api object
         try:
-            self.dbsURL = url.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
-            self.dbs = DbsApi(self.dbsURL, **contact)
             self.logger = logger or logging.getLogger(self.__class__.__name__)
+            self.dbsURL = url.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+            # check if self does not have attribute dbsURL
+            self.logger.info(f"input url: {url}")
+            if not hasattr(self, "dbsURL"):
+                self.logger.info(f"DBS3Reader does NOT have attribute dbsURL")
+            self.dbs = DbsApi(self.dbsURL, **contact)
             self.parallel = parallel
         except Exception as ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)
+            import traceback
+            print(traceback.format_exc())
             raise DBSReaderError(msg) from None
 
     def _getLumiList(self, blockName=None, lfns=None, validFileOnly=1):

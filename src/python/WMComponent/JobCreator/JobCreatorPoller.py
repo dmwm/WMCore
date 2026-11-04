@@ -338,6 +338,10 @@ class JobCreatorPoller(BaseWorkerThread):
         self.agentName = getattr(config.Agent, 'hostName', '')
         self.glideinLimits = getattr(config.JobCreator, 'GlideInRestriction', None)
 
+        # Load workflows/filesets to skip
+        self.skipWorkflows = getattr(config.JobCreator, 'skipWorkflows', [])
+        self.skipFilesets = getattr(config.JobCreator, 'skipFilesets', [])
+
         try:
             self.jobCacheDir = getattr(config.JobCreator, 'jobCacheDir',
                                        os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
@@ -442,6 +446,15 @@ class JobCreatorPoller(BaseWorkerThread):
             workflow.load()
             wmbsSubscription['workflow'] = workflow
             wmWorkload = retrieveWMSpec(workflow=workflow)
+
+            # Check if we should skip this workflow or fileset
+            if workflow.name in self.skipWorkflows:
+                logging.info("Skipping workflow %s as configured in skipWorkflows", workflow.name)
+                continue
+
+            if wmbsSubscription and wmbsSubscription.get('fileset') and wmbsSubscription['fileset'].name in self.skipFilesets:
+                logging.info("Skipping fileset %s as configured in skipFilesets", wmbsSubscription['fileset'].name)
+                continue
 
             if not workflow.task or not wmWorkload:
                 # Then we have a problem

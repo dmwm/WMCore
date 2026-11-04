@@ -247,7 +247,8 @@ config.JobSubmitter.skipRefreshCount = 20  # (If above the threshold meet, cache
 config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], submitScript)
 config.JobSubmitter.extraMemoryPerCore = 500  # in MB
 config.JobSubmitter.drainGraceTime = 2 * 24 * 60 * 60  # in seconds
-config.JobSubmitter.useOauthToken = False
+config.JobSubmitter.oauthCMSTokenName = ""   # disable with: "". enable with "cms_wmagent". 
+                                             # override with WMAgent.secrets variable OAUTH_CMS_TOKEN_NAME
 
 config.component_("JobTracker")
 config.JobTracker.section_('JobTrackerPoller')

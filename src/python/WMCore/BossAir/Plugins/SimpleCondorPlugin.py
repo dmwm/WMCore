@@ -142,7 +142,7 @@ class SimpleCondorPlugin(BasePlugin):
 
         self.tc = TagCollector()
 
-        self.useCMSToken = getattr(config.JobSubmitter, 'useOauthToken', False)
+        self.oauthCMSTokenName = getattr(config.JobSubmitter, 'oauthCMSTokenName', "")
 
         return
 
@@ -528,8 +528,9 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
 
             # Allow oauth based token authentication
-            if self.useCMSToken:
-                ad['use_oauth_services'] = "cms"
+            if self.oauthCMSTokenName:
+                # 2025aug: self.oauthCMSTokenName == cms_wmagent
+                ad['use_oauth_services'] = self.oauthCMSTokenName
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['My.DESIRED_Sites'] = classad.quote(str(sites))

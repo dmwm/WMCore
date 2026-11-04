@@ -197,10 +197,10 @@ if [ -n "${_CONDOR_CREDS}" ]; then
     echo "Content under _CONDOR_CREDS: ${_CONDOR_CREDS}"
     ls -l ${_CONDOR_CREDS}
     # Now, check specifically for cms token
-    if [ -f "${_CONDOR_CREDS}/cms.use" ]
-    then
-        echo "CMS token found, setting BEARER_TOKEN_FILE=${_CONDOR_CREDS}/cms.use"
-        export BEARER_TOKEN_FILE=${_CONDOR_CREDS}/cms.use
+    for tokenfile in ${_CONDOR_CREDS}/*.use ; do
+        if [ -f ${tokenfile} ];  then
+          echo "CMS token found, setting BEARER_TOKEN_FILE=${tokenfile}"
+          export BEARER_TOKEN_FILE=${tokenfile}
     
         # Show token information
         # This tool requires htgettoken package in the cmssw runtime apptainer image
@@ -211,12 +211,13 @@ if [ -n "${_CONDOR_CREDS}" ]; then
             echo "Warning: [WMAgent Token verification] httokendecode tool could not be found."
             echo "Warning: Token exists and can be used, but details will not be displayed."
         fi
-    else
+      else
         echo "[WMAgent token verification]: The bearer token file could not be found."
         # Do not fail, we still support x509 proxies
         # if we fail here in the future, we need to define an exit code number
         # exit 1106
-    fi
+      fi
+    done
 else
     echo "Variable _CONDOR_CREDS is not defined, condor auth/token credentials directory not found."
 fi

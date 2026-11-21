@@ -74,7 +74,7 @@ class ProtectedLFNList(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self):
-        # This assumes DataCahe is periodically updated.
+        # This assumes DataCache is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         if DataCache.isEmpty():
             raise DataCacheEmpty()

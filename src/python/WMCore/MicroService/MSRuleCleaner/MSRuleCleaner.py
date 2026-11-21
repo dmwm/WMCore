@@ -14,7 +14,6 @@ workflows remain.
 
 # futures
 from __future__ import division, print_function
-from future.utils import viewvalues
 
 import json
 import re
@@ -23,6 +22,8 @@ import time
 # system modules
 from threading import current_thread
 from pprint import pformat
+
+from future.utils import viewitems
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import RULECLEANER_REPORT
@@ -37,6 +38,7 @@ from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.MicroService.Tools.Common import findParent
 from Utils.Pipeline import Pipeline, Functor
 from Utils.CertTools import ckey, cert
+from Utils.IteratorTools import getChunk
 
 
 class MSRuleCleanerResolveParentError(WMException):
@@ -103,6 +105,9 @@ class MSRuleCleaner(MSCore):
         self.alertServiceName = "ms-rulecleaner"
         # 2 days of expiration time
         self.alertExpiration = self.msConfig.get("alertExpireSecs", 2 * 24 * 60 * 60)
+
+        # chunk size for requests processing
+        self.chunkSize = self.msConfig.get("requestChunkSize", 100)
 
         # Building all the Pipelines:
         pName = 'plineMSTrCont'
@@ -207,59 +212,52 @@ class MSRuleCleaner(MSCore):
         self.logger.info("MSRuleCleaner is running in mode: %s.", self.mode)
 
         # Build the list of workflows to work on:
+        #requestRecords = {}
         try:
-            requestRecords = {}
+            self.getGlobalLocks()
+            # in this loop we'll only allocate single wflow object, process it and collect metrics
+            # therefore, the memory allocation will be flat regardless of number of records.
+            cleanNumRequests = 0
+            totalNumRequests = 0
             for status in reqStatus:
-                requestRecords.update(self.getRequestRecords(status))
+                reqIds = self.getRequestRecords(status, detail=False)
+                ids = reqIds.keys()
+                for chunk in getChunk(ids, self.chunkSize):
+                    cnum, tnum = self.processRequestsChunk(chunk)
+                    cleanNumRequests += cnum
+                    totalNumRequests += tnum
+
+            # Report the counters:
+            for pline in self.cleanuplines:
+                msg = "Workflows cleaned by pipeline: %s: %d"
+                self.logger.info(msg, pline.name, self.wfCounters['cleaned'][pline.name])
+            normalArchivedNumRequests = self.wfCounters['archived']['normalArchived']
+            forceArchivedNumRequests = self.wfCounters['archived']['forceArchived']
+            self.logger.info("Workflows normally archived: %d", self.wfCounters['archived']['normalArchived'])
+            self.logger.info("Workflows force archived: %d", self.wfCounters['archived']['forceArchived'])
+
+            self.updateAllMetrics(summary, totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests)
+
         except Exception as err:  # general error
             msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
-        # Call _execute() and feed the relevant pipeline with the objects popped from requestRecords
-        try:
-            self.getGlobalLocks()
-            totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests = self._execute(requestRecords)
-            msg = "\nNumber of processed workflows: %s."
-            msg += "\nNumber of properly cleaned workflows: %s."
-            msg += "\nNumber of normally archived workflows: %s."
-            msg += "\nNumber of force archived workflows: %s."
-            self.logger.info(msg,
-                             totalNumRequests,
-                             cleanNumRequests,
-                             normalArchivedNumRequests,
-                             forceArchivedNumRequests)
-            self.updateReportDict(summary, "total_num_requests", totalNumRequests)
-            self.updateReportDict(summary, "clean_num_requests", cleanNumRequests)
-            self.updateReportDict(summary, "normal_archived_num_requests", normalArchivedNumRequests)
-            self.updateReportDict(summary, "force_archived_num_requests", forceArchivedNumRequests)
-        except Exception as ex:
-            msg = "Unknown exception while running MSRuleCleaner thread Error: {}".format(str(ex))
-            self.logger.exception(msg)
-            self.updateReportDict(summary, "error", msg)
-
         return summary
 
-    def _execute(self, reqRecords):
+    def processRequestsChunk(self, chunk):
         """
-        Executes the MSRuleCleaner pipelines based on the workflow status
-        :param reqList: A list of RequestRecords to work on
-        :return:        a tuple with:
-                            number of properly cleaned requests
-                            number of processed workflows
-                            number of archived workflows
-                            number of forced archived workflows
+        Helper function to process requests chunk
+        :param chunk: list of request's ids
+        :return: tuple of clean and total number of requests
         """
-        # NOTE: The Input Cleanup, the Block Level Cleanup and the Archival
-        #       Pipelines are executed sequentially in the above order.
-        #       This way we assure ourselves that we archive only workflows
-        #       that have accomplished the needed cleanup
-
         cleanNumRequests = 0
         totalNumRequests = 0
-
-        # Call the workflow dispatcher:
-        for req in viewvalues(reqRecords):
+        result = self.reqmgr2.getRequestByNames(chunk)
+        requests = {}
+        if result:
+            requests = result[0]
+        for req in viewitems(requests):
             wflow = MSRuleCleanerWflow(req)
             self._dispatchWflow(wflow)
             msg = "\n----------------------------------------------------------"
@@ -269,16 +267,22 @@ class MSRuleCleaner(MSCore):
             totalNumRequests += 1
             if self._checkClean(wflow):
                 cleanNumRequests += 1
+        return cleanNumRequests, totalNumRequests
 
-        # Report the counters:
-        for pline in self.cleanuplines:
-            msg = "Workflows cleaned by pipeline: %s: %d"
-            self.logger.info(msg, pline.name, self.wfCounters['cleaned'][pline.name])
-        normalArchivedNumRequests = self.wfCounters['archived']['normalArchived']
-        forceArchivedNumRequests = self.wfCounters['archived']['forceArchived']
-        self.logger.info("Workflows normally archived: %d", self.wfCounters['archived']['normalArchived'])
-        self.logger.info("Workflows force archived: %d", self.wfCounters['archived']['forceArchived'])
-        return totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests
+    def updateAllMetrics(self, summary, totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests):
+        msg = "\nNumber of processed workflows: %s."
+        msg += "\nNumber of properly cleaned workflows: %s."
+        msg += "\nNumber of normally archived workflows: %s."
+        msg += "\nNumber of force archived workflows: %s."
+        self.logger.info(msg,
+                         totalNumRequests,
+                         cleanNumRequests,
+                         normalArchivedNumRequests,
+                         forceArchivedNumRequests)
+        self.updateReportDict(summary, "total_num_requests", totalNumRequests)
+        self.updateReportDict(summary, "clean_num_requests", cleanNumRequests)
+        self.updateReportDict(summary, "normal_archived_num_requests", normalArchivedNumRequests)
+        self.updateReportDict(summary, "force_archived_num_requests", forceArchivedNumRequests)
 
     def _dispatchWflow(self, wflow):
         """
@@ -778,14 +782,14 @@ class MSRuleCleaner(MSCore):
         wflow['CleanupStatus'][currPline] = all(delResults)
         return wflow
 
-    def getRequestRecords(self, reqStatus):
+    def getRequestRecords(self, reqStatus, detail=True):
         """
         Queries ReqMgr2 for requests in a given status.
         :param reqStatus: The status for the requests to be fetched from ReqMgr2
         :return requests: A dictionary with all the workflows in the given status
         """
         self.logger.info("Fetching requests in status: %s", reqStatus)
-        result = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
+        result = self.reqmgr2.getRequestByStatus([reqStatus], detail=detail)
         if not result:
             requests = {}
         else:

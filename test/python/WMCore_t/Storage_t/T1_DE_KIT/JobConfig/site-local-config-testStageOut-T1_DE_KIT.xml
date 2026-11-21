@@ -33,7 +33,11 @@
 		</fallback-stage-out>
 
 		<stage-out>
-        <method volume="KIT_dCache" protocol="WebDAV"/>
+		    <method volume="KIT_dCache" protocol="WebDAV"/>
+		    <method volume="KIT_MSS" protocol="WebDAV"/>
+			<method volume="KIT_dCache" protocol="xrootd-module"/>
+			<method volume="KIT_dCache" protocol="XRootDHoreKaGridKa"/>
+            <method site="T2_DE_DESY" volume="DESY_dCache" protocol="WebDAV"/>
 		</stage-out>
 
 		<calib-data>

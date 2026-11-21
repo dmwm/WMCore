@@ -14,7 +14,8 @@
     <phedex-node value="T1_US_FNAL_Disk"/>
   </local-stage-out>
   <stage-out>
-    <method volume="FNAL_dCache_EOS" protocol="XRootD" command="xrdcp" option="-p"/>
+    <method volume="FNAL_dCache_EOS" protocol="XRootD" option="-p"/>
+    <method volume="FNAL_dCache_EOS" protocol="xrootd"/>
     <method volume="FNAL_dCache_EOS" protocol="SRMv2"/>
     <method volume="FNAL_dCache_EOS" protocol="WebDAV"/>
   </stage-out>

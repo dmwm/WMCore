@@ -185,7 +185,12 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       60409: "Timeout in stage out of log files during log collection (WMAgent).",  # (WMA)
                       60450: "No output files present in the report",  # (WMA)
                       60451: "Output file lacked adler32 checksum (WMAgent).",  # (WMA)
+                      70317: "Indefinite hangout while staging out DQM root file to EOS",  # (WMA)
                       70318: "Failure in DQM upload.",
+                      70319: "HTTP POST to DQM register url failed.",  # (WMA)
+                      70320: "Error while retrieving run number from job definition.",  # (WMA)
+                      70321: "Indefinite hang while deleting file from EOS.",  # (WMA)
+                      70322: "General failure while deleting file from EOS.",  # (WMA)
                       70452: "No run/lumi information in file (WMAgent).",
                       71101: "No sites are available to submit the job because the location of its input(s) do not pass the site whitelist/blacklist restrictions (WMAgent).",
                       71102: "The job can only run at a site that is currently in Aborted state (WMAgent).",
